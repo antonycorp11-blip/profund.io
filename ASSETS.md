@@ -222,6 +222,31 @@ caminhada e a escalada seguem a distância percorrida. Por isso a animação
 As cópias da copiadora usam as mesmas tiras, recoloridas em tempo de execução —
 elas são o protagonista, então precisam ser o mesmo desenho.
 
+## CRIATURAS — folha 6x5
+
+Uma imagem por bicho, `arte-bruta/criaturas/<nome>.png`, fundo transparente.
+Grade de **6 quadros na horizontal x 5 linhas**, nesta ordem de cima para baixo:
+
+| linha | animação |
+|---|---|
+| 1 | parado |
+| 2 | andando |
+| 3 | atacando |
+| 4 | levando dano |
+| 5 | morrendo |
+
+Rode `npm run slice-assets`. Saem 5 tiras por bicho em
+`public/art/creatures/<nome>_<animação>.png`.
+
+**O que o fatiador resolve:** as linhas são achadas por banda (o espaço entre
+elas varia), e cada fronteira de coluna cai na **coluna com menos pixels** perto
+da posição ideal — em bicho largo os quadros se encostam e não existe lacuna
+limpa. Depois de cortar, só o **maior aglomerado** de cada célula é mantido:
+sem isso a lasca do vizinho entra na caixa de conteúdo e encolhe o bicho todo.
+
+**O que você garante:** bicho virado para a **direita**, mesmo tamanho em todos
+os quadros da mesma folha, sem sombra no chão (o motor desenha).
+
 ## Paleta oficial (use nos prompts futuros)
 
 | Uso | Hex |

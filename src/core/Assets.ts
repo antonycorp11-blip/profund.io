@@ -1,4 +1,5 @@
 import { ART, type ArtManifest } from '../data/art';
+import { CREATURES } from '../data/creatures';
 import { RESOURCES } from '../data/resources';
 
 /** Nomes gravados por tools/slice-assets.mjs em public/art/skills. */
@@ -26,6 +27,8 @@ class AssetsImpl {
   hasCharacterArt = false;
   /** Quais tiras de animacao do heroi existem de fato. */
   readonly characterStrips = new Set<string>();
+  /** Quais criaturas tem arte carregada. */
+  readonly creatureArts = new Set<string>();
   hasCrackArt = false;
   hasBackgroundArt = false;
   private skillIcons = new Set<string>();
@@ -68,6 +71,26 @@ class AssetsImpl {
           this.characterStrips.add(name);
         })
       );
+    }
+
+    // Criaturas: uma imagem por animacao de cada bicho. O que faltar cai no
+    // desenho vetorial daquela criatura, sem quebrar nada.
+    const artes = new Set<string>();
+    for (const def of CREATURES) {
+      if (def.art) artes.add(def.art);
+    }
+    for (const art of artes) {
+      for (const anim of manifest.creatureAnims) {
+        jobs.push(
+          this.loadImage(`${manifest.basePath}${manifest.creaturesDir}${art}_${anim}.png`).then(
+            (img) => {
+              if (!img) return;
+              this.images.set(`creature:${art}:${anim}`, img);
+              this.creatureArts.add(art);
+            }
+          )
+        );
+      }
     }
 
     for (const key of manifest.skyKeys) {
@@ -250,6 +273,11 @@ class AssetsImpl {
   /** Folha do personagem, ou null se ainda nao existe. */
   character(): HTMLImageElement | null {
     return this.images.get('character') ?? null;
+  }
+
+  /** Quadro de animacao de uma criatura, ou null quando nao ha arte. */
+  creature(art: string, anim: string): HTMLImageElement | null {
+    return this.images.get(`creature:${art}:${anim}`) ?? null;
   }
 
   /** Tira de uma animacao do heroi, ou null quando aquele arquivo nao existe. */

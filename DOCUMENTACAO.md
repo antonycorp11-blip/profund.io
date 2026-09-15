@@ -331,6 +331,27 @@ src/systems/CreatureManager  postos de guardiao, populacao de ambiente, ataque, 
 src/systems/Vitals.ts        vida do jogador, iframes, morte e cura
 ```
 
+**Dez bichos com arte propria**, cada um em 5 animacoes (parado, andar, atacar,
+levar dano, morrer). A fauna troca ANTES da rocha: cada bicho aparece em duas ou
+tres camadas vizinhas, entao descer sempre apresenta algo novo antes de o
+cenario mudar.
+
+| camada | quem mora la |
+|---|---|
+| superficie | nenhuma (a superficie e segura) |
+| pedra (50 m) | Toupeira Mineira, Larva Palida, Morcego Rubro, Aranha Violeta |
+| cristal (200 m) | Morcego, Aranha, Cogumelo Venenoso, Casco de Cristal |
+| minerais (500 m) | Aranha, Cogumelo, Casco de Cristal, Limo Acido |
+| magma (900 m) | Vespa Ignea, Escaravelho de Magma, Limo |
+| ruinas (1300 m) | Vespa, Escaravelho, Limo, Casco de Cristal, Alma Perdida |
+| abismo (1700 m) | Escaravelho, Limo, Alma Perdida |
+| portal (1960 m) | Alma Perdida |
+
+Vida e dano sobem com a profundidade: 34/6 na toupeira, 220/30 na alma. Tres
+bichos VOAM (morcego, vespa, alma): ignoram gravidade, perseguem em linha reta e
+nascem no vao, nao no chao — morcego andando pelo chao so mostra que ele e um
+bloco com asas.
+
 **Duas populacoes, propositos diferentes.**
 
 1. **Ambiente** (toupeira, morcego, besouro, verme, elemental): nasce e some ao redor do jogador

@@ -142,7 +142,9 @@ export class CreatureManager {
     for (let i = this.creatures.length - 1; i >= 0; i--) {
       const c = this.creatures[i];
       if (!c.alive) {
-        this.creatures.splice(i, 1);
+        // O corpo fica na tela ate a animacao de morte acabar.
+        c.update(dt, this.world, player, hitPlayer);
+        if (!c.fading) this.creatures.splice(i, 1);
         continue;
       }
       if (c.distanceTo(player.x, player.y) > CREATURE_CONFIG.despawn && !c.isGuardian) {
@@ -183,7 +185,6 @@ export class CreatureManager {
       const row = Math.floor(y / ts);
       if (!this.world.inBounds(col, row)) continue;
       if (this.world.isSolid(col, row) || this.world.isSolid(col, row - 1)) continue;
-      if (!this.world.isSolid(col, row + 1)) continue;
 
       let total = pool.reduce((n, c) => n + c.spawnWeight, 0);
       let roll = Math.random() * total;
@@ -195,6 +196,8 @@ export class CreatureManager {
           break;
         }
       }
+      // Quem anda precisa de chao embaixo; quem voa nasce no vao mesmo.
+      if (!def.flying && !this.world.isSolid(col, row + 1)) continue;
       this.creatures.push(new Creature(def, col * ts + ts / 2, row * ts + ts / 2));
       return;
     }

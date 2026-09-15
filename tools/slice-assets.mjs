@@ -97,6 +97,12 @@ const TOL = Number(args.tol ?? 60);
 
 const OUT_BLOCKS = path.join('public', 'art', 'blocks');
 const OUT_CHAR = path.join('public', 'art', 'character');
+const OUT_CREATURES = path.join('public', 'art', 'creatures');
+/** Ordem das linhas nas folhas de criatura (5 linhas x 6 quadros). */
+const CREATURE_ROWS = ['idle', 'walk', 'attack', 'hurt', 'death'];
+const CREATURE_COLS = 6;
+/** Lado do quadro de saida. Criatura grande precisa caber inteira aqui. */
+const CREATURE_SIZE = 96;
 
 /** Tiras de animacao do heroi: nome de saida -> nomes aceitos na pasta. */
 const STRIPS = [
@@ -123,6 +129,7 @@ function main() {
   wrote += sliceBlocks();
   wrote += sliceCharacter();
   wrote += sliceCharacterStrips();
+  wrote += sliceCreatures();
   wrote += sliceCracks();
   wrote += sliceIcons();
   wrote += sliceIconSheet();
@@ -401,6 +408,236 @@ function frameRuns(png, minGap = 6) {
     out.push({ x0: from, x1: run.x1 });
   }
   return out;
+}
+
+// -------------------------------------------------------- criaturas ---
+
+/**
+ * Folhas de criatura: 5 linhas de animacao x 6 quadros.
+ *
+ * As linhas sao achadas por banda vertical (o espaco entre elas varia), mas as
+ * COLUNAS sao divisao exata da largura: a grade por tras e uniforme, e cortar
+ * por ocupacao quebraria os quadros de ataque, onde o efeito invade o vizinho.
+ *
+ * Saida: uma tira por animacao, `public/art/creatures/<bicho>_<anim>.png`,
+ * todas na mesma escala daquele bicho e ancoradas pelos pes.
+ */
+function sliceCreatures() {
+  const dir = path.join(SRC, 'criaturas');
+  if (!fs.existsSync(dir)) return 0;
+  const files = fs.readdirSync(dir).filter((f) => /\.png$/i.test(f));
+  if (files.length === 0) return 0;
+
+  fs.mkdirSync(OUT_CREATURES, { recursive: true });
+  console.log(`\n  ${dir}/  ->  ${files.length} criatura(s)`);
+  let wrote = 0;
+
+  for (const file of files) {
+    const name = path.basename(file, path.extname(file));
+    const src = readPng(path.join(dir, file));
+    if (!src) continue;
+    const bg = detectBackground(src);
+    if (bg) keyOut(src, bg, TOL);
+
+    const bands = horizontalBands(src);
+    if (bands.length === 0) {
+      console.log(`    ${file}: vazia, pulando`);
+      continue;
+    }
+    const colW = src.width / CREATURE_COLS;
+    let porOcupacao = 0;
+
+    // Passada 1: maior quadro deste bicho (a escala e por bicho, nao global —
+    // um morcego e uma toupeira nao precisam ter o mesmo tamanho na tela).
+    let tallest = 1;
+    let widest = 1;
+    const grid = [];
+    for (const [b0, b1] of bands) {
+      const faixa = crop(src, 0, b0, src.width, b1 - b0 + 1);
+      // Sabemos que sao 6 quadros; o que varia e onde eles comecam. Cada
+      // fronteira cai na coluna mais VAZIA perto da posicao ideal — em bicho
+      // largo os quadros se encostam e nao existe lacuna limpa para achar.
+      const cuts = gridCuts(faixa, CREATURE_COLS);
+      porOcupacao++;
+
+      const linha = [];
+      for (let c = 0; c < CREATURE_COLS; c++) {
+        const x0 = cuts[c];
+        const x1 = cuts[c + 1];
+        const cell = crop(src, x0, b0, Math.max(1, x1 - x0), b1 - b0 + 1);
+        // Em bicho largo o corte ainda leva uma lasca do vizinho. Fica so o
+        // bloco principal: sem isso a lasca entra na caixa de conteudo, o
+        // quadro parece ter dois bichos e a escala do bicho inteiro encolhe.
+        const box = mainClusterBox(cell);
+        if (box) {
+          tallest = Math.max(tallest, box.bottom - box.top + 1);
+          widest = Math.max(widest, box.right - box.left + 1);
+        }
+        linha.push({ cell, box });
+      }
+      grid.push(linha);
+    }
+    // Cabe pela altura e pela largura: efeito de ataque costuma ser mais largo.
+    const scale = Math.min(
+      (CREATURE_SIZE * 0.86) / tallest,
+      (CREATURE_SIZE * 0.96) / widest
+    );
+    const feetY = Math.round(CREATURE_SIZE * 0.92);
+
+    // Passada 2: grava uma tira por linha.
+    for (let r = 0; r < grid.length && r < CREATURE_ROWS.length; r++) {
+      const linha = grid[r];
+      const out = new PNG({ width: CREATURE_SIZE * CREATURE_COLS, height: CREATURE_SIZE });
+      out.data.fill(0);
+
+      for (let c = 0; c < linha.length; c++) {
+        const { cell, box } = linha[c];
+        if (!box) continue;
+        const cw = box.right - box.left + 1;
+        const ch = box.bottom - box.top + 1;
+        const tight = crop(cell, box.left, box.top, cw, ch);
+        const sw = Math.max(1, Math.round(cw * scale));
+        const sh = Math.max(1, Math.round(ch * scale));
+        const small = resize(tight, sw, sh);
+        blit(small, out, Math.round(c * CREATURE_SIZE + CREATURE_SIZE / 2 - sw / 2), feetY - sh);
+      }
+
+      writePng(path.join(OUT_CREATURES, `${name}_${CREATURE_ROWS[r]}.png`), out);
+      wrote++;
+    }
+    console.log(
+      `    ${file}  ->  ${Math.min(grid.length, CREATURE_ROWS.length)} tiras ` +
+        `(escala ${scale.toFixed(2)}, maior quadro ${widest}x${tallest}, ` +
+        `${porOcupacao}/${bands.length} linhas)`
+    );
+  }
+  return wrote;
+}
+
+/**
+ * Caixa do maior aglomerado de conteudo do quadro.
+ * Agrupa colunas vizinhas e fica com o grupo que tem mais pixels; o resto e
+ * lasca do quadro ao lado.
+ */
+function mainClusterBox(png) {
+  const w = png.width;
+  const peso = new Int32Array(w);
+  for (let x = 0; x < w; x++) {
+    let n = 0;
+    for (let y = 0; y < png.height; y++) {
+      if (png.data[((y * w + x) << 2) + 3] >= 24) n++;
+    }
+    peso[x] = n;
+  }
+
+  let melhor = null;
+  let melhorPeso = -1;
+  let ini = -1;
+  let soma = 0;
+  let gap = 0;
+  for (let x = 0; x <= w; x++) {
+    const cheio = x < w && peso[x] > 0;
+    if (cheio) {
+      if (ini < 0) ini = x;
+      soma += peso[x];
+      gap = 0;
+    } else if (ini >= 0) {
+      gap++;
+      // Lacuna curta nao separa: pernas e antenas deixam colunas vazias.
+      if (gap >= 4 || x === w) {
+        if (soma > melhorPeso) {
+          melhorPeso = soma;
+          melhor = [ini, x - gap];
+        }
+        ini = -1;
+        soma = 0;
+      }
+    }
+  }
+  if (!melhor) return null;
+
+  const [left, right] = melhor;
+  let top = -1;
+  let bottom = -1;
+  for (let y = 0; y < png.height; y++) {
+    for (let x = left; x <= right; x++) {
+      if (png.data[((y * w + x) << 2) + 3] < 24) continue;
+      if (top < 0) top = y;
+      bottom = y;
+      break;
+    }
+  }
+  return bottom < 0 ? null : { top, bottom, left, right };
+}
+
+/**
+ * Fronteiras de uma grade de N colunas dentro de uma faixa.
+ *
+ * Devolve N+1 posicoes. Cada fronteira interna e a coluna com MENOS pixels
+ * numa janela ao redor da posicao ideal: onde ha lacuna, cai na lacuna; onde os
+ * quadros se encostam, cai no ponto mais estreito do encontro.
+ */
+function gridCuts(png, cols) {
+  const w = png.width;
+  const density = new Int32Array(w);
+  for (let x = 0; x < w; x++) {
+    let n = 0;
+    for (let y = 0; y < png.height; y++) {
+      if (png.data[((y * w + x) << 2) + 3] >= 24) n++;
+    }
+    density[x] = n;
+  }
+
+  const pitch = w / cols;
+  const janela = Math.round(pitch * 0.34);
+  const cuts = [0];
+  for (let i = 1; i < cols; i++) {
+    const ideal = Math.round(i * pitch);
+    let best = ideal;
+    let menor = Infinity;
+    for (let x = Math.max(1, ideal - janela); x <= Math.min(w - 2, ideal + janela); x++) {
+      // Empate vai para o mais perto do ideal: mantem a grade regular.
+      const score = density[x] * 1000 + Math.abs(x - ideal);
+      if (score < menor) {
+        menor = score;
+        best = x;
+      }
+    }
+    cuts.push(best);
+  }
+  cuts.push(w);
+  return cuts;
+}
+
+/** Faixas horizontais com conteudo, separadas por linhas totalmente vazias. */
+function horizontalBands(png, minGap = 10) {
+  const has = new Uint8Array(png.height);
+  for (let y = 0; y < png.height; y++) {
+    for (let x = 0; x < png.width; x++) {
+      if (png.data[((y * png.width + x) << 2) + 3] >= 24) {
+        has[y] = 1;
+        break;
+      }
+    }
+  }
+  const bands = [];
+  let start = -1;
+  let gap = 0;
+  for (let y = 0; y < png.height; y++) {
+    if (has[y]) {
+      if (start < 0) start = y;
+      gap = 0;
+    } else if (start >= 0) {
+      gap++;
+      if (gap >= minGap) {
+        bands.push([start, y - gap]);
+        start = -1;
+      }
+    }
+  }
+  if (start >= 0) bands.push([start, png.height - 1]);
+  // Descarta respingos entre linhas.
+  return bands.filter(([a, b]) => b - a + 1 >= png.height * 0.04);
 }
 
 // ---------------------------------------------------------- rachaduras ---

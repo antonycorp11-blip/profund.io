@@ -165,6 +165,10 @@ export const ART = {
     cart: { file: 'cart.png', w: 72, h: 48 },
   } as Record<string, { file: string; w: number; h: number }>,
 
+  /** Criaturas: uma tira por animacao, geradas pelo slice-assets. */
+  creaturesDir: 'creatures/',
+  creatureAnims: ['idle', 'walk', 'attack', 'hurt', 'death'] as const,
+
   /**
    * Personagem: folha 4x4 de 128px (saida do slice-assets).
    * Os indices seguem a ordem dos quadros descrita em ASSETS.md.

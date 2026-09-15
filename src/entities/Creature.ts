@@ -1,6 +1,9 @@
+import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
-import type { CreatureDef } from '../data/creatures';
+import { CREATURE_CONFIG, type CreatureDef } from '../data/creatures';
 import type { World } from '../world/World';
+
+type AnimName = 'idle' | 'walk' | 'attack' | 'hurt' | 'death';
 
 export type CreatureState = 'parado' | 'patrulha' | 'perseguindo' | 'atacando' | 'ferido' | 'morto';
 
@@ -31,6 +34,15 @@ export class Creature {
   private t = Math.random() * 10;
   /** Segundos preso dentro de rocha (o jogador pode fechar o vao dela). */
   private stuckTime = 0;
+  /** Animacao corrente e o tempo dentro dela. */
+  private anim: AnimName = 'idle';
+  private animTime = 0;
+  /** Trava a animacao ate acabar (ataque, dano, morte). */
+  private animLock = 0;
+  /** Segundos que o corpo ainda fica na tela depois de morrer. */
+  private deathFade = 0;
+  /** Altura que quem voa persegue. */
+  private flyTargetY = 0;
 
   constructor(readonly def: CreatureDef, x: number, y: number) {
     this.health = def.health;
@@ -43,6 +55,18 @@ export class Creature {
 
   get alive(): boolean {
     return this.state !== 'morto';
+  }
+
+  /** True enquanto o corpo ainda esta desaparecendo (nao pode ser removido). */
+  get fading(): boolean {
+    return this.deathFade > 0;
+  }
+
+  /** Toca uma animacao travada por `dur` segundos. */
+  private play(anim: AnimName, dur: number): void {
+    this.anim = anim;
+    this.animTime = 0;
+    this.animLock = dur;
   }
 
   /** Emparedada: quem cuida disso e o CreatureManager (some ou volta ao posto). */
@@ -63,9 +87,12 @@ export class Creature {
     if (!this.alive) return false;
     this.health -= amount;
     this.hurtTimer = 0.22;
+    this.play('hurt', 0.3);
     this.vx = Math.sign(this.x - fromX) * 120;
     if (this.health <= 0) {
       this.state = 'morto';
+      this.play('death', 0.7);
+      this.deathFade = 0.7;
       return true;
     }
     // Levar dano sempre acorda a criatura, mesmo a passiva.
@@ -79,7 +106,12 @@ export class Creature {
     player: { x: number; y: number; invulnerable: boolean },
     hitPlayer: (damage: number, fromX: number) => void
   ): void {
-    if (!this.alive) return;
+    this.animTime += dt;
+    this.animLock = Math.max(0, this.animLock - dt);
+    if (!this.alive) {
+      this.deathFade = Math.max(0, this.deathFade - dt);
+      return;
+    }
     this.t += dt;
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.attackTimer = Math.max(0, this.attackTimer - dt);
@@ -88,6 +120,12 @@ export class Creature {
     const dy = player.y - this.y;
     const dist = Math.hypot(dx, dy);
     const homeDist = Math.hypot(this.x - this.homeX, this.y - this.homeY);
+    if (this.def.flying) {
+      this.flyTargetY =
+        this.state === 'perseguindo' || this.state === 'atacando'
+          ? player.y - 6
+          : this.homeY + Math.sin(this.t * 0.7) * 22;
+    }
 
     // Passiva so reage se for atacada; as outras percebem por proximidade.
     const notices =
@@ -107,6 +145,7 @@ export class Creature {
         this.facing = dx >= 0 ? 1 : -1;
         if (this.attackTimer <= 0 && !player.invulnerable) {
           this.attackTimer = this.def.attackCooldown;
+          this.play('attack', 0.5);
           hitPlayer(this.def.damage, this.x);
         }
         if (dist > this.def.attackRange * 1.3) this.state = 'perseguindo';
@@ -140,11 +179,39 @@ export class Creature {
     }
 
     this.move(dt, world);
+
+    if (this.animLock <= 0) {
+      const andando = Math.abs(this.vx) > 6 || (this.def.flying && Math.abs(this.vy) > 6);
+      const proxima: AnimName = andando ? 'walk' : 'idle';
+      if (proxima !== this.anim) {
+        this.anim = proxima;
+        this.animTime = 0;
+      }
+    }
   }
 
   private move(dt: number, world: World): void {
     const w = this.def.w;
     const h = this.def.h;
+
+    // Quem voa nao cai: flutua e sobe/desce para alcancar o alvo. Sem isto o
+    // morcego "anda" pelo chao da caverna, o que so mostra que ele e um bloco
+    // com asas.
+    if (this.def.flying) {
+      this.vy += (this.flyTargetY - this.y) * 2.4 * dt * 60 * 0.016;
+      this.vy = Math.max(-this.def.moveSpeed, Math.min(this.def.moveSpeed, this.vy));
+      const nfx = this.x + this.vx * dt;
+      if (!world.rectCollides(nfx - w / 2, this.y - h / 2, w, h)) this.x = nfx;
+      else this.vx = -this.vx * 0.4;
+      const nfy = this.y + this.vy * dt;
+      if (!world.rectCollides(this.x - w / 2, nfy - h / 2, w, h)) this.y = nfy;
+      else this.vy = -this.vy * 0.4;
+      this.vx *= 0.9;
+      this.vy *= 0.9;
+      // Balanco proprio do voo, para nao ficar deslizando reto.
+      this.y += Math.sin(this.t * 5) * 0.25;
+      return;
+    }
 
     // Presa dentro da rocha: sobe devagar tentando achar ar. Se nao achar em
     // poucos segundos, o manager resolve — nada de criatura vibrando na parede.
@@ -191,7 +258,78 @@ export class Creature {
     return Math.hypot(this.x - x, this.y - y);
   }
 
+  /**
+   * Desenha a partir das tiras. Devolve false quando a arte daquele bicho
+   * ainda nao existe — ai o chamador cai no desenho vetorial.
+   *
+   * A arte olha para a direita; o espelhamento segue o `facing`.
+   */
+  private renderArt(ctx: CanvasRenderingContext2D): boolean {
+    const d = this.def;
+    if (!d.art) return false;
+    const sheet = Assets.creature(d.art, this.anim) ?? Assets.creature(d.art, 'idle');
+    if (!sheet) return false;
+
+    const n = CREATURE_CONFIG.frames;
+    const fps = CREATURE_CONFIG.fps[this.anim] ?? 8;
+    // Morte e dano nao repetem: param no ultimo quadro.
+    const bruto = Math.floor(this.animTime * fps);
+    const i =
+      this.anim === 'death' || this.anim === 'hurt'
+        ? Math.min(n - 1, bruto)
+        : bruto % n;
+
+    const size = CREATURE_CONFIG.frameSize;
+    const scale = d.drawHeight / size;
+    const w = size * scale;
+    const h = d.drawHeight;
+    // Os pes da tira estao em 92% do quadro; alinhar com a base da caixa.
+    const feetY = this.y + d.h / 2;
+    const top = feetY - h * 0.92;
+
+    ctx.save();
+    if (!this.alive) ctx.globalAlpha = Math.max(0, this.deathFade / 0.7);
+
+    if (this.alive) {
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, feetY + 1, d.w * 0.45, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.translate(Math.round(this.x), Math.round(top));
+    if (this.facing === -1) ctx.scale(-1, 1);
+    ctx.drawImage(sheet, i * size, 0, size, size, -w / 2, 0, w, h);
+    ctx.restore();
+
+    // Piscada branca ao levar dano, por cima da arte.
+    if (this.hurtTimer > 0 && this.alive) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.75, this.hurtTimer * 3);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.translate(Math.round(this.x), Math.round(top));
+      if (this.facing === -1) ctx.scale(-1, 1);
+      ctx.drawImage(sheet, i * size, 0, size, size, -w / 2, 0, w, h);
+      ctx.restore();
+    }
+
+    if (this.alive && this.health < d.health) this.renderHealthBar(ctx, top);
+    return true;
+  }
+
+  private renderHealthBar(ctx: CanvasRenderingContext2D, top: number): void {
+    const d = this.def;
+    const w = d.w + 10;
+    const y = top - 6;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - w / 2, y, w, 4);
+    ctx.fillStyle = this.isGuardian ? '#c08aff' : '#e05a5a';
+    ctx.fillRect(this.x - w / 2, y, w * (this.health / d.health), 4);
+  }
+
   render(ctx: CanvasRenderingContext2D): void {
+    if (!this.alive && this.deathFade <= 0) return;
+    if (this.renderArt(ctx)) return;
     if (!this.alive) return;
     const d = this.def;
     const bob = Math.sin(this.t * 4) * 1.5;
