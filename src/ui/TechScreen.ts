@@ -1,5 +1,6 @@
 import { CONFIG } from '../data/config';
 import { COLLECTOR_UPGRADES } from '../data/collectors';
+import { Events } from '../core/events';
 import {
   EQUIP_SLOTS,
   equipDef,
@@ -432,6 +433,9 @@ export class TechScreen {
           <button class="btn primary" data-hire ${!cheio && mgr.canAfford() ? '' : 'disabled'}>
             CONTRATAR TOUPEIRA
           </button>
+          <button class="btn" data-dumpall ${mgr.carriedTotal() > 0 ? '' : 'disabled'}>
+            ENTREGAR TUDO (${mgr.carriedTotal()})
+          </button>
         </div>
       </div>
       <details class="clone-upgrades" open>
@@ -465,6 +469,19 @@ export class TechScreen {
   }
 
   private bindCollectors(): void {
+    const dump = this.bodyEl.querySelector('[data-dumpall]');
+    dump?.addEventListener('click', () => {
+      const r = this.host.collectors.deliverAll();
+      if (r.itens > 0) {
+        Haptics.ui();
+        Events.emit('ui:toast', {
+          text: `Toupeiras entregaram ${r.itens} itens · ✦${r.moedas.toLocaleString('pt-BR')}`,
+          tone: 'good',
+        });
+      }
+      this.render();
+    });
+
     const hire = this.bodyEl.querySelector('[data-hire]');
     hire?.addEventListener('click', () => {
       const p = this.host.spawnPoint();

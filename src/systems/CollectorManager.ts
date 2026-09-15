@@ -120,6 +120,47 @@ export class CollectorManager {
     return unit;
   }
 
+  /**
+   * Todas entregam agora o que estao carregando, de onde estiverem.
+   *
+   * E um botao de "me mostra o resultado": a toupeira pode estar a 300 m no
+   * meio de uma viagem, e o jogador quer ver o ganho na hora em vez de esperar
+   * a bolsa encher. Nao burla nada — e o mesmo recurso que ela ja tinha na mao.
+   */
+  deliverAll(): { itens: number; moedas: number } {
+    let itens = 0;
+    let moedas = 0;
+    for (const unit of this.units) {
+      const carga = unit.entries();
+      if (carga.length === 0) continue;
+      const n = unit.carried;
+
+      moedas += this.stock.deliver(carga, this.attrs.get('deliveryValue'));
+      for (const [r, q] of carga) this.onDelivered?.(r, q);
+      unit.delivered += n;
+      unit.items.clear();
+      itens += n;
+
+      Events.emit('collector:delivered', {
+        index: unit.index,
+        total: n,
+        money: moedas,
+        depth: this.world.depthOfPixel(unit.y),
+      });
+    }
+    if (itens === 0) {
+      Events.emit('ui:toast', { text: 'Nenhuma toupeira esta carregando nada.', tone: 'warn' });
+    }
+    return { itens, moedas };
+  }
+
+  /** O que todas juntas estao carregando agora. */
+  carriedTotal(): number {
+    let n = 0;
+    for (const u of this.units) n += u.carried;
+    return n;
+  }
+
   update(dt: number): void {
     for (const unit of this.units) {
       unit.update(

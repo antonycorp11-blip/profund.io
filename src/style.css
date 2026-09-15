@@ -2576,6 +2576,10 @@ body {
   color: var(--ink-dim);
 }
 
+.cloner-new .btn + .btn {
+  margin-top: 5px;
+}
+
 .cloner-new {
   min-width: 190px;
 }
