@@ -67,8 +67,16 @@ export interface GameEvents {
   'level:up': { level: number; points: number };
   'skill:activated': { id: string; charges: number };
   'skill:spent': { id: string };
-  'skill:ready': { id: string };
+  'skill:ready': { id: string; name: string };
   'skill:shock': { worldX: number; worldY: number; hits: number };
+  'skill:drill': {
+    worldX: number;
+    worldY: number;
+    hits: number;
+    dirX: number;
+    dirY: number;
+  };
+  'skill:recall': { from: { x: number; y: number } };
   'player:hurt': { damage: number; health: number; max: number };
   'player:died': { lost: number };
   'player:revived': Record<string, never>;

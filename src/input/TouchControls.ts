@@ -18,7 +18,7 @@ export class TouchControls {
   private stickBase: HTMLDivElement;
   private stickKnob: HTMLDivElement;
   private stickId: number | null = null;
-  private skillBtn: HTMLButtonElement | null = null;
+  private skillBtns: HTMLButtonElement[] = [];
   private stickOx = 0;
   private stickOy = 0;
   private readonly radius = 56;
@@ -42,9 +42,12 @@ export class TouchControls {
     const buttons = this.root.querySelector('.touch-buttons') as HTMLDivElement;
     // Sem botao AGIR: chegar perto ja resolve o que e instantaneo, e o que
     // abre tela vira um toque no proprio aviso na tela.
-    // GADGET e DASH sairam: o lugar deles e da habilidade ativa.
+    // GADGET e DASH sairam: o lugar deles e das habilidades ativas — uma por
+    // botao, e cada uma so aparece depois de aprendida.
     const specs: PadButtonSpec[] = [
-      { id: 'btn-skill', label: '⚡', button: 'skill', cls: 'skill locked', locked: false },
+      { id: 'btn-skill1', label: '⚡', button: 'skill1', cls: 'skill', locked: false },
+      { id: 'btn-skill2', label: '🛠', button: 'skill2', cls: 'skill', locked: false },
+      { id: 'btn-skill3', label: '⟲', button: 'skill3', cls: 'skill', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];
@@ -54,9 +57,10 @@ export class TouchControls {
       el.className = `touch-btn ${spec.cls}`;
       el.textContent = spec.label;
       el.setAttribute('aria-label', spec.label);
-      if (spec.button === 'skill') {
-        el.innerHTML = '⚡<span class="pad-badge" data-charges hidden></span>';
-        this.skillBtn = el;
+      if (spec.cls === 'skill') {
+        el.innerHTML = `${spec.label}<span class="pad-badge" data-charges hidden></span>`;
+        el.hidden = true;
+        this.skillBtns.push(el);
       }
       buttons.appendChild(el);
       if (spec.locked) {
@@ -78,20 +82,42 @@ export class TouchControls {
   }
 
   /**
-   * Estado do botao de habilidade: bloqueado, pronto, ligado ou recarregando.
-   * O anel mostra a recarga sem precisar de numero.
+   * Um botao por habilidade ativa, na ordem em que elas existem.
+   *
+   * Habilidade nao aprendida nao ocupa espaco no pad: o polegar do celular nao
+   * tem lugar para botao que nao faz nada.
    */
-  setSkillState(unlocked: boolean, active: boolean, ratio: number, charges: number): void {
-    const el = this.skillBtn;
-    if (!el) return;
-    el.classList.toggle('locked', !unlocked);
-    el.classList.toggle('armed', active);
-    el.classList.toggle('ready', unlocked && !active && ratio >= 1);
-    el.style.setProperty('--ring', `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`);
-    const badge = el.querySelector('[data-charges]') as HTMLElement | null;
-    if (badge) {
-      badge.textContent = active ? String(charges) : '';
-      badge.hidden = !active;
+  syncSkills(skills: {
+    all(): { id: string; unlocked: boolean; charges: number; cooldown: number; casting: number }[];
+    readyRatio(id: never): number;
+    castRatio(id: never): number;
+  }): void {
+    const estados = skills.all();
+    for (let i = 0; i < this.skillBtns.length; i++) {
+      const el = this.skillBtns[i];
+      const st = estados[i];
+      if (!st) {
+        el.hidden = true;
+        continue;
+      }
+      if (el.hidden === st.unlocked) el.hidden = !st.unlocked;
+      if (!st.unlocked) continue;
+
+      const canalizando = st.casting > 0;
+      const ratio = canalizando
+        ? skills.castRatio(st.id as never)
+        : skills.readyRatio(st.id as never);
+      el.classList.toggle('armed', st.charges > 0 || canalizando);
+      el.classList.toggle('ready', st.charges === 0 && !canalizando && ratio >= 1);
+      el.classList.toggle('casting', canalizando);
+      el.style.setProperty('--ring', `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`);
+
+      const badge = el.querySelector('[data-charges]') as HTMLElement | null;
+      if (badge) {
+        const txt = st.charges > 0 ? String(st.charges) : '';
+        if (badge.textContent !== txt) badge.textContent = txt;
+        badge.hidden = txt === '';
+      }
     }
   }
 

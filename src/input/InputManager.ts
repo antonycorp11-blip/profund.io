@@ -3,7 +3,7 @@
  * O gameplay so le "intencoes" (axisX, jump, mine...), nunca o dispositivo.
  */
 
-export type Button = 'jump' | 'mine' | 'interact' | 'skill';
+export type Button = 'jump' | 'mine' | 'interact' | 'skill1' | 'skill2' | 'skill3';
 
 export class InputManager {
   /** -1..1 */
@@ -162,6 +162,10 @@ const KEY_BUTTONS: Record<string, Button> = {
   Enter: 'interact',
   KeyE: 'interact',
   KeyF: 'interact',
-  ShiftLeft: 'skill',
-  KeyQ: 'skill',
+  KeyQ: 'skill1',
+  Digit1: 'skill1',
+  KeyR: 'skill2',
+  Digit2: 'skill2',
+  KeyT: 'skill3',
+  Digit3: 'skill3',
 };

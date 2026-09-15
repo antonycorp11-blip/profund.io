@@ -22,7 +22,10 @@ export type SfxKey =
   | 'creature_hit'
   | 'creature_die'
   | 'player_hurt'
-  | 'player_die';
+  | 'player_die'
+  | 'skill_on'
+  | 'drill'
+  | 'recall';
 
 interface SynthSpec {
   /** Frequencia central. */
@@ -176,6 +179,9 @@ class AudioSystemImpl {
     Events.on('creature:killed', (p) => this.play('creature_die', p.guardian ? 1 : 0.75));
     Events.on('player:hurt', () => this.play('player_hurt', 0.9));
     Events.on('player:died', () => this.play('player_die', 1));
+    Events.on('skill:activated', () => this.play('skill_on', 0.7));
+    Events.on('skill:drill', () => this.play('drill', 0.6));
+    Events.on('skill:recall', () => this.play('recall', 0.9));
   }
 }
 
@@ -202,6 +208,9 @@ const SYNTH: Record<string, SynthSpec> = {
   creature_die: { freq: 190, dur: 0.42, type: 'noise', q: 1.1, gain: 0.34, jitter: 0.2 },
   player_hurt: { freq: 130, dur: 0.22, type: 'tone', q: 1, gain: 0.3, jitter: 0.1 },
   player_die: { freq: 90, dur: 0.9, type: 'tone', q: 1, gain: 0.34, jitter: 0 },
+  skill_on: { freq: 980, dur: 0.18, type: 'chime', q: 1, gain: 0.2, jitter: 0 },
+  drill: { freq: 520, dur: 0.16, type: 'noise', q: 2.6, gain: 0.3, jitter: 0.3 },
+  recall: { freq: 700, dur: 0.7, type: 'chime', q: 1, gain: 0.26, jitter: 0 },
 };
 
 export const AudioSystem = new AudioSystemImpl();

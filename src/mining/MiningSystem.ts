@@ -49,10 +49,19 @@ export class MiningSystem {
    */
   strike: ((dirX: number, dirY: number) => boolean) | null = null;
   /**
-   * Gancho do Choque: chamado depois de cada martelada que acerta bloco.
-   * Devolve quantos blocos a corrente atingiu (0 = nao estava ligada).
+   * Gancho das habilidades de martelada (Choque, Broca): chamado depois de cada
+   * golpe que acerta bloco. Devolve quantos blocos extras foram atingidos.
    */
-  shock: ((col: number, row: number, damage: number, toolTier: number) => number) | null = null;
+  skillHit:
+    | ((
+        col: number,
+        row: number,
+        damage: number,
+        toolTier: number,
+        dirX: number,
+        dirY: number
+      ) => number)
+    | null = null;
 
   constructor(
     private world: World,
@@ -251,8 +260,8 @@ export class MiningSystem {
     }
 
     this.targetProgress = res.progress;
-    // A corrente sai do bloco atingido, entao roda depois do dano do golpe.
-    this.shock?.(col, row, damage, stats.toolTier);
+    // Os efeitos saem do bloco atingido, entao rodam depois do dano do golpe.
+    this.skillHit?.(col, row, damage, stats.toolTier, this.aimX, this.aimY);
     // Particulas saindo da face atingida, na direcao do jogador.
     this.particles.burst(
       cx - this.aimX * (ts * 0.35),

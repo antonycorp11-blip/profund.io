@@ -1,6 +1,7 @@
 import { CONFIG } from '../data/config';
 import { RESOURCES } from '../data/resources';
-import { blockDef } from '../data/blocks';
+import { activeSkillMeta, type ActiveSkillId } from '../data/activeSkills';
+import { blockDef, type BlockDef } from '../data/blocks';
 import { RESCUE_NPCS } from '../data/story';
 import { Camera } from './camera';
 import { CLUES as STORY_CLUES } from '../data/story';
@@ -45,6 +46,7 @@ import { CloneManager } from '../systems/CloneManager';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { CreatureManager } from '../systems/CreatureManager';
+import { DrillTool } from '../mining/DrillTool';
 import { ShockChain } from '../mining/ShockChain';
 import { CREATURE_CONFIG } from '../data/creatures';
 import { Vitals } from '../systems/Vitals';
@@ -107,6 +109,9 @@ export class Game {
   private activeSkills = new ActiveSkills(this.attrs);
   private progression = new Progression(this.skills);
   private shock: ShockChain;
+  private drill: DrillTool;
+  /** De onde o jogador saiu na ultima Volta Rapida (para o retorno). */
+  private recallReturn: { x: number; y: number } | null = null;
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
   /** Alvo que ja disparou sozinho neste encontro. */
@@ -264,12 +269,24 @@ export class Game {
 
     // Choque: a corrente sai do bloco atingido e gasta uma martelada.
     this.shock = new ShockChain(this.world, this.attrs);
-    this.mining.shock = (col, row, damage, tier) => {
-      if (!this.activeSkills.isActive('shock')) return 0;
-      this.activeSkills.consume('shock');
-      return this.shock.fire(col, row, damage, tier, (c, r, def) =>
-        this.mining.breakFromOutside(c, r, def)
-      );
+    this.drill = new DrillTool(this.world, this.attrs);
+    // Um gancho so para as duas: a martelada e a mesma, o efeito e que muda.
+    this.mining.skillHit = (col, row, damage, tier, dirX, dirY) => {
+      const quebra = (c: number, r: number, def: BlockDef): void =>
+        this.mining.breakFromOutside(c, r, def);
+      let hits = 0;
+      if (this.activeSkills.isActive('drill')) {
+        this.activeSkills.consume('drill');
+        hits += this.drill.fire(col, row, dirX, dirY, damage, tier, quebra);
+      }
+      if (this.activeSkills.isActive('shock')) {
+        this.activeSkills.consume('shock');
+        hits += this.shock.fire(col, row, damage, tier, quebra);
+      }
+      return hits;
+    };
+    this.activeSkills.onCast = (id) => {
+      if (id === 'recall') this.doRecall();
     };
 
     this.buildEntities();
@@ -489,6 +506,21 @@ export class Game {
       this.particles.burst(x, y, 6, ['#7fd8e8', '#ffe9a3'], { speed: 70 });
     });
 
+    Events.on('skill:drill', (p) => {
+      const ts = CONFIG.tileSize;
+      this.camera.addShake(2.2);
+      this.particles.burst(
+        p.worldX + p.dirX * ts,
+        p.worldY + p.dirY * ts,
+        10,
+        ['#d9c08a', '#8d8d95'],
+        { dirX: p.dirX, dirY: p.dirY, spread: 0.9, speed: 180, size: 4 }
+      );
+    });
+    Events.on('skill:recall', (p) => {
+      this.particles.burst(p.from.x, p.from.y, 18, ['#9be0ff', '#ffe9a3'], { speed: 150 });
+    });
+
     Events.on('creature:hurt', (p) => {
       this.floating.push(
         p.worldX,
@@ -635,25 +667,16 @@ export class Game {
       this.player.update(dt, this.input, this.world);
       if (!building) this.mining.update(dt, this.input, this.touch.isVisible());
     }
-    this.activeSkills.update(dt);
+    // Canalizar exige estar parado no chao e inteiro.
+    const podeCanalizar =
+      !this.vitals.dead &&
+      this.player.onGround &&
+      Math.abs(this.player.vx) < 12 &&
+      this.vitals.hurtFlash <= 0;
+    this.activeSkills.update(dt, podeCanalizar);
     this.shock.update(dt);
-    if (!uiBlocking && this.input.wasPressed('skill')) {
-      if (!this.activeSkills.activate('shock')) {
-        const st = this.activeSkills.state('shock');
-        Events.emit('ui:toast', {
-          text: st.unlocked
-            ? `Choque recarregando (${Math.ceil(st.cooldown)} s)`
-            : 'Aprenda Choque na arvore de habilidades.',
-          tone: 'warn',
-        });
-      }
-    }
-    this.touch.setSkillState(
-      this.activeSkills.state('shock').unlocked,
-      this.activeSkills.isActive('shock'),
-      this.activeSkills.readyRatio('shock'),
-      this.activeSkills.state('shock').charges
-    );
+    if (!uiBlocking) this.pollSkillButtons();
+    this.touch.syncSkills(this.activeSkills);
 
     const depthNow = this.world.depthOfPixel(this.player.cy);
     if (this.vitals.update(dt, depthNow)) this.rescueAfterDeath();
@@ -755,6 +778,61 @@ export class Game {
       slot++;
       this.save();
     }
+  }
+
+  /** Le os botoes de habilidade (tela e teclado) e liga o que der. */
+  private pollSkillButtons(): void {
+    const ids: ActiveSkillId[] = ['shock', 'drill', 'recall'];
+    for (let i = 0; i < ids.length; i++) {
+      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3';
+      if (!this.input.wasPressed(botao)) continue;
+      const id = ids[i];
+      const st = this.activeSkills.state(id);
+      const meta = activeSkillMeta(id);
+      if (st.casting > 0) {
+        this.activeSkills.cancelCast(id, 'cancelada');
+        continue;
+      }
+      if (this.activeSkills.activate(id)) continue;
+      Events.emit('ui:toast', {
+        text: st.unlocked
+          ? `${meta.name} recarregando (${Math.ceil(st.cooldown)} s)`
+          : `Aprenda ${meta.name} na tela de habilidades.`,
+        tone: 'warn',
+      });
+    }
+  }
+
+  /**
+   * Volta Rapida concluida.
+   *
+   * No ultimo nivel ela tem volta: o proximo uso devolve o jogador ao ponto de
+   * onde ele saiu. E o que transforma "atalho para entregar" em "atalho para
+   * entregar E continuar de onde parou".
+   */
+  private doRecall(): void {
+    const voltando = this.recallReturn;
+    if (voltando && this.attrs.has('recallDive')) {
+      this.recallReturn = null;
+      this.particles.burst(this.player.cx, this.player.cy, 14, ['#9be0ff', '#ffe9a3'], {
+        speed: 120,
+      });
+      this.player.setPosition(voltando.x, voltando.y);
+      this.player.unstuck(this.world);
+      this.camera.snapTo(this.player.cx, this.player.cy);
+      this.floating.push(voltando.x, voltando.y - 24, 'De volta ao ponto', '#9be0ff', 13);
+      Events.emit('ui:toast', { text: 'Voce voltou para onde estava.', tone: 'good' });
+      return;
+    }
+
+    const profundidade = this.world.depthOfPixel(this.player.cy);
+    // So guarda o ponto se valia a pena voltar para la.
+    this.recallReturn =
+      this.attrs.has('recallDive') && profundidade > 20
+        ? { x: this.player.cx, y: this.player.cy }
+        : null;
+    Events.emit('skill:recall', { from: { x: this.player.cx, y: this.player.cy } });
+    this.returnToBase();
   }
 
   // ------------------------------------------------------------- combate ----

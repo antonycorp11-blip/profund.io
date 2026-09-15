@@ -321,6 +321,66 @@ export const SKILLS: SkillDef[] = [
     position: { x: 2, y: 3 },
   },
 
+  {
+    id: 'mining_drill',
+    category: 'active',
+    branch: 'broca',
+    name: 'Broca',
+    description:
+      'Acopla uma broca na picareta. Enquanto ligada, cada martelada abre um tunel ' +
+      'inteiro na direcao da mira — para o lado, para baixo ou para cima.',
+    maxLevel: 4,
+    cost: [2, 2, 3, 3],
+    requiredSkills: ['mining_speed_1'],
+    requiredDepth: 60,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'drillUnlocked', op: 'unlock', value: 1 }],
+      [{ target: 'drillDepth', op: 'flat', value: 1 }],
+      [
+        { target: 'drillCharges', op: 'flat', value: 3 },
+        { target: 'drillCooldown', op: 'flat', value: -5 },
+      ],
+      [
+        { target: 'drillHeight', op: 'flat', value: 2 },
+        { target: 'drillPower', op: 'percentAdd', value: 0.35 },
+      ],
+    ],
+    unlockEffect: 'Botao de habilidade: 4 marteladas abrindo tunel, depois recarrega.',
+    icon: '🛠',
+    art: 'power',
+    position: { x: 0, y: 2 },
+  },
+  {
+    id: 'move_recall',
+    category: 'active',
+    branch: 'volta',
+    name: 'Volta Rapida',
+    description:
+      'Fica parado alguns segundos e a mina te devolve na base. Levar dano ou sair ' +
+      'andando cancela. Serve para nao perder a viagem de volta com a mochila cheia.',
+    maxLevel: 3,
+    cost: [2, 3, 4],
+    requiredSkills: [],
+    requiredDepth: 100,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'recallUnlocked', op: 'unlock', value: 1 }],
+      [
+        { target: 'recallCastTime', op: 'flat', value: -1 },
+        { target: 'recallCooldown', op: 'flat', value: -30 },
+      ],
+      [
+        { target: 'recallDive', op: 'unlock', value: 1 },
+        { target: 'recallCooldown', op: 'flat', value: -30 },
+      ],
+    ],
+    unlockEffect: 'No ultimo nivel, usar de novo te devolve ao ponto onde voce estava.',
+    icon: '⟲',
+    art: 'boots',
+    position: { x: 1, y: 2 },
+  },
+
   // ------------------------------------------------------------------ COLETA
   {
     id: 'collect_speed_1',

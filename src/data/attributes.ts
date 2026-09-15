@@ -73,6 +73,13 @@ export type AttrId =
   | 'shockPower'
   | 'shockCooldown'
   | 'shockRange'
+  | 'drillCharges'
+  | 'drillDepth'
+  | 'drillHeight'
+  | 'drillPower'
+  | 'drillCooldown'
+  | 'recallCastTime'
+  | 'recallCooldown'
   | 'gadgetDamage'
   | 'explosiveDamage'
   | 'explosiveRadius'
@@ -109,6 +116,9 @@ export type FlagId =
   | 'rareOreGlow'
   | 'secretSense'
   | 'shockUnlocked'
+  | 'drillUnlocked'
+  | 'recallUnlocked'
+  | 'recallDive'
   | 'legacyTreeVisible';
 
 export interface AttrMeta {
@@ -195,6 +205,17 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   shockPower: { id: 'shockPower', name: 'Forca do choque', base: 0.55, format: 'percent', live: true },
   shockCooldown: { id: 'shockCooldown', name: 'Recarga do choque', base: 16, format: 'flat', min: 3, live: true },
   shockRange: { id: 'shockRange', name: 'Alcance do salto', base: 2.6, format: 'flat', live: true },
+
+  // --- Broca: abre tunel a frente ---
+  drillCharges: { id: 'drillCharges', name: 'Marteladas com broca', base: 4, format: 'flat', live: true },
+  drillDepth: { id: 'drillDepth', name: 'Avanco da broca', base: 2, format: 'flat', live: true },
+  drillHeight: { id: 'drillHeight', name: 'Altura do tunel', base: 3, format: 'flat', live: true },
+  drillPower: { id: 'drillPower', name: 'Forca da broca', base: 1, format: 'multiplier', live: true },
+  drillCooldown: { id: 'drillCooldown', name: 'Recarga da broca', base: 22, format: 'flat', min: 3, live: true },
+
+  // --- Volta Rapida: sobe para a base ---
+  recallCastTime: { id: 'recallCastTime', name: 'Tempo parado', base: 3, format: 'flat', min: 0.4, live: true },
+  recallCooldown: { id: 'recallCooldown', name: 'Recarga da volta', base: 120, format: 'flat', min: 10, live: true },
   gadgetDamage: { id: 'gadgetDamage', name: 'Dano de gadgets', base: 0, format: 'percent', live: false },
   explosiveDamage: { id: 'explosiveDamage', name: 'Dano explosivo', base: 0, format: 'percent', live: false },
   explosiveRadius: { id: 'explosiveRadius', name: 'Raio explosivo', base: 0, format: 'percent', live: false },

@@ -1214,6 +1214,26 @@ body {
   box-shadow: 0 0 14px rgba(120, 200, 255, 0.35);
 }
 
+/* Canalizando: o anel enche em vez de esvaziar. */
+.touch-btn.skill.casting {
+  border-color: #9be0ff;
+  animation: skill-cast 0.5s ease-in-out infinite;
+}
+
+@keyframes skill-cast {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(150, 220, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(150, 220, 255, 0.85);
+  }
+}
+
+.touch-btn.skill[hidden] {
+  display: none;
+}
+
 /* Ligada: pulsa enquanto as marteladas nao acabam. */
 .touch-btn.skill.armed {
   border-color: #bfe9ff;
