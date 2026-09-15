@@ -58,8 +58,20 @@ export class Camera {
     }
   }
 
+  /** 0 = sem tremor, 1 = normal. Ajuste do jogador. */
+  shakeScale = 1;
+
+  /**
+   * Tremor de impacto.
+   *
+   * Pega o MAIOR em vez de somar. Somando, quem tem velocidade de mineracao
+   * alta recebe dezenas de impactos por segundo e a camera fica presa no teto
+   * — a tela tremia tanto que nao dava para jogar. Com o maior, um golpe forte
+   * continua sacudindo mais que um fraco, mas marteladas seguidas nao empilham.
+   */
   addShake(amount: number): void {
-    this.shake = Math.min(CONFIG.camera.maxShake, this.shake + amount);
+    const wanted = Math.min(CONFIG.camera.maxShake, amount * this.shakeScale);
+    if (wanted > this.shake) this.shake = wanted;
   }
 
   update(dt: number): void {

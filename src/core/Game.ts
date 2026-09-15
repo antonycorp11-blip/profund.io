@@ -1,4 +1,6 @@
 import { CONFIG } from '../data/config';
+import { RESOURCES } from '../data/resources';
+import { blockDef } from '../data/blocks';
 import { RESCUE_NPCS } from '../data/story';
 import { Camera } from './camera';
 import { CLUES as STORY_CLUES } from '../data/story';
@@ -40,6 +42,7 @@ import { TileRenderer } from '../world/TileRenderer';
 import { TimeSystem } from '../systems/TimeSystem';
 import { CloneManager } from '../systems/CloneManager';
 import { ActiveSkills } from '../systems/ActiveSkills';
+import { Progression } from '../systems/Progression';
 import { CreatureManager } from '../systems/CreatureManager';
 import { ShockChain } from '../mining/ShockChain';
 import { CREATURE_CONFIG } from '../data/creatures';
@@ -100,6 +103,7 @@ export class Game {
   private creatures: CreatureManager;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
+  private progression = new Progression(this.skills);
   private shock: ShockChain;
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
@@ -169,7 +173,8 @@ export class Game {
       () => this.panels.toggle('settings'),
       () => this.techScreen.toggle(),
       () => this.skillUI.toggle(),
-      () => this.buildMode.toggle()
+      () => this.buildMode.toggle(),
+      () => this.techScreen.openCloner()
     );
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
@@ -203,6 +208,15 @@ export class Game {
         return next;
       },
       isTouchVisible: () => this.touch.isVisible(),
+      shakeScale: () => this.camera.shakeScale,
+      setShakeScale: (v) => {
+        this.camera.shakeScale = v;
+        try {
+          localStorage.setItem('profundezas.shake', String(v));
+        } catch {
+          /* preferencia e opcional */
+        }
+      },
     });
 
     this.skillUI = new SkillTreeUI(uiRoot, {
@@ -302,6 +316,13 @@ export class Game {
     });
     this.bindEvents();
     this.input.attach(canvas);
+
+    try {
+      const saved = localStorage.getItem('profundezas.shake');
+      if (saved !== null) this.camera.shakeScale = Number(saved);
+    } catch {
+      /* sem preferencia salva: usa o padrao */
+    }
 
     this.camera.setBounds(this.world.pixelWidth, this.world.pixelHeight);
     this.resize();
@@ -422,6 +443,30 @@ export class Game {
       this.quota.registerDelivery(p.resource as never, p.amount)
     );
     Events.on('time:week', (p) => this.quota.onWeekChanged(p.week));
+    // --- fontes de XP: tudo que e "jogar" empurra a barra ---
+    Events.on('block:break', (p) => {
+      const c = CONFIG.progression;
+      const def = blockDef(p.blockId);
+      const value = def.drop ? RESOURCES[def.drop].value : 0;
+      this.progression.add(c.xpPerBlock + value * c.xpPerBlockValue, 'mineracao');
+    });
+    Events.on('delivery:done', (p) =>
+      this.progression.add(p.total * CONFIG.progression.xpPerDelivery, 'entrega')
+    );
+    Events.on('automation:delivered', (p) =>
+      this.progression.add(p.amount * CONFIG.progression.xpPerDelivery * 0.5, 'linha')
+    );
+    Events.on('creature:killed', (p) =>
+      this.progression.add(
+        CONFIG.progression.xpPerCreature * (p.guardian ? 8 : 1),
+        'criatura derrotada'
+      )
+    );
+    Events.on('level:up', (p) => {
+      this.camera.addShake(2);
+      this.floating.push(this.player.cx, this.player.cy - 34, `NIVEL ${p.level}`, '#ffe9a3', 16);
+    });
+
     Events.on('creature:hurt', (p) => {
       this.floating.push(
         p.worldX,
@@ -498,6 +543,7 @@ export class Game {
     this.creatures.fromJSON(data.creatures);
     this.vitals.fromJSON(data.vitals);
     this.activeSkills.fromJSON(data.activeSkills);
+    this.progression.fromJSON(data.progression);
     this.mining.blocksMined = data.stats?.blocksMined ?? 0;
     this.deepestMeters = data.stats?.deepestMeters ?? 0;
     this.playTime = data.stats?.playTime ?? 0;
@@ -633,12 +679,18 @@ export class Game {
       }
     }
     if (depth > this.deepestMeters) {
+      this.progression.add(
+        (depth - this.deepestMeters) * CONFIG.progression.xpPerMeter,
+        'profundidade'
+      );
       this.deepestMeters = depth;
       // Pontos de habilidade vem de descer e explorar, nunca de matar (spec, item 39).
       this.skills.checkDepthMilestone(this.deepestMeters);
     }
 
     this.hud.setHealth(this.vitals.health, this.vitals.max);
+    this.hud.setLevel(this.progression.level, this.progression.ratio);
+    this.hud.setClonerAvailable(this.tech.unlocked('cloner'));
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
     this.hud.update(
       target?.prompt() ?? null,
@@ -997,6 +1049,7 @@ export class Game {
       creatures: this.creatures.toJSON(),
       vitals: this.vitals.toJSON(),
       activeSkills: this.activeSkills.toJSON(),
+      progression: this.progression.toJSON(),
       stats: {
         blocksMined: this.mining.blocksMined,
         deepestMeters: this.deepestMeters,

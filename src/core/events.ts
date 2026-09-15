@@ -62,6 +62,8 @@ export interface GameEvents {
     critical: boolean;
     name: string;
   };
+  'xp:gained': { amount: number; level: number; ratio: number };
+  'level:up': { level: number; points: number };
   'skill:activated': { id: string; charges: number };
   'skill:spent': { id: string };
   'skill:ready': { id: string };

@@ -26,6 +26,8 @@ export class TechScreen {
   private bodyEl: HTMLElement;
   private stockEl: HTMLElement;
   private tab: Tab = 'copias';
+  /** True depois que o jogador escolheu uma aba a mao nesta sessao. */
+  private tabChosen = false;
 
   constructor(parent: HTMLElement, private host: TechHost) {
     this.wrap = document.createElement('div');
@@ -57,9 +59,22 @@ export class TechScreen {
   }
 
   open(tab?: Tab): void {
-    if (tab) this.tab = tab;
+    if (tab) {
+      this.tab = tab;
+      this.tabChosen = true;
+    } else if (!this.tabChosen && this.host.tech.unlocked('cloner')) {
+      // Depois de pesquisar a copiadora, ela e o motivo de abrir esta tela.
+      // Cair na aba de pesquisa e obrigar a procurar a aba certa era o caminho
+      // mais longo possivel ate a coisa mais usada.
+      this.tab = 'copiadora';
+    }
     this.wrap.classList.add('open');
     this.render();
+  }
+
+  /** Atalho direto para o painel das copias. */
+  openCloner(): void {
+    this.open('copiadora');
   }
 
   close(): void {
@@ -96,6 +111,7 @@ export class TechScreen {
       btn.innerHTML = `<span class="tab-icon">${t.icon}</span><span>${t.name}</span>`;
       btn.addEventListener('click', () => {
         this.tab = t.id;
+        this.tabChosen = true;
         this.render();
       });
       this.tabsEl.appendChild(btn);

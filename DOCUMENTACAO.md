@@ -356,6 +356,24 @@ resolvido. Morte testada com 20 carvao e 10 ferro na mochila: sobraram 13 e 7, j
 **Criatura emparedada nao trava.** Se o vao fechar em cima dela, ela tenta subir por 2,5 s;
 depois some (ambiente) ou volta ao posto (guardiao).
 
+## 4g-bis. Nivel e XP
+
+```
+src/systems/Progression.ts   xp, nivel, curva e ponto por nivel
+```
+
+Profundidade e historia dao pontos em saltos raros; entre um salto e outro o
+jogador ficava sem nada acontecendo. O nivel e o pingo constante: cada bloco
+quebrado, cada entrega, cada criatura e cada metro novo empurram a barra, e
+cada nivel vale 1 ponto de habilidade.
+
+Curva `baseXp * nivel^1.35`: nivel 2 custa 90, nivel 3 custa 231, nivel 4 custa
+397. Medido: 40 blocos de terra/pedra = 44 XP, entao o primeiro nivel sai em
+~80 blocos e os seguintes esticam sem travar.
+
+O ponto vem do nivel, e o nivel vem de JOGAR — nunca de gastar dinheiro nem de
+esperar o relogio.
+
 ## 4h. Habilidades ativas — Choque
 
 ```
@@ -403,6 +421,10 @@ maskable 512 e apple-touch 180. Nenhuma arte nova foi necessaria.
 
 ## 5. Problemas conhecidos
 
+0. **Tremor de tela somava impactos.** Com mineracao rapida a camera ficava
+   presa no teto e era impossivel jogar. Agora `addShake` pega o MAIOR impacto
+   em vez de somar, o teto caiu de 10 para 5,5 e existe ajuste do jogador
+   (Ajustes -> Tremor da tela: Nenhum / Pouco / Normal).
 1. **Engasgo ao repintar muitos chunks de uma vez** (~20 ms no primeiro frame após carregar o save
    ou virar a tela). Solução futura: repintar no máximo N chunks por frame.
 2. **Sem áudio final.** O `AudioSystem` sintetiza os sons; é feedback funcional, não arte sonora.

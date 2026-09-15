@@ -15,6 +15,11 @@ export class HUD {
   private healthEl: HTMLDivElement;
   private healthFill: HTMLElement;
   private healthLabel: HTMLElement;
+  private levelEl: HTMLDivElement;
+  private levelNum: HTMLElement;
+  private levelFill: HTMLElement;
+  private lastLevel = -1;
+  private lastLevelRatio = -1;
   private climbEl: HTMLDivElement;
   private climbFill: HTMLElement;
   private lastClimb = -1;
@@ -37,6 +42,7 @@ export class HUD {
   private lastHealth = -1;
   private lastPoints = -1;
   private skillBadge: HTMLElement | null = null;
+  private clonerBtn!: HTMLButtonElement;
   private lastMoney: number | null = null;
   private shownMoney = 0;
   private moneyFrame = 0;
@@ -53,7 +59,8 @@ export class HUD {
     private onMenu: () => void,
     private onWorkshop: () => void,
     private onSkills: () => void,
-    private onBuild: () => void
+    private onBuild: () => void,
+    private onCloner: () => void = () => {}
   ) {
     this.root = document.createElement('div');
     this.root.style.position = 'absolute';
@@ -73,6 +80,17 @@ export class HUD {
     this.moneyValue = this.moneyEl.querySelector('[data-money]') as HTMLElement;
     this.moneyFloat = this.moneyEl.querySelector('.money-float') as HTMLElement;
     left.appendChild(this.moneyEl);
+
+    // Nivel e XP logo abaixo do saldo: e a linha de progresso que sempre anda,
+    // mesmo quando o jogador nao entregou nada nem desceu mais fundo.
+    this.levelEl = document.createElement('div');
+    this.levelEl.className = 'level-card';
+    this.levelEl.innerHTML = `
+      <span class="level-num">1</span>
+      <span class="level-bar"><i></i></span>`;
+    this.levelNum = this.levelEl.querySelector('.level-num') as HTMLElement;
+    this.levelFill = this.levelEl.querySelector('.level-bar > i') as HTMLElement;
+    left.appendChild(this.levelEl);
     const chips = document.createElement('div');
     chips.className = 'chips';
     left.appendChild(chips);
@@ -167,6 +185,16 @@ export class HUD {
     btnMenu.textContent = '☰';
     btnMenu.title = 'Ajustes';
     btnMenu.addEventListener('click', () => this.onMenu());
+    // Botao da copiadora: aparece assim que ela e pesquisada e vai direto para
+    // o painel das copias.
+    this.clonerBtn = document.createElement('button');
+    this.clonerBtn.className = 'icon-btn';
+    this.clonerBtn.textContent = '⧉';
+    this.clonerBtn.title = 'Copiadora';
+    this.clonerBtn.hidden = true;
+    this.clonerBtn.addEventListener('click', () => this.onCloner());
+    buttons.appendChild(this.clonerBtn);
+
     buttons.appendChild(this.buildSkillButton());
     const btnBuild = document.createElement('button');
     btnBuild.className = 'icon-btn';
@@ -234,6 +262,18 @@ export class HUD {
       this.announceLayer(`Semana ${p.week}`, 'nova cota no quadro');
     });
     Events.on('map:discovered', (p) => this.toast(`Local marcado no mapa: ${p.label}`, 'info'));
+    Events.on('level:up', (p) => {
+      this.celebrate(
+        `NÍVEL ${p.level}`,
+        `+${p.points} ponto${p.points > 1 ? 's' : ''} de habilidade`,
+        'Gaste na árvore quando quiser',
+        'progress',
+        2
+      );
+      this.levelEl.classList.remove('up');
+      void this.levelEl.offsetWidth;
+      this.levelEl.classList.add('up');
+    });
     Events.on('player:hurt', () => {
       this.healthEl.classList.remove('hurt');
       void this.healthEl.offsetWidth;
@@ -353,12 +393,16 @@ export class HUD {
     }
     const daysEl = this.quotaEl.querySelector('.quota-days') as HTMLElement | null;
     if (daysEl) {
+      // Mostrar o DIA, e nao so quantos faltam: "5 dias restantes" fica igual
+      // por dez minutos de jogo e da a impressao de que o relogio travou.
       const d = this.quota.daysLeft();
       const txt = this.quota.completed
-        ? `livre por mais ${d} dia${d === 1 ? '' : 's'}`
-        : `${d} dia${d === 1 ? '' : 's'} restante${d === 1 ? '' : 's'}`;
+        ? `dia ${this.quota.dayOfWeek()}/7 · livre`
+        : `dia ${this.quota.dayOfWeek()}/7 · faltam ${d}`;
       if (daysEl.textContent !== txt) daysEl.textContent = txt;
       daysEl.classList.toggle('free', this.quota.completed);
+      // A fatia mostra o quanto do dia de hoje ja correu.
+      daysEl.style.setProperty('--day', `${Math.round(this.quota.dayProgress() * 100)}%`);
     }
     this.quotaEl.classList.toggle('done', this.quota.isMet);
     const stateEl = this.quotaEl.querySelector('[data-quota-state]');
@@ -393,6 +437,24 @@ export class HUD {
   /** Onde o minimapa deve se montar. */
   mapSlot(): HTMLElement {
     return this.mapSlotEl;
+  }
+
+  /** Mostra o botao da copiadora depois que ela e pesquisada. */
+  setClonerAvailable(available: boolean): void {
+    if (this.clonerBtn.hidden !== !available) this.clonerBtn.hidden = !available;
+  }
+
+  /** Nivel e barra de XP. */
+  setLevel(level: number, ratio: number): void {
+    if (level !== this.lastLevel) {
+      this.lastLevel = level;
+      this.levelNum.textContent = String(level);
+    }
+    const pct = Math.round(ratio * 100);
+    if (pct !== this.lastLevelRatio) {
+      this.lastLevelRatio = pct;
+      this.levelFill.style.width = `${pct}%`;
+    }
   }
 
   /** Vigor da escalada. Some quando o jogador nao esta agarrado. */

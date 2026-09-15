@@ -28,8 +28,8 @@ export const CONFIG = {
     /** Deslocamento vertical: camera olha um pouco abaixo do player. */
     lookAheadY: 24,
     lookAheadX: 40,
-    shakeDecay: 7.5,
-    maxShake: 10,
+    shakeDecay: 11,
+    maxShake: 5.5,
   },
 
   physics: {
@@ -244,6 +244,24 @@ export const CONFIG = {
     minimapTilesY: 52,
   },
 
+  progression: {
+    /** XP do nivel 1 para o 2. */
+    baseXp: 90,
+    /** Expoente da curva: 1.35 dobra o custo a cada ~2 niveis. */
+    curve: 1.35,
+    /** Pontos de habilidade por nivel. */
+    pointsPerLevel: 1,
+    /** XP por bloco quebrado, multiplicado pelo valor do que ele solta. */
+    xpPerBlock: 1,
+    xpPerBlockValue: 0.25,
+    /** XP por unidade entregue na base. */
+    xpPerDelivery: 0.6,
+    /** XP por criatura derrotada (guardiao vale 8x). */
+    xpPerCreature: 14,
+    /** XP por metro novo de profundidade. */
+    xpPerMeter: 3,
+  },
+
   skills: {
     /** Piso da recarga, para nenhum upgrade transformar ativa em passiva. */
     minCooldown: 3,
@@ -269,7 +287,8 @@ export const CONFIG = {
   },
 
   save: {
-    key: 'profundezas.save.v1',
+    // v2: formato mudou muito (criaturas, vida, habilidades ativas, nivel).
+    key: 'profundezas.save.v2',
     autosaveIntervalSec: 12,
   },
 

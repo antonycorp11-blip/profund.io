@@ -32,6 +32,9 @@ export interface PanelHost {
   onResetSave(): void;
   onToggleTouch(): boolean;
   isTouchVisible(): boolean;
+  /** 0 = sem tremor, 1 = normal. */
+  shakeScale(): number;
+  setShakeScale(v: number): void;
 }
 
 type PanelKind = 'workshop' | 'settings';
@@ -74,6 +77,33 @@ export class PanelUI {
     else this.open(kind);
   }
 
+  /** Tres niveis de tremor: nada, metade, normal. */
+  private shakeRow(): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<span>Tremor da tela</span>';
+    const group = document.createElement('div');
+    group.className = 'seg-group';
+    const opcoes: [string, number][] = [
+      ['Nenhum', 0],
+      ['Pouco', 0.5],
+      ['Normal', 1],
+    ];
+    for (const [label, value] of opcoes) {
+      const b = document.createElement('button');
+      b.className = 'seg-btn';
+      b.textContent = label;
+      b.classList.toggle('on', Math.abs(this.host.shakeScale() - value) < 0.01);
+      b.addEventListener('click', () => {
+        this.host.setShakeScale(value);
+        for (const other of group.children) other.classList.remove('on');
+        b.classList.add('on');
+      });
+      group.appendChild(b);
+    }
+    row.appendChild(group);
+    return row;
+  }
   private render(): void {
     this.panel.innerHTML = '';
     const header = document.createElement('header');
@@ -219,6 +249,9 @@ export class PanelUI {
         CONFIG.debug.showFps = on;
       })
     );
+    // Tremor de tela incomoda gente diferente de jeitos diferentes; e um ajuste,
+    // nao um numero fixo escondido no codigo.
+    this.panel.appendChild(this.shakeRow());
 
     this.panel.appendChild(sectionTitle('Desenvolvimento — habilidades'));
     const devGrid = document.createElement('div');
@@ -329,4 +362,5 @@ function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}m ${String(s).padStart(2, '0')}s`;
+
 }

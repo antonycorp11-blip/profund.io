@@ -154,6 +154,27 @@ export class QuotaSystem {
     return Math.max(0, Math.ceil(this.clock.secondsToNextWeek / this.clock.dayLength));
   }
 
+  /** Dia corrente dentro da semana (1..7). */
+  dayOfWeek(): number {
+    return this.clock.dayOfWeek;
+  }
+
+  /** Quanto do dia de hoje ja passou, 0..1. */
+  dayProgress(): number {
+    return this.clock.dayProgress;
+  }
+
+  /** Nome curto da fase do dia, para o jogador se localizar no relogio. */
+  phaseLabel(): string {
+    const nomes: Record<string, string> = {
+      amanhecer: 'amanhecer',
+      dia: 'dia',
+      entardecer: 'entardecer',
+      noite: 'noite',
+    };
+    return nomes[this.clock.phase] ?? '';
+  }
+
   get title(): string {
     return `Cota da Semana ${this.week}`;
   }

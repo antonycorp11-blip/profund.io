@@ -363,7 +363,7 @@ export class MiningSystem {
       this.particles.sparks(cx, cy, 40, rdef.accent);
       this.particles.burst(cx, cy, 24, [rdef.color, rdef.accent], { speed: 240, size: 5 });
       this.floating.push(cx, cy - 20, `JACKPOT! +${total}`, rdef.accent, 16);
-      this.camera.addShake(7);
+      this.camera.addShake(3.2);
       Haptics.break_();
       Events.emit('proc:jackpot', { worldX: cx, worldY: cy, resource, amount: total });
     } else if (isRare) {

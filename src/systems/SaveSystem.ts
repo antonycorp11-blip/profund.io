@@ -31,6 +31,7 @@ export interface SaveData {
   creatures?: CreatureSave;
   vitals?: VitalsSave;
   activeSkills?: Record<string, { charges: number; cooldown: number }>;
+  progression?: { level: number; xp: number };
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;
 }
