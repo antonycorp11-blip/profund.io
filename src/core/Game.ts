@@ -220,7 +220,9 @@ export class Game {
       col: Math.floor(this.player.cx / CONFIG.tileSize),
       row: Math.floor(this.player.cy / CONFIG.tileSize),
     }));
-    this.minimap = new Minimap(uiRoot, this.world, this.exploration, () => this.mapScreen.open());
+    this.minimap = new Minimap(this.hud.mapSlot(), this.world, this.exploration, () =>
+      this.mapScreen.open()
+    );
 
     // Criaturas: os postos vem da geracao, entao so podem ser calculados
     // depois de o mundo existir (e antes de o save restaurar quem ja morreu).
@@ -602,7 +604,6 @@ export class Game {
 
     this.hud.setHealth(this.vitals.health, this.vitals.max);
     this.hud.update(
-      depth,
       target?.prompt() ?? null,
       this.touch.isVisible() ? 'AGIR' : 'E',
       this.skills.points

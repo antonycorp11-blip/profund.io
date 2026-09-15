@@ -18,7 +18,7 @@ export class HUD {
   private moneyEl: HTMLDivElement;
   private moneyValue: HTMLElement;
   private moneyFloat: HTMLElement;
-  private depthEl: HTMLDivElement;
+  private mapSlotEl: HTMLDivElement;
   private quotaEl: HTMLDivElement;
   private quotaTotalFill!: HTMLElement;
   private quotaTotalLabel!: HTMLElement;
@@ -28,7 +28,6 @@ export class HUD {
   private debugEl: HTMLDivElement;
 
   private lastValues = new Map<ResourceId, number>();
-  private lastDepth = -1;
   private lastPrompt: string | null = null;
   private lastBag = -1;
   private lastHealth = -1;
@@ -109,10 +108,8 @@ export class HUD {
       <div class="bar"><i></i></div>`;
     this.bagFill = this.bagEl.querySelector('.bar > i') as HTMLElement;
     this.bagLabel = this.bagEl.querySelector('[data-bag-count]') as HTMLElement;
-    left.appendChild(this.bagEl);
-
-    // Vida: fica junto da mochila porque as duas contam a mesma historia —
-    // quanto ainda da para aguentar antes de voltar.
+    // Vida ao lado da mochila: as duas contam a mesma historia (quanto ainda da
+    // para aguentar antes de voltar) e lado a lado custam metade da altura.
     this.healthEl = document.createElement('div');
     this.healthEl.className = 'bag vitals';
     this.healthEl.innerHTML = `
@@ -120,7 +117,12 @@ export class HUD {
       <div class="bar"><i></i></div>`;
     this.healthFill = this.healthEl.querySelector('.bar > i') as HTMLElement;
     this.healthLabel = this.healthEl.querySelector('[data-health-count]') as HTMLElement;
-    left.appendChild(this.healthEl);
+
+    const bars = document.createElement('div');
+    bars.className = 'hud-bars';
+    bars.appendChild(this.bagEl);
+    bars.appendChild(this.healthEl);
+    left.appendChild(bars);
 
     this.root.appendChild(left);
 
@@ -151,10 +153,11 @@ export class HUD {
     buttons.appendChild(btnMenu);
     right.appendChild(buttons);
 
-    this.depthEl = document.createElement('div');
-    this.depthEl.className = 'depth';
-    this.depthEl.innerHTML = '<span>PROFUNDIDADE</span><strong>0 <small>m</small></strong>';
-    right.appendChild(this.depthEl);
+    // Vaga do minimapa: ele entra aqui, na coluna da direita, em vez de ficar
+    // solto no meio do topo tapando justamente o que esta a frente do jogador.
+    this.mapSlotEl = document.createElement('div');
+    this.mapSlotEl.className = 'hud-map-slot';
+    right.appendChild(this.mapSlotEl);
 
     this.quotaEl = document.createElement('div');
     this.quotaEl.className = 'quota';
@@ -274,12 +277,7 @@ export class HUD {
   }
 
   /** Chamado todo frame; so escreve no DOM quando algo mudou. */
-  update(
-    depthMeters: number,
-    prompt: string | null,
-    interactKeyHint: string,
-    skillPoints = 0
-  ): void {
+  update(prompt: string | null, interactKeyHint: string, skillPoints = 0): void {
     this.updateMoney();
     if (skillPoints !== this.lastPoints && this.skillBadge) {
       this.lastPoints = skillPoints;
@@ -309,12 +307,6 @@ export class HUD {
       this.bagEl.classList.toggle('full', used >= cap);
     }
 
-    const d = Math.max(0, Math.round(depthMeters));
-    if (d !== this.lastDepth) {
-      this.lastDepth = d;
-      const strong = this.depthEl.querySelector('strong');
-      if (strong) strong.innerHTML = `${d} <small>m</small>`;
-    }
 
     for (const [res, refs] of this.quotaRows) {
       const have = this.quota.progress(res);
@@ -356,6 +348,11 @@ export class HUD {
         this.promptEl.textContent = '';
       }
     }
+  }
+
+  /** Onde o minimapa deve se montar (coluna da direita, sob os botoes). */
+  mapSlot(): HTMLElement {
+    return this.mapSlotEl;
   }
 
   /** Barra de vida; escreve so quando muda. */
@@ -480,8 +477,8 @@ export class HUD {
 
   resetCaches(): void {
     this.lastValues.clear();
-    this.lastDepth = -1;
     this.lastBag = -1;
+    this.lastHealth = -1;
     this.lastPrompt = null;
     this.lastMoney = null;
   }

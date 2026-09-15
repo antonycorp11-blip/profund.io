@@ -79,8 +79,13 @@ export class Minimap {
     const depth = this.world.depthOfRow(row);
     const layer = layerAt(depth);
     const toNext = metersToNextLayer(depth);
+    // A profundidade mora aqui: e a mesma informacao que o mapa ja conta, e um
+    // card so no lugar de dois deixa a coluna respirar.
     this.label.innerHTML =
       `<b>${layer.name}</b>` +
-      (toNext !== null ? `<span>proxima em ${Math.max(0, Math.round(toNext))} m</span>` : '');
+      `<strong>${Math.max(0, Math.round(depth))}<small>m</small></strong>` +
+      (toNext !== null
+        ? `<span>proxima em ${Math.max(0, Math.round(toNext))} m</span>`
+        : '<span>fundo da mina</span>');
   }
 }

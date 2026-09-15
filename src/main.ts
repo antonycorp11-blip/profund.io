@@ -22,11 +22,50 @@ Assets.load()
     (window as unknown as { game: Game }).game = game;
   });
 
-// PWA: registra o service worker apenas em producao.
+/**
+ * PWA: registra o service worker e **se atualiza sozinho**.
+ *
+ * Instalado na tela inicial do iPhone, o app pode ficar dias sem recarregar o
+ * documento — e a atualizacao so chegava reinstalando. Aqui: a cada volta para
+ * o primeiro plano o registro e verificado; quando uma versao nova assume o
+ * controle, o jogo salva e recarrega sozinho.
+ */
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {
-      /* offline opcional */
+  window.addEventListener('load', async () => {
+    let reg: ServiceWorkerRegistration;
+    try {
+      reg = await navigator.serviceWorker.register('./sw.js');
+    } catch {
+      return; // sem offline; o jogo continua funcionando pela rede
+    }
+
+    // Na primeira instalacao o controlador tambem muda — ali nao se recarrega.
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloading = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloading) return;
+      reloading = true;
+      const game = (window as unknown as { game?: { save(): void } }).game;
+      try {
+        game?.save();
+      } catch {
+        /* salvar e melhor-esforco: a atualizacao nao pode travar aqui */
+      }
+      window.location.reload();
     });
+
+    const check = (): void => {
+      reg.update().catch(() => {
+        /* offline: tenta na proxima */
+      });
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) check();
+    });
+    window.addEventListener('focus', check);
+    // Rede de seguranca para quem deixa o jogo aberto.
+    window.setInterval(check, 10 * 60 * 1000);
   });
 }

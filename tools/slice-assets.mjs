@@ -112,6 +112,7 @@ function main() {
   let wrote = 0;
   wrote += sliceBlocks();
   wrote += sliceCharacter();
+  wrote += sliceCharacterStrips();
   wrote += sliceCracks();
   wrote += sliceIcons();
   wrote += sliceIconSheet();
@@ -223,6 +224,140 @@ function sliceCharacter() {
   console.log(`    pes alinhados em y=${feetY}px de ${SIZE}px` +
     (ajustes.length ? ` (correcoes: ${ajustes.join(', ')})` : ''));
   return 1;
+}
+
+// ------------------------------------------------- personagem (tiras) ---
+
+/**
+ * Tiras de animacao: um arquivo por acao, quadros lado a lado.
+ *
+ * Tres cuidados que fazem a diferenca entre "animacao" e "boneco tremendo":
+ *
+ * 1. Os quadros sao achados pela ocupacao das colunas, nao por divisao igual.
+ *    As folhas geradas por IA nunca tem espacamento perfeito; dividir em 8
+ *    partes iguais corta bracos e pes.
+ * 2. A escala e a MESMA para todas as tiras — medida numa primeira passada
+ *    sobre todos os arquivos. Sem isso o heroi muda de tamanho ao trocar de
+ *    animacao.
+ * 3. Cada quadro e ancorado pelos pes e centrado pelas PERNAS, nao pela caixa
+ *    de conteudo: senao a picareta esticada para o lado empurra o corpo.
+ */
+const STRIPS = [
+  { name: 'idle', files: ['idle.png', 'parado.png'] },
+  { name: 'walk', files: ['walk.png', 'andar.png', 'caminhar.png'] },
+  { name: 'jump', files: ['jump.png', 'pular.png', 'pulo.png'] },
+  { name: 'mine', files: ['mine.png', 'minerar.png', 'picareta.png'] },
+  { name: 'climb', files: ['climb.png', 'escalar.png', 'escalada.png'] },
+];
+
+function sliceCharacterStrips() {
+  const dir = path.join(SRC, 'personagem');
+  if (!fs.existsSync(dir)) return 0;
+
+  // --- passada 1: encontrar os quadros e a altura maxima do heroi ---
+  const jobs = [];
+  let tallest = 0;
+  for (const def of STRIPS) {
+    const file = def.files.map((f) => path.join(dir, f)).find((f) => fs.existsSync(f));
+    if (!file) continue;
+    const src = readPng(file);
+    if (!src) continue;
+
+    const bg = detectBackground(src);
+    if (bg) keyOut(src, bg, TOL);
+
+    const runs = frameRuns(src);
+    if (runs.length === 0) {
+      console.log(`    ${path.basename(file)}: nenhum quadro encontrado, pulando`);
+      continue;
+    }
+    const boxes = runs.map((r) => {
+      const cell = crop(src, r.x0, 0, r.x1 - r.x0 + 1, src.height);
+      const box = contentBox(cell);
+      return { cell, box };
+    }).filter((f) => f.box);
+
+    for (const f of boxes) tallest = Math.max(tallest, f.box.bottom - f.box.top + 1);
+    jobs.push({ name: def.name, file, frames: boxes });
+  }
+  if (jobs.length === 0) return 0;
+
+  console.log(`\n  ${dir}  ->  tiras de animacao`);
+
+  // O heroi ocupa 78% da altura do quadro: sobra folga para o braco levantado
+  // da escalada e para a picareta erguida sem cortar nada.
+  const targetH = Math.round(SIZE * 0.78);
+  const scale = targetH / tallest;
+  const feetY = Math.round(SIZE * FEET_ANCHOR);
+  let wrote = 0;
+
+  // --- passada 2: normalizar e gravar ---
+  for (const job of jobs) {
+    const n = job.frames.length;
+    const out = new PNG({ width: SIZE * n, height: SIZE });
+    out.data.fill(0);
+
+    for (let i = 0; i < n; i++) {
+      const { cell, box } = job.frames[i];
+      const cw = box.right - box.left + 1;
+      const ch = box.bottom - box.top + 1;
+      const tight = crop(cell, box.left, box.top, cw, ch);
+      const sw = Math.max(1, Math.round(cw * scale));
+      const sh = Math.max(1, Math.round(ch * scale));
+      const small = resize(tight, sw, sh);
+
+      // Centro horizontal medido no terco de baixo (pernas e botas): a parte
+      // do desenho que nao muda de lugar quando a picareta se estica.
+      const legs = contentBox(crop(small, 0, Math.floor(sh * 0.66), sw, Math.ceil(sh * 0.34)));
+      const cx = legs ? (legs.left + legs.right) / 2 : sw / 2;
+
+      const dx = Math.round(i * SIZE + SIZE / 2 - cx);
+      const dy = feetY - sh;
+      blit(small, out, dx, dy);
+    }
+
+    writePng(path.join(OUT_CHAR, `${job.name}.png`), out);
+    console.log(`    ${path.basename(job.file)}  ->  ${job.name}.png (${n} quadros)`);
+    wrote++;
+  }
+  console.log(`    escala unica ${scale.toFixed(3)} (maior heroi: ${tallest}px) · pes em y=${feetY}`);
+  return wrote;
+}
+
+/**
+ * Agrupa as colunas ocupadas da tira em quadros.
+ * Lacunas menores que `minGap` sao ignoradas: a picareta de um quadro pode
+ * quase encostar no vizinho sem que os dois virem um so.
+ */
+function frameRuns(png, minGap = 6) {
+  const occupied = new Uint8Array(png.width);
+  for (let x = 0; x < png.width; x++) {
+    for (let y = 0; y < png.height; y++) {
+      if (png.data[(y * png.width + x) * 4 + 3] >= 24) {
+        occupied[x] = 1;
+        break;
+      }
+    }
+  }
+  const runs = [];
+  let start = -1;
+  let gap = 0;
+  for (let x = 0; x < png.width; x++) {
+    if (occupied[x]) {
+      if (start < 0) start = x;
+      gap = 0;
+    } else if (start >= 0) {
+      gap++;
+      if (gap >= minGap) {
+        runs.push({ x0: start, x1: x - gap });
+        start = -1;
+      }
+    }
+  }
+  if (start >= 0) runs.push({ x0: start, x1: png.width - 1 });
+  // Descarta respingos: qualquer corrida com menos de 4% da largura da tira.
+  const min = png.width * 0.04;
+  return runs.filter((r) => r.x1 - r.x0 + 1 >= min);
 }
 
 // ---------------------------------------------------------- rachaduras ---

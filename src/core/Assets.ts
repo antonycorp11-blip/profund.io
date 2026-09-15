@@ -24,6 +24,8 @@ class AssetsImpl {
   hasBlockArt = false;
   /** True quando ao menos uma animacao do personagem foi carregada. */
   hasCharacterArt = false;
+  /** Quais tiras de animacao do heroi existem de fato. */
+  readonly characterStrips = new Set<string>();
   hasCrackArt = false;
   hasBackgroundArt = false;
   private skillIcons = new Set<string>();
@@ -55,6 +57,18 @@ class AssetsImpl {
         }
       )
     );
+    // Tiras por animacao. Cada uma que chegar substitui aquele estado; o que
+    // faltar continua vindo da folha 4x4.
+    for (const [name, strip] of Object.entries(manifest.character.strips)) {
+      jobs.push(
+        this.loadImage(manifest.basePath + manifest.character.dir + strip.file).then((img) => {
+          if (!img) return;
+          this.images.set('char:' + name, img);
+          this.hasCharacterArt = true;
+          this.characterStrips.add(name);
+        })
+      );
+    }
 
     for (const key of manifest.skyKeys) {
       jobs.push(
@@ -236,6 +250,23 @@ class AssetsImpl {
   /** Folha do personagem, ou null se ainda nao existe. */
   character(): HTMLImageElement | null {
     return this.images.get('character') ?? null;
+  }
+
+  /** Tira de uma animacao do heroi, ou null quando aquele arquivo nao existe. */
+  characterStrip(name: string): HTMLImageElement | null {
+    return this.images.get('char:' + name) ?? null;
+  }
+
+  /** Tira recolorida — e assim que cada copia ganha cor propria. */
+  tintedStrip(name: string, color: string, strength: number): HTMLCanvasElement | null {
+    const key = `strip|${name}|${color}|${strength}`;
+    const cached = this.tinted.get(key);
+    if (cached) return cached;
+    const src = this.images.get('char:' + name);
+    if (!src) return null;
+    const made = this.tintImage(src, src.width, src.height, color, strength);
+    this.tinted.set(key, made);
+    return made;
   }
 
   /** Folha de rachaduras (2x2), ou null. */

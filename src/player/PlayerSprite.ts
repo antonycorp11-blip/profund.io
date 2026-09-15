@@ -32,6 +32,7 @@ export class PlayerSprite {
     // Escalar vem antes de tudo: e o unico estado em que o corpo esta na
     // vertical contra a parede, e a pose de pulo ali fica errada.
     if (player.climbingWall !== 0) {
+      if (player.mantling) return 'mantle';
       if (player.climbTired) return 'climb_slide';
       return player.vy < -8 ? 'climb' : 'climb_hold';
     }
@@ -59,26 +60,139 @@ export class PlayerSprite {
     if (this.anim === 'walk') {
       return def.frames[Math.floor(this.walkDist / 20) % n];
     }
-    // Escalada: mesma logica, pela altura ganha.
-    if (this.anim === 'climb') {
-      return def.frames[Math.floor(this.climbDist / 22) % n];
-    }
     const i = Math.floor(this.animTime * def.fps);
     return def.frames[def.loop ? i % n : Math.min(i, n - 1)];
   }
 
+  /**
+   * Movimento da escalada, feito em codigo.
+   *
+   * A folha tem um unico corpo na vertical; o que transforma a pose em
+   * escalada e o ritmo: alcancar (estica e sobe), puxar (encolhe e desce um
+   * pouco), sempre inclinado contra a parede. O ciclo anda com a altura ganha,
+   * entao subir devagar e subir rapido tem a mesma leitura.
+   */
+  private climbTransform(
+    ctx: CanvasRenderingContext2D,
+    player: Player,
+    h: number,
+    hasStripArt: boolean
+  ): void {
+    const dir = player.climbingWall * player.facing; // +1 = lado da parede
+
+    // Com a tira dedicada o ciclo ja esta desenhado: basta encostar na parede.
+    if (hasStripArt) {
+      ctx.translate(dir * 3, 0);
+      if (player.climbTired) ctx.translate(Math.sin(this.animTime * 34) * 1.2, 0);
+      return;
+    }
+
+    if (player.climbTired) {
+      // Escorregando: treme um pouco, sem ciclo.
+      ctx.translate(dir * 2 + Math.sin(this.animTime * 34) * 1.2, 0);
+      ctx.rotate(dir * 0.05);
+      return;
+    }
+
+    // Parado agarrado respira devagar; subindo, o ciclo vem da altura.
+    const moving = player.vy < -8;
+    const phase = moving ? this.climbDist * 0.085 : this.animTime * 2.2;
+    const pull = Math.sin(phase);
+    const reach = Math.max(0, pull); // so a metade de cima do ciclo estica
+
+    // Encosta na parede (e o passo mais importante: senao ele flutua no vao).
+    ctx.translate(dir * (3.5 + reach * 1.5), moving ? -pull * 2.4 : -pull * 1.2);
+    // Inclina o tronco contra a rocha.
+    ctx.rotate(dir * (0.06 + pull * 0.05));
+    // Estica ao alcancar, encolhe ao puxar o corpo.
+    const stretch = 1 + pull * (moving ? 0.05 : 0.018);
+    ctx.translate(0, h * (1 - stretch));
+    ctx.scale(1 - pull * 0.02, stretch);
+  }
+
+  /**
+   * Traduz o estado em (tira, quadro).
+   *
+   * As tiras novas tem a animacao inteira desenhada, entao o quadro vem do
+   * estado fisico — velocidade, progresso do golpe, altura ganha — e nao de um
+   * timer solto. E o que faz a arte "obedecer" ao controle.
+   */
+  private stripFrame(player: Player): { name: string; index: number } | null {
+    const strips = ART.character.strips;
+    const has = (n: string): boolean => Assets.characterStrips.has(n);
+    const last = (n: string): number => strips[n].frames - 1;
+    const pick = (n: string, i: number): { name: string; index: number } => ({
+      name: n,
+      index: Math.max(0, Math.min(last(n), Math.round(i))),
+    });
+
+    if (player.climbingWall !== 0 && has('climb')) {
+      const n = strips.climb.frames;
+      if (player.mantling) return pick('climb', last('climb'));
+      if (player.climbTired) return pick('climb', 0);
+      if (player.vy < -8) {
+        return pick('climb', Math.floor(this.climbDist / 11) % n);
+      }
+      return pick('climb', 0);
+    }
+
+    if (player.swing > 0.02 && has('mine')) {
+      // swing vai de 1 (impacto comecando) a 0: o quadro segue esse arco.
+      return pick('mine', (1 - player.swing) * last('mine'));
+    }
+
+    if (!player.onGround && has('jump')) {
+      const n = strips.jump.frames; // 0 agachar, ~n/2 apice, fim queda/pouso
+      const apex = Math.floor(n * 0.55);
+      if (player.vy < -240) return pick('jump', 1);
+      if (player.vy < -90) return pick('jump', 2);
+      if (player.vy < -20) return pick('jump', 3);
+      if (player.vy < 90) return pick('jump', apex);
+      return pick('jump', apex + 1);
+    }
+
+    if (player.landSquash > 0.3 && has('jump')) {
+      return pick('jump', last('jump') - 1);
+    }
+
+    if (Math.abs(player.vx) > 12 && has('walk')) {
+      const n = strips.walk.frames;
+      return pick('walk', Math.floor(this.walkDist / 13) % n);
+    }
+
+    if (has('idle')) {
+      const n = strips.idle.frames;
+      return pick('idle', Math.floor(this.animTime * strips.idle.fps) % n);
+    }
+    return null;
+  }
+
   /** Retorna false quando ainda nao ha arte: o chamador desenha o placeholder. */
   render(ctx: CanvasRenderingContext2D, player: Player): boolean {
-    const sheet = Assets.character();
-    if (!sheet) return false;
-
     const art = ART.character;
-    const index = this.frameIndex(player);
-    const sx = (index % art.cols) * art.frameW;
-    const sy = Math.floor(index / art.cols) * art.frameH;
+    const strip = this.stripFrame(player);
 
-    const scale = art.drawHeight / art.frameH;
-    const w = art.frameW * scale;
+    // Formato novo (uma tira por animacao) tem prioridade; sem ele, a folha 4x4.
+    let sheet: CanvasImageSource | null = strip ? Assets.characterStrip(strip.name) : null;
+    let frameW = art.stripFrame;
+    let frameH = art.stripFrame;
+    let sx: number;
+    let sy = 0;
+
+    if (sheet && strip) {
+      sx = strip.index * frameW;
+    } else {
+      sheet = Assets.character();
+      if (!sheet) return false;
+      const index = this.frameIndex(player);
+      frameW = art.frameW;
+      frameH = art.frameH;
+      sx = (index % art.cols) * frameW;
+      sy = Math.floor(index / art.cols) * frameH;
+    }
+
+    const scale = art.drawHeight / frameH;
+    const w = frameW * scale;
     const h = art.drawHeight;
     const feetY = player.feetY;
     const top = feetY - h * art.feetAnchor;
@@ -94,10 +208,8 @@ export class PlayerSprite {
     ctx.save();
     ctx.translate(Math.round(player.cx), Math.round(top));
     if (player.facing === -1) ctx.scale(-1, 1);
-    // Agarrado, o corpo encosta na parede: um leve deslocamento para o lado do
-    // agarre tira o boneco de "flutuando no meio do vao".
     if (player.climbingWall !== 0) {
-      ctx.translate(player.climbingWall * player.facing * 3, 0);
+      this.climbTransform(ctx, player, h, strip?.name === 'climb');
     }
     // Squash ao aterrissar continua vindo do codigo: a arte nao precisa de quadro para isso.
     if (player.landSquash > 0) {
@@ -105,7 +217,7 @@ export class PlayerSprite {
       ctx.translate(0, h * (1 - sq));
       ctx.scale(1 + player.landSquash * 0.12, sq);
     }
-    ctx.drawImage(sheet, sx, sy, art.frameW, art.frameH, -w / 2, 0, w, h);
+    ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
     ctx.restore();
     return true;
   }

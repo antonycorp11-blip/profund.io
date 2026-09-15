@@ -13,10 +13,20 @@ export interface AnimDef {
   loop: boolean;
 }
 
+/** Uma animacao em arquivo proprio: quadros lado a lado, tamanho fixo. */
+export interface StripDef {
+  file: string;
+  frames: number;
+  fps: number;
+}
+
 export interface CharacterArt {
   dir: string;
   /** Folha unica normalizada pelo slice-assets. */
   sheet: string;
+  /** Lado do quadro quadrado dentro de cada tira. */
+  stripFrame: number;
+  strips: Record<string, StripDef>;
   cols: number;
   /** Tamanho de cada quadro dentro da folha. */
   frameW: number;
@@ -147,6 +157,19 @@ export const ART = {
   character: {
     dir: 'character/',
     sheet: 'miner_sheet.png',
+    /**
+     * Tiras por animacao (formato novo): um arquivo por acao, quadros lado a
+     * lado, todos ja alinhados pelos pes pelo slice-assets. Quando existem,
+     * substituem a folha 4x4 inteira; quando faltam, o jogo cai nela sozinho.
+     */
+    stripFrame: 128,
+    strips: {
+      idle: { file: 'idle.png', frames: 8, fps: 6 },
+      walk: { file: 'walk.png', frames: 8, fps: 13 },
+      jump: { file: 'jump.png', frames: 8, fps: 12 },
+      mine: { file: 'mine.png', frames: 8, fps: 12 },
+      climb: { file: 'climb.png', frames: 8, fps: 10 },
+    } as Record<string, { file: string; frames: number; fps: number }>,
     cols: 4,
     frameW: 128,
     frameH: 128,
@@ -162,14 +185,18 @@ export const ART = {
       mine_up: { frames: [8, 11], fps: 7, loop: true },
       land: { frames: [12], fps: 1, loop: false },
       /**
-       * Escalada: alcance (6) e recolhida (12) alternando dao o ciclo de puxar
-       * o corpo. Sao os dois unicos quadros da folha com o corpo na vertical.
+       * Escalada. Um quadro so — o braco esticado para cima — e o movimento
+       * vem do codigo (ver PlayerSprite.climbTransform). Alternar dois quadros
+       * soltos da folha lia como dois bonecos diferentes piscando; um corpo so,
+       * puxando e alcancando, le como escalada.
        */
-      climb: { frames: [6, 12], fps: 7, loop: true },
-      /** Parado agarrado: so o alcance, sem ciclo. */
+      climb: { frames: [6], fps: 1, loop: false },
+      /** Parado agarrado: mesma pose, respiracao no lugar do ciclo. */
       climb_hold: { frames: [6], fps: 1, loop: false },
       /** Sem forca, escorregando: bracos abertos. */
       climb_slide: { frames: [7], fps: 1, loop: false },
+      /** Passando por cima da borda: o corpo agachado apoiando no chao. */
+      mantle: { frames: [12], fps: 1, loop: false },
       celebrate: { frames: [13], fps: 1, loop: false },
       carry: { frames: [14], fps: 1, loop: false },
     },
