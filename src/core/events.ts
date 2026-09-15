@@ -47,6 +47,15 @@ export interface GameEvents {
   'tech:researched': { id: string; name: string; unlocks: string };
   'clone:created': { id: string; index: number };
   'clone:delivered': { index: number; total: number; depth: number };
+  'collector:delivered': { index: number; total: number; depth: number };
+  'block:regrow': {
+    col: number;
+    row: number;
+    blockId: number;
+    worldX: number;
+    worldY: number;
+  };
+  'collector:burrow': { worldX: number; worldY: number; col: number; row: number };
   'automation:delivered': { resource: string; amount: number };
   'creature:killed': {
     id: string;

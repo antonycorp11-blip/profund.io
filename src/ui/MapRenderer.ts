@@ -14,6 +14,8 @@ export interface MapDrawOptions {
   playerCol: number;
   playerRow: number;
   markers?: MapMarker[];
+  /** Ajudantes (copias e toupeiras) para o jogador achar no mapa. */
+  helpers?: { col: number; row: number; tint: string }[];
   /** Desenha a regua de profundidade a esquerda. */
   ruler?: boolean;
   /** Ponto destacado (item selecionado na lista). */
@@ -100,6 +102,21 @@ export function drawMap(
     ctx.beginPath();
     ctx.arc(fx, fy, Math.max(7, s * 3), 0, Math.PI * 2);
     ctx.stroke();
+  }
+
+  // Ajudantes antes do jogador: eles importam, mas menos que "onde eu estou".
+  for (const h of o.helpers ?? []) {
+    const hx = (h.col - o.originCol) * s + s / 2;
+    const hy = (h.row - o.originRow) * s + s / 2;
+    const r = Math.max(1.8, s * 0.75);
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.beginPath();
+    ctx.arc(hx, hy, r + 1.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = h.tint;
+    ctx.beginPath();
+    ctx.arc(hx, hy, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // Jogador por ultimo, sempre por cima.

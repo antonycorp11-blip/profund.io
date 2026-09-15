@@ -1,15 +1,18 @@
 import { CONFIG } from '../data/config';
+import { COLLECTOR_UPGRADES } from '../data/collectors';
 import { RESOURCES, type ResourceId } from '../data/resources';
 import { TECH_CATEGORIES, techsOf, type TechCategory, type TechDef } from '../data/tech';
 import { Haptics } from '../fx/Haptics';
 import type { Clone, CloneFocus } from '../entities/Clone';
 import type { CloneManager } from '../systems/CloneManager';
+import type { CollectorManager } from '../systems/CollectorManager';
 import type { TechTree } from '../systems/TechTree';
 import type { BaseStock } from '../systems/BaseStock';
 
 export interface TechHost {
   tech: TechTree;
   clones: CloneManager;
+  collectors: CollectorManager;
   stock: BaseStock;
   deepest(): number;
   /** Profundidade em metros de um Y de mundo (para o monitor das copias). */
@@ -19,7 +22,7 @@ export interface TechHost {
   onToolUnlocked(index: number): void;
 }
 
-type Tab = TechCategory | 'copiadora';
+type Tab = TechCategory | 'copiadora' | 'toupeiras';
 
 /** Tela de Pesquisa e Tecnologia + painel da Copiadora. */
 export class TechScreen {
@@ -69,7 +72,8 @@ export class TechScreen {
   private startLive(): void {
     this.stopLive();
     this.liveTimer = window.setInterval(() => {
-      if (!this.isOpen || this.tab !== 'copiadora') return;
+      if (!this.isOpen) return;
+      if (this.tab !== 'copiadora' && this.tab !== 'toupeiras') return;
       this.refreshCloneLive();
     }, 400);
   }
@@ -91,7 +95,7 @@ export class TechScreen {
     }
     this.wrap.classList.add('open');
     this.render();
-    if (this.tab === 'copiadora') this.startLive();
+    if (this.tab === 'copiadora' || this.tab === 'toupeiras') this.startLive();
   }
 
   /** Atalho direto para o painel das copias. */
@@ -115,6 +119,7 @@ export class TechScreen {
     this.renderTabs();
     this.renderStock();
     if (this.tab === 'copiadora') this.renderCloner();
+    else if (this.tab === 'toupeiras') this.renderCollectors();
     else this.renderTechs(this.tab);
   }
 
@@ -122,6 +127,7 @@ export class TechScreen {
     const tabs: { id: Tab; name: string; icon: string; color: string }[] = Object.values(
       TECH_CATEGORIES
     ).map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }));
+    tabs.unshift({ id: 'toupeiras', name: 'Toupeiras', icon: '🐀', color: '#d8a35a' });
     if (this.host.tech.unlocked('cloner')) {
       tabs.unshift({ id: 'copiadora', name: 'Copiadora', icon: '⧉', color: '#5ac7d0' });
     }
@@ -135,7 +141,7 @@ export class TechScreen {
       btn.addEventListener('click', () => {
         this.tab = t.id;
         this.tabChosen = true;
-        if (t.id === 'copiadora') this.startLive();
+        if (t.id === 'copiadora' || t.id === 'toupeiras') this.startLive();
         else this.stopLive();
         this.render();
       });
@@ -251,6 +257,108 @@ export class TechScreen {
     this.bindCloner();
   }
 
+  // ------------------------------------------------------------ toupeiras --
+
+  /**
+   * Painel das toupeiras coletoras.
+   *
+   * Tudo aqui se paga com moeda. Elas existem para recolher o que ficou para
+   * tras quando a mochila encheu — e o dinheiro que compra mais toupeiras vem
+   * justamente do que elas trazem.
+   */
+  private renderCollectors(): void {
+    const mgr = this.host.collectors;
+    const money = Math.floor(this.host.stock.money);
+    const custo = mgr.costFor();
+    const cheio = mgr.units.length >= mgr.max;
+
+    const upgrades = COLLECTOR_UPGRADES.map((u) => {
+      const nivel = mgr.levelOf(u.id);
+      const max = nivel >= u.maxLevel;
+      const preco = mgr.upgradeCost(u.id);
+      return `
+        <div class="up-card ${max ? 'done' : ''}">
+          <div class="up-head"><span>${u.icon}</span><b>${u.name}</b>
+            <span class="up-level">${nivel}/${u.maxLevel}</span></div>
+          <p>${u.description}</p>
+          ${
+            max
+              ? '<div class="up-done">NO MAXIMO</div>'
+              : `<button class="btn" data-colup="${u.id}" ${money >= preco ? '' : 'disabled'}>
+                   ✦ ${preco.toLocaleString('pt-BR')}
+                 </button>`
+          }
+        </div>`;
+    }).join('');
+
+    let html = `
+      <div class="cloner-head">
+        <div>
+          <h4>Toupeiras coletoras</h4>
+          <p>Elas nao mineram: buscam o que ficou no chao e trazem para a base.
+             Cavam reto, entao chegam onde voce nao volta mais.
+             Ativas: <b>${mgr.units.length}/${mgr.max}</b></p>
+        </div>
+        <div class="cloner-new">
+          <div class="tech-cost">
+            <span class="${money >= custo ? 'ok' : 'miss'}">✦ ${custo.toLocaleString('pt-BR')} moedas
+            <small> (voce tem ${money.toLocaleString('pt-BR')})</small></span>
+          </div>
+          <button class="btn primary" data-hire ${!cheio && mgr.canAfford() ? '' : 'disabled'}>
+            CONTRATAR TOUPEIRA
+          </button>
+        </div>
+      </div>
+      <details class="clone-upgrades" open>
+        <summary>Melhorias das toupeiras</summary>
+        <div class="up-grid">${upgrades}</div>
+      </details>
+      <div class="clone-list">`;
+
+    if (mgr.units.length === 0) {
+      html += '<p class="map-empty">Nenhuma toupeira ainda. Contrate a primeira acima.</p>';
+    }
+    for (const u of mgr.units) {
+      html += `
+        <div class="clone-card" style="--tint:#d8a35a">
+          <div class="clone-card-head">
+            <span class="clone-dot" style="background:#d8a35a"></span>
+            <b>Toupeira ${u.index + 1}</b>
+            <span class="clone-state" data-live-cstate="${u.id}">${u.statusLabel()}</span>
+            <span class="clone-depth" data-live-cdepth="${u.id}"></span>
+            <span class="clone-load" data-live-cload="${u.id}">${u.carried}/${u.capacity}</span>
+          </div>
+          <div class="clone-live">
+            <span data-live-ccarry="${u.id}"></span>
+            <b data-live-ctotal="${u.id}"></b>
+          </div>
+        </div>`;
+    }
+    html += '</div>';
+    this.bodyEl.innerHTML = html;
+    this.bindCollectors();
+  }
+
+  private bindCollectors(): void {
+    const hire = this.bodyEl.querySelector('[data-hire]');
+    hire?.addEventListener('click', () => {
+      const p = this.host.spawnPoint();
+      if (this.host.collectors.buy(p.x, p.y)) {
+        Haptics.ui();
+        this.render();
+      }
+    });
+    for (const b of Array.from(this.bodyEl.querySelectorAll('[data-colup]'))) {
+      b.addEventListener('click', () => {
+        const id = (b as HTMLElement).dataset.colup!;
+        if (this.host.collectors.buyUpgrade(id)) {
+          Haptics.ui();
+          this.render();
+        }
+      });
+    }
+  }
+
   /**
    * Melhorias das copias dentro do painel delas.
    *
@@ -309,6 +417,17 @@ export class TechScreen {
       set('load', `${c.carried}/${c.capacity}`);
       set('carry', c.summary());
       set('total', `${c.delivered} entregues`);
+    }
+    for (const u of this.host.collectors.units) {
+      const set = (attr: string, txt: string) => {
+        const el = this.bodyEl.querySelector(`[data-live-c${attr}="${u.id}"]`);
+        if (el && el.textContent !== txt) el.textContent = txt;
+      };
+      set('state', u.statusLabel());
+      set('depth', `${Math.round(this.host.depthOf(u.y))} m`);
+      set('load', `${u.carried}/${u.capacity}`);
+      set('carry', u.summary());
+      set('total', `${u.delivered} entregues`);
     }
   }
 

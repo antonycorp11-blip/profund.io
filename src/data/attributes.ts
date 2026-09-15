@@ -101,6 +101,11 @@ export type AttrId =
   | 'energyConsumptionReduction'
   // --- copias ---
   | 'cloneSlots'
+  | 'collectorSpeed'
+  | 'collectorDigSpeed'
+  | 'collectorCapacity'
+  | 'collectorRange'
+  | 'collectorBreak'
   | 'cloneMiningPower'
   | 'cloneMiningSpeed'
   | 'cloneMoveSpeed'
@@ -236,7 +241,15 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   machineEfficiency: { id: 'machineEfficiency', name: 'Eficiencia das maquinas', base: 1, format: 'multiplier', live: false },
   energyConsumptionReduction: { id: 'energyConsumptionReduction', name: 'Consumo de energia', base: 0, format: 'percent', max: 0.6, live: true },
 
-  cloneSlots: { id: 'cloneSlots', name: 'Copias simultaneas', base: 1, format: 'flat', max: 6, live: true },
+  // A camara nao limita mais: a mesma maquina imprime quantas copias voce
+  // conseguir pagar. O freio e o preco, que sobe a cada copia.
+  collectorSpeed: { id: 'collectorSpeed', name: 'Velocidade das toupeiras', base: 1, format: 'multiplier', live: true },
+  collectorDigSpeed: { id: 'collectorDigSpeed', name: 'Escavacao das toupeiras', base: 1, format: 'multiplier', live: true },
+  collectorCapacity: { id: 'collectorCapacity', name: 'Bolsa das toupeiras', base: 1, format: 'multiplier', live: true },
+  collectorBreak: { id: 'collectorBreak', name: 'Dentes das toupeiras', base: 0, format: 'percent', live: true },
+  collectorRange: { id: 'collectorRange', name: 'Faro das toupeiras', base: 1, format: 'multiplier', live: true },
+
+  cloneSlots: { id: 'cloneSlots', name: 'Copias simultaneas', base: 99, format: 'flat', max: 99, live: true },
   cloneMiningPower: { id: 'cloneMiningPower', name: 'Poder das copias', base: 9, format: 'flat', live: true },
   cloneMiningSpeed: { id: 'cloneMiningSpeed', name: 'Velocidade das copias', base: 1, format: 'multiplier', live: true },
   cloneMoveSpeed: { id: 'cloneMoveSpeed', name: 'Movimento das copias', base: 95, format: 'flat', live: true },

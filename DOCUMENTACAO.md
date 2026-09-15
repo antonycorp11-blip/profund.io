@@ -420,6 +420,44 @@ Curva `baseXp * nivel^1.35`: nivel 2 custa 90, nivel 3 custa 231, nivel 4 custa
 O ponto vem do nivel, e o nivel vem de JOGAR — nunca de gastar dinheiro nem de
 esperar o relogio.
 
+## 4g-ter. Toupeiras coletoras e mina que se refaz
+
+```
+src/data/collectors.ts        precos, melhorias e numeros das toupeiras
+src/entities/Collector.ts     a toupeira: buscar, atravessar rocha, voltar
+src/systems/CollectorManager  contratacao, melhorias em moeda, entrega
+```
+
+**Por que existem.** Com a mochila cheia o jogador sobe deixando recurso no
+chao — e boa parte disso ele nunca volta para buscar. A toupeira e barata (50
+moedas a primeira), nao mina e nao briga: so recolhe o que ficou para tras.
+
+**Ela atravessa a rocha, nao cava.** Nao colide com nada e desce reto, o que
+lhe permite ir buscar a 300 m e voltar sem depender de poco nenhum. Dentro da
+pedra anda a 55% da velocidade, levanta poeira e ganha um halo escuro — o
+trabalho dela precisa ser visto, nao ser um numero que sobe sozinho. A melhoria
+`Dentes de Diamante` faz a rocha por onde ela passa ceder de vez: o tunel fica
+aberto e o que estava dentro cai para ela mesma recolher.
+
+**Nunca param enquanto houver minerio solto:** o raio de busca cobre o mapa.
+
+Medido: contratada na base, desceu a 85 m em 20 s atravessando rocha, recolheu
+24 de ouro e entregou — 624 no estoque sem o jogador sair do lugar.
+
+**Copia nao depende mais de camara.** A mesma maquina imprime quantas o jogador
+conseguir pagar; o freio e o preco (900, x1,6 a cada uma).
+
+### A mina se refaz
+
+So MINERIO volta, entre 260 e 400 s depois de quebrado, no maximo 8 por
+segundo e nunca a menos de 150 px do jogador. Corredor aberto continua aberto:
+encher o caminho de pedra de novo seria punir quem construiu passagem. Sem
+isso a mina virava casca vazia e todo mundo — jogador e ajudantes — tinha que
+andar cada vez mais longe para achar o mesmo carvao.
+
+Medido: veio de 24 blocos quebrado, 24 de volta, com tempos diferentes para o
+veio nao reaparecer inteiro de uma vez.
+
 ## 4h. Habilidades ativas — Choque, Broca e Volta Rapida
 
 ```

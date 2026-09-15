@@ -1,6 +1,13 @@
 import { CONFIG } from '../data/config';
 import type { Camera } from '../core/camera';
-import type { Clone } from '../entities/Clone';
+/** Qualquer ajudante que valha apontar: copia ou toupeira. */
+export interface CompassTarget {
+  x: number;
+  y: number;
+  tint: string;
+  index: number;
+  label: string;
+}
 import type { World } from '../world/World';
 
 /**
@@ -16,7 +23,7 @@ import type { World } from '../world/World';
 export class CloneCompass {
   constructor(
     private world: World,
-    private clones: () => Clone[]
+    private targets: () => CompassTarget[]
   ) {}
 
   render(
@@ -26,7 +33,7 @@ export class CloneCompass {
     cssH: number,
     dpr: number
   ): void {
-    const lista = this.clones();
+    const lista = this.targets();
     if (lista.length === 0) return;
 
     const cfg = CONFIG.cloneCompass;
@@ -82,7 +89,7 @@ export class CloneCompass {
       // Etiqueta sempre na horizontal, deslocada para dentro da tela.
       const lx = px - Math.cos(ang) * cfg.labelOffset;
       const ly = py - Math.sin(ang) * cfg.labelOffset;
-      const texto = `${clone.index + 1} · ${prof}m`;
+      const texto = `${clone.label}${clone.index + 1} · ${prof}m`;
       const w = ctx.measureText(texto).width + 10;
       ctx.globalAlpha = 0.8;
       ctx.fillStyle = 'rgba(10,8,7,0.75)';

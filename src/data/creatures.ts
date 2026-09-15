@@ -50,29 +50,13 @@ export interface CreatureDef {
   tagline: string;
 }
 
+/*
+ * A Toupeira Mineira saiu daqui: ela virou ajudante, nao inimigo. Recolhe o
+ * que o jogador deixou para tras quando a mochila encheu — ver /data/collectors.
+ * A arte dela continua em public/art/creatures/toupeira_*.
+ */
 export const CREATURES: CreatureDef[] = [
   // ------------------------------------------------- superficie e pedra ---
-  {
-    id: 'toupeira',
-    name: 'Toupeira Mineira',
-    layers: ['surface', 'stone'],
-    behavior: 'territorial',
-    health: 34,
-    damage: 6,
-    moveSpeed: 54,
-    aggroRange: 150,
-    attackRange: 28,
-    attackCooldown: 1.4,
-    spawnWeight: 5,
-    w: 26,
-    h: 20,
-    art: 'toupeira',
-    drawHeight: 38,
-    color: '#5b4632',
-    accent: '#d8c3a5',
-    drops: [{ resource: 'coal', min: 1, max: 3, chance: 0.7 }],
-    tagline: 'Achou o capacete de alguem e nao devolve.',
-  },
   {
     id: 'larva',
     name: 'Larva Palida',

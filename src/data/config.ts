@@ -146,6 +146,28 @@ export const CONFIG = {
     chunkSize: 8,
   },
 
+  /**
+   * A mina se refaz.
+   *
+   * Sem isto, cada veio quebrado some para sempre e a mina vira casca vazia —
+   * o jogador (e as copias) precisam ir sempre mais longe para achar o mesmo
+   * carvao. So MINERIO volta: corredor aberto continua aberto, porque encher
+   * o caminho de pedra de novo seria punir quem construiu passagem.
+   */
+  regrow: {
+    enabled: true,
+    /** Tempo base ate um minerio quebrado voltar (s). */
+    delaySec: 260,
+    /** Variacao aleatoria, para o veio nao reaparecer inteiro de uma vez (s). */
+    jitterSec: 140,
+    /** Nao renasce a menos que isto de distancia do jogador (px). */
+    safeRadius: 150,
+    /** Nem acima desta profundidade: a base fica em paz. */
+    minDepth: 10,
+    /** Teto de blocos que voltam por segundo. */
+    perSecond: 8,
+  },
+
   base: {
     /** Coluna central da base na superficie. */
     centerCol: 60,

@@ -15,6 +15,8 @@ export interface SaveData {
   player: { x: number; y: number };
   /** Overrides do tilemap achatados: [index, blockId, index, blockId, ...]. */
   tiles: number[];
+  /** Minerios esperando para voltar: [index, bloco, segundos, ...]. */
+  regrow?: number[];
   inventory: InventoryData;
   stock: { items?: InventoryData; delivered?: InventoryData; money?: number };
   toolIndex: number;
@@ -32,6 +34,7 @@ export interface SaveData {
   vitals?: VitalsSave;
   activeSkills?: Record<string, { charges: number; cooldown: number }>;
   progression?: { level: number; xp: number };
+  collectors?: import('./CollectorManager').CollectorSave;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;
 }

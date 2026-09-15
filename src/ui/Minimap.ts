@@ -16,6 +16,7 @@ export class Minimap {
   private lastCol = -999;
   private lastRow = -999;
   private lastVersion = -1;
+  private helperTick = 0;
   private readonly tilesX = CONFIG.map.minimapTilesX;
   private readonly tilesY = CONFIG.map.minimapTilesY;
   private readonly scale = CONFIG.map.minimapScale;
@@ -24,7 +25,9 @@ export class Minimap {
     parent: HTMLElement,
     private world: World,
     private exploration: Exploration,
-    private onOpen: () => void
+    private onOpen: () => void,
+    /** Copias e toupeiras, para aparecerem no minimapa. */
+    private helpers: () => { x: number; y: number; tint: string }[] = () => []
   ) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.root = document.createElement('div');
@@ -70,9 +73,21 @@ export class Minimap {
     const ts = this.world.tileSize;
     const col = Math.floor(playerX / ts);
     const row = Math.floor(playerY / ts);
-    if (col === this.lastCol && row === this.lastRow && this.exploration.version === this.lastVersion) {
+    // Ajudantes se mexem sozinhos: o minimapa precisa redesenhar mesmo com o
+    // jogador parado, senao eles congelam na tela.
+    const ajudantes = this.helpers();
+    const assinatura = ajudantes.length;
+    if (
+      col === this.lastCol &&
+      row === this.lastRow &&
+      this.exploration.version === this.lastVersion &&
+      this.helperTick > 0
+    ) {
+      this.helperTick--;
       return;
     }
+    this.helperTick = ajudantes.length > 0 ? 6 : 30;
+    void assinatura;
     this.lastCol = col;
     this.lastRow = row;
     this.lastVersion = this.exploration.version;
@@ -86,6 +101,11 @@ export class Minimap {
       playerCol: col,
       playerRow: row,
       markers: this.exploration.visibleMarkers(),
+      helpers: ajudantes.map((h) => ({
+        col: Math.floor(h.x / ts),
+        row: Math.floor(h.y / ts),
+        tint: h.tint,
+      })),
     });
 
     const depth = this.world.depthOfRow(row);

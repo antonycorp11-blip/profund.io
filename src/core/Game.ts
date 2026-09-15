@@ -44,6 +44,7 @@ import { TileRenderer } from '../world/TileRenderer';
 import { TimeSystem } from '../systems/TimeSystem';
 import { CloneCompass } from '../ui/CloneCompass';
 import { CloneManager } from '../systems/CloneManager';
+import { CollectorManager } from '../systems/CollectorManager';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { CreatureManager } from '../systems/CreatureManager';
@@ -112,6 +113,7 @@ export class Game {
   private shock: ShockChain;
   private drill: DrillTool;
   private compass: CloneCompass;
+  private collectors: CollectorManager;
   /** De onde o jogador saiu na ultima Volta Rapida (para o retorno). */
   private recallReturn: { x: number; y: number } | null = null;
   /** Ultima camada anunciada, para avisar so na entrada. */
@@ -259,8 +261,12 @@ export class Game {
       col: Math.floor(this.player.cx / CONFIG.tileSize),
       row: Math.floor(this.player.cy / CONFIG.tileSize),
     }));
-    this.minimap = new Minimap(this.hud.mapSlot(), this.world, this.exploration, () =>
-      this.mapScreen.open()
+    this.minimap = new Minimap(
+      this.hud.mapSlot(),
+      this.world,
+      this.exploration,
+      () => this.mapScreen.open(),
+      () => this.helperDots()
     );
 
     // Criaturas: os postos vem da geracao, entao so podem ser calculados
@@ -327,7 +333,35 @@ export class Game {
       (r, n) => this.quota.registerDelivery(r, n)
     );
 
-    this.compass = new CloneCompass(this.world, () => this.cloneManager.clones);
+    // Bussola aponta para tudo que trabalha longe: copias e toupeiras.
+    this.compass = new CloneCompass(this.world, () => [
+      ...this.cloneManager.clones.map((c) => ({
+        x: c.x,
+        y: c.y,
+        tint: c.tint,
+        index: c.index,
+        label: 'C',
+      })),
+      ...this.collectors.units.map((u) => ({
+        x: u.x,
+        y: u.y,
+        tint: '#d8a35a',
+        index: u.index,
+        label: 'T',
+      })),
+    ]);
+
+    this.collectors = new CollectorManager(
+      this.world,
+      this.attrs,
+      this.stock,
+      this.drops,
+      {
+        x: this.worldInfo.depotCol * ts0 + ts0 / 2,
+        y: (this.worldInfo.baseFloorRow - 1) * ts0,
+      },
+      (r, n) => this.quota.registerDelivery(r, n)
+    );
 
     this.buildMode = new BuildMode(uiRoot, {
       automation: this.automation,
@@ -339,6 +373,7 @@ export class Game {
     this.techScreen = new TechScreen(uiRoot, {
       tech: this.tech,
       clones: this.cloneManager,
+      collectors: this.collectors,
       stock: this.stock,
       deepest: () => this.deepestMeters,
       depthOf: (y) => this.world.depthOfPixel(y),
@@ -502,6 +537,23 @@ export class Game {
 
     // Entrega de copia: aparece no deposito, para dar para ver o resultado do
     // trabalho delas sem abrir tela nenhuma.
+    // Minerio voltando: um brilho curto, para o jogador notar que a mina se
+    // refaz sem precisar ler nada.
+    Events.on('block:regrow', (p) => {
+      if (Math.hypot(p.worldX - this.player.cx, p.worldY - this.player.cy) > 420) return;
+      const def = blockDef(p.blockId);
+      this.particles.sparks(p.worldX, p.worldY, 6, def.oreGlow ?? '#ffe9a3');
+    });
+    Events.on('collector:burrow', (p) => {
+      this.particles.dust(p.worldX, p.worldY, 2, '#8d6a48');
+    });
+
+    Events.on('collector:delivered', (p) => {
+      const ts = CONFIG.tileSize;
+      const x = this.worldInfo.depotCol * ts + ts / 2;
+      const y = (this.worldInfo.baseFloorRow - 1) * ts;
+      this.floating.push(x, y - 24, `Toupeira ${p.index + 1}: +${p.total}`, '#d8c3a5', 12);
+    });
     Events.on('clone:delivered', (p) => {
       const ts = CONFIG.tileSize;
       const x = this.worldInfo.depotCol * ts + ts / 2;
@@ -587,6 +639,7 @@ export class Game {
       pairs.push([data.tiles[i], data.tiles[i + 1]]);
     }
     this.world.applyOverrides(pairs);
+    this.world.applyRegrow(data.regrow);
 
     this.stats.setTool(data.toolIndex ?? 0);
     this.inventory.fromJSON(data.inventory);
@@ -602,6 +655,7 @@ export class Game {
     this.vitals.fromJSON(data.vitals);
     this.activeSkills.fromJSON(data.activeSkills);
     this.progression.fromJSON(data.progression);
+    this.collectors.fromJSON(data.collectors);
     this.mining.blocksMined = data.stats?.blocksMined ?? 0;
     this.deepestMeters = data.stats?.deepestMeters ?? 0;
     this.playTime = data.stats?.playTime ?? 0;
@@ -692,6 +746,7 @@ export class Game {
       );
     }
     this.cloneManager.update(dt);
+    this.collectors.update(dt);
     this.automation.update(dt);
     this.structures.update(dt);
     this.buildMode.updateEnergy();
@@ -699,6 +754,7 @@ export class Game {
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     this.playerSprite.update(dt, this.player);
 
+    this.world.setWatchPoint(this.player.cx, this.player.cy);
     this.world.update(dt);
     this.procs.update(dt);
     this.player.loadRatio = this.inventory.loadRatio;
@@ -934,6 +990,14 @@ export class Game {
     target.interact();
   }
 
+  /** Copias e toupeiras para o mapa e a bussola. */
+  private helperDots(): { x: number; y: number; tint: string }[] {
+    return [
+      ...this.cloneManager.clones.map((c) => ({ x: c.x, y: c.y, tint: c.tint })),
+      ...this.collectors.units.map((u) => ({ x: u.x, y: u.y, tint: '#d8a35a' })),
+    ];
+  }
+
   private findInteractable(): Interactable | null {
     let best: Interactable | null = null;
     let bestDist = Infinity;
@@ -987,6 +1051,7 @@ export class Game {
     this.drops.render(ctx);
     this.creatures.render(ctx);
     this.cloneManager.render(ctx);
+    this.collectors.render(ctx);
     this.mining.render(ctx);
     // Sprite real quando a arte existe; senao o placeholder vetorial.
     if (!this.playerSprite.render(ctx, this.player)) {
@@ -1144,6 +1209,7 @@ export class Game {
     SaveSystem.save({
       player: { x: this.player.cx, y: this.player.cy },
       tiles: flat,
+      regrow: this.world.serializeRegrow(),
       inventory: this.inventory.toJSON(),
       stock: this.stock.toJSON(),
       toolIndex: this.stats.toolIndex,
@@ -1160,6 +1226,7 @@ export class Game {
       vitals: this.vitals.toJSON(),
       activeSkills: this.activeSkills.toJSON(),
       progression: this.progression.toJSON(),
+      collectors: this.collectors.toJSON(),
       stats: {
         blocksMined: this.mining.blocksMined,
         deepestMeters: this.deepestMeters,

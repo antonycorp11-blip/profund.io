@@ -1,5 +1,6 @@
 import { BLOCK_IDS, blockDef, type BlockDef } from '../data/blocks';
 import { CONFIG } from '../data/config';
+import { Events } from '../core/events';
 
 export interface DamageResult {
   applied: boolean;
@@ -37,6 +38,12 @@ export class World {
   readonly chunkRows: number;
 
   private time = 0;
+  /** Minerios quebrados esperando a hora de voltar: index -> bloco e quando. */
+  private regrowQueue = new Map<number, { id: number; at: number }>();
+  /** Onde o jogador esta, para nao fazer bloco nascer em cima dele. */
+  private watchX = 0;
+  private watchY = 0;
+  private regrowTick = 0;
 
   constructor() {
     this.width = CONFIG.world.width;
@@ -182,6 +189,7 @@ export class World {
       this.damage[i] = 0;
       this.damaged.delete(i);
       this.setTile(col, row, BLOCK_IDS.AIR);
+      this.scheduleRegrow(i, def);
       return { applied: true, broken: true, def, progress: 1 };
     }
     this.damage[i] = next;
@@ -191,8 +199,92 @@ export class World {
   }
 
   /** Regenera dano de blocos que nao sao atingidos ha algum tempo. */
+  /**
+   * Agenda a volta de um minerio quebrado.
+   *
+   * Guarda o bloco que ESTAVA ali: a geracao e deterministica, mas reconstruir
+   * um tile dela isoladamente custaria mais que lembrar um numero.
+   */
+  private scheduleRegrow(index: number, def: BlockDef): void {
+    const cfg = CONFIG.regrow;
+    if (!cfg.enabled) return;
+    // So minerio volta. Pedra e terra ficam onde o jogador as deixou.
+    if (!def.tags.includes('ore')) return;
+    if (this.depthOfRow(Math.floor(index / this.width)) < cfg.minDepth) return;
+    this.regrowQueue.set(index, {
+      id: def.id,
+      at: this.time + cfg.delaySec + Math.random() * cfg.jitterSec,
+    });
+  }
+
+  /** Processa os minerios que ja podem voltar. */
+  private processRegrow(playerX: number, playerY: number): void {
+    const cfg = CONFIG.regrow;
+    if (!cfg.enabled || this.regrowQueue.size === 0) return;
+
+    let orcamento = Math.max(1, Math.round(cfg.perSecond * 0.25));
+    for (const [index, entry] of this.regrowQueue) {
+      if (orcamento <= 0) break;
+      if (this.time < entry.at) continue;
+
+      const col = index % this.width;
+      const row = Math.floor(index / this.width);
+      // Nunca na cara do jogador: bloco nascendo em cima dele seria injusto.
+      const dx = (col + 0.5) * this.tileSize - playerX;
+      const dy = (row + 0.5) * this.tileSize - playerY;
+      if (dx * dx + dy * dy < cfg.safeRadius * cfg.safeRadius) continue;
+      // O lugar precisa continuar vazio: se ha estrutura ou outro bloco ali,
+      // o jogador fez algo com aquele espaco e isso vale mais.
+      if (this.tiles[index] !== BLOCK_IDS.AIR) {
+        this.regrowQueue.delete(index);
+        continue;
+      }
+
+      this.setTile(col, row, entry.id);
+      this.regrowQueue.delete(index);
+      orcamento--;
+      Events.emit('block:regrow', {
+        col,
+        row,
+        blockId: entry.id,
+        worldX: (col + 0.5) * this.tileSize,
+        worldY: (row + 0.5) * this.tileSize,
+      });
+    }
+  }
+
+  /** Estado do renascimento, para o save. */
+  serializeRegrow(): number[] {
+    const out: number[] = [];
+    for (const [index, e] of this.regrowQueue) {
+      out.push(index, e.id, Math.max(0, Math.round(e.at - this.time)));
+    }
+    return out;
+  }
+
+  applyRegrow(flat: number[] | undefined): void {
+    this.regrowQueue.clear();
+    if (!flat) return;
+    for (let i = 0; i + 2 < flat.length; i += 3) {
+      this.regrowQueue.set(flat[i], { id: flat[i + 1], at: this.time + flat[i + 2] });
+    }
+  }
+
+  /** Onde o jogador esta agora (o renascimento evita a vizinhanca dele). */
+  setWatchPoint(x: number, y: number): void {
+    this.watchX = x;
+    this.watchY = y;
+  }
+
   update(dt: number): void {
     this.time += dt;
+
+    this.regrowTick -= dt;
+    if (this.regrowTick <= 0) {
+      this.regrowTick = 0.25;
+      this.processRegrow(this.watchX, this.watchY);
+    }
+
     if (this.damaged.size === 0) return;
     const delay = CONFIG.mining.damageResetDelay;
     const rate = CONFIG.mining.damageResetRate;
