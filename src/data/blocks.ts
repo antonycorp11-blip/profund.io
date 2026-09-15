@@ -1,0 +1,527 @@
+/**
+ * Definicao de todos os blocos do mundo.
+ * O tilemap guarda apenas o `id` numerico; tudo o mais vem daqui.
+ * Trocar cores por sprites depois nao exige mudar gameplay.
+ */
+
+import type { Rarity, ResourceId } from './resources';
+
+export type BlockType = 'ar' | 'terreno' | 'minerio' | 'estrutura' | 'especial';
+
+/**
+ * Etiquetas de bloco. Skills e procs consultam isto em vez de olhar o id:
+ * "fratura nao afeta blocos `ancient`", "jackpot so em `ore`", etc.
+ */
+export type BlockTag =
+  | 'soil'
+  | 'stone'
+  | 'hardStone'
+  | 'ore'
+  | 'rareOre'
+  | 'ancient'
+  | 'indestructible'
+  | 'special'
+  | 'quest'
+  | 'boss';
+
+export interface BlockDef {
+  /** Id numerico gravado no tilemap. */
+  id: number;
+  /** Chave legivel (debug / save / worldgen). */
+  key: string;
+  name: string;
+  type: BlockType;
+  /** Pontos de vida: dano necessario para quebrar. */
+  hp: number;
+  /** Recurso solto ao quebrar (null = nao solta nada). */
+  drop: ResourceId | null;
+  dropMin: number;
+  dropMax: number;
+  /** Chance de soltar o recurso (1 = sempre). */
+  dropChance: number;
+  rarity: Rarity;
+  /** Valor de referencia (usado para destaque visual/feedback). */
+  value: number;
+  /** Profundidade minima em metros para aparecer na geracao. */
+  minDepth: number;
+  /** Profundidade maxima em metros (Infinity = sem limite). */
+  maxDepth: number;
+  /** Tier minimo de ferramenta necessario para quebrar. */
+  minTool: number;
+  solid: boolean;
+  indestructible: boolean;
+  /** Cores placeholder do tile. */
+  color: string;
+  shade: string;
+  speckle: string;
+  /** Cor do "veio" desenhado por cima (minerios). */
+  oreColor?: string;
+  oreGlow?: string;
+  /** Emite luz propria (cristais). */
+  emissive?: number;
+  /** Chance base de um tile virar semente de veio deste minerio. */
+  veinChance?: number;
+  veinSizeMin?: number;
+  veinSizeMax?: number;
+  /** Etiquetas usadas por skills, procs e protecoes. */
+  tags: BlockTag[];
+  /**
+   * Pode espelhar a textura na vertical para variar o tile?
+   * Falso para blocos com topo definido (grama). Padrao: true.
+   */
+  artFlipY?: boolean;
+  /** Categoria de som (o AudioSystem decide o que tocar). */
+  sfxMaterial: 'terra' | 'pedra' | 'metal' | 'cristal' | 'estrutura';
+}
+
+export const BLOCK_IDS = {
+  AIR: 0,
+  DIRT: 1,
+  GRASS: 2,
+  STONE: 3,
+  COAL: 4,
+  COPPER: 5,
+  IRON: 6,
+  GOLD: 7,
+  CRYSTAL: 8,
+  BEDROCK: 9,
+  DARKSTONE: 10,
+  RUIN_BRICK: 11,
+  PLANK: 12,
+  RUBY: 13,
+  RELIC: 14,
+  VOIDSTONE: 15,
+} as const;
+
+export const BLOCKS: BlockDef[] = [
+  {
+    id: BLOCK_IDS.AIR,
+    key: 'air',
+    name: 'Ar',
+    type: 'ar',
+    hp: 0,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: [],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 0,
+    solid: false,
+    indestructible: true,
+    color: 'transparent',
+    shade: 'transparent',
+    speckle: 'transparent',
+    sfxMaterial: 'terra',
+  },
+  {
+    id: BLOCK_IDS.DIRT,
+    key: 'dirt',
+    name: 'Terra',
+    type: 'terreno',
+    hp: 18,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['soil'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: 70,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    color: '#6b4a2f',
+    shade: '#54381f',
+    speckle: '#83603f',
+    sfxMaterial: 'terra',
+  },
+  {
+    id: BLOCK_IDS.GRASS,
+    key: 'grass',
+    name: 'Solo com grama',
+    type: 'terreno',
+    hp: 18,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['soil'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: 2,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    color: '#6b4a2f',
+    shade: '#54381f',
+    speckle: '#83603f',
+    artFlipY: false,
+    sfxMaterial: 'terra',
+  },
+  {
+    id: BLOCK_IDS.STONE,
+    key: 'stone',
+    name: 'Pedra',
+    type: 'terreno',
+    hp: 34,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 1,
+    dropChance: 0.35,
+    tags: ['stone'],
+    rarity: 'comum',
+    value: 1,
+    minDepth: 6,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    color: '#5c5c66',
+    shade: '#46464f',
+    speckle: '#74747f',
+    sfxMaterial: 'pedra',
+  },
+  {
+    id: BLOCK_IDS.DARKSTONE,
+    key: 'darkstone',
+    name: 'Pedra profunda',
+    type: 'terreno',
+    hp: 58,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 0.45,
+    tags: ['stone', 'hardStone'],
+    rarity: 'comum',
+    value: 1,
+    minDepth: 120,
+    maxDepth: Infinity,
+    minTool: 2,
+    solid: true,
+    indestructible: false,
+    color: '#3b3b46',
+    shade: '#2b2b33',
+    speckle: '#50505e',
+    sfxMaterial: 'pedra',
+  },
+  {
+    id: BLOCK_IDS.COAL,
+    key: 'coal',
+    name: 'Veio de carvao',
+    type: 'minerio',
+    hp: 30,
+    drop: 'coal',
+    dropMin: 1,
+    dropMax: 3,
+    dropChance: 1,
+    tags: ['stone', 'ore'],
+    rarity: 'comum',
+    value: 4,
+    minDepth: 3,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    color: '#5a5a64',
+    shade: '#43434c',
+    speckle: '#6d6d78',
+    oreColor: '#1f1f25',
+    oreGlow: '#3d3d47',
+    veinChance: 0.02,
+    veinSizeMin: 3,
+    veinSizeMax: 8,
+    sfxMaterial: 'pedra',
+  },
+  {
+    id: BLOCK_IDS.COPPER,
+    key: 'copper',
+    name: 'Veio de cobre',
+    type: 'minerio',
+    hp: 44,
+    drop: 'copper',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['stone', 'ore'],
+    rarity: 'incomum',
+    value: 9,
+    minDepth: 14,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    color: '#5a5a64',
+    shade: '#43434c',
+    speckle: '#6d6d78',
+    oreColor: '#c0713a',
+    oreGlow: '#f0b077',
+    veinChance: 0.008,
+    veinSizeMin: 2,
+    veinSizeMax: 6,
+    sfxMaterial: 'metal',
+  },
+  {
+    id: BLOCK_IDS.IRON,
+    key: 'iron',
+    name: 'Veio de ferro',
+    type: 'minerio',
+    hp: 62,
+    drop: 'iron',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['stone', 'hardStone', 'ore'],
+    rarity: 'incomum',
+    value: 16,
+    minDepth: 40,
+    maxDepth: Infinity,
+    minTool: 2,
+    solid: true,
+    indestructible: false,
+    color: '#55555f',
+    shade: '#3f3f48',
+    speckle: '#6a6a76',
+    oreColor: '#b9c2cc',
+    oreGlow: '#eef3f8',
+    veinChance: 0.006,
+    veinSizeMin: 2,
+    veinSizeMax: 5,
+    sfxMaterial: 'metal',
+  },
+  {
+    id: BLOCK_IDS.GOLD,
+    key: 'gold',
+    name: 'Veio de ouro',
+    type: 'minerio',
+    hp: 78,
+    drop: 'gold',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['stone', 'hardStone', 'ore', 'rareOre'],
+    rarity: 'raro',
+    value: 42,
+    minDepth: 85,
+    maxDepth: Infinity,
+    minTool: 3,
+    solid: true,
+    indestructible: false,
+    color: '#4e4e58',
+    shade: '#3a3a42',
+    speckle: '#62626d',
+    oreColor: '#d9a828',
+    oreGlow: '#ffe9a3',
+    emissive: 0.12,
+    veinChance: 0.0032,
+    veinSizeMin: 1,
+    veinSizeMax: 4,
+    sfxMaterial: 'metal',
+  },
+  {
+    id: BLOCK_IDS.CRYSTAL,
+    key: 'crystal',
+    name: 'Cristal bruto',
+    type: 'minerio',
+    hp: 96,
+    drop: 'crystal',
+    dropMin: 1,
+    dropMax: 1,
+    dropChance: 1,
+    tags: ['stone', 'hardStone', 'ore', 'rareOre'],
+    rarity: 'epico',
+    value: 110,
+    minDepth: 140,
+    maxDepth: Infinity,
+    minTool: 3,
+    solid: true,
+    indestructible: false,
+    color: '#413b52',
+    shade: '#312c3e',
+    speckle: '#564d6c',
+    oreColor: '#8c5ce0',
+    oreGlow: '#e0c8ff',
+    emissive: 0.45,
+    veinChance: 0.002,
+    veinSizeMin: 1,
+    veinSizeMax: 3,
+    sfxMaterial: 'cristal',
+  },
+  {
+    id: BLOCK_IDS.RUIN_BRICK,
+    key: 'ruin_brick',
+    name: 'Tijolo antigo',
+    type: 'estrutura',
+    hp: 120,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 1,
+    dropChance: 0.6,
+    tags: ['ancient', 'hardStone', 'special'],
+    rarity: 'incomum',
+    value: 2,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 2,
+    solid: true,
+    indestructible: false,
+    color: '#4a5352',
+    shade: '#374040',
+    speckle: '#5e6a68',
+    emissive: 0.05,
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.PLANK,
+    key: 'plank',
+    name: 'Estrutura da base',
+    type: 'estrutura',
+    hp: 0,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['special', 'indestructible'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 99,
+    solid: true,
+    indestructible: true,
+    color: '#7a5533',
+    shade: '#5d3f25',
+    speckle: '#96683f',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.RUBY,
+    key: 'ruby',
+    name: 'Veio de rubi',
+    type: 'minerio',
+    hp: 120,
+    drop: 'ruby',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['stone', 'hardStone', 'ore', 'rareOre'],
+    rarity: 'epico',
+    value: 210,
+    minDepth: 900,
+    maxDepth: Infinity,
+    minTool: 3,
+    solid: true,
+    indestructible: false,
+    color: '#4a2f2a',
+    shade: '#382220',
+    speckle: '#61403a',
+    oreColor: '#c0392b',
+    oreGlow: '#ff8a7a',
+    emissive: 0.3,
+    sfxMaterial: 'cristal',
+  },
+  {
+    id: BLOCK_IDS.RELIC,
+    key: 'relic',
+    name: 'Fragmento antigo',
+    type: 'minerio',
+    hp: 150,
+    drop: 'relic',
+    dropMin: 1,
+    dropMax: 1,
+    dropChance: 1,
+    tags: ['ancient', 'hardStone', 'ore', 'rareOre'],
+    rarity: 'epico',
+    value: 380,
+    minDepth: 1300,
+    maxDepth: Infinity,
+    minTool: 3,
+    solid: true,
+    indestructible: false,
+    color: '#2c4038',
+    shade: '#1f2e28',
+    speckle: '#3d564a',
+    oreColor: '#2f9a7a',
+    oreGlow: '#9affd8',
+    emissive: 0.25,
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.VOIDSTONE,
+    key: 'voidstone',
+    name: 'Pedra do vazio',
+    type: 'minerio',
+    hp: 185,
+    drop: 'voidstone',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['stone', 'hardStone', 'ore', 'rareOre'],
+    rarity: 'epico',
+    value: 640,
+    minDepth: 1700,
+    maxDepth: Infinity,
+    minTool: 3,
+    solid: true,
+    indestructible: false,
+    color: '#2a1f38',
+    shade: '#1c1426',
+    speckle: '#3d2d52',
+    oreColor: '#6a2fd0',
+    oreGlow: '#c08aff',
+    emissive: 0.5,
+    sfxMaterial: 'cristal',
+  },
+  {
+    id: BLOCK_IDS.BEDROCK,
+    key: 'bedrock',
+    name: 'Rocha-mae',
+    type: 'especial',
+    hp: 0,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['indestructible', 'special'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 99,
+    solid: true,
+    indestructible: true,
+    color: '#26262c',
+    shade: '#17171c',
+    speckle: '#35353d',
+    sfxMaterial: 'pedra',
+  },
+];
+
+const BY_ID: BlockDef[] = [];
+const BY_KEY = new Map<string, BlockDef>();
+for (const b of BLOCKS) {
+  BY_ID[b.id] = b;
+  BY_KEY.set(b.key, b);
+}
+
+export function blockDef(id: number): BlockDef {
+  return BY_ID[id] ?? BY_ID[BLOCK_IDS.AIR];
+}
+
+export function blockByKey(key: string): BlockDef | undefined {
+  return BY_KEY.get(key);
+}
+
+export function isSolid(id: number): boolean {
+  return BY_ID[id]?.solid ?? false;
+}
+
+/** Minerios candidatos a geracao, na ordem em que sao testados (mais raro primeiro). */
+export const ORE_BLOCKS: BlockDef[] = BLOCKS.filter((b) => b.veinChance !== undefined).sort(
+  (a, b) => (a.veinChance ?? 1) - (b.veinChance ?? 1)
+);

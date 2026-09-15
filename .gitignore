@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vercel/
+.DS_Store
+*.local
+*.log
+
+# arte bruta gerada por IA (as versoes recortadas ficam em public/art)
+arte-bruta/
