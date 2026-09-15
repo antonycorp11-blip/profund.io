@@ -36,6 +36,8 @@ const SCAN_INTERVAL = 0.45;
 const RELOCATE_INTERVAL = 1.2;
 /** Intervalo entre checagens de "este bolsao ainda vale a pena?" (s). */
 const MIGRATE_INTERVAL = 5;
+/** Sem quebrar nem entregar nada por este tempo, a copia se resseta (s). */
+const IDLE_LIMIT = 14;
 const STUCK_LIMIT = 9;
 
 /**
@@ -62,6 +64,7 @@ export class Clone {
   private scanTimer = 0;
   private relocateTimer = 0;
   private migrateTimer = 0;
+  private idleTimer = 0;
   private mineTimer = 0;
   private stuckTimer = 0;
   private lastProgressX = 0;
@@ -149,6 +152,8 @@ export class Clone {
     this.swing = Math.max(0, this.swing - dt * 3.2);
     this.walkPhase += dt * 6;
 
+    this.watchdog(dt);
+
     if (this.config.focus === 'coletar') this.updateCollector(dt);
     else this.updateMiner(dt);
 
@@ -215,6 +220,7 @@ export class Clone {
   }
 
   private finishDelivery(deliver: (items: [ResourceId, number][]) => void): void {
+    this.markProgress();
     deliver(this.entries());
     this.items.clear();
     this.state = 'procurando';
@@ -315,6 +321,7 @@ export class Clone {
   }
 
   private onBroke(col: number, row: number, def: BlockDef): void {
+    this.markProgress();
     const ts = this.world.tileSize;
     if (!def.drop || Math.random() >= def.dropChance) return;
     if (!this.accepts(def.drop)) {
@@ -406,7 +413,14 @@ export class Clone {
 
   /** Se ficar preso, volta para a base em vez de travar para sempre. */
   private checkStuck(dt: number): void {
-    if (Math.abs(this.x - this.lastProgressX) > 6 || Math.abs(this.y - this.lastProgressY) > 6) {
+    // Minerar e progresso, mesmo parada: um bloco duro leva segundos e nao
+    // pode contar como travamento — senao ela e arrancada do proprio trabalho.
+    const trabalhando = this.state === 'minerando' || this.swing > 0.05;
+    if (
+      trabalhando ||
+      Math.abs(this.x - this.lastProgressX) > 6 ||
+      Math.abs(this.y - this.lastProgressY) > 6
+    ) {
       this.lastProgressX = this.x;
       this.lastProgressY = this.y;
       this.stuckTimer = 0;
@@ -419,6 +433,35 @@ export class Clone {
     this.x = this.homeX;
     this.y = this.homeY;
     Events.emit('ui:toast', { text: `Copia ${this.index + 1} reposicionada.`, tone: 'info' });
+  }
+
+  /**
+   * Cao de guarda.
+   *
+   * Se ela passar muito tempo sem quebrar nada nem entregar nada, alguma coisa
+   * deu errado que nao vale a pena adivinhar: pode ser um estado antigo vindo
+   * do save, um deposito inalcancavel ou um buraco sem saida. A saida e sempre
+   * a mesma: esquecer o que estava fazendo, procurar trabalho de novo e, se
+   * nao houver, descer. Vale mais uma copia teimosa que uma copia parada.
+   */
+  private watchdog(dt: number): void {
+    this.idleTimer += dt;
+    if (this.idleTimer < IDLE_LIMIT) return;
+    this.idleTimer = 0;
+    this.state = 'procurando';
+    this.target = null;
+    this.sendTimer = 0;
+    this.stuckTimer = 0;
+    if (!this.relocate(true) && !this.relocate(false)) this.digDeeper();
+    Events.emit('ui:toast', {
+      text: `Copia ${this.index + 1} procurando trabalho novo.`,
+      tone: 'info',
+    });
+  }
+
+  /** Zera o cao de guarda: houve trabalho de verdade. */
+  private markProgress(): void {
+    this.idleTimer = 0;
   }
 
   /**
