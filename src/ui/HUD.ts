@@ -15,6 +15,9 @@ export class HUD {
   private healthEl: HTMLDivElement;
   private healthFill: HTMLElement;
   private healthLabel: HTMLElement;
+  private climbEl: HTMLDivElement;
+  private climbFill: HTMLElement;
+  private lastClimb = -1;
   private moneyEl: HTMLDivElement;
   private moneyValue: HTMLElement;
   private moneyFloat: HTMLElement;
@@ -29,6 +32,7 @@ export class HUD {
 
   private lastValues = new Map<ResourceId, number>();
   private lastPrompt: string | null = null;
+  private promptAction: (() => void) | null = null;
   private lastBag = -1;
   private lastHealth = -1;
   private lastPoints = -1;
@@ -73,8 +77,10 @@ export class HUD {
     chips.className = 'chips';
     left.appendChild(chips);
 
+    // Todos os recursos ganham chip; quem nao esta no bolso fica escondido.
+    // Antes a lista era fixa em tres, entao pedra, ouro e cristal entravam na
+    // mochila sem nenhum contador se mexer — parecia que nao eram coletados.
     for (const id of RESOURCE_ORDER) {
-      if (!RESOURCES[id].showInHud) continue;
       const chip = document.createElement('div');
       chip.className = 'chip';
       // Icone real quando a arte existe; senao o losango colorido.
@@ -97,6 +103,7 @@ export class HUD {
       chip.appendChild(dot);
       chip.appendChild(value);
       chip.title = RESOURCES[id].name;
+      chip.hidden = !RESOURCES[id].showInHud;
       chips.appendChild(chip);
       this.chipEls.set(id, { el: chip, value });
     }
@@ -118,11 +125,22 @@ export class HUD {
     this.healthFill = this.healthEl.querySelector('.bar > i') as HTMLElement;
     this.healthLabel = this.healthEl.querySelector('[data-health-count]') as HTMLElement;
 
+    // Vigor da escalada: fica junto das outras barras em vez de flutuar sobre a
+    // cabeca do heroi, onde tapava o proprio personagem. So aparece escalando.
+    this.climbEl = document.createElement('div');
+    this.climbEl.className = 'bag climb-gauge';
+    this.climbEl.hidden = true;
+    this.climbEl.innerHTML = `
+      <div class="bag-label"><span>Vigor</span><span data-climb-count></span></div>
+      <div class="bar"><i></i></div>`;
+    this.climbFill = this.climbEl.querySelector('.bar > i') as HTMLElement;
+
     const bars = document.createElement('div');
     bars.className = 'hud-bars';
     bars.appendChild(this.bagEl);
     bars.appendChild(this.healthEl);
     left.appendChild(bars);
+    left.appendChild(this.climbEl);
 
     this.root.appendChild(left);
 
@@ -153,21 +171,27 @@ export class HUD {
     buttons.appendChild(btnMenu);
     right.appendChild(buttons);
 
-    // Vaga do minimapa: ele entra aqui, na coluna da direita, em vez de ficar
-    // solto no meio do topo tapando justamente o que esta a frente do jogador.
-    this.mapSlotEl = document.createElement('div');
-    this.mapSlotEl.className = 'hud-map-slot';
-    right.appendChild(this.mapSlotEl);
-
     this.quotaEl = document.createElement('div');
     this.quotaEl.className = 'quota';
     this.buildQuota();
     right.appendChild(this.quotaEl);
     this.root.appendChild(right);
 
+    // --- minimapa: canto inferior esquerdo, por cima da area do joystick ---
+    // Translucido e sem captura de toque: o dedo que move o personagem
+    // atravessa o mapa. So o selo "MAPA" e clicavel.
+    this.mapSlotEl = document.createElement('div');
+    this.mapSlotEl.className = 'hud-map-slot';
+    this.root.appendChild(this.mapSlotEl);
+
     // --- prompt de interacao ---
     this.promptEl = document.createElement('div');
     this.promptEl.className = 'prompt';
+    this.promptEl.addEventListener('pointerdown', (e) => {
+      if (!this.promptAction) return;
+      e.preventDefault();
+      this.promptAction();
+    });
     this.root.appendChild(this.promptEl);
 
     // --- toasts ---
@@ -291,6 +315,8 @@ export class HUD {
       const prev = this.lastValues.get(id) ?? 0;
       this.lastValues.set(id, v);
       refs.value.textContent = String(v);
+      // Aparece no instante em que o primeiro pedaco entra na mochila.
+      refs.el.hidden = v <= 0 && !RESOURCES[id].showInHud;
       if (v > prev) {
         refs.el.classList.remove('gain');
         void refs.el.offsetWidth;
@@ -341,7 +367,9 @@ export class HUD {
     if (prompt !== this.lastPrompt) {
       this.lastPrompt = prompt;
       if (prompt) {
-        this.promptEl.innerHTML = `<b>${interactKeyHint}</b> ${prompt}`;
+        this.promptEl.innerHTML = interactKeyHint
+          ? `<b>${interactKeyHint}</b> ${prompt}`
+          : `${prompt}`;
         this.promptEl.classList.add('show');
       } else {
         this.promptEl.classList.remove('show');
@@ -350,9 +378,33 @@ export class HUD {
     }
   }
 
-  /** Onde o minimapa deve se montar (coluna da direita, sob os botoes). */
+  /**
+   * Define se o aviso de interacao e clicavel e o que ele faz.
+   *
+   * Sem botao AGIR, o proprio aviso na tela vira o botao — e o unico jeito de
+   * abrir a oficina no celular sem que passar perto dela abra sozinha.
+   */
+  setPromptTarget(action: (() => void) | null): void {
+    this.promptAction = action;
+    this.promptEl.classList.toggle('tappable', action !== null);
+    this.promptEl.style.pointerEvents = action ? 'auto' : 'none';
+  }
+
+  /** Onde o minimapa deve se montar. */
   mapSlot(): HTMLElement {
     return this.mapSlotEl;
+  }
+
+  /** Vigor da escalada. Some quando o jogador nao esta agarrado. */
+  setClimb(ratio: number, visible: boolean): void {
+    const shouldHide = !visible;
+    if (this.climbEl.hidden !== shouldHide) this.climbEl.hidden = shouldHide;
+    if (!visible) return;
+    const pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+    if (pct === this.lastClimb) return;
+    this.lastClimb = pct;
+    this.climbFill.style.width = `${pct}%`;
+    this.climbEl.classList.toggle('low', pct <= 25);
   }
 
   /** Barra de vida; escreve so quando muda. */

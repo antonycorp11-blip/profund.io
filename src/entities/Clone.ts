@@ -454,9 +454,10 @@ export class Clone {
     ctx.ellipse(this.x, this.y + this.h / 2 + 1, this.w * 0.5, 3, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    const artFacing = stripImg && stripName ? art.stripFacing : 1;
     ctx.save();
     ctx.translate(Math.round(this.x), Math.round(top));
-    if (this.facing === -1) ctx.scale(-1, 1);
+    if (this.facing !== artFacing) ctx.scale(-1, 1);
     ctx.drawImage(src, sx, sy, frameW, frameH, -w / 2, 0, w, h);
     ctx.restore();
 

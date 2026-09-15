@@ -323,25 +323,6 @@ export class Player {
     return this.climbStamina / CONFIG.player.climb.stamina;
   }
 
-  /**
-   * Barra de forca acima da cabeca enquanto escala.
-   * Desenhada depois da iluminacao (senao some no escuro, que e justamente
-   * onde se escala). Sem ela o jogador nao tem como saber que existe limite.
-   */
-  renderClimbGauge(ctx: CanvasRenderingContext2D): void {
-    if (this.climbingWall === 0 || this.chimney) return;
-    const ratio = clamp(this.climbRatio, 0, 1);
-    if (ratio >= 1 && !this.climbTired) return;
-
-    const w = 26;
-    const x = this.cx - w / 2;
-    const y = this.y - 12;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(x, y, w, 4);
-    ctx.fillStyle = this.climbTired ? '#e05a5a' : ratio < 0.3 ? '#ff9a5c' : '#9fd6ff';
-    ctx.fillRect(x, y, w * ratio, 4);
-  }
-
   render(ctx: CanvasRenderingContext2D): void {
     const squash = 1 - this.landSquash * 0.22;
     const stretch = 1 + this.landSquash * 0.18;

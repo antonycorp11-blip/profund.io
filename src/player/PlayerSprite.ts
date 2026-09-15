@@ -76,9 +76,11 @@ export class PlayerSprite {
     ctx: CanvasRenderingContext2D,
     player: Player,
     h: number,
-    hasStripArt: boolean
+    hasStripArt: boolean,
+    flipped: boolean
   ): void {
-    const dir = player.climbingWall * player.facing; // +1 = lado da parede
+    // +1 = lado da parede no espaco local (que esta espelhado quando flipped).
+    const dir = player.climbingWall * (flipped ? -1 : 1);
 
     // Com a tira dedicada o ciclo ja esta desenhado: basta encostar na parede.
     if (hasStripArt) {
@@ -180,9 +182,11 @@ export class PlayerSprite {
     let sy = 0;
 
     let drawH = art.drawHeight;
+    let usingStrip = false;
     if (sheet && strip) {
       sx = strip.index * frameW;
       drawH = art.stripDrawHeight;
+      usingStrip = true;
     } else {
       sheet = Assets.character();
       if (!sheet) return false;
@@ -207,11 +211,15 @@ export class PlayerSprite {
       ctx.fill();
     }
 
+    // Espelha so quando o lado desejado difere do lado que a arte ja olha.
+    const artFacing = usingStrip ? art.stripFacing : 1;
+    const flipped = player.facing !== artFacing;
+
     ctx.save();
     ctx.translate(Math.round(player.cx), Math.round(top));
-    if (player.facing === -1) ctx.scale(-1, 1);
+    if (flipped) ctx.scale(-1, 1);
     if (player.climbingWall !== 0) {
-      this.climbTransform(ctx, player, h, strip?.name === 'climb');
+      this.climbTransform(ctx, player, h, strip?.name === 'climb', flipped);
     }
     // Squash ao aterrissar continua vindo do codigo: a arte nao precisa de quadro para isso.
     if (player.landSquash > 0) {

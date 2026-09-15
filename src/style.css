@@ -179,6 +179,11 @@ body {
   max-width: 100%;
 }
 
+/* `display: flex` vence o [hidden] do navegador — precisa ser explicito. */
+.chip[hidden] {
+  display: none;
+}
+
 .chip {
   display: flex;
   align-items: center;
@@ -277,6 +282,32 @@ body {
 
 .bag.full .bag-label {
   color: var(--warn);
+}
+
+/* --- vigor da escalada --- */
+.climb-gauge[hidden] {
+  display: none;
+}
+
+.climb-gauge {
+  width: 100%;
+  animation: gauge-in 0.16s ease-out;
+}
+
+.climb-gauge .bar > i {
+  background: linear-gradient(90deg, #4f9fd8, #9fd6ff);
+  transition: width 0.08s linear;
+}
+
+.climb-gauge.low .bar > i {
+  background: linear-gradient(90deg, #d8683f, #ffb199);
+}
+
+@keyframes gauge-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 /* --- vida --- */
@@ -615,6 +646,18 @@ body {
   transition: opacity 0.14s, transform 0.14s;
   white-space: nowrap;
 }
+
+/* Sem botao AGIR, o aviso e o botao: precisa parecer tocavel. */
+.prompt.tappable {
+  border-color: rgba(255, 205, 110, 0.7);
+  background: linear-gradient(150deg, rgba(58, 43, 26, 0.96), rgba(26, 20, 15, 0.94));
+  cursor: pointer;
+}
+
+.prompt.tappable:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
 
 .prompt.show {
   opacity: 1;
@@ -1063,8 +1106,9 @@ body {
 
 .debug {
   position: absolute;
-  left: calc(var(--safe-l) + 10px);
-  bottom: calc(var(--safe-b) + 8px);
+  /* Sai da esquerda: o minimapa mora la agora. */
+  right: calc(var(--safe-r) + 10px);
+  bottom: calc(var(--safe-b) + 4px);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.45);
   font-family: ui-monospace, monospace;
@@ -1494,24 +1538,34 @@ body {
 
 /* ---------------- Minimapa ---------------- */
 
+/* Minimapa sobre a area do joystick: translucido e sem capturar o toque. */
 .hud-map-slot {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
+  position: absolute;
+  left: calc(var(--safe-l) + 10px);
+  bottom: calc(var(--safe-b) + 10px);
+  width: min(24vw, 150px);
   pointer-events: none;
 }
 
 .minimap {
   position: relative;
   width: 100%;
-  pointer-events: auto;
+  /* O dedo do joystick passa direto; so o selo MAPA e clicavel. */
+  pointer-events: none;
   cursor: pointer;
-  background: var(--panel);
-  border: 1px solid var(--stroke);
+  opacity: 0.66;
+  background: rgba(10, 8, 7, 0.34);
+  border: 1px solid rgba(255, 224, 170, 0.14);
   border-radius: 10px;
   padding: 4px 4px 3px;
   line-height: 0;
-  backdrop-filter: blur(3px);
+  transition: opacity 0.18s ease-out;
+}
+
+/* Ao encostar no selo o mapa fica legivel por inteiro. */
+.minimap:hover,
+.minimap.peek {
+  opacity: 0.95;
 }
 
 .minimap.hidden {
@@ -1552,7 +1606,7 @@ body {
   grid-column: 2;
   align-self: center;
   color: #ffdd96;
-  font-size: 17px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -1570,19 +1624,22 @@ body {
 
 .minimap-hint {
   position: absolute;
-  right: 6px;
-  top: 6px;
-  font-size: 8px;
+  /* Canto superior direito: o mais longe possivel de onde o polegar descansa. */
+  right: 4px;
+  top: 4px;
+  pointer-events: auto;
+  padding: 4px 9px !important;
+  font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  background: rgba(0, 0, 0, 0.5);
-  padding: 1px 5px;
+  color: rgba(255, 244, 220, 0.85);
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(255, 224, 170, 0.22);
   border-radius: 999px;
   line-height: 1.5;
 }
 
-/* Com o minimapa na coluna da direita, o centro do topo fica livre. */
+/* Com o minimapa no rodape, o centro do topo fica livre para os avisos. */
 .toasts {
   top: calc(var(--safe-t) + 52px);
 }

@@ -99,6 +99,9 @@ export class Game {
   private vitals = new Vitals(this.attrs);
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
+  /** Alvo que ja disparou sozinho neste encontro. */
+  private autoArmedFor: string | null = null;
+  private autoCooldown = 0;
 
   private interactables: Interactable[] = [];
   private clueObjects: ClueObject[] = [];
@@ -575,9 +578,7 @@ export class Game {
     for (const e of this.interactables) e.update?.(dt);
 
     const target = this.findInteractable();
-    if (!uiBlocking && target && this.input.wasPressed('interact')) {
-      target.interact();
-    }
+    this.updateInteraction(dt, target, uiBlocking);
 
     this.camera.follow(this.player.cx, this.player.cy, this.player.vx, dt);
     this.camera.update(dt);
@@ -603,9 +604,10 @@ export class Game {
     }
 
     this.hud.setHealth(this.vitals.health, this.vitals.max);
+    this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
     this.hud.update(
       target?.prompt() ?? null,
-      this.touch.isVisible() ? 'AGIR' : 'E',
+      target?.auto ? '' : 'E',
       this.skills.points
     );
     if (CONFIG.debug.showFps) {
@@ -694,6 +696,50 @@ export class Game {
     this.returnToBase();
     Events.emit('player:died', { lost });
     Events.emit('player:revived', {});
+  }
+
+  /**
+   * Interacao sem botao.
+   *
+   * O que e instantaneo dispara sozinho ao chegar perto (`auto`), com trava
+   * para nao repetir enquanto o jogador continua parado ali. O que abre tela
+   * continua exigindo uma acao: tocar no proprio aviso, ou a tecla de sempre no
+   * teclado. Assim passar pela oficina nunca sequestra o jogo.
+   */
+  private updateInteraction(dt: number, target: Interactable | null, uiBlocking: boolean): void {
+    this.autoCooldown = Math.max(0, this.autoCooldown - dt);
+
+    if (!target) {
+      this.autoArmedFor = null;
+      this.hud.setPromptTarget(null);
+      return;
+    }
+    this.hud.setPromptTarget(target.auto ? null : () => target.interact());
+
+    if (uiBlocking) return;
+
+    // Tecla/botao explicito continua valendo para tudo.
+    if (this.input.wasPressed('interact')) {
+      target.interact();
+      this.autoArmedFor = target.id;
+      this.autoCooldown = CONFIG.player.autoInteractCooldown;
+      return;
+    }
+
+    if (!target.auto) return;
+    // Ja disparou neste encontro: so rearma depois de sair e voltar.
+    if (this.autoArmedFor === target.id && this.autoCooldown > 0) return;
+    if (this.autoArmedFor === target.id) {
+      // Deposito com mochila nova: vale entregar de novo.
+      if (!this.inventory.isEmpty && target.id === 'depot') {
+        this.autoCooldown = CONFIG.player.autoInteractCooldown;
+        target.interact();
+      }
+      return;
+    }
+    this.autoArmedFor = target.id;
+    this.autoCooldown = CONFIG.player.autoInteractCooldown;
+    target.interact();
   }
 
   private findInteractable(): Interactable | null {
@@ -798,7 +844,6 @@ export class Game {
       Math.round(-this.camera.top * this.camera.scale * this.dpr)
     );
     for (const e of this.interactables) e.renderOverlay?.(ctx);
-    this.player.renderClimbGauge(ctx);
     this.floating.render(ctx);
 
     if (this.vitals.hurtFlash > 0 || this.vitals.dead) {

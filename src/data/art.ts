@@ -33,6 +33,12 @@ export interface CharacterArt {
    * encolheria ao trocar de formato de arte.
    */
   stripDrawHeight: number;
+  /**
+   * Para que lado a arte das tiras olha: 1 direita, -1 esquerda.
+   * A folha 4x4 antiga olhava para a direita; estas tiras olham para a
+   * esquerda. Sem este dado o heroi anda de costas.
+   */
+  stripFacing: 1 | -1;
   strips: Record<string, StripDef>;
   cols: number;
   /** Tamanho de cada quadro dentro da folha. */
@@ -171,6 +177,7 @@ export const ART = {
      */
     stripFrame: 128,
     stripDrawHeight: 66,
+    stripFacing: -1,
     strips: {
       idle: { file: 'idle.png', frames: 8, fps: 6 },
       walk: { file: 'walk.png', frames: 8, fps: 13 },

@@ -62,6 +62,9 @@ export class RescueNpc implements Interactable {
     Events.emit('ui:toast', { text: `${this.def.name} agora vive na base.`, tone: 'good' });
   }
 
+  /** Resgate acontece ao alcancar a pessoa. */
+  readonly auto = true;
+
   prompt(): string | null {
     if (this.state === 'trapped' || this.state === 'safe' || this.state === 'home') {
       return 'Falar com ' + this.def.name;

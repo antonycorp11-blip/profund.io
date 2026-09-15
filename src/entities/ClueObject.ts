@@ -19,6 +19,9 @@ export class ClueObject implements Interactable {
     this.y = def.row * ts + ts / 2;
   }
 
+  /** Pista se le sozinha ao chegar perto. */
+  readonly auto = true;
+
   prompt(): string | null {
     return this.found ? 'Reler marca' : this.def.prompt;
   }

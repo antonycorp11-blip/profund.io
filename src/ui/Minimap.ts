@@ -47,7 +47,19 @@ export class Minimap {
     this.ctx = c;
 
     this.label = this.root.querySelector('.minimap-label') as HTMLElement;
-    this.root.addEventListener('click', () => this.onOpen());
+
+    // So o selo abre o mapa. O resto do minimapa e "atravessavel": ele fica
+    // por cima da area do joystick, e roubar esse toque tornaria o jogo
+    // injogavel no celular.
+    const hint = this.root.querySelector('.minimap-hint') as HTMLElement;
+    hint.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      this.onOpen();
+    });
+    // Enquanto o dedo estiver no selo, o mapa fica opaco para dar uma olhada.
+    hint.addEventListener('pointerenter', () => this.root.classList.add('peek'));
+    hint.addEventListener('pointerleave', () => this.root.classList.remove('peek'));
   }
 
   setVisible(v: boolean): void {

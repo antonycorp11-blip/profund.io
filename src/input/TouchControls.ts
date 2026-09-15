@@ -39,10 +39,11 @@ export class TouchControls {
     this.stickKnob = this.root.querySelector('[data-knob]') as HTMLDivElement;
 
     const buttons = this.root.querySelector('.touch-buttons') as HTMLDivElement;
+    // Sem botao AGIR: chegar perto ja resolve o que e instantaneo, e o que
+    // abre tela vira um toque no proprio aviso na tela.
     const specs: PadButtonSpec[] = [
       { id: 'btn-gadget', label: 'GADGET', button: 'gadget', cls: 'small locked', locked: true },
       { id: 'btn-dash', label: 'DASH', button: 'dash', cls: 'small locked', locked: true },
-      { id: 'btn-interact', label: 'AGIR', button: 'interact', cls: 'small' },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];

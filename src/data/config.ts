@@ -91,6 +91,8 @@ export const CONFIG = {
     pickupRadius: 18,
     /** Raio de interacao com objetos/NPC. */
     interactRadius: 52,
+    /** Trava entre duas interacoes automaticas com o mesmo objeto (s). */
+    autoInteractCooldown: 1.2,
   },
 
   mining: {
