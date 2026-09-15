@@ -1167,7 +1167,6 @@ body {
 
 .debug {
   position: absolute;
-  /* Sai da esquerda: o minimapa mora la agora. */
   right: calc(var(--safe-r) + 10px);
   bottom: calc(var(--safe-b) + 4px);
   font-size: 10px;
@@ -1599,12 +1598,10 @@ body {
 
 /* ---------------- Minimapa ---------------- */
 
-/* Minimapa sobre a area do joystick: translucido e sem capturar o toque. */
+/* Minimapa fechando a coluna da esquerda, abaixo das barras. */
 .hud-map-slot {
-  position: absolute;
-  left: calc(var(--safe-l) + 10px);
-  bottom: calc(var(--safe-b) + 10px);
-  width: min(20vw, 124px);
+  width: 100%;
+  max-width: 168px;
   pointer-events: none;
 }
 
@@ -1614,9 +1611,9 @@ body {
   /* O dedo do joystick passa direto; so o selo MAPA e clicavel. */
   pointer-events: none;
   cursor: pointer;
-  opacity: 0.66;
-  background: rgba(10, 8, 7, 0.34);
-  border: 1px solid rgba(255, 224, 170, 0.14);
+  opacity: 0.92;
+  background: rgba(10, 8, 7, 0.62);
+  border: 1px solid rgba(255, 224, 170, 0.18);
   border-radius: 10px;
   padding: 4px 4px 3px;
   line-height: 0;
@@ -1626,7 +1623,7 @@ body {
 /* Ao encostar no selo o mapa fica legivel por inteiro. */
 .minimap:hover,
 .minimap.peek {
-  opacity: 0.95;
+  opacity: 1;
 }
 
 .minimap.hidden {

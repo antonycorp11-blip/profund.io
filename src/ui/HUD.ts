@@ -142,6 +142,13 @@ export class HUD {
     left.appendChild(bars);
     left.appendChild(this.climbEl);
 
+    // Minimapa fecha a coluna da esquerda. E o unico canto fora das duas zonas
+    // de toque: o joystick fica no rodape esquerdo e os botoes no rodape
+    // direito, entao aqui ele nunca disputa dedo com o controle.
+    this.mapSlotEl = document.createElement('div');
+    this.mapSlotEl.className = 'hud-map-slot';
+    left.appendChild(this.mapSlotEl);
+
     this.root.appendChild(left);
 
     // --- topo direito: profundidade + cota + botoes ---
@@ -176,13 +183,6 @@ export class HUD {
     this.buildQuota();
     right.appendChild(this.quotaEl);
     this.root.appendChild(right);
-
-    // --- minimapa: canto inferior esquerdo, por cima da area do joystick ---
-    // Translucido e sem captura de toque: o dedo que move o personagem
-    // atravessa o mapa. So o selo "MAPA" e clicavel.
-    this.mapSlotEl = document.createElement('div');
-    this.mapSlotEl.className = 'hud-map-slot';
-    this.root.appendChild(this.mapSlotEl);
 
     // --- prompt de interacao ---
     this.promptEl = document.createElement('div');
