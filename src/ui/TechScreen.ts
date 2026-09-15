@@ -12,6 +12,8 @@ export interface TechHost {
   clones: CloneManager;
   stock: BaseStock;
   deepest(): number;
+  /** Profundidade em metros de um Y de mundo (para o monitor das copias). */
+  depthOf(y: number): number;
   /** Onde a proxima copia deve nascer (perto do jogador). */
   spawnPoint(): { x: number; y: number };
   onToolUnlocked(index: number): void;
@@ -58,6 +60,23 @@ export class TechScreen {
     return this.wrap.classList.contains('open');
   }
 
+  /** Enquanto o painel das copias esta aberto, ele se atualiza sozinho: e um
+   *  monitor do trabalho delas, nao uma foto do momento em que abriu. */
+  private liveTimer = 0;
+
+  private startLive(): void {
+    this.stopLive();
+    this.liveTimer = window.setInterval(() => {
+      if (!this.isOpen || this.tab !== 'copiadora') return;
+      this.refreshCloneLive();
+    }, 400);
+  }
+
+  private stopLive(): void {
+    if (this.liveTimer) window.clearInterval(this.liveTimer);
+    this.liveTimer = 0;
+  }
+
   open(tab?: Tab): void {
     if (tab) {
       this.tab = tab;
@@ -70,6 +89,7 @@ export class TechScreen {
     }
     this.wrap.classList.add('open');
     this.render();
+    if (this.tab === 'copiadora') this.startLive();
   }
 
   /** Atalho direto para o painel das copias. */
@@ -79,6 +99,7 @@ export class TechScreen {
 
   close(): void {
     this.wrap.classList.remove('open');
+    this.stopLive();
   }
 
   toggle(): void {
@@ -112,6 +133,8 @@ export class TechScreen {
       btn.addEventListener('click', () => {
         this.tab = t.id;
         this.tabChosen = true;
+        if (t.id === 'copiadora') this.startLive();
+        else this.stopLive();
         this.render();
       });
       this.tabsEl.appendChild(btn);
@@ -225,6 +248,25 @@ export class TechScreen {
     this.bindCloner();
   }
 
+  /**
+   * Atualiza so os numeros vivos dos cartoes (estado, profundidade, carga,
+   * total entregue). Redesenhar o painel inteiro a cada 400 ms mataria o
+   * arrastar dos controles e piscaria a tela.
+   */
+  private refreshCloneLive(): void {
+    for (const c of this.host.clones.clones) {
+      const set = (attr: string, txt: string) => {
+        const el = this.bodyEl.querySelector(`[data-live-${attr}="${c.id}"]`);
+        if (el && el.textContent !== txt) el.textContent = txt;
+      };
+      set('state', c.statusLabel());
+      set('depth', `${Math.round(this.host.depthOf(c.y))} m`);
+      set('load', `${c.carried}/${c.capacity}`);
+      set('carry', c.summary());
+      set('total', `${c.delivered} entregues`);
+    }
+  }
+
   private cloneCard(c: Clone): string {
     const focos: { id: CloneFocus; label: string }[] = [
       { id: 'minerar', label: 'Minerar' },
@@ -238,8 +280,13 @@ export class TechScreen {
         <div class="clone-card-head">
           <span class="clone-dot" style="background:${c.tint}"></span>
           <b>Copia ${c.index + 1}</b>
-          <span class="clone-state">${c.statusLabel()}</span>
-          <span class="clone-load">${c.carried}/${c.capacity}</span>
+          <span class="clone-state" data-live-state="${c.id}">${c.statusLabel()}</span>
+          <span class="clone-depth" data-live-depth="${c.id}"></span>
+          <span class="clone-load" data-live-load="${c.id}">${c.carried}/${c.capacity}</span>
+        </div>
+        <div class="clone-live">
+          <span data-live-carry="${c.id}"></span>
+          <b data-live-total="${c.id}"></b>
         </div>
         <div class="clone-row">
           <label>Foco</label>

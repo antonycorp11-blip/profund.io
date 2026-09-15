@@ -125,9 +125,11 @@ export class CloneManager {
           value += qty;
         }
         if (value > 0) {
-          Events.emit('ui:toast', {
-            text: `Copia ${clone.index + 1} entregou ${value} itens.`,
-            tone: 'info',
+          clone.delivered += value;
+          Events.emit('clone:delivered', {
+            index: clone.index,
+            total: value,
+            depth: this.world.depthOfPixel(clone.y),
           });
         }
       });

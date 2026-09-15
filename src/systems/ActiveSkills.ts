@@ -30,7 +30,6 @@ export class ActiveSkills {
 
   update(dt: number): void {
     for (const st of this.states.values()) {
-      st.unlocked = st.id === 'shock' ? this.attrs.has('shockUnlocked') : st.unlocked;
       if (st.charges > 0) continue;
       if (st.cooldown > 0) {
         st.cooldown = Math.max(0, st.cooldown - dt);
@@ -40,7 +39,11 @@ export class ActiveSkills {
   }
 
   state(id: ActiveSkillId): ActiveSkillState {
-    return this.states.get(id)!;
+    const st = this.states.get(id)!;
+    // Lido na hora, e nao guardado no update: a tela de habilidades consulta
+    // fora do laco do jogo e mostrava tudo como bloqueado.
+    st.unlocked = id === 'shock' ? this.attrs.has('shockUnlocked') : st.unlocked;
+    return st;
   }
 
   isActive(id: ActiveSkillId): boolean {

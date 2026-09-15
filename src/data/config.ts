@@ -204,7 +204,13 @@ export const CONFIG = {
     /** Raio de busca por drops no chao. */
     collectSearch: 260,
     /** Raio de trabalho padrao (tiles). */
-    defaultWorkRadius: 14,
+    defaultWorkRadius: 18,
+    /** Abaixo disto a area e considerada esgotada e a copia se muda. */
+    minOreInArea: 3,
+    /** Sem trabalho por perto, procura um posto novo neste raio (tiles). */
+    relocateSearch: 40,
+    /** Nem assim achou: desce este tanto e abre caminho (tiles). */
+    digDownStep: 12,
     /**
      * Custo por copia impressa, em MOEDAS.
      * Pagar com recurso bruto competia com a cota da semana; pagar com moeda

@@ -1284,6 +1284,150 @@ body {
   color: #ffdc83;
 }
 
+/* Linha viva do cartao da copia: o que ela carrega e o total ja entregue. */
+.clone-live {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--ink-dim);
+  padding: 2px 0 4px;
+  border-bottom: 1px solid rgba(255, 224, 170, 0.08);
+  margin-bottom: 4px;
+}
+
+.clone-live b {
+  color: #9be09b;
+  font-variant-numeric: tabular-nums;
+}
+
+.clone-depth {
+  font-size: 10px;
+  color: #ffdd96;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- Tela de habilidades ativas ---------------- */
+
+.screen-title {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.active-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.active-card {
+  background: linear-gradient(155deg, rgba(30, 38, 52, 0.94), rgba(16, 18, 24, 0.94));
+  border: 1px solid var(--stroke);
+  border-left: 3px solid rgba(127, 182, 255, 0.5);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.active-card.owned {
+  border-left-color: #7fb6ff;
+}
+
+.active-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.active-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  border-radius: 9px;
+  background: rgba(127, 182, 255, 0.14);
+  border: 1px solid rgba(127, 182, 255, 0.3);
+}
+
+.active-icon img {
+  width: 26px;
+  height: 26px;
+}
+
+.active-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.active-title b {
+  font-size: 14px;
+}
+
+.active-level {
+  font-size: 10px;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.active-status {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.active-status.on {
+  color: #bfe9ff;
+}
+
+.active-status.cooling {
+  color: var(--warn);
+}
+
+.active-desc {
+  margin: 7px 0 5px;
+  font-size: 11.5px;
+  color: var(--ink-dim);
+  line-height: 1.45;
+}
+
+.active-stats {
+  font-size: 11px;
+  color: #bfe9ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.active-next {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 5px;
+}
+
+.active-next b {
+  color: var(--ink);
+}
+
+.active-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.active-req {
+  font-size: 10.5px;
+  color: var(--ink-dim);
+}
+
 /* ---------------- Debug ---------------- */
 
 .debug {

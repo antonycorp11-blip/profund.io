@@ -33,6 +33,7 @@ import { Player } from '../player/Player';
 import { PlayerStats } from '../player/PlayerStats';
 import { Procs } from '../systems/Procs';
 import { SkillTree } from '../systems/SkillTree';
+import { ActiveSkillsUI } from '../ui/ActiveSkillsUI';
 import { SkillTreeUI } from '../ui/SkillTreeUI';
 import { PlayerSprite } from '../player/PlayerSprite';
 import { QuotaSystem } from '../systems/QuotaSystem';
@@ -90,6 +91,7 @@ export class Game {
   private dialog: DialogUI;
   private panels: PanelUI;
   private skillUI: SkillTreeUI;
+  private activeUI: ActiveSkillsUI;
   private exploration: Exploration;
   private clock = new TimeSystem();
   private tech: TechTree;
@@ -174,7 +176,8 @@ export class Game {
       () => this.techScreen.toggle(),
       () => this.skillUI.toggle(),
       () => this.buildMode.toggle(),
-      () => this.techScreen.openCloner()
+      () => this.techScreen.openCloner(),
+      () => this.activeUI.toggle()
     );
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
@@ -234,6 +237,14 @@ export class Game {
         },
       },
     });
+
+    this.activeUI = new ActiveSkillsUI(uiRoot, {
+      tree: this.skills,
+      attrs: this.attrs,
+      active: this.activeSkills,
+      currentDepth: () => this.deepestMeters,
+    });
+    this.activeUI.bindEvents();
 
     this.tech = new TechTree(this.attrs, this.stock);
     this.exploration = new Exploration(this.world, this.attrs);
@@ -309,6 +320,7 @@ export class Game {
       clones: this.cloneManager,
       stock: this.stock,
       deepest: () => this.deepestMeters,
+      depthOf: (y) => this.world.depthOfPixel(y),
       spawnPoint: () => ({ x: this.player.cx, y: this.player.cy - 8 }),
       onToolUnlocked: (index) => {
         if (index > this.stats.toolIndex) this.stats.setTool(index);
@@ -467,6 +479,16 @@ export class Game {
       this.floating.push(this.player.cx, this.player.cy - 34, `NIVEL ${p.level}`, '#ffe9a3', 16);
     });
 
+    // Entrega de copia: aparece no deposito, para dar para ver o resultado do
+    // trabalho delas sem abrir tela nenhuma.
+    Events.on('clone:delivered', (p) => {
+      const ts = CONFIG.tileSize;
+      const x = this.worldInfo.depotCol * ts + ts / 2;
+      const y = (this.worldInfo.baseFloorRow - 1) * ts;
+      this.floating.push(x, y - 16, `Copia ${p.index + 1}: +${p.total}`, '#7fd8e8', 12);
+      this.particles.burst(x, y, 6, ['#7fd8e8', '#ffe9a3'], { speed: 70 });
+    });
+
     Events.on('creature:hurt', (p) => {
       this.floating.push(
         p.worldX,
@@ -603,6 +625,7 @@ export class Game {
       this.panels.isOpen ||
       this.skillUI.isOpen ||
       this.mapScreen.isOpen ||
+      this.activeUI.isOpen ||
       this.techScreen.isOpen;
     // No modo construir o toque no mundo constroi, entao a mineracao para.
     const building = this.buildMode.isActive;

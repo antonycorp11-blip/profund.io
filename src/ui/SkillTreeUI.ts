@@ -126,6 +126,8 @@ export class SkillTreeUI {
   private buildTabs(): void {
     this.tabsEl.innerHTML = '';
     for (const cat of Object.values(CATEGORIES)) {
+      // Ativas tem tela propria.
+      if (cat.id === 'active') continue;
       if (!this.host.tree.isCategoryVisible(cat.id)) continue;
       const btn = document.createElement('button');
       btn.className = `skill-tab ${cat.id === this.category ? 'active' : ''}`;

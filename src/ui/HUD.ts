@@ -61,7 +61,8 @@ export class HUD {
     private onWorkshop: () => void,
     private onSkills: () => void,
     private onBuild: () => void,
-    private onCloner: () => void = () => {}
+    private onCloner: () => void = () => {},
+    private onActiveSkills: () => void = () => {}
   ) {
     this.root = document.createElement('div');
     this.root.style.position = 'absolute';
@@ -189,6 +190,7 @@ export class HUD {
     this.clonerBtn.hidden = true;
     buttons.appendChild(this.clonerBtn);
 
+    buttons.appendChild(this.buildIconButton('⚡', 'Skills', () => this.onActiveSkills()));
     buttons.appendChild(this.buildSkillButton());
     buttons.appendChild(this.buildIconButton('⚒', 'Construir', () => this.onBuild()));
     buttons.appendChild(btnWorkshop);
@@ -335,7 +337,7 @@ export class HUD {
 
   /** Botao da arvore de habilidades, com selo de pontos disponiveis. */
   private buildSkillButton(): HTMLElement {
-    const btn = this.buildIconButton('✦', 'Skills', () => this.onSkills());
+    const btn = this.buildIconButton('✦', 'Atributos', () => this.onSkills());
     btn.insertAdjacentHTML('beforeend', '<span class="badge" data-skill-badge hidden></span>');
     this.skillBadge = btn.querySelector('[data-skill-badge]') as HTMLElement;
     return btn;

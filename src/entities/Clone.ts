@@ -32,6 +32,10 @@ export type CloneState =
 export const CLONE_TINTS = ['#2fb8c0', '#d07a2f', '#4fc05a', '#9a5ad0', '#d04f8a', '#c0b02f'];
 
 const SCAN_INTERVAL = 0.45;
+/** Intervalo entre tentativas de mudar de posto quando nao ha trabalho (s). */
+const RELOCATE_INTERVAL = 1.2;
+/** Intervalo entre checagens de "este bolsao ainda vale a pena?" (s). */
+const MIGRATE_INTERVAL = 5;
 const STUCK_LIMIT = 9;
 
 /**
@@ -46,6 +50,8 @@ export class Clone {
   vy = 0;
   facing: 1 | -1 = 1;
   state: CloneState = 'procurando';
+  /** Total ja entregue por esta copia (aparece no painel). */
+  delivered = 0;
   /** Onde ele foi criado: centro da sua area de trabalho. */
   homeX = 0;
   homeY = 0;
@@ -54,6 +60,8 @@ export class Clone {
   readonly h = 26;
   private items = new Map<ResourceId, number>();
   private scanTimer = 0;
+  private relocateTimer = 0;
+  private migrateTimer = 0;
   private mineTimer = 0;
   private stuckTimer = 0;
   private lastProgressX = 0;
@@ -217,6 +225,24 @@ export class Clone {
   private updateMiner(dt: number): void {
     if (this.state === 'entregando' || this.state === 'enviando') return;
 
+    /*
+     * Migracao.
+     *
+     * A area de trabalho nasce onde a copia foi impressa — quase sempre na
+     * base, onde so ha terra e um pouco de carvao raso. Sem isto ela passa a
+     * vida inteira raspando o mesmo bolsao pobre e da a impressao de estar
+     * travada la em cima. Quando sobra pouco minerio na area, ela procura um
+     * deposito melhor (de preferencia mais fundo) e muda o posto para la.
+     */
+    this.migrateTimer -= dt;
+    if (this.migrateTimer <= 0) {
+      this.migrateTimer = MIGRATE_INTERVAL;
+      if (this.oresInArea() < CONFIG.clones.minOreInArea) {
+        if (!this.relocate(true)) this.digDeeper();
+        this.target = null;
+      }
+    }
+
     this.scanTimer -= dt;
     if (!this.target || this.scanTimer <= 0) {
       this.scanTimer = SCAN_INTERVAL;
@@ -224,8 +250,20 @@ export class Clone {
     }
 
     if (!this.target) {
-      // Sem veio por perto: junta o que estiver no chao.
+      /*
+       * Sem nada para minerar na area de trabalho.
+       *
+       * Acontecia sempre com a copia impressa na base: em volta so ha terra,
+       * que nao solta recurso, entao ela ficava andando em circulo la em cima.
+       * Agora ela procura trabalho num raio bem maior e MUDA DE POSTO; se nem
+       * assim achar, desce, porque a mina fica embaixo.
+       */
       this.state = 'procurando';
+      this.relocateTimer -= dt;
+      if (this.relocateTimer <= 0) {
+        this.relocateTimer = RELOCATE_INTERVAL;
+        if (!this.relocate()) this.digDeeper();
+      }
       this.moveToward(this.homeX, this.homeY, dt, true);
       return;
     }
@@ -311,22 +349,46 @@ export class Clone {
     const blockedSide = this.world.isSolidAtPixel(aheadX, this.y);
     const needUp = dy < -ts * 0.8;
     const blockedUp = this.world.isSolidAtPixel(this.x, this.y - this.h / 2 - 4);
+    const needDown = dy > ts * 0.8;
+    const belowY = this.y + this.h / 2 + 4;
+    const blockedDown = this.world.isSolidAtPixel(this.x, belowY);
+    // So cava o chao depois de estar por cima do alvo, senao ela abre buraco
+    // enquanto anda de lado e cai fora do caminho.
+    const alinhado = Math.abs(dx) < ts * 0.9;
 
-    if (digThrough && (blockedSide || (needUp && blockedUp))) {
-      const col = Math.floor((blockedSide ? aheadX : this.x) / ts);
-      const row = Math.floor((blockedSide ? this.y : this.y - this.h / 2 - 4) / ts);
-      const def = this.world.getDef(col, row);
-      if (!def.indestructible) {
-        this.swing = 1;
-        const res = this.world.applyDamage(col, row, this.attrs.get('cloneMiningPower') * 1.5, 3);
-        if (res.broken) this.onBroke(col, row, res.def);
+    if (digThrough) {
+      let col = -1;
+      let row = -1;
+      if (needDown && blockedDown && alinhado) {
+        col = Math.floor(this.x / ts);
+        row = Math.floor(belowY / ts);
+      } else if (blockedSide) {
+        col = Math.floor(aheadX / ts);
+        row = Math.floor(this.y / ts);
+      } else if (needUp && blockedUp) {
+        col = Math.floor(this.x / ts);
+        row = Math.floor((this.y - this.h / 2 - 4) / ts);
       }
-      if (needUp && !blockedUp) this.y -= speed * dt;
-      return false;
+
+      if (col >= 0) {
+        const def = this.world.getDef(col, row);
+        if (!def.indestructible) {
+          this.swing = 1;
+          const res = this.world.applyDamage(col, row, this.attrs.get('cloneMiningPower') * 1.5, 3);
+          if (res.broken) this.onBroke(col, row, res.def);
+        }
+        if (needUp && !blockedUp) this.y -= speed * dt;
+        return false;
+      }
     }
 
     if (!blockedSide) this.x += step;
-    if (needUp && !blockedUp) this.y -= speed * dt * 0.8;
+    if (needUp && !blockedUp) {
+      // Sobe contra a gravidade: sem zerar a queda, o passo era desfeito no
+      // mesmo frame e a copia ficava batendo no teto do proprio buraco.
+      this.y -= speed * dt;
+      this.vy = 0;
+    }
     return false;
   }
 
@@ -359,14 +421,87 @@ export class Clone {
     Events.emit('ui:toast', { text: `Copia ${this.index + 1} reposicionada.`, tone: 'info' });
   }
 
-  /** Procura o bloco mais proximo que bate com o filtro. */
-  private findBlock(): { col: number; row: number } | null {
+  /**
+   * Procura trabalho MUITO alem da area de trabalho e muda o posto para la.
+   * @returns false quando nao ha nada minerarel no alcance da busca.
+   */
+  private relocate(oreOnly = false): boolean {
     const ts = this.world.tileSize;
     const col0 = Math.floor(this.x / ts);
     const row0 = Math.floor(this.y / ts);
-    const homeCol = Math.floor(this.homeX / ts);
-    const homeRow = Math.floor(this.homeY / ts);
+    const r = CONFIG.clones.relocateSearch;
+
+    let best: { col: number; row: number } | null = null;
+    let bestScore = Infinity;
+    for (let dr = -r; dr <= r; dr++) {
+      for (let dc = -r; dc <= r; dc++) {
+        const col = col0 + dc;
+        const row = row0 + dr;
+        const id = this.world.getTile(col, row);
+        if (id === 0) continue;
+        const def = blockDef(id);
+        if (def.indestructible || !def.drop) continue;
+        if (def.tags.includes('ancient') || def.tags.includes('quest')) continue;
+        if (oreOnly && !def.tags.includes('ore')) continue;
+        if (!this.accepts(def.drop)) continue;
+        // Descer pesa menos que subir: o trabalho de verdade e para baixo.
+        const score = dc * dc + dr * dr * (dr < 0 ? 3 : 1);
+        if (score < bestScore) {
+          bestScore = score;
+          best = { col, row };
+        }
+      }
+    }
+    if (!best) return false;
+    this.homeX = best.col * ts + ts / 2;
+    this.homeY = best.row * ts + ts / 2;
+    return true;
+  }
+
+  /** Quanto minerio ainda ha na area de trabalho. */
+  private oresInArea(): number {
+    const ts = this.world.tileSize;
+    const col0 = Math.floor(this.homeX / ts);
+    const row0 = Math.floor(this.homeY / ts);
+    const r = this.config.workRadius;
+    let n = 0;
+    // Passo 2: contar tile a tile num raio de 18 seria 1300 leituras por
+    // chamada; uma amostra a cada 2 tiles responde a mesma pergunta.
+    for (let dr = -r; dr <= r; dr += 2) {
+      for (let dc = -r; dc <= r; dc += 2) {
+        const id = this.world.getTile(col0 + dc, row0 + dr);
+        if (id === 0) continue;
+        const def = blockDef(id);
+        if (!def.tags.includes('ore') || !def.drop) continue;
+        if (!this.accepts(def.drop)) continue;
+        n++;
+      }
+    }
+    return n;
+  }
+
+  /** Nada por perto: puxa o posto para baixo e vai abrindo caminho. */
+  private digDeeper(): void {
+    const ts = this.world.tileSize;
+    const alvo = Math.min(
+      (this.world.height - 4) * ts,
+      this.y + CONFIG.clones.digDownStep * ts
+    );
+    this.homeY = alvo;
+    this.homeX = this.x;
+  }
+
+  /** Procura o bloco mais proximo que bate com o filtro. */
+  private findBlock(): { col: number; row: number } | null {
+    const ts = this.world.tileSize;
+    // A area de trabalho e UMA caixa, ao redor do posto. Antes era a
+    // intersecao de duas caixas (posto e copia) e ela podia ficar vazia — a
+    // copia entao nao achava nada mesmo cercada de minerio.
+    const col0 = Math.floor(this.homeX / ts);
+    const row0 = Math.floor(this.homeY / ts);
     const radius = this.config.workRadius;
+    const cloneCol = Math.floor(this.x / ts);
+    const cloneRow = Math.floor(this.y / ts);
 
     let best: { col: number; row: number } | null = null;
     let bestScore = Infinity;
@@ -375,8 +510,6 @@ export class Clone {
       for (let dc = -radius; dc <= radius; dc++) {
         const col = col0 + dc;
         const row = row0 + dr;
-        // Nao sai da area de trabalho definida.
-        if (Math.abs(col - homeCol) > radius || Math.abs(row - homeRow) > radius) continue;
         const id = this.world.getTile(col, row);
         if (id === 0) continue;
         const def = blockDef(id);
@@ -385,7 +518,12 @@ export class Clone {
         if (!this.accepts(def.drop)) continue;
         // Minerio primeiro; pedra so se o filtro aceitar.
         const priority = def.tags.includes('ore') ? 0 : 400;
-        const score = dc * dc + dr * dr + priority;
+        // Alvo acima so vale se for vizinho: a copia nao pula nem escala, e
+        // perseguir bloco alto virava sobe-e-cai eterno — ela parecia travada.
+        if (row < cloneRow - 1) continue;
+        const ddc = col - cloneCol;
+        const ddr = row - cloneRow;
+        const score = ddc * ddc + ddr * ddr + priority;
         if (score < bestScore) {
           bestScore = score;
           best = { col, row };
@@ -532,6 +670,7 @@ export class Clone {
       y: this.y,
       homeX: this.homeX,
       homeY: this.homeY,
+      delivered: this.delivered,
       config: this.config,
       items: Object.fromEntries(this.items),
     };

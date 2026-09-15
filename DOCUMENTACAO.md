@@ -310,6 +310,25 @@ vira o destino natural do dinheiro que ja sobra da venda. Primeira copia: 900,
 e cada uma seguinte custa 1,6x a anterior. A propria copiadora ja vem montada
 (o custo do pilar de automacao esta nas copias, nao na maquina).
 
+**A copia caca trabalho sozinha.** Tres correcoes que a tiraram do lugar:
+
+1. **Cavar para baixo.** `moveToward` so abria caminho para o lado e para cima.
+   Impressa na base, a copia nao tinha como chegar na mina.
+2. **Alvo alcancavel.** Ela nao pula nem escala: perseguir bloco acima da
+   cabeca virava sobe-e-cai eterno. Agora so mira bloco na altura dela ou
+   abaixo (vizinho de cima ainda vale, que esta ao alcance do braco).
+3. **Uma caixa, nao duas.** A busca era a intersecao de duas caixas (ao redor
+   do posto E ao redor da copia) e podia dar vazio mesmo com minerio em volta.
+   Agora a area e uma so, ao redor do posto.
+
+E **migracao**: a cada 5 s ela conta quanto minerio ainda ha na area; abaixo de
+3, procura um deposito melhor num raio de 40 tiles (preferindo mais fundo) e
+muda o posto para la. Sem nada no raio, desce 12 tiles e abre caminho. Sem isto
+a copia impressa na base passava a vida raspando terra, que nao solta nada.
+
+Medido: impressa na base, em 17 s ela desceu ate 17 m, encheu a mochila (30) e
+entregou — a cota da semana saiu de 0 para 15/90 sem o jogador tocar em nada.
+
 **Copias usam a rede.** Ao encher, a copia procura uma entrada (esteira ou armazem) num raio de
 16 tiles e joga a carga la. Se nao houver rede por perto, cai no comportamento antigo de enviar
 pelo poco. E o caminho de evolucao que o GDD descreve: manual -> envio -> linha industrial.

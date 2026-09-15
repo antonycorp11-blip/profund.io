@@ -46,6 +46,7 @@ export interface GameEvents {
   'time:week': { week: number };
   'tech:researched': { id: string; name: string; unlocks: string };
   'clone:created': { id: string; index: number };
+  'clone:delivered': { index: number; total: number; depth: number };
   'automation:delivered': { resource: string; amount: number };
   'creature:killed': {
     id: string;

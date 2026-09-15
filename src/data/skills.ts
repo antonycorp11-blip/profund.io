@@ -8,6 +8,7 @@
 import type { Modifier } from '../systems/Attributes';
 
 export type SkillCategory =
+  | 'active'
   | 'mining'
   | 'collect'
   | 'movement'
@@ -34,6 +35,19 @@ export const CATEGORY_ART: Partial<Record<SkillCategory, string>> = {
 };
 
 export const CATEGORIES: Record<SkillCategory, CategoryMeta> = {
+  /**
+   * Habilidades ATIVAS. Nao aparecem na arvore de atributos: elas tem tela
+   * propria, porque a pergunta que o jogador faz sobre elas e outra — nao e
+   * "quanto isso melhora meu numero", e "o que isso faz quando eu aperto".
+   */
+  active: {
+    id: 'active',
+    name: 'Habilidades',
+    fantasy: 'Quero um truque na manga quando a rocha nao ceder.',
+    color: '#7fb6ff',
+    icon: '⚡',
+    usesPoints: true,
+  },
   mining: {
     id: 'mining',
     name: 'Mineracao',
@@ -274,7 +288,7 @@ export const SKILLS: SkillDef[] = [
 
   {
     id: 'mining_shock',
-    category: 'mining',
+    category: 'active',
     branch: 'choque',
     name: 'Choque',
     description:
