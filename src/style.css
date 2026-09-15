@@ -1304,6 +1304,70 @@ body {
   color: #ffdc83;
 }
 
+/* Gaveta de melhorias dentro do painel das copias. */
+.clone-upgrades {
+  margin: 8px 0;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: rgba(16, 20, 26, 0.7);
+}
+
+.clone-upgrades > summary {
+  cursor: pointer;
+  padding: 8px 11px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9be0ff;
+}
+
+.up-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  padding: 0 10px 10px;
+}
+
+.up-card {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 8px 9px;
+  background: rgba(30, 38, 52, 0.6);
+  font-size: 11px;
+}
+
+.up-card.done {
+  opacity: 0.6;
+  border-color: rgba(155, 224, 155, 0.45);
+}
+
+.up-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.up-card p {
+  margin: 0 0 6px;
+  color: var(--ink-dim);
+  line-height: 1.4;
+}
+
+.up-card .btn {
+  width: 100%;
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.up-done {
+  color: #9be09b;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
 /* Linha viva do cartao da copia: o que ela carrega e o total ja entregue. */
 .clone-live {
   display: flex;

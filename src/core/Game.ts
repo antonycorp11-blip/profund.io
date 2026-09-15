@@ -42,6 +42,7 @@ import { RescueNpc } from '../entities/RescueNpc';
 import { SaveSystem } from '../systems/SaveSystem';
 import { TileRenderer } from '../world/TileRenderer';
 import { TimeSystem } from '../systems/TimeSystem';
+import { CloneCompass } from '../ui/CloneCompass';
 import { CloneManager } from '../systems/CloneManager';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
@@ -110,6 +111,7 @@ export class Game {
   private progression = new Progression(this.skills);
   private shock: ShockChain;
   private drill: DrillTool;
+  private compass: CloneCompass;
   /** De onde o jogador saiu na ultima Volta Rapida (para o retorno). */
   private recallReturn: { x: number; y: number } | null = null;
   /** Ultima camada anunciada, para avisar so na entrada. */
@@ -324,6 +326,8 @@ export class Game {
       },
       (r, n) => this.quota.registerDelivery(r, n)
     );
+
+    this.compass = new CloneCompass(this.world, () => this.cloneManager.clones);
 
     this.buildMode = new BuildMode(uiRoot, {
       automation: this.automation,
@@ -1034,6 +1038,11 @@ export class Game {
     for (const e of this.interactables) e.renderOverlay?.(ctx);
     this.shock.render(ctx);
     this.floating.render(ctx);
+
+    // Bussola por ultimo: ela vive na borda da tela, nao no mundo.
+    if (!this.mapScreen.isOpen) {
+      this.compass.render(ctx, this.camera, this.cssW, this.cssH, this.dpr);
+    }
 
     if (this.vitals.hurtFlash > 0 || this.vitals.dead) {
       this.renderHurtVignette(ctx);

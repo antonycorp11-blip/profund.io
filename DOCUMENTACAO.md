@@ -420,14 +420,26 @@ Curva `baseXp * nivel^1.35`: nivel 2 custa 90, nivel 3 custa 231, nivel 4 custa
 O ponto vem do nivel, e o nivel vem de JOGAR — nunca de gastar dinheiro nem de
 esperar o relogio.
 
-## 4h. Habilidades ativas — Choque
+## 4h. Habilidades ativas — Choque, Broca e Volta Rapida
 
 ```
 src/systems/ActiveSkills.ts   cargas, recarga e estado (molde para as proximas)
 src/mining/ShockChain.ts      a corrente: escolha de alvos e desenho dos raios
 ```
 
-**Contrato:** apertar liga N marteladas com o efeito; quando as marteladas
+Tres habilidades, duas formas de gasto (descritas em `/data/activeSkills.ts`):
+
+| habilidade | forma | o que faz |
+|---|---|---|
+| Choque | cargas | corrente que salta entre blocos, preferindo o mesmo material |
+| Broca | cargas | cada martelada abre um tunel na direcao da mira |
+| Volta Rapida | canalizada | 3 s parado e a mina te devolve na base |
+
+Subir de nivel e so somar modificador: nenhuma precisa de codigo novo para
+ficar melhor. Um botao por habilidade no pad, e habilidade nao aprendida nao
+ocupa espaco.
+
+**Contrato das de carga:** apertar liga N marteladas com o efeito; quando as marteladas
 acabam, comeca a recarga. Nao e passivo que dispara sozinho — o jogador escolhe
 QUANDO gastar, e e essa escolha que faz a habilidade valer alguma coisa.
 

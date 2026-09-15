@@ -30,6 +30,8 @@ export class TechScreen {
   private tab: Tab = 'copias';
   /** True depois que o jogador escolheu uma aba a mao nesta sessao. */
   private tabChosen = false;
+  /** Lembra se a gaveta de melhorias estava aberta. */
+  private upgradesOpen = false;
 
   constructor(parent: HTMLElement, private host: TechHost) {
     this.wrap = document.createElement('div');
@@ -234,6 +236,7 @@ export class TechScreen {
           }
         </div>
       </div>
+      ${this.cloneUpgrades()}
       <div class="clone-list">`;
 
     if (mgr.clones.length === 0) {
@@ -246,6 +249,48 @@ export class TechScreen {
     html += '</div>';
     this.bodyEl.innerHTML = html;
     this.bindCloner();
+  }
+
+  /**
+   * Melhorias das copias dentro do painel delas.
+   *
+   * Elas moravam na aba de pesquisa, a duas telas de distancia de quem estava
+   * olhando as copias e querendo melhora-las. A pergunta "como deixo minhas
+   * copias melhores?" tem que ser respondida onde as copias estao.
+   */
+  private cloneUpgrades(): string {
+    const techs = techsOf('copias').filter((t) => t.id !== 'tech_cloner');
+    if (techs.length === 0) return '';
+
+    const cartoes = techs
+      .map((t) => {
+        const feita = this.host.tech.has(t.id);
+        const check = this.host.tech.canResearch(t.id, this.host.deepest());
+        const custo = Object.entries(t.cost)
+          .map(([id, qty]) => {
+            const rid = id as ResourceId;
+            const have = this.host.stock.count(rid);
+            return `<span class="${have >= qty ? 'ok' : 'miss'}">${RESOURCES[rid].name} ${have}/${qty}</span>`;
+          })
+          .join('');
+        return `
+          <div class="up-card ${feita ? 'done' : ''}">
+            <div class="up-head"><span>${t.icon}</span><b>${t.name}</b></div>
+            <p>${t.description}</p>
+            ${feita ? '<div class="up-done">INSTALADO</div>' : `
+              <div class="tech-cost">${custo}</div>
+              <button class="btn" data-up="${t.id}" ${check.ok ? '' : 'disabled'}>
+                ${check.ok ? 'INSTALAR' : (check.reason ?? 'Indisponivel')}
+              </button>`}
+          </div>`;
+      })
+      .join('');
+
+    return `
+      <details class="clone-upgrades" ${this.upgradesOpen ? 'open' : ''}>
+        <summary>Melhorias das copias</summary>
+        <div class="up-grid">${cartoes}</div>
+      </details>`;
   }
 
   /**
@@ -338,6 +383,22 @@ export class TechScreen {
 
   private bindCloner(): void {
     const q = (sel: string) => Array.from(this.bodyEl.querySelectorAll(sel));
+
+    const det = this.bodyEl.querySelector('.clone-upgrades') as HTMLDetailsElement | null;
+    if (det) {
+      det.addEventListener('toggle', () => {
+        this.upgradesOpen = det.open;
+      });
+    }
+    q('[data-up]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const id = (b as HTMLElement).dataset.up!;
+        if (this.host.tech.research(id, this.host.deepest())) {
+          Haptics.ui();
+          this.render();
+        }
+      })
+    );
 
     q('[data-create]').forEach((b) =>
       b.addEventListener('click', () => {

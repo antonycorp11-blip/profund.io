@@ -254,6 +254,14 @@ export const CONFIG = {
     minimapTilesY: 52,
   },
 
+  cloneCompass: {
+    /** Distancia da borda da tela ate a seta (px de tela). */
+    margin: 34,
+    size: 9,
+    /** Quanto a etiqueta entra para dentro da seta. */
+    labelOffset: 18,
+  },
+
   progression: {
     /** XP do nivel 1 para o 2. */
     baseXp: 90,
