@@ -434,7 +434,7 @@ export class TechScreen {
             CONTRATAR TOUPEIRA
           </button>
           <button class="btn" data-dumpall ${mgr.carriedTotal() > 0 ? '' : 'disabled'}>
-            ENTREGAR TUDO (${mgr.carriedTotal()})
+            MANDAR ENTREGAR (${mgr.carriedTotal()})
           </button>
         </div>
       </div>
@@ -472,11 +472,11 @@ export class TechScreen {
     const dump = this.bodyEl.querySelector('[data-dumpall]');
     dump?.addEventListener('click', () => {
       const r = this.host.collectors.deliverAll();
-      if (r.itens > 0) {
+      if (r.unidades > 0) {
         Haptics.ui();
         Events.emit('ui:toast', {
-          text: `Toupeiras entregaram ${r.itens} itens · ✦${r.moedas.toLocaleString('pt-BR')}`,
-          tone: 'good',
+          text: `${r.unidades} toupeira${r.unidades > 1 ? 's' : ''} subindo com ${r.itens} itens.`,
+          tone: 'info',
         });
       }
       this.render();

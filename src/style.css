@@ -234,18 +234,13 @@ body {
 
 .hud-bars {
   display: flex;
-  gap: 6px;
-  width: 100%;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .hud-bars[hidden],
 .bag[hidden] {
   display: none;
-}
-
-.hud-bars > .bag {
-  flex: 1 1 0;
-  min-width: 0;
 }
 
 .bag {
@@ -289,6 +284,70 @@ body {
 
 .bag.full .bag-label {
   color: var(--warn);
+}
+
+/* --- barras finas: vida, mochila e vigor ---
+   Sem caixa e sem rotulo: elas so precisam dizer "quanto falta", e faziam isso
+   ocupando um terco da coluna da esquerda. */
+.slim {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 13px;
+}
+
+.slim[hidden] {
+  display: none;
+}
+
+.slim-icon {
+  font-size: 9px;
+  opacity: 0.7;
+  width: 11px;
+  text-align: center;
+}
+
+.slim-bar {
+  width: 70px;
+  height: 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 224, 170, 0.1);
+  overflow: hidden;
+}
+
+.slim-bar > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  transition: width 0.15s ease-out;
+}
+
+.slim-num {
+  font-size: 9px;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 24px;
+}
+
+.slim.vitals .slim-bar > i {
+  background: linear-gradient(90deg, #b8432f, #ff7d68);
+}
+
+.slim.vitals.low .slim-bar > i {
+  background: linear-gradient(90deg, #ff3b2f, #ffb199);
+}
+
+.slim.bag .slim-bar > i {
+  background: linear-gradient(90deg, #e0a94b, #ffd98a);
+}
+
+.slim.bag.full .slim-bar > i {
+  background: linear-gradient(90deg, #c8452f, #ff8a6a);
+}
+
+.slim.climb-gauge .slim-bar > i {
+  background: linear-gradient(90deg, #4f9fd8, #9fd6ff);
 }
 
 /* --- nivel e XP, dentro do card de saldo --- */
@@ -451,101 +510,92 @@ body {
   font-weight: normal;
 }
 
+/* A cota como UMA faixa: era um card com uma linha por recurso, ocupando o
+   canto inteiro para dizer algo que cabe numa barra. */
 .quota {
-  background: linear-gradient(155deg, rgba(38, 31, 22, 0.94), rgba(17, 14, 12, 0.91));
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius);
-  padding: 4px 8px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   width: 100%;
   min-width: 150px;
+  padding: 5px 10px 6px;
+  background: linear-gradient(155deg, rgba(38, 31, 22, 0.8), rgba(17, 14, 12, 0.76));
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
   font-size: 10px;
 }
 
-.quota h4 {
-  margin: 0 0 2px;
+.quota-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quota-week {
   font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.quota-total {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 3px;
-  align-items: center;
-  margin-bottom: 4px;
-  color: #e4c99e;
-  font-size: 8px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
 }
 
-.quota-total b {
-  color: #ffdc83;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.quota-total .bar {
-  grid-column: 1 / -1;
-  height: 7px;
-}
-
-.quota-total .bar > i {
-  background: linear-gradient(90deg, #b87727, #ffde8b);
-}
-
-.quota-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  margin-top: 2px;
-}
-
-.quota-resource {
-  width: 48px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: #d8c3a2;
-  font-size: 10px;
-}
-
-.quota-row [data-q-label] {
-  min-width: 42px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.quota-row.advanced {
-  animation: quota-advance 0.65s ease-out;
-}
-
-@keyframes quota-advance {
-  45% { color: #fff4bf; filter: drop-shadow(0 0 6px #ffc453); }
-}
-
-.quota-row .bar {
+.quota-bar {
   flex: 1;
   height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
 }
 
-.quota-row .bar > i {
-  background: linear-gradient(90deg, #5aa85a, #9be09b);
+.quota-bar > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #e0a94b, #ffd98a);
+  transition: width 0.25s ease-out;
+}
+
+.quota [data-quota-total] {
+  font-size: 10px;
+  color: #ffdd96;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+.quota-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 8px;
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.quota-item em {
+  font-style: normal;
+  opacity: 0.7;
+}
+
+.quota-item.ok {
+  color: #9be09b;
+}
+
+.quota-item.advanced {
+  animation: quota-pop 0.4s ease-out;
+}
+
+@keyframes quota-pop {
+  from {
+    color: #ffdd96;
+    transform: scale(1.14);
+  }
+}
+
+.quota.done .quota-bar > i {
+  background: linear-gradient(90deg, #5aa02f, #9be09b);
 }
 
 .quota.done {
-  border-color: rgba(125, 220, 125, 0.5);
-  box-shadow: 0 0 14px rgba(125, 220, 125, 0.22);
-}
-
-.quota.done h4 {
-  color: var(--good);
+  border-color: rgba(125, 220, 125, 0.45);
 }
 
 .hud-buttons {

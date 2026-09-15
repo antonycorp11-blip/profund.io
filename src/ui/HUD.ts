@@ -129,32 +129,36 @@ export class HUD {
       this.chipEls.set(id, { el: chip, value });
     }
 
+    // Barras finas com icone, sem caixa nem rotulo: elas so precisam dizer
+    // "quanto falta", e faziam isso ocupando um terco da coluna.
     this.bagEl = document.createElement('div');
-    this.bagEl.className = 'bag';
+    this.bagEl.className = 'slim bag';
     this.bagEl.innerHTML = `
-      <div class="bag-label"><span>Mochila</span><span data-bag-count>0/0</span></div>
-      <div class="bar"><i></i></div>`;
-    this.bagFill = this.bagEl.querySelector('.bar > i') as HTMLElement;
+      <span class="slim-icon">🎒</span>
+      <span class="slim-bar"><i></i></span>
+      <span class="slim-num" data-bag-count>0</span>`;
+    this.bagFill = this.bagEl.querySelector('.slim-bar > i') as HTMLElement;
     this.bagLabel = this.bagEl.querySelector('[data-bag-count]') as HTMLElement;
     // Vida ao lado da mochila: as duas contam a mesma historia (quanto ainda da
     // para aguentar antes de voltar) e lado a lado custam metade da altura.
     this.healthEl = document.createElement('div');
-    this.healthEl.className = 'bag vitals';
+    this.healthEl.className = 'slim vitals';
     this.healthEl.innerHTML = `
-      <div class="bag-label"><span>Vida</span><span data-health-count>0/0</span></div>
-      <div class="bar"><i></i></div>`;
-    this.healthFill = this.healthEl.querySelector('.bar > i') as HTMLElement;
+      <span class="slim-icon">❤</span>
+      <span class="slim-bar"><i></i></span>
+      <span class="slim-num" data-health-count>0</span>`;
+    this.healthFill = this.healthEl.querySelector('.slim-bar > i') as HTMLElement;
     this.healthLabel = this.healthEl.querySelector('[data-health-count]') as HTMLElement;
 
     // Vigor da escalada: fica junto das outras barras em vez de flutuar sobre a
     // cabeca do heroi, onde tapava o proprio personagem. So aparece escalando.
     this.climbEl = document.createElement('div');
-    this.climbEl.className = 'bag climb-gauge';
+    this.climbEl.className = 'slim climb-gauge';
     this.climbEl.hidden = true;
     this.climbEl.innerHTML = `
-      <div class="bag-label"><span>Vigor</span><span data-climb-count></span></div>
-      <div class="bar"><i></i></div>`;
-    this.climbFill = this.climbEl.querySelector('.bar > i') as HTMLElement;
+      <span class="slim-icon">🧗</span>
+      <span class="slim-bar"><i></i></span>`;
+    this.climbFill = this.climbEl.querySelector('.slim-bar > i') as HTMLElement;
 
     const bars = document.createElement('div');
     bars.className = 'hud-bars';
@@ -286,38 +290,39 @@ export class HUD {
   }
 
   /** Monta as linhas da cota da semana atual. */
+  /**
+   * A cota como UMA barra.
+   *
+   * Era um card com uma linha por recurso; ocupava o canto inteiro para dizer
+   * algo que cabe numa faixa: quanto falta e quantos dias restam. O detalhe por
+   * recurso continua ali, em texto pequeno, sob a barra.
+   */
   private buildQuota(): void {
     this.quotaRows.clear();
-    this.quotaEl.innerHTML = '';
-    const h4 = document.createElement('h4');
-    h4.innerHTML = `<span>${this.quota.title}</span><span data-quota-state></span>`;
-    this.quotaEl.appendChild(h4);
+    this.quotaEl.innerHTML = `
+      <div class="quota-line">
+        <span class="quota-week">S${this.quota.week}</span>
+        <span class="quota-bar"><i></i></span>
+        <b data-quota-total>0%</b>
+      </div>
+      <div class="quota-detail"></div>
+      <div class="quota-days"></div>`;
 
-    const total = document.createElement('div');
-    total.className = 'quota-total';
-    total.innerHTML = '<span>PROGRESSO</span><b data-quota-total>0%</b><div class="bar"><i></i></div>';
-    this.quotaEl.appendChild(total);
-    this.quotaTotalFill = total.querySelector('.bar > i') as HTMLElement;
-    this.quotaTotalLabel = total.querySelector('[data-quota-total]') as HTMLElement;
+    this.quotaTotalFill = this.quotaEl.querySelector('.quota-bar > i') as HTMLElement;
+    this.quotaTotalLabel = this.quotaEl.querySelector('[data-quota-total]') as HTMLElement;
 
+    const detail = this.quotaEl.querySelector('.quota-detail') as HTMLElement;
     for (const entry of this.quota.entries) {
-      const row = document.createElement('div');
-      row.className = 'quota-row';
-      row.innerHTML = `
-        <span class="quota-resource">${RESOURCES[entry.resource].name}</span>
-        <span class="bar"><i></i></span>
-        <span data-q-label>0/${entry.amount}</span>`;
-      this.quotaEl.appendChild(row);
+      const item = document.createElement('span');
+      item.className = 'quota-item';
+      item.innerHTML =
+        `<em>${RESOURCES[entry.resource].name}</em> <span data-q-label>0/${entry.amount}</span>`;
+      detail.appendChild(item);
       this.quotaRows.set(entry.resource, {
-        fill: row.querySelector('.bar > i') as HTMLElement,
-        label: row.querySelector('[data-q-label]') as HTMLElement,
+        fill: item,
+        label: item.querySelector('[data-q-label]') as HTMLElement,
       });
     }
-
-    const days = document.createElement('div');
-    days.className = 'quota-days';
-    days.dataset.days = '1';
-    this.quotaEl.appendChild(days);
   }
 
   /**
@@ -390,8 +395,8 @@ export class HUD {
       if (refs.label.textContent !== text) {
         const previous = Number(refs.label.textContent?.split('/')[0] ?? 0);
         refs.label.textContent = text;
-        refs.fill.style.width = `${Math.min(100, (have / need) * 100)}%`;
-        if (have > previous) this.pulse(refs.fill.closest('.quota-row') as HTMLElement, 'advanced');
+        refs.fill.classList.toggle('ok', have >= need);
+        if (have > previous) this.pulse(refs.fill, 'advanced');
       }
     }
     const percent = Math.round(this.quota.ratio * 100);
@@ -414,8 +419,6 @@ export class HUD {
       daysEl.style.setProperty('--day', `${Math.round(this.quota.dayProgress() * 100)}%`);
     }
     this.quotaEl.classList.toggle('done', this.quota.isMet);
-    const stateEl = this.quotaEl.querySelector('[data-quota-state]');
-    if (stateEl) stateEl.textContent = this.quota.isMet ? 'OK' : '';
 
     if (prompt !== this.lastPrompt) {
       this.lastPrompt = prompt;
@@ -485,7 +488,7 @@ export class HUD {
     this.lastHealth = cur;
     const ratio = max > 0 ? cur / max : 0;
     this.healthFill.style.width = `${Math.min(100, ratio * 100)}%`;
-    this.healthLabel.textContent = `${cur}/${Math.round(max)}`;
+    this.healthLabel.textContent = String(cur);
     this.healthEl.classList.toggle('low', ratio <= 0.3);
     // So aparece depois de levar dano: com a vida cheia nao ha o que decidir.
     const showHealth = ratio < 1;

@@ -121,37 +121,27 @@ export class CollectorManager {
   }
 
   /**
-   * Todas entregam agora o que estao carregando, de onde estiverem.
+   * Manda todas voltarem para entregar o que estao carregando.
    *
-   * E um botao de "me mostra o resultado": a toupeira pode estar a 300 m no
-   * meio de uma viagem, e o jogador quer ver o ganho na hora em vez de esperar
-   * a bolsa encher. Nao burla nada — e o mesmo recurso que ela ja tinha na mao.
+   * E uma ORDEM, nao um teleporte: elas sobem correndo e entregam ao chegar.
+   * Entregar do nada tiraria o sentido de melhorar a velocidade e as garras
+   * delas — e tiraria tambem a parte boa, que e ver o trabalho acontecendo.
+   *
+   * @returns quantas foram chamadas e quanto estao trazendo
    */
-  deliverAll(): { itens: number; moedas: number } {
+  deliverAll(): { unidades: number; itens: number } {
+    let unidades = 0;
     let itens = 0;
-    let moedas = 0;
     for (const unit of this.units) {
-      const carga = unit.entries();
-      if (carga.length === 0) continue;
-      const n = unit.carried;
-
-      moedas += this.stock.deliver(carga, this.attrs.get('deliveryValue'));
-      for (const [r, q] of carga) this.onDelivered?.(r, q);
-      unit.delivered += n;
-      unit.items.clear();
-      itens += n;
-
-      Events.emit('collector:delivered', {
-        index: unit.index,
-        total: n,
-        money: moedas,
-        depth: this.world.depthOfPixel(unit.y),
-      });
+      if (unit.carried <= 0) continue;
+      unit.sendHome();
+      unidades++;
+      itens += unit.carried;
     }
-    if (itens === 0) {
+    if (unidades === 0) {
       Events.emit('ui:toast', { text: 'Nenhuma toupeira esta carregando nada.', tone: 'warn' });
     }
-    return { itens, moedas };
+    return { unidades, itens };
   }
 
   /** O que todas juntas estao carregando agora. */

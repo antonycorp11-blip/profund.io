@@ -75,6 +75,13 @@ export class Collector {
     return e.length ? e.map(([id, n]) => `${n} ${id}`).join(', ') : 'vazio';
   }
 
+  /** Ordem do jogador: larga o que esta fazendo e sobe para entregar. */
+  sendHome(): void {
+    if (this.carried <= 0) return;
+    this.state = 'voltando';
+    this.hasTarget = false;
+  }
+
   statusLabel(): string {
     const nomes: Record<CollectorState, string> = {
       procurando: 'farejando',
