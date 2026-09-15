@@ -123,8 +123,13 @@ export class Collector {
         this.targetY = alvo.y;
         this.hasTarget = true;
         this.state = 'buscando';
+      } else if (this.carried > 0) {
+        // Nada mais para buscar e com carga na bolsa: entrega o que tem em vez
+        // de esperar encher. Segurar recurso parado nao ajuda ninguem.
+        this.state = 'voltando';
+        return;
       } else {
-        // Nada na mina: fica rondando o poco, pronta para descer.
+        // Nada na mina e de maos vazias: ronda o poco, pronta para descer.
         this.state = 'procurando';
         this.idleTimer -= dt;
         if (this.idleTimer <= 0) {

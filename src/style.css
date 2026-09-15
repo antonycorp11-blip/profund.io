@@ -1401,19 +1401,24 @@ body {
   color: var(--ink);
 }
 
+/* Cartoes lado a lado: numa tela deitada de celular cabem dois ou tres, e a
+   lista deixa de ser uma coluna gigante que exige rolar para ver o resto. */
 .active-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  align-content: start;
+  gap: 8px;
+  padding: 8px;
 }
 
 .active-card {
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(155deg, rgba(30, 38, 52, 0.94), rgba(16, 18, 24, 0.94));
   border: 1px solid var(--stroke);
   border-left: 3px solid rgba(127, 182, 255, 0.5);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .active-card.owned {
@@ -1427,19 +1432,20 @@ body {
 }
 
 .active-icon {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
+  flex: none;
   display: grid;
   place-items: center;
-  font-size: 19px;
-  border-radius: 9px;
+  font-size: 16px;
+  border-radius: 8px;
   background: rgba(127, 182, 255, 0.14);
   border: 1px solid rgba(127, 182, 255, 0.3);
 }
 
 .active-icon img {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
 }
 
 .active-title {
@@ -1450,7 +1456,7 @@ body {
 }
 
 .active-title b {
-  font-size: 14px;
+  font-size: 12.5px;
 }
 
 .active-level {
@@ -1477,22 +1483,22 @@ body {
 }
 
 .active-desc {
-  margin: 7px 0 5px;
-  font-size: 11.5px;
+  margin: 6px 0 4px;
+  font-size: 10.5px;
   color: var(--ink-dim);
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .active-stats {
-  font-size: 11px;
+  font-size: 10px;
   color: #bfe9ff;
   font-variant-numeric: tabular-nums;
 }
 
 .active-next {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--ink-dim);
-  margin-top: 5px;
+  margin-top: 4px;
 }
 
 .active-next b {
@@ -1503,13 +1509,110 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: 9px;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 7px;
+}
+
+.active-foot .btn {
+  font-size: 10px;
+  padding: 6px 10px;
+  white-space: nowrap;
 }
 
 .active-req {
-  font-size: 10.5px;
+  font-size: 9.5px;
   color: var(--ink-dim);
+  line-height: 1.2;
+}
+
+/* ---------------- Equipamento ---------------- */
+
+.eq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+}
+
+.eq-slot h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin: 0 0 5px;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.eq-slot h4 small {
+  color: #ffdd96;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 10.5px;
+}
+
+.eq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 7px;
+}
+
+.eq-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 7px 9px;
+  background: rgba(30, 26, 22, 0.75);
+  font-size: 10.5px;
+}
+
+.eq-card.on {
+  border-color: rgba(255, 205, 110, 0.8);
+  background: rgba(60, 44, 22, 0.8);
+}
+
+.eq-card.locked {
+  opacity: 0.45;
+}
+
+.eq-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eq-head b {
+  font-size: 11.5px;
+}
+
+.eq-icon {
+  font-size: 14px;
+}
+
+.eq-card p {
+  margin: 4px 0;
+  color: var(--ink-dim);
+  line-height: 1.35;
+}
+
+.eq-mods {
+  color: #9be0ff;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.eq-foot {
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.eq-foot .btn {
+  width: 100%;
+  font-size: 10px;
+  padding: 6px 8px;
 }
 
 /* ---------------- Debug ---------------- */

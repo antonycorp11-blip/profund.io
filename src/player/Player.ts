@@ -46,6 +46,8 @@ export class Player {
 
   /** Habilidades que a arvore libera. */
   wallJumpUnlocked = false;
+  /** Asas/jato: a queda fica lenta o bastante para escolher onde pousar. */
+  glideUnlocked = false;
   private coyote = 0;
   private jumpBufferTimer = 0;
   /** Fase do ciclo de caminhada (usada tambem pelo sprite animado). */
@@ -188,7 +190,7 @@ export class Player {
 
     if (this.onGround) {
       this.climbStamina = Math.min(
-        climbCfg.stamina,
+        this.stats.climbStamina,
         this.climbStamina + climbCfg.recovery * dt
       );
       this.climbTired = false;
@@ -204,7 +206,10 @@ export class Player {
 
     // --- gravidade ---
     if (this.climbingWall === 0) {
-      this.vy = Math.min(this.vy + p.gravity * dt, p.maxFallSpeed);
+      // Planeio: asas e mochila a jato seguram a queda. Nao e voo — e chegar
+      // embaixo inteiro e no lugar que voce escolheu.
+      const teto = this.glideUnlocked && this.vy > 0 ? p.maxFallSpeed * 0.42 : p.maxFallSpeed;
+      this.vy = Math.min(this.vy + p.gravity * dt, teto);
     }
 
     // --- movimento com colisao (substeps para nao atravessar tiles) ---
@@ -332,7 +337,7 @@ export class Player {
 
   /** 0..1 da resistencia de escalada, para a HUD/sprite. */
   get climbRatio(): number {
-    return this.climbStamina / CONFIG.player.climb.stamina;
+    return this.climbStamina / Math.max(0.1, this.stats.climbStamina);
   }
 
   render(ctx: CanvasRenderingContext2D): void {

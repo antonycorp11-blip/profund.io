@@ -2,15 +2,17 @@ import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { ACTIVE_SKILLS, type ActiveSkillMeta } from '../data/activeSkills';
-import { skillCost, skillDef, type SkillDef } from '../data/skills';
+import { skillDef, type SkillDef } from '../data/skills';
 import type { ActiveSkills } from '../systems/ActiveSkills';
 import type { Attributes } from '../systems/Attributes';
+import type { BaseStock } from '../systems/BaseStock';
 import type { SkillTree } from '../systems/SkillTree';
 
 export interface ActiveSkillsHost {
   tree: SkillTree;
   attrs: Attributes;
   active: ActiveSkills;
+  stock: BaseStock;
   currentDepth(): number;
 }
 
@@ -35,7 +37,7 @@ export class ActiveSkillsUI {
       <div class="tech-screen">
         <header class="tech-header">
           <div class="tech-tabs"><h3 class="screen-title">⚡ Habilidades</h3></div>
-          <div class="tech-stock"><b data-points>0</b> pontos</div>
+          <div class="tech-stock">✦ <b data-points>0</b></div>
           <button class="icon-btn" data-close>✕</button>
         </header>
         <div class="tech-body active-list"></div>
@@ -76,7 +78,7 @@ export class ActiveSkillsUI {
   }
 
   private render(): void {
-    this.pointsEl.textContent = String(this.host.tree.points);
+    this.pointsEl.textContent = Math.floor(this.host.stock.money).toLocaleString('pt-BR');
     this.listEl.innerHTML = '';
     let n = 0;
     for (const meta of ACTIVE_SKILLS) {
@@ -95,12 +97,20 @@ export class ActiveSkillsUI {
     const level = tree.levelOf(def.id);
     const maxed = level >= def.maxLevel;
     const check = tree.canLearn(def.id, this.host.currentDepth());
-    const cost = skillCost(def, level);
+    const preco = meta.prices[Math.min(level, meta.prices.length - 1)] ?? 0;
+    const money = Math.floor(this.host.stock.money);
+    const podePagar = money >= preco;
 
     const el = document.createElement('div');
     el.className = `active-card ${level > 0 ? 'owned' : ''}`;
     const art = def.art ? Assets.skillIcon(def.art) : null;
-    const icone = art ? `<img src="${art}" alt="">` : def.icon;
+    const icone = art ? `<img src="${art}" alt="">` : meta.icon;
+
+    // Motivo curto de nao poder comprar: o cartao tem uma linha para isso.
+    let motivo = '';
+    if (maxed) motivo = 'No maximo';
+    else if (!check.ok) motivo = check.reason ?? '';
+    else if (!podePagar) motivo = `Faltam ✦${(preco - money).toLocaleString('pt-BR')}`;
 
     el.innerHTML = `
       <div class="active-head">
@@ -115,15 +125,18 @@ export class ActiveSkillsUI {
       <div class="active-stats" data-live-stats="${meta.id}"></div>
       <div class="active-next">${this.nextText(def, level)}</div>
       <div class="active-foot">
-        <span class="active-req">${maxed ? 'No maximo' : check.ok ? `Custa ${cost} ponto${cost > 1 ? 's' : ''}` : (check.reason ?? '')}</span>
-        <button class="btn primary" data-learn ${maxed || !check.ok ? 'disabled' : ''}>
-          ${level > 0 ? 'MELHORAR' : 'APRENDER'}
+        <span class="active-req">${motivo}</span>
+        <button class="btn primary" data-learn ${maxed || !check.ok || !podePagar ? 'disabled' : ''}>
+          ${maxed ? 'COMPLETA' : `${level > 0 ? 'MELHORAR' : 'APRENDER'} · ✦${preco.toLocaleString('pt-BR')}`}
         </button>
       </div>`;
 
     const btn = el.querySelector('[data-learn]') as HTMLButtonElement;
     btn.addEventListener('click', () => {
-      if (tree.learn(def.id, this.host.currentDepth())) this.render();
+      if (this.host.stock.money < preco) return;
+      if (!tree.learn(def.id, this.host.currentDepth())) return;
+      this.host.stock.money -= preco;
+      this.render();
     });
     return el;
   }

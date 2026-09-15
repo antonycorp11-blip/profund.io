@@ -1,11 +1,19 @@
 import { CONFIG } from '../data/config';
 import { COLLECTOR_UPGRADES } from '../data/collectors';
+import {
+  EQUIP_SLOTS,
+  equipDef,
+  equipmentOfSlot,
+  type EquipSlot,
+} from '../data/equipment';
 import { RESOURCES, type ResourceId } from '../data/resources';
 import { TECH_CATEGORIES, techsOf, type TechCategory, type TechDef } from '../data/tech';
 import { Haptics } from '../fx/Haptics';
 import type { Clone, CloneFocus } from '../entities/Clone';
 import type { CloneManager } from '../systems/CloneManager';
 import type { CollectorManager } from '../systems/CollectorManager';
+import type { Equipment } from '../systems/Equipment';
+import type { Modifier } from '../systems/Attributes';
 import type { TechTree } from '../systems/TechTree';
 import type { BaseStock } from '../systems/BaseStock';
 
@@ -13,6 +21,7 @@ export interface TechHost {
   tech: TechTree;
   clones: CloneManager;
   collectors: CollectorManager;
+  equipment: Equipment;
   stock: BaseStock;
   deepest(): number;
   /** Profundidade em metros de um Y de mundo (para o monitor das copias). */
@@ -23,6 +32,36 @@ export interface TechHost {
 }
 
 type Tab = TechCategory | 'copiadora' | 'toupeiras';
+
+/** Modificador em uma linha curta, do jeito que o jogador pensa. */
+function describeMod(m: Modifier): string {
+  const nomes: Record<string, string> = {
+    lightRadius: 'luz',
+    defense: 'defesa',
+    maxHealth: 'vida',
+    knockbackResistance: 'firmeza',
+    moveSpeed: 'velocidade',
+    inventoryCapacity: 'mochila',
+    carryMovePenalty: 'peso da carga',
+    climbSpeed: 'escalada',
+    climbStamina: 'folego',
+    jumpForce: 'salto',
+    airControl: 'controle no ar',
+    fireResistance: 'resistencia ao fogo',
+    environmentalResistance: 'resistencia ambiental',
+    healthRegeneration: 'regeneracao',
+    rareOreDetectionRadius: 'faro para raro',
+    rareOreGlow: 'minerio raro brilha',
+    glide: 'planeio',
+  };
+  const nome = nomes[m.target] ?? m.target;
+  if (m.op === 'unlock') return nome;
+  if (m.op === 'percentAdd') {
+    return `${m.value > 0 ? '+' : ''}${Math.round(m.value * 100)}% ${nome}`;
+  }
+  const v = Math.abs(m.value) < 1 ? `${Math.round(m.value * 100)}%` : `${m.value}`;
+  return `${m.value > 0 ? '+' : ''}${v} ${nome}`;
+}
 
 /** Tela de Pesquisa e Tecnologia + painel da Copiadora. */
 export class TechScreen {
@@ -120,6 +159,7 @@ export class TechScreen {
     this.renderStock();
     if (this.tab === 'copiadora') this.renderCloner();
     else if (this.tab === 'toupeiras') this.renderCollectors();
+    else if (this.tab === 'equipamento') this.renderEquipment();
     else this.renderTechs(this.tab);
   }
 
@@ -255,6 +295,91 @@ export class TechScreen {
     html += '</div>';
     this.bodyEl.innerHTML = html;
     this.bindCloner();
+  }
+
+  // ---------------------------------------------------------- equipamento --
+
+  /**
+   * Loja de equipamento, por slot.
+   *
+   * Comprar custa moeda; equipar nao custa nada. A escolha interessante e qual
+   * levar — cobrar pela troca so faria o jogador evitar experimentar.
+   */
+  private renderEquipment(): void {
+    const eq = this.host.equipment;
+    const money = Math.floor(this.host.stock.money);
+    const deepest = this.host.deepest();
+
+    const blocos = Object.values(EQUIP_SLOTS)
+      .map((slot) => {
+        const itens = equipmentOfSlot(slot.id)
+          .map((def) => {
+            const tem = eq.has(def.id);
+            const vestido = eq.isEquipped(def.id);
+            const longe = deepest < def.requiredDepth;
+            const efeitos = def.modifiers.map((m) => describeMod(m)).join(' · ');
+
+            let acao: string;
+            if (vestido) {
+              acao = `<button class="btn" data-uneq="${slot.id}">TIRAR</button>`;
+            } else if (tem) {
+              acao = `<button class="btn primary" data-eq="${def.id}">EQUIPAR</button>`;
+            } else if (longe) {
+              acao = `<div class="tech-status">Chegue a ${def.requiredDepth} m</div>`;
+            } else {
+              acao = `<button class="btn ${money >= def.cost ? 'primary' : ''}" data-buyeq="${def.id}"
+                        ${money >= def.cost ? '' : 'disabled'}>✦ ${def.cost.toLocaleString('pt-BR')}</button>`;
+            }
+
+            return `
+              <div class="eq-card ${vestido ? 'on' : ''} ${longe && !tem ? 'locked' : ''}">
+                <div class="eq-head"><span class="eq-icon">${def.icon}</span><b>${def.name}</b></div>
+                <p>${def.description}</p>
+                <div class="eq-mods">${efeitos}</div>
+                <div class="eq-foot">${acao}</div>
+              </div>`;
+          })
+          .join('');
+
+        const atual = eq.equippedIn(slot.id);
+        const nomeAtual = atual ? (equipDef(atual)?.name ?? '') : 'vazio';
+        return `
+          <div class="eq-slot">
+            <h4><span>${slot.icon}</span> ${slot.name}
+              <small>${nomeAtual}</small></h4>
+            <div class="eq-grid">${itens}</div>
+          </div>`;
+      })
+      .join('');
+
+    this.bodyEl.innerHTML = `<div class="eq-list">${blocos}</div>`;
+    this.bindEquipment();
+  }
+
+  private bindEquipment(): void {
+    const eq = this.host.equipment;
+    for (const b of Array.from(this.bodyEl.querySelectorAll('[data-buyeq]'))) {
+      b.addEventListener('click', () => {
+        if (eq.buy((b as HTMLElement).dataset.buyeq!)) {
+          Haptics.ui();
+          this.render();
+        }
+      });
+    }
+    for (const b of Array.from(this.bodyEl.querySelectorAll('[data-eq]'))) {
+      b.addEventListener('click', () => {
+        eq.equip((b as HTMLElement).dataset.eq!);
+        Haptics.ui();
+        this.render();
+      });
+    }
+    for (const b of Array.from(this.bodyEl.querySelectorAll('[data-uneq]'))) {
+      b.addEventListener('click', () => {
+        eq.unequip((b as HTMLElement).dataset.uneq as EquipSlot);
+        Haptics.ui();
+        this.render();
+      });
+    }
   }
 
   // ------------------------------------------------------------ toupeiras --

@@ -13,6 +13,7 @@ export type AttrId =
   | 'jumpForce'
   | 'airControl'
   | 'climbSpeed'
+  | 'climbStamina'
   | 'dashSpeed'
   | 'dashDistance'
   | 'dashCooldown'
@@ -115,6 +116,7 @@ export type AttrId =
 /** Flags ligadas/desligadas por habilidades (op 'unlock'). */
 export type FlagId =
   | 'wallJump'
+  | 'glide'
   | 'autoPickup'
   | 'dashUnlocked'
   | 'airDash'
@@ -147,6 +149,7 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   moveSpeed: { id: 'moveSpeed', name: 'Velocidade', base: 165, format: 'flat', live: true },
   jumpForce: { id: 'jumpForce', name: 'Forca do salto', base: 470, format: 'flat', live: true },
   airControl: { id: 'airControl', name: 'Controle aereo', base: 1, format: 'multiplier', live: true },
+  climbStamina: { id: 'climbStamina', name: 'Folego de escalada', base: 7, format: 'flat', live: true },
   climbSpeed: { id: 'climbSpeed', name: 'Escalada', base: 145, format: 'flat', live: true },
   dashSpeed: { id: 'dashSpeed', name: 'Velocidade do dash', base: 520, format: 'flat', live: false },
   dashDistance: { id: 'dashDistance', name: 'Distancia do dash', base: 120, format: 'pixels', live: false },

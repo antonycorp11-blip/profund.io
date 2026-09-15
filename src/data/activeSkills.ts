@@ -17,6 +17,15 @@ export type ActiveSkillKind = 'charges' | 'cast';
 
 export interface ActiveSkillMeta {
   id: ActiveSkillId;
+  /**
+   * Preco em MOEDAS de cada nivel (o primeiro compra a habilidade).
+   *
+   * Habilidade ativa deixou de custar ponto de atributo: ponto vem de jogar e e
+   * raro; moeda vem da economia (entregar, copias, toupeiras) e e abundante.
+   * Cada uma compra um tipo de progresso diferente, e a economia passa a ter
+   * onde ser gasta.
+   */
+  prices: number[];
   /** No da arvore que a libera (categoria 'active'). */
   skill: string;
   name: string;
@@ -36,6 +45,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   {
     id: 'shock',
     skill: 'mining_shock',
+    prices: [900, 2200, 4800, 9500],
     name: 'Choque',
     icon: '⚡',
     kind: 'charges',
@@ -52,6 +62,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   {
     id: 'drill',
     skill: 'mining_drill',
+    prices: [1200, 2800, 6000, 12000],
     name: 'Broca',
     icon: '🛠',
     kind: 'charges',
@@ -68,6 +79,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   {
     id: 'recall',
     skill: 'move_recall',
+    prices: [1500, 4000, 9000],
     name: 'Volta Rapida',
     icon: '⟲',
     kind: 'cast',

@@ -142,15 +142,15 @@ export class CollectorManager {
           ),
         (items) => {
           let total = 0;
-          for (const [r, n] of items) {
-            this.stock.add(r, n);
-            this.onDelivered?.(r, n);
-            total += n;
-          }
+          for (const [, n] of items) total += n;
+          // A toupeira vende como qualquer entrega: o que ela traz vira moeda.
+          const moedas = this.stock.deliver(items, this.attrs.get('deliveryValue'));
+          for (const [r, n] of items) this.onDelivered?.(r, n);
           if (total > 0) {
             Events.emit('collector:delivered', {
               index: unit.index,
               total,
+              money: moedas,
               depth: this.world.depthOfPixel(unit.y),
             });
           }

@@ -60,6 +60,10 @@ export class PlayerStats {
   get interactionRange(): number {
     return this.attrs.get('interactionRange');
   }
+  get climbStamina(): number {
+    return this.attrs.get('climbStamina');
+  }
+
   get climbSpeed(): number {
     return this.attrs.get('climbSpeed');
   }

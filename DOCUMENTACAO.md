@@ -458,6 +458,43 @@ andar cada vez mais longe para achar o mesmo carvao.
 Medido: veio de 24 blocos quebrado, 24 de volta, com tempos diferentes para o
 veio nao reaparecer inteiro de uma vez.
 
+## 4g-quater. Equipamento e a divisao da economia
+
+```
+src/data/equipment.ts       catalogo: 11 itens em 4 slots
+src/systems/Equipment.ts    o que foi comprado e o que esta vestido
+```
+
+**A regra da economia**, que ficou clara agora:
+
+| moeda | ponto de atributo |
+|---|---|
+| equipamento, habilidades ativas, copias, toupeiras | arvore de atributos |
+| vem de entregar (seu, das copias, das toupeiras) | vem de descer, da historia e de subir de nivel |
+| abundante | raro |
+
+Cada uma compra um tipo de progresso diferente, e a economia passa a ter onde
+ser gasta — antes o dinheiro so servia para a oficina.
+
+**Slots:** cabeca, corpo, costas, pes. Um item ativo por slot. Comprar ja veste;
+trocar nao custa nada — cobrar pela troca so faria o jogador evitar
+experimentar. Itens aparecem na loja conforme a profundidade ja alcancada.
+
+Dois efeitos precisaram virar de verdade para os itens nao mentirem:
+`climbStamina` deixou de ser numero fixo no CONFIG e virou atributo (botas e
+mochila a jato mexem nele), e `glide` e uma flag nova que segura a queda a 42%
+da velocidade (asas e jato). Item que promete o que o motor nao faz e pior que
+item nenhum.
+
+### Entregar passou a ser uma regra so
+
+`BaseStock.deliver()` guarda o recurso E paga por ele. A regra estava escrita em
+tres lugares e um deles esquecia de pagar: o jogador entregando virava moeda,
+mas copia e toupeira so enchiam o estoque. Trabalho de ajudante rende dinheiro
+igual ao seu.
+
+Medido: toupeira trouxe 12 de ouro e o saldo foi de 950 para 1454.
+
 ## 4h. Habilidades ativas — Choque, Broca e Volta Rapida
 
 ```

@@ -65,18 +65,16 @@ export class Depot implements Interactable {
       return;
     }
     let units = 0;
-    let value = 0;
     let offset = 0;
-    for (const [id, qty] of this.inventory.entries()) {
-      this.stock.add(id, qty);
+    const itens = this.inventory.entries();
+    for (const [id, qty] of itens) {
       this.quota.registerDelivery(id, qty);
       units += qty;
-      value += RESOURCES[id].value * qty;
       this.floating.push(this.x, this.y - 18 - offset, `+${qty} ${RESOURCES[id].name}`, RESOURCES[id].accent, 11);
       offset += 13;
     }
-    value = Math.round(value * this.valueMultiplier());
-    this.stock.money += value;
+    // Uma regra so para entregar, em BaseStock: guardar e pagar.
+    const value = this.stock.deliver(itens, this.valueMultiplier());
     this.inventory.clear();
     Haptics.ui();
     Events.emit('delivery:done', { total: units, value });

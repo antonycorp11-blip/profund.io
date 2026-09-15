@@ -119,16 +119,17 @@ export class CloneManager {
     for (const clone of this.clones) {
       clone.update(dt, (items) => {
         let value = 0;
-        for (const [id, qty] of items) {
-          this.stock.add(id, qty);
-          this.onDelivered?.(id, qty);
-          value += qty;
-        }
+        for (const [, qty] of items) value += qty;
+        // Paga igual a entrega do jogador: o ajudante nao trabalha de graca.
+        const moedas = this.stock.deliver(items, this.attrs.get('deliveryValue'));
+        for (const [id, qty] of items) this.onDelivered?.(id, qty);
+        void moedas;
         if (value > 0) {
           clone.delivered += value;
           Events.emit('clone:delivered', {
             index: clone.index,
             total: value,
+            money: moedas,
             depth: this.world.depthOfPixel(clone.y),
           });
         }

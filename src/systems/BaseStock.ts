@@ -22,6 +22,28 @@ export class BaseStock {
     if (countAsDelivery) this.delivered.set(id, this.deliveredCount(id) + amount);
   }
 
+  /**
+   * Entrega no deposito: guarda o recurso E paga por ele.
+   *
+   * Existe porque a regra estava escrita em tres lugares e um deles esquecia de
+   * pagar: o jogador entregando virava moeda, mas copia e toupeira so enchiam
+   * o estoque. Trabalho de ajudante tem que render dinheiro igual ao seu.
+   *
+   * @param multiplier bonus de venda (atributo `deliveryValue`)
+   * @returns moedas pagas
+   */
+  deliver(items: [ResourceId, number][], multiplier = 1): number {
+    let valor = 0;
+    for (const [id, qty] of items) {
+      if (qty <= 0) continue;
+      this.add(id, qty);
+      valor += RESOURCES[id].value * qty;
+    }
+    valor = Math.round(valor * multiplier);
+    this.money += valor;
+    return valor;
+  }
+
   /** Tenta gastar; retorna false se faltar recurso. */
   spend(cost: Partial<Record<ResourceId, number>>): boolean {
     for (const [id, qty] of Object.entries(cost)) {

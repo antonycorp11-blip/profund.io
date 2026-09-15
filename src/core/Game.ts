@@ -45,6 +45,7 @@ import { TimeSystem } from '../systems/TimeSystem';
 import { CloneCompass } from '../ui/CloneCompass';
 import { CloneManager } from '../systems/CloneManager';
 import { CollectorManager } from '../systems/CollectorManager';
+import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { CreatureManager } from '../systems/CreatureManager';
@@ -114,6 +115,7 @@ export class Game {
   private drill: DrillTool;
   private compass: CloneCompass;
   private collectors: CollectorManager;
+  private equipment = new Equipment(this.attrs, this.stock);
   /** De onde o jogador saiu na ultima Volta Rapida (para o retorno). */
   private recallReturn: { x: number; y: number } | null = null;
   /** Ultima camada anunciada, para avisar so na entrada. */
@@ -251,6 +253,7 @@ export class Game {
       tree: this.skills,
       attrs: this.attrs,
       active: this.activeSkills,
+      stock: this.stock,
       currentDepth: () => this.deepestMeters,
     });
     this.activeUI.bindEvents();
@@ -374,6 +377,7 @@ export class Game {
       tech: this.tech,
       clones: this.cloneManager,
       collectors: this.collectors,
+      equipment: this.equipment,
       stock: this.stock,
       deepest: () => this.deepestMeters,
       depthOf: (y) => this.world.depthOfPixel(y),
@@ -552,13 +556,25 @@ export class Game {
       const ts = CONFIG.tileSize;
       const x = this.worldInfo.depotCol * ts + ts / 2;
       const y = (this.worldInfo.baseFloorRow - 1) * ts;
-      this.floating.push(x, y - 24, `Toupeira ${p.index + 1}: +${p.total}`, '#d8c3a5', 12);
+      this.floating.push(
+        x,
+        y - 24,
+        `Toupeira ${p.index + 1}: +${p.total} · ✦${p.money}`,
+        '#d8c3a5',
+        12
+      );
     });
     Events.on('clone:delivered', (p) => {
       const ts = CONFIG.tileSize;
       const x = this.worldInfo.depotCol * ts + ts / 2;
       const y = (this.worldInfo.baseFloorRow - 1) * ts;
-      this.floating.push(x, y - 16, `Copia ${p.index + 1}: +${p.total}`, '#7fd8e8', 12);
+      this.floating.push(
+        x,
+        y - 16,
+        `Copia ${p.index + 1}: +${p.total} · ✦${p.money}`,
+        '#7fd8e8',
+        12
+      );
       this.particles.burst(x, y, 6, ['#7fd8e8', '#ffe9a3'], { speed: 70 });
     });
 
@@ -656,6 +672,7 @@ export class Game {
     this.activeSkills.fromJSON(data.activeSkills);
     this.progression.fromJSON(data.progression);
     this.collectors.fromJSON(data.collectors);
+    this.equipment.fromJSON(data.equipment);
     this.mining.blocksMined = data.stats?.blocksMined ?? 0;
     this.deepestMeters = data.stats?.deepestMeters ?? 0;
     this.playTime = data.stats?.playTime ?? 0;
@@ -751,6 +768,7 @@ export class Game {
     this.structures.update(dt);
     this.buildMode.updateEnergy();
     this.player.wallJumpUnlocked = this.attrs.has('wallJump');
+    this.player.glideUnlocked = this.attrs.has('glide');
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     this.playerSprite.update(dt, this.player);
 
@@ -1227,6 +1245,7 @@ export class Game {
       activeSkills: this.activeSkills.toJSON(),
       progression: this.progression.toJSON(),
       collectors: this.collectors.toJSON(),
+      equipment: this.equipment.toJSON(),
       stats: {
         blocksMined: this.mining.blocksMined,
         deepestMeters: this.deepestMeters,

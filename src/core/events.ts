@@ -46,8 +46,8 @@ export interface GameEvents {
   'time:week': { week: number };
   'tech:researched': { id: string; name: string; unlocks: string };
   'clone:created': { id: string; index: number };
-  'clone:delivered': { index: number; total: number; depth: number };
-  'collector:delivered': { index: number; total: number; depth: number };
+  'clone:delivered': { index: number; total: number; money: number; depth: number };
+  'collector:delivered': { index: number; total: number; money: number; depth: number };
   'block:regrow': {
     col: number;
     row: number;
@@ -90,6 +90,7 @@ export interface GameEvents {
   'player:died': { lost: number };
   'player:revived': Record<string, never>;
   'layer:reached': { id: string; name: string; tagline: string };
+  'equip:changed': Record<string, never>;
   'save:written': Record<string, never>;
   'game:reset': Record<string, never>;
 }

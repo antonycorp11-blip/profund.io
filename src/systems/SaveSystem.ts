@@ -35,6 +35,7 @@ export interface SaveData {
   activeSkills?: Record<string, { charges: number; cooldown: number }>;
   progression?: { level: number; xp: number };
   collectors?: import('./CollectorManager').CollectorSave;
+  equipment?: import('./Equipment').EquipmentSave;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;
 }

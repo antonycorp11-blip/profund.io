@@ -46,7 +46,8 @@ export const CATEGORIES: Record<SkillCategory, CategoryMeta> = {
     fantasy: 'Quero um truque na manga quando a rocha nao ceder.',
     color: '#7fb6ff',
     icon: '⚡',
-    usesPoints: true,
+    // Pagas em moeda, nao em ponto: ver /data/activeSkills.ts.
+    usesPoints: false,
   },
   mining: {
     id: 'mining',
