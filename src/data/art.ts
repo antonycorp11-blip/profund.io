@@ -26,6 +26,13 @@ export interface CharacterArt {
   sheet: string;
   /** Lado do quadro quadrado dentro de cada tira. */
   stripFrame: number;
+  /**
+   * Altura do quadro da tira em pixels de mundo.
+   * Maior que `drawHeight` porque nas tiras o heroi ocupa 78% do quadro (sobra
+   * folga para o braco da escalada e a picareta erguida) — sem isso ele
+   * encolheria ao trocar de formato de arte.
+   */
+  stripDrawHeight: number;
   strips: Record<string, StripDef>;
   cols: number;
   /** Tamanho de cada quadro dentro da folha. */
@@ -163,6 +170,7 @@ export const ART = {
      * substituem a folha 4x4 inteira; quando faltam, o jogo cai nela sozinho.
      */
     stripFrame: 128,
+    stripDrawHeight: 66,
     strips: {
       idle: { file: 'idle.png', frames: 8, fps: 6 },
       walk: { file: 'walk.png', frames: 8, fps: 13 },

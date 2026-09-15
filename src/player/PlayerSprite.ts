@@ -179,8 +179,10 @@ export class PlayerSprite {
     let sx: number;
     let sy = 0;
 
+    let drawH = art.drawHeight;
     if (sheet && strip) {
       sx = strip.index * frameW;
+      drawH = art.stripDrawHeight;
     } else {
       sheet = Assets.character();
       if (!sheet) return false;
@@ -191,9 +193,9 @@ export class PlayerSprite {
       sy = Math.floor(index / art.cols) * frameH;
     }
 
-    const scale = art.drawHeight / frameH;
+    const scale = drawH / frameH;
     const w = frameW * scale;
-    const h = art.drawHeight;
+    const h = drawH;
     const feetY = player.feetY;
     const top = feetY - h * art.feetAnchor;
 

@@ -412,7 +412,8 @@ Na ordem, depois do teste:
    26 golpes — tenso de proposito, mas so o playtest diz se e tenso ou chato. Os numeros estao em
    `src/data/creatures.ts`, `src/data/quota.ts` e `CONFIG.combat`.
 2. **Arte das criaturas e das estruturas de automacao.** Sao os dois unicos sistemas grandes ainda
-   desenhados em vetor. Maior ganho visual por hora investida agora.
+   desenhados em vetor. Maior ganho visual por hora investida agora. (O heroi ja saiu dessa lista:
+   usa tiras de 8 quadros por animacao — ver ASSETS.md.)
 3. **Som real.** O sintetizador cobre tudo, mas som e metade da sensacao de impacto.
 4. **Equipamentos como itens** (capacete, traje, mochila, picareta): a camada de modificadores ja
    aceita; falta a tela e os dados.

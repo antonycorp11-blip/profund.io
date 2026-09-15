@@ -1,4 +1,4 @@
-# Caderno de Assets — Leva 1 (personagem + blocos)
+# Caderno de Assets
 
 Estilo fechado: **cartoon HD 2x** — arte gerada grande, desenhada reduzida no jogo.
 
@@ -175,6 +175,52 @@ LINHA 4
 ```
 
 ---
+
+## FORMATO ATUAL DO PERSONAGEM — tiras de animação
+
+**Este é o formato em uso.** A folha 4x4 do PEDIDO 3 continua no repositório só
+como rede de segurança: se um arquivo de tira faltar, aquele estado volta a
+usá-la sozinho.
+
+Uma imagem por animação, quadros lado a lado na horizontal, fundo transparente.
+Salve em `arte-bruta/personagem/` e rode `npm run slice-assets`.
+
+| arquivo | quadros | o que desenhar |
+|---|---|---|
+| `idle.png` | 8 | parado respirando, picareta na mão |
+| `walk.png` | 8 | ciclo de caminhada completo |
+| `jump.png` | 8 | agachar → impulso → subir → ápice → cair → pousar |
+| `mine.png` | 8 | erguer a picareta → golpe → recuperar |
+| `climb.png` | 8 | escalando de frente para a parede |
+
+**O que o fatiador resolve sozinho** (não perca tempo com isso ao gerar):
+
+- **Espaçamento irregular.** Os quadros são achados pela ocupação das colunas,
+  não por divisão em partes iguais.
+- **Picareta encostando no quadro vizinho.** Quando dois quadros se colam, o
+  corte cai na coluna com menos pixels do trecho — o cabo fino da picareta — e
+  não no meio do corpo.
+- **Escala.** Todas as tiras são medidas juntas e recebem a MESMA escala; sem
+  isso o herói mudaria de tamanho ao trocar de animação.
+- **Alinhamento.** Cada quadro é ancorado pelos pés, com o centro horizontal
+  medido nas pernas (não na caixa de conteúdo, senão a picareta esticada
+  empurraria o corpo para o lado).
+
+**O que você precisa garantir:**
+
+1. Todos os quadros da mesma tira com o personagem **do mesmo tamanho** e
+   **virado para a direita** (o motor espelha para a esquerda).
+2. Fundo transparente ou chapado (branco/preto uniforme).
+3. Nada de sombra no chão, brilho da lanterna projetado ou partículas — o motor
+   desenha isso por cima.
+
+**Como o jogo escolhe o quadro:** pelo estado físico, não por um timer solto.
+O pulo segue a velocidade vertical real, a mineração segue o arco do golpe, a
+caminhada e a escalada seguem a distância percorrida. Por isso a animação
+"obedece" ao controle em vez de andar sozinha.
+
+As cópias da copiadora usam as mesmas tiras, recoloridas em tempo de execução —
+elas são o protagonista, então precisam ser o mesmo desenho.
 
 ## Paleta oficial (use nos prompts futuros)
 

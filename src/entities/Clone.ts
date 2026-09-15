@@ -62,6 +62,7 @@ export class Clone {
   private walkPhase = 0;
   private swing = 0;
   private tintCache: HTMLCanvasElement | null = null;
+  private stripTints = new Map<string, HTMLCanvasElement | null>();
   /** Tempo restante do envio de carga pelo poco. */
   private sendTimer = 0;
   private sendTotal = 1;
@@ -397,25 +398,55 @@ export class Clone {
   // -------------------------------------------------------------- desenho --
 
   render(ctx: CanvasRenderingContext2D, sheetIndex: number): void {
-    const sheet = Assets.character();
+    const art = ART.character;
+
+    // A copia e o proprio protagonista: ela usa a mesma arte, so recolorida.
+    // Por isso tenta as tiras novas antes de cair na folha 4x4.
+    const stripName = this.stripName();
+    const stripImg = stripName ? Assets.characterStrip(stripName) : null;
+
+    const sheet = stripImg ?? Assets.character();
     if (!sheet) {
       ctx.fillStyle = this.tint;
       ctx.fillRect(this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
       return;
     }
-    if (!this.tintCache) {
-      this.tintCache = Assets.tintedCharacter(this.tint, 0.55);
+
+    let src: CanvasImageSource;
+    let frameW: number;
+    let frameH: number;
+    let sx: number;
+    let sy = 0;
+    let h: number;
+
+    if (stripImg && stripName) {
+      const cacheKey = 'strip:' + stripName;
+      let tinted = this.stripTints.get(cacheKey);
+      if (tinted === undefined) {
+        tinted = Assets.tintedStrip(stripName, this.tint, 0.55);
+        this.stripTints.set(cacheKey, tinted);
+      }
+      src = tinted ?? stripImg;
+      frameW = art.stripFrame;
+      frameH = art.stripFrame;
+      sx = this.stripIndex(stripName) * frameW;
+      h = art.stripDrawHeight * 0.92;
+    } else {
+      if (!this.tintCache) {
+        this.tintCache = Assets.tintedCharacter(this.tint, 0.55);
+      }
+      src = this.tintCache ?? sheet;
+      const frame =
+        this.state === 'minerando'
+          ? art.anims.mine_side.frames[this.swing >= 0.6 ? 1 : 0]
+          : sheetIndex;
+      frameW = art.frameW;
+      frameH = art.frameH;
+      sx = (frame % art.cols) * frameW;
+      sy = Math.floor(frame / art.cols) * frameH;
+      h = art.drawHeight * 0.92;
     }
-    const art = ART.character;
-    const src = this.tintCache ?? sheet;
-    const frame =
-      this.state === 'minerando'
-        ? art.anims[this.swing >= 0.6 ? 'mine_side' : 'mine_side'].frames[this.swing >= 0.6 ? 1 : 0]
-        : sheetIndex;
-    const sx = (frame % art.cols) * art.frameW;
-    const sy = Math.floor(frame / art.cols) * art.frameH;
-    const h = art.drawHeight * 0.92;
-    const w = art.frameW * (h / art.frameH);
+    const w = frameW * (h / frameH);
     const top = this.y + this.h / 2 - h * art.feetAnchor;
 
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -426,7 +457,7 @@ export class Clone {
     ctx.save();
     ctx.translate(Math.round(this.x), Math.round(top));
     if (this.facing === -1) ctx.scale(-1, 1);
-    ctx.drawImage(src, sx, sy, art.frameW, art.frameH, -w / 2, 0, w, h);
+    ctx.drawImage(src, sx, sy, frameW, frameH, -w / 2, 0, w, h);
     ctx.restore();
 
     if (this.state === 'enviando') this.renderSending(ctx, top);
@@ -446,6 +477,25 @@ export class Clone {
     ctx.fillStyle = this.tint;
     ctx.fillRect(this.x - 2, y - 6 - t * 12, 4, 6);
     ctx.globalAlpha = 1;
+  }
+
+  /** Qual tira usar agora, ou null quando aquele arquivo nao existe. */
+  private stripName(): string | null {
+    const has = (n: string): boolean => Assets.characterStrips.has(n);
+    if (this.state === 'minerando' && has('mine')) return 'mine';
+    if (this.state === 'parado' && has('idle')) return 'idle';
+    if (has('walk')) return 'walk';
+    return has('idle') ? 'idle' : null;
+  }
+
+  /** Quadro dentro da tira escolhida. */
+  private stripIndex(name: string): number {
+    const def = ART.character.strips[name];
+    if (!def) return 0;
+    if (name === 'mine') {
+      return Math.min(def.frames - 1, Math.round((1 - this.swing) * (def.frames - 1)));
+    }
+    return Math.floor(this.walkPhase) % def.frames;
   }
 
   /** Quadro de caminhada/parado, calculado fora para poder reusar a folha. */

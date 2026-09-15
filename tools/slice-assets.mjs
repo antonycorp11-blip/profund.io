@@ -98,6 +98,16 @@ const TOL = Number(args.tol ?? 60);
 const OUT_BLOCKS = path.join('public', 'art', 'blocks');
 const OUT_CHAR = path.join('public', 'art', 'character');
 
+/** Tiras de animacao do heroi: nome de saida -> nomes aceitos na pasta. */
+const STRIPS = [
+  { name: 'idle', files: ['idle.png', 'parado.png'] },
+  { name: 'walk', files: ['walk.png', 'andar.png', 'caminhar.png'] },
+  { name: 'jump', files: ['jump.png', 'pular.png', 'pulo.png'] },
+  { name: 'mine', files: ['mine.png', 'minerar.png', 'picareta.png'] },
+  { name: 'climb', files: ['climb.png', 'escalar.png', 'escalada.png'] },
+];
+
+
 main();
 
 function main() {
@@ -242,13 +252,6 @@ function sliceCharacter() {
  * 3. Cada quadro e ancorado pelos pes e centrado pelas PERNAS, nao pela caixa
  *    de conteudo: senao a picareta esticada para o lado empurra o corpo.
  */
-const STRIPS = [
-  { name: 'idle', files: ['idle.png', 'parado.png'] },
-  { name: 'walk', files: ['walk.png', 'andar.png', 'caminhar.png'] },
-  { name: 'jump', files: ['jump.png', 'pular.png', 'pulo.png'] },
-  { name: 'mine', files: ['mine.png', 'minerar.png', 'picareta.png'] },
-  { name: 'climb', files: ['climb.png', 'escalar.png', 'escalada.png'] },
-];
 
 function sliceCharacterStrips() {
   const dir = path.join(SRC, 'personagem');
@@ -326,24 +329,30 @@ function sliceCharacterStrips() {
 
 /**
  * Agrupa as colunas ocupadas da tira em quadros.
- * Lacunas menores que `minGap` sao ignoradas: a picareta de um quadro pode
- * quase encostar no vizinho sem que os dois virem um so.
+ *
+ * Duas etapas, porque as duas falham sozinhas:
+ * 1. corte por lacuna — separa quadros que nao se tocam;
+ * 2. corte por densidade — quando a picareta esticada de um quadro encosta no
+ *    vizinho, os dois viram uma corrida so. Ali o corte cai na coluna com menos
+ *    pixels do trecho (o cabo fino da picareta), e nao no meio do corpo.
  */
 function frameRuns(png, minGap = 6) {
-  const occupied = new Uint8Array(png.width);
-  for (let x = 0; x < png.width; x++) {
+  const w = png.width;
+  // Quantos pixels opacos cada coluna tem: serve de ocupacao e de densidade.
+  const density = new Int32Array(w);
+  for (let x = 0; x < w; x++) {
+    let n = 0;
     for (let y = 0; y < png.height; y++) {
-      if (png.data[(y * png.width + x) * 4 + 3] >= 24) {
-        occupied[x] = 1;
-        break;
-      }
+      if (png.data[((y * w + x) << 2) + 3] >= 24) n++;
     }
+    density[x] = n;
   }
+
   const runs = [];
   let start = -1;
   let gap = 0;
-  for (let x = 0; x < png.width; x++) {
-    if (occupied[x]) {
+  for (let x = 0; x < w; x++) {
+    if (density[x] > 0) {
       if (start < 0) start = x;
       gap = 0;
     } else if (start >= 0) {
@@ -354,10 +363,44 @@ function frameRuns(png, minGap = 6) {
       }
     }
   }
-  if (start >= 0) runs.push({ x0: start, x1: png.width - 1 });
-  // Descarta respingos: qualquer corrida com menos de 4% da largura da tira.
-  const min = png.width * 0.04;
-  return runs.filter((r) => r.x1 - r.x0 + 1 >= min);
+  if (start >= 0) runs.push({ x0: start, x1: w - 1 });
+
+  // Descarta respingos.
+  const keep = runs.filter((r) => r.x1 - r.x0 + 1 >= w * 0.04);
+  if (keep.length === 0) return keep;
+
+  // Largura tipica = mediana das corridas (as coladas sao a minoria).
+  const widths = keep.map((r) => r.x1 - r.x0 + 1).sort((a, b) => a - b);
+  const unit = widths[Math.floor(widths.length / 2)];
+
+  const out = [];
+  for (const run of keep) {
+    const width = run.x1 - run.x0 + 1;
+    const parts = Math.max(1, Math.round(width / unit));
+    if (parts === 1) {
+      out.push(run);
+      continue;
+    }
+    // Procura cada fronteira na coluna mais "vazia" perto da posicao ideal.
+    const step = width / parts;
+    let from = run.x0;
+    for (let i = 1; i < parts; i++) {
+      const ideal = Math.round(run.x0 + step * i);
+      const span = Math.round(step * 0.35);
+      let cut = ideal;
+      let best = Infinity;
+      for (let x = Math.max(from + 4, ideal - span); x <= Math.min(run.x1 - 4, ideal + span); x++) {
+        if (density[x] < best) {
+          best = density[x];
+          cut = x;
+        }
+      }
+      out.push({ x0: from, x1: cut - 1 });
+      from = cut;
+    }
+    out.push({ x0: from, x1: run.x1 });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------- rachaduras ---
