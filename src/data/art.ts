@@ -167,6 +167,8 @@ export const ART = {
 
   /** Criaturas: uma tira por animacao, geradas pelo slice-assets. */
   creaturesDir: 'creatures/',
+  /** Arte de /creatures usada por quem NAO e monstro (as toupeiras coletoras). */
+  helperArts: ['toupeira'],
   creatureAnims: ['idle', 'walk', 'attack', 'hurt', 'death'] as const,
 
   /**

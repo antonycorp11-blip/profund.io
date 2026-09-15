@@ -37,7 +37,7 @@ export const COLLECTOR_CONFIG = {
   /** Sem nada para buscar, voltam para o poco e esperam. */
   idlePatrol: 140,
   /** Altura do sprite em pixels de mundo. */
-  drawHeight: 30,
+  drawHeight: 38,
   /** Caixa de colisao. */
   w: 22,
   h: 18,

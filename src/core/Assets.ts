@@ -79,6 +79,11 @@ class AssetsImpl {
     for (const def of CREATURES) {
       if (def.art) artes.add(def.art);
     }
+    // Ajudantes usam a mesma pasta. A toupeira saiu do bestiario ao virar
+    // coletora, e com ela a arte deixou de ser carregada — a toupeira virava
+    // um retangulo marrom. Quem desenha do /creatures precisa pedir a arte
+    // aqui, e nao depender de continuar sendo monstro.
+    for (const art of ART.helperArts) artes.add(art);
     for (const art of artes) {
       for (const anim of manifest.creatureAnims) {
         jobs.push(
