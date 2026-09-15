@@ -1241,13 +1241,23 @@ body {
 }
 
 /* --- botao de habilidade ativa --- */
+/* Coluna propria das habilidades, a esquerda dos botoes grandes. Cada uma tem
+   o seu botao: e assim que se escolhe qual usar. */
+.touch-skills {
+  position: absolute;
+  right: calc(var(--safe-r) + 190px);
+  bottom: calc(var(--safe-b) + 18px);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+
 .touch-btn.skill {
   position: relative;
-  width: 58px;
-  height: 58px;
-  font-size: 22px;
-  grid-column: 2;
-  grid-row: 1;
+  width: 52px;
+  height: 52px;
+  font-size: 20px;
   background: rgba(26, 38, 58, 0.8);
   border-color: rgba(140, 190, 240, 0.35);
   /* O anel conta a recarga sem precisar de numero na tela. */

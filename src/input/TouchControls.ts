@@ -32,6 +32,7 @@ export class TouchControls {
       <div class="touch-stick" data-stick>
         <div class="touch-stick-knob" data-knob></div>
       </div>
+      <div class="touch-skills"></div>
       <div class="touch-buttons"></div>
     `;
     parent.appendChild(this.root);
@@ -40,6 +41,7 @@ export class TouchControls {
     this.stickKnob = this.root.querySelector('[data-knob]') as HTMLDivElement;
 
     const buttons = this.root.querySelector('.touch-buttons') as HTMLDivElement;
+    const skillCol = this.root.querySelector('.touch-skills') as HTMLDivElement;
     // Sem botao AGIR: chegar perto ja resolve o que e instantaneo, e o que
     // abre tela vira um toque no proprio aviso na tela.
     // GADGET e DASH sairam: o lugar deles e das habilidades ativas — uma por
@@ -61,8 +63,13 @@ export class TouchControls {
         el.innerHTML = `${spec.label}<span class="pad-badge" data-charges hidden></span>`;
         el.hidden = true;
         this.skillBtns.push(el);
+        // Habilidades vao para a propria coluna: no grid dos botoes elas
+        // caiam todas na mesma celula e uma tapava a outra — so a ultima
+        // recebia o toque, e nao dava para escolher qual usar.
+        skillCol.appendChild(el);
+      } else {
+        buttons.appendChild(el);
       }
-      buttons.appendChild(el);
       if (spec.locked) {
         el.disabled = true;
         continue;

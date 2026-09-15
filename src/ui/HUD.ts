@@ -228,9 +228,8 @@ export class HUD {
     this.root.appendChild(this.debugEl);
 
     Events.on('ui:toast', (p) => this.toast(p.text, p.tone ?? 'info'));
-    Events.on('inventory:full', () =>
-      this.toast('Mochila cheia! Volte e entregue na base.', 'warn')
-    );
+    // Sem aviso de mochila cheia: a barra ja fica vermelha e o aviso aparecia
+    // de novo a cada tentativa de coletar — virava um piscar constante.
     Events.on('clue:found', (p) => this.toast(p.logEntry, 'story'));
     Events.on('npc:rescued', (p) => this.toast(`${p.name} foi resgatado!`, 'good'));
     Events.on('quota:complete', (p) => {
