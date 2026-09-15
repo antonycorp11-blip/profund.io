@@ -15,7 +15,11 @@ export interface TechSave {
 export class TechTree {
   private researched = new Set<string>();
 
-  constructor(private attrs: Attributes, private stock: BaseStock) {}
+  constructor(private attrs: Attributes, private stock: BaseStock) {
+    for (const def of TECHS) {
+      if (def.startsResearched) this.researched.add(def.id);
+    }
+  }
 
   has(id: string): boolean {
     return this.researched.has(id);

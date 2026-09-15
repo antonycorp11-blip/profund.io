@@ -186,13 +186,11 @@ export class TechScreen {
   private renderCloner(): void {
     const mgr = this.host.clones;
     const cost = mgr.costFor();
-    const costHtml = Object.entries(cost)
-      .map(([id, qty]) => {
-        const rid = id as ResourceId;
-        const have = this.host.stock.count(rid);
-        return `<span class="${have >= qty ? 'ok' : 'miss'}">${RESOURCES[rid].name} ${have}/${qty}</span>`;
-      })
-      .join('');
+    const money = Math.floor(this.host.stock.money);
+    const costHtml =
+      `<span class="${money >= cost ? 'ok' : 'miss'}">` +
+      `✦ ${cost.toLocaleString('pt-BR')} moedas` +
+      `<small> (voce tem ${money.toLocaleString('pt-BR')})</small></span>`;
 
     let html = `
       <div class="cloner-head">

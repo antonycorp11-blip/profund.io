@@ -48,19 +48,14 @@ export class CloneManager {
     return this.clones.length < this.slots;
   }
 
-  /** O custo sobe a cada copia ja impressa. */
-  costFor(indexOverride?: number): Partial<Record<ResourceId, number>> {
+  /** Custo em moedas da proxima copia. Sobe a cada copia ja impressa. */
+  costFor(indexOverride?: number): number {
     const n = indexOverride ?? this.clones.length;
-    const mult = Math.pow(CONFIG.clones.costGrowth, n);
-    const out: Partial<Record<ResourceId, number>> = {};
-    for (const [id, qty] of Object.entries(CONFIG.clones.cost)) {
-      out[id as ResourceId] = Math.round(qty * mult);
-    }
-    return out;
+    return Math.round(CONFIG.clones.cost * Math.pow(CONFIG.clones.costGrowth, n));
   }
 
   canAfford(): boolean {
-    return this.stock.canAfford(this.costFor());
+    return this.stock.money >= this.costFor();
   }
 
   create(x: number, y: number): Clone | null {
@@ -69,10 +64,14 @@ export class CloneManager {
       return null;
     }
     const cost = this.costFor();
-    if (!this.stock.spend(cost)) {
-      Events.emit('ui:toast', { text: 'Recursos insuficientes para imprimir.', tone: 'warn' });
+    if (this.stock.money < cost) {
+      Events.emit('ui:toast', {
+        text: `Faltam ${Math.ceil(cost - this.stock.money)} moedas para imprimir.`,
+        tone: 'warn',
+      });
       return null;
     }
+    this.stock.money -= cost;
     const clone = this.spawn(`clone_${this.created}`, this.clones.length, x, y, {
       focus: 'minerar',
       filter: [],

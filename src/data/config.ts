@@ -205,8 +205,12 @@ export const CONFIG = {
     collectSearch: 260,
     /** Raio de trabalho padrao (tiles). */
     defaultWorkRadius: 14,
-    /** Custo por copia impressa. */
-    cost: { iron: 25, copper: 40, coal: 60 } as Record<string, number>,
+    /**
+     * Custo por copia impressa, em MOEDAS.
+     * Pagar com recurso bruto competia com a cota da semana; pagar com moeda
+     * transforma a copia no destino natural do dinheiro que ja sobra da venda.
+     */
+    cost: 900,
     /** O custo sobe a cada copia ja existente. */
     costGrowth: 1.6,
     /** Ate esta distancia do deposito a copia entrega andando. */

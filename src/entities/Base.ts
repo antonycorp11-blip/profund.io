@@ -45,9 +45,14 @@ export class Depot implements Interactable {
     private valueMultiplier: () => number = () => 1
   ) {}
 
-  /** Chegar perto com a mochila cheia ja entrega: ninguem quer apertar botao
-   *  para guardar o que acabou de carregar por 200 metros. */
-  readonly auto = true;
+  /**
+   * Chegar perto com carga ja entrega: ninguem quer apertar botao para guardar
+   * o que acabou de carregar por 200 metros. Com a mochila vazia NAO dispara —
+   * senao passar pela base vira um "a mochila esta vazia" a cada volta.
+   */
+  get auto(): boolean {
+    return !this.inventory.isEmpty;
+  }
 
   prompt(): string | null {
     if (this.inventory.isEmpty) return 'Deposito (vazio)';

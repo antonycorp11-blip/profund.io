@@ -304,6 +304,12 @@ Tres comportamentos que valem a pena conhecer:
 3. **Refinaria rende mais do que entrou.** Segura o lote por alguns segundos e devolve
    `amount * refineryYield` — o atributo que a pesquisa aumenta.
 
+**Copia custa moeda, nao recurso.** Pagar com minerio bruto competia direto com
+a cota da semana — imprimir uma copia atrasava a entrega. Em moeda, a copia
+vira o destino natural do dinheiro que ja sobra da venda. Primeira copia: 900,
+e cada uma seguinte custa 1,6x a anterior. A propria copiadora ja vem montada
+(o custo do pilar de automacao esta nas copias, nao na maquina).
+
 **Copias usam a rede.** Ao encher, a copia procura uma entrada (esteira ou armazem) num raio de
 16 tiles e joga a carga la. Se nao houver rede por perto, cai no comportamento antigo de enviar
 pelo poco. E o caminho de evolucao que o GDD descreve: manual -> envio -> linha industrial.

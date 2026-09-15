@@ -94,9 +94,11 @@ body {
 
 .money-card {
   position: relative;
-  display: flex;
+  /* Grade de duas linhas: moeda + saldo em cima, faixa de nivel embaixo. */
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 9px;
+  gap: 2px 9px;
   min-width: 170px;
   padding: 7px 11px 7px 8px;
   border: 1px solid rgba(255, 206, 100, 0.48);
@@ -236,6 +238,11 @@ body {
   width: 100%;
 }
 
+.hud-bars[hidden],
+.bag[hidden] {
+  display: none;
+}
+
 .hud-bars > .bag {
   flex: 1 1 0;
   min-width: 0;
@@ -284,20 +291,18 @@ body {
   color: var(--warn);
 }
 
-/* --- nivel e XP --- */
-.level-card {
+/* --- nivel e XP, dentro do card de saldo --- */
+.level-inline {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  gap: 7px;
-  width: 100%;
-  padding: 3px 9px 4px;
-  background: linear-gradient(150deg, rgba(36, 28, 20, 0.93), rgba(17, 14, 12, 0.91));
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius);
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 1px;
 }
 
 .level-num {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   color: #ffdd96;
   font-variant-numeric: tabular-nums;
@@ -314,7 +319,8 @@ body {
 
 .level-bar {
   flex: 1;
-  height: 5px;
+  max-width: 78px;
+  height: 4px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -328,17 +334,15 @@ body {
   transition: width 0.2s ease-out;
 }
 
-.level-card.up {
+.money-card.level-up-flash {
   animation: level-up 0.5s ease-out;
 }
 
 @keyframes level-up {
   0% {
-    border-color: rgba(205, 176, 255, 0.95);
-    box-shadow: 0 0 18px rgba(160, 120, 255, 0.6);
+    box-shadow: 0 0 20px rgba(160, 120, 255, 0.75);
   }
   100% {
-    border-color: var(--stroke);
     box-shadow: none;
   }
 }
@@ -569,6 +573,34 @@ body {
 /* `display: grid` vence o [hidden]; precisa ser explicito. */
 .icon-btn[hidden] {
   display: none;
+}
+
+/* Botao com legenda: o icone sozinho nao ensina nada a quem abre o jogo. */
+.icon-btn.labeled {
+  width: auto;
+  min-width: 44px;
+  height: auto;
+  padding: 4px 8px 3px;
+  gap: 1px;
+  line-height: 1;
+  grid-auto-flow: row;
+}
+
+.ib-icon {
+  font-size: 15px;
+}
+
+.ib-label {
+  font-size: 7.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-weight: 700;
+}
+
+.icon-btn.labeled:hover .ib-label,
+.icon-btn.labeled:focus-visible .ib-label {
+  color: inherit;
 }
 
 .icon-btn:hover,
@@ -1700,9 +1732,9 @@ body {
   /* O dedo do joystick passa direto; so o selo MAPA e clicavel. */
   pointer-events: none;
   cursor: pointer;
-  opacity: 0.92;
-  background: rgba(10, 8, 7, 0.62);
-  border: 1px solid rgba(255, 224, 170, 0.18);
+  opacity: 0.62;
+  background: rgba(10, 8, 7, 0.3);
+  border: 1px solid rgba(255, 224, 170, 0.14);
   border-radius: 10px;
   padding: 4px 4px 3px;
   line-height: 0;

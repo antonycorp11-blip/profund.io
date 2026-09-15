@@ -256,10 +256,11 @@ export class PanelUI {
     this.panel.appendChild(sectionTitle('Desenvolvimento — habilidades'));
     const devGrid = document.createElement('div');
     devGrid.className = 'dev-grid';
+    // "Desbloquear tudo" saiu: com tudo ligado de uma vez o jogo nao tem mais
+    // nada para contar, e os numeros deixam de dizer se o balanceamento presta.
     const devButtons: [string, () => void][] = [
       ['+1 ponto', () => this.host.dev.addPoint(1)],
       ['+10 pontos', () => this.host.dev.addPoint(10)],
-      ['Desbloquear tudo', () => this.host.dev.unlockAll()],
       ['Resetar skills', () => this.host.dev.resetSkills()],
       ['Testar jackpot', () => this.host.dev.testProc('jackpot')],
       ['Testar critico', () => this.host.dev.testProc('blockCritical')],

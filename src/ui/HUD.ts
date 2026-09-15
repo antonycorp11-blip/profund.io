@@ -20,6 +20,7 @@ export class HUD {
   private levelFill: HTMLElement;
   private lastLevel = -1;
   private lastLevelRatio = -1;
+  private barsRow!: HTMLDivElement;
   private climbEl: HTMLDivElement;
   private climbFill: HTMLElement;
   private lastClimb = -1;
@@ -79,18 +80,19 @@ export class HUD {
       <span class="money-float" aria-hidden="true"></span>`;
     this.moneyValue = this.moneyEl.querySelector('[data-money]') as HTMLElement;
     this.moneyFloat = this.moneyEl.querySelector('.money-float') as HTMLElement;
-    left.appendChild(this.moneyEl);
-
-    // Nivel e XP logo abaixo do saldo: e a linha de progresso que sempre anda,
-    // mesmo quando o jogador nao entregou nada nem desceu mais fundo.
+    // Nivel entra DENTRO do card de saldo: o selo no canto e a barra fina na
+    // base. Uma linha inteira so para isso empurrava todo o resto da coluna
+    // para baixo sem precisar.
     this.levelEl = document.createElement('div');
-    this.levelEl.className = 'level-card';
+    this.levelEl.className = 'level-inline';
     this.levelEl.innerHTML = `
       <span class="level-num">1</span>
       <span class="level-bar"><i></i></span>`;
     this.levelNum = this.levelEl.querySelector('.level-num') as HTMLElement;
     this.levelFill = this.levelEl.querySelector('.level-bar > i') as HTMLElement;
-    left.appendChild(this.levelEl);
+    this.moneyEl.appendChild(this.levelEl);
+
+    left.appendChild(this.moneyEl);
     const chips = document.createElement('div');
     chips.className = 'chips';
     left.appendChild(chips);
@@ -157,6 +159,10 @@ export class HUD {
     bars.className = 'hud-bars';
     bars.appendChild(this.bagEl);
     bars.appendChild(this.healthEl);
+    this.barsRow = bars;
+    this.bagEl.hidden = true;
+    this.healthEl.hidden = true;
+    bars.hidden = true;
     left.appendChild(bars);
     left.appendChild(this.climbEl);
 
@@ -175,33 +181,16 @@ export class HUD {
 
     const buttons = document.createElement('div');
     buttons.className = 'hud-buttons';
-    const btnWorkshop = document.createElement('button');
-    btnWorkshop.className = 'icon-btn';
-    btnWorkshop.textContent = '⚗';
-    btnWorkshop.title = 'Tecnologia';
-    btnWorkshop.addEventListener('click', () => this.onWorkshop());
-    const btnMenu = document.createElement('button');
-    btnMenu.className = 'icon-btn';
-    btnMenu.textContent = '☰';
-    btnMenu.title = 'Ajustes';
-    btnMenu.addEventListener('click', () => this.onMenu());
+    const btnWorkshop = this.buildIconButton('⚗', 'Tecnologia', () => this.onWorkshop());
+    const btnMenu = this.buildIconButton('☰', 'Ajustes', () => this.onMenu());
     // Botao da copiadora: aparece assim que ela e pesquisada e vai direto para
     // o painel das copias.
-    this.clonerBtn = document.createElement('button');
-    this.clonerBtn.className = 'icon-btn';
-    this.clonerBtn.textContent = '⧉';
-    this.clonerBtn.title = 'Copiadora';
+    this.clonerBtn = this.buildIconButton('⧉', 'Cópias', () => this.onCloner());
     this.clonerBtn.hidden = true;
-    this.clonerBtn.addEventListener('click', () => this.onCloner());
     buttons.appendChild(this.clonerBtn);
 
     buttons.appendChild(this.buildSkillButton());
-    const btnBuild = document.createElement('button');
-    btnBuild.className = 'icon-btn';
-    btnBuild.textContent = '⚒';
-    btnBuild.title = 'Construir';
-    btnBuild.addEventListener('click', () => this.onBuild());
-    buttons.appendChild(btnBuild);
+    buttons.appendChild(this.buildIconButton('⚒', 'Construir', () => this.onBuild()));
     buttons.appendChild(btnWorkshop);
     buttons.appendChild(btnMenu);
     right.appendChild(buttons);
@@ -270,9 +259,9 @@ export class HUD {
         'progress',
         2
       );
-      this.levelEl.classList.remove('up');
-      void this.levelEl.offsetWidth;
-      this.levelEl.classList.add('up');
+      this.moneyEl.classList.remove('level-up-flash');
+      void this.moneyEl.offsetWidth;
+      this.moneyEl.classList.add('level-up-flash');
     });
     Events.on('player:hurt', () => {
       this.healthEl.classList.remove('hurt');
@@ -329,13 +318,25 @@ export class HUD {
     this.quotaEl.appendChild(days);
   }
 
+  /**
+   * Botao da HUD com legenda.
+   *
+   * So o icone nao bastava: no celular ninguem adivinha que "✦" e a arvore de
+   * habilidades nem que "⧉" e a copiadora — e as duas telas ficaram perdidas.
+   */
+  private buildIconButton(icon: string, label: string, onClick: () => void): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.className = 'icon-btn labeled';
+    btn.title = label;
+    btn.innerHTML = `<span class="ib-icon">${icon}</span><span class="ib-label">${label}</span>`;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
   /** Botao da arvore de habilidades, com selo de pontos disponiveis. */
   private buildSkillButton(): HTMLElement {
-    const btn = document.createElement('button');
-    btn.className = 'icon-btn';
-    btn.title = 'Habilidades';
-    btn.innerHTML = '✦<span class="badge" data-skill-badge hidden></span>';
-    btn.addEventListener('click', () => this.onSkills());
+    const btn = this.buildIconButton('✦', 'Skills', () => this.onSkills());
+    btn.insertAdjacentHTML('beforeend', '<span class="badge" data-skill-badge hidden></span>');
     this.skillBadge = btn.querySelector('[data-skill-badge]') as HTMLElement;
     return btn;
   }
@@ -368,9 +369,15 @@ export class HUD {
     if (used !== this.lastBag) {
       this.lastBag = used;
       const cap = this.inventory.capacity;
-      this.bagFill.style.width = `${Math.min(100, (used / cap) * 100)}%`;
+      const ratio = cap > 0 ? used / cap : 0;
+      this.bagFill.style.width = `${Math.min(100, ratio * 100)}%`;
       this.bagLabel.textContent = `${used}/${cap}`;
       this.bagEl.classList.toggle('full', used >= cap);
+      // Some enquanto ha espaco de sobra: barra cheia o tempo todo vira ruido.
+      // Aparece a 80% — antes disso nao ha decisao a tomar, depois disso ha.
+      const showBag = ratio >= 0.8;
+      if (this.bagEl.hidden !== !showBag) this.bagEl.hidden = !showBag;
+      this.syncBarsRow();
     }
 
 
@@ -478,6 +485,16 @@ export class HUD {
     this.healthFill.style.width = `${Math.min(100, ratio * 100)}%`;
     this.healthLabel.textContent = `${cur}/${Math.round(max)}`;
     this.healthEl.classList.toggle('low', ratio <= 0.3);
+    // So aparece depois de levar dano: com a vida cheia nao ha o que decidir.
+    const showHealth = ratio < 1;
+    if (this.healthEl.hidden !== !showHealth) this.healthEl.hidden = !showHealth;
+    this.syncBarsRow();
+  }
+
+  /** A linha some junto quando as duas barras estao escondidas. */
+  private syncBarsRow(): void {
+    const empty = this.bagEl.hidden && this.healthEl.hidden;
+    if (this.barsRow.hidden !== empty) this.barsRow.hidden = empty;
   }
 
   private formatMoney(value: number): string {

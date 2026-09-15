@@ -51,6 +51,8 @@ export const TECH_CATEGORIES: Record<TechCategory, TechCategoryMeta> = {
 };
 
 export interface TechDef {
+  /** Ja nasce pesquisada (a maquina existe; usar e que custa). */
+  startsResearched?: boolean;
   id: string;
   category: TechCategory;
   name: string;
@@ -74,8 +76,11 @@ export const TECHS: TechDef[] = [
     category: 'copias',
     name: 'Copiadora',
     description:
-      'Uma maquina que le o seu padrao e imprime outro voce. Cada copia mina sozinha.',
-    cost: { iron: 40, copper: 60, crystal: 4 },
+      'Uma maquina que le o seu padrao e imprime outro voce. Cada copia mina sozinha. ' +
+      'Ela veio com a mina; imprimir cada copia e que custa.',
+    /** Ja vem montada: o custo do pilar de automacao esta nas copias, nao aqui. */
+    startsResearched: true,
+    cost: {},
     requires: [],
     requiredDepth: 0,
     unlocks: 'cloner',
