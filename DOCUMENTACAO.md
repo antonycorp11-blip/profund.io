@@ -356,7 +356,35 @@ resolvido. Morte testada com 20 carvao e 10 ferro na mochila: sobraram 13 e 7, j
 **Criatura emparedada nao trava.** Se o vao fechar em cima dela, ela tenta subir por 2,5 s;
 depois some (ambiente) ou volta ao posto (guardiao).
 
-## 4h. Publicacao (Vercel + PWA)
+## 4h. Habilidades ativas — Choque
+
+```
+src/systems/ActiveSkills.ts   cargas, recarga e estado (molde para as proximas)
+src/mining/ShockChain.ts      a corrente: escolha de alvos e desenho dos raios
+```
+
+**Contrato:** apertar liga N marteladas com o efeito; quando as marteladas
+acabam, comeca a recarga. Nao e passivo que dispara sozinho — o jogador escolhe
+QUANDO gastar, e e essa escolha que faz a habilidade valer alguma coisa.
+
+**A corrente prefere o mesmo material.** Cada salto pontua os vizinhos por
+distancia (contra) e por ser do mesmo bloco de origem (a favor, peso 3). Bater
+numa pedra solta rende pouco; bater no meio de um veio de ferro derruba o veio.
+E o que transforma a habilidade em ferramenta de exploracao em vez de "dano em
+area": ela desenha a forma do deposito.
+
+Protecoes de sempre: `indestructible`, `quest` e `boss` nunca sao alvo, e ha
+teto de blocos por martelada (`CONFIG.skills.shockMaxTargets`).
+
+**Quatro niveis:** desbloqueia -> +2 saltos e +12% de forca -> +2 marteladas e
+-4 s de recarga -> +3 saltos, +1 de alcance e +18% de forca. No nivel 3 medido:
+6 saltos, 5 marteladas, 12 s de recarga.
+
+Uma armadilha que custou um teste: ler a definicao do bloco DEPOIS de aplicar o
+dano devolve ar, e o bloco quebrava sem soltar nada. Quem quebra bloco de fora
+do golpe normal recebe o `BlockDef` de antes.
+
+## 4i. Publicacao (Vercel + PWA)
 
 ```
 vercel.json              headers de cache por tipo de arquivo

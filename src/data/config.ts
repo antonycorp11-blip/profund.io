@@ -244,6 +244,17 @@ export const CONFIG = {
     minimapTilesY: 52,
   },
 
+  skills: {
+    /** Piso da recarga, para nenhum upgrade transformar ativa em passiva. */
+    minCooldown: 3,
+    /** Choque: quanto tempo cada arco fica na tela (s). */
+    shockArcSec: 0.22,
+    /** Teto de blocos atingidos por martelada, custe o que custar. */
+    shockMaxTargets: 14,
+    /** Peso extra para a corrente preferir blocos do mesmo material. */
+    shockSameBlockBias: 3,
+  },
+
   combat: {
     /** Alcance do golpe em criaturas (px). Um pouco maior que o de bloco. */
     attackRange: 52,

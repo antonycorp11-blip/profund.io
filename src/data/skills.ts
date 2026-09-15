@@ -272,6 +272,41 @@ export const SKILLS: SkillDef[] = [
     position: { x: 3, y: 3 },
   },
 
+  {
+    id: 'mining_shock',
+    category: 'mining',
+    branch: 'choque',
+    name: 'Choque',
+    description:
+      'Liga uma corrente eletrica na picareta. Ao bater, o raio salta para os blocos ' +
+      'em volta — e prefere os do mesmo material, entao veios inteiros caem juntos.',
+    maxLevel: 4,
+    cost: [2, 2, 3, 3],
+    requiredSkills: ['mining_power_1'],
+    requiredDepth: 30,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'shockUnlocked', op: 'unlock', value: 1 }],
+      [
+        { target: 'shockJumps', op: 'flat', value: 2 },
+        { target: 'shockPower', op: 'flat', value: 0.12 },
+      ],
+      [
+        { target: 'shockCharges', op: 'flat', value: 2 },
+        { target: 'shockCooldown', op: 'flat', value: -4 },
+      ],
+      [
+        { target: 'shockJumps', op: 'flat', value: 3 },
+        { target: 'shockRange', op: 'flat', value: 1 },
+        { target: 'shockPower', op: 'flat', value: 0.18 },
+      ],
+    ],
+    unlockEffect: 'Botao de habilidade: 3 marteladas com corrente, depois recarrega.',
+    icon: '⚡',
+    art: 'charged',
+    position: { x: 2, y: 3 },
+  },
+
   // ------------------------------------------------------------------ COLETA
   {
     id: 'collect_speed_1',
@@ -437,16 +472,18 @@ export const SKILLS: SkillDef[] = [
     id: 'move_speed_1',
     category: 'movement',
     branch: 'passo',
-    name: 'Passo Leve',
-    description: 'Voce se cansa menos e anda mais.',
-    maxLevel: 2,
-    cost: [1, 2],
+    name: 'Velocidade de Movimento',
+    description: 'Anda mais rapido. Cada nivel encurta a volta para a base.',
+    maxLevel: 4,
+    cost: [1, 1, 2, 3],
     requiredSkills: [],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
-      [{ target: 'moveSpeed', op: 'percentAdd', value: 0.08 }],
       [{ target: 'moveSpeed', op: 'percentAdd', value: 0.12 }],
+      [{ target: 'moveSpeed', op: 'percentAdd', value: 0.12 }],
+      [{ target: 'moveSpeed', op: 'percentAdd', value: 0.15 }],
+      [{ target: 'moveSpeed', op: 'percentAdd', value: 0.18 }],
     ],
     icon: '👟',
     art: 'boots',

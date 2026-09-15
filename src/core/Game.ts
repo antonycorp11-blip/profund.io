@@ -39,7 +39,9 @@ import { SaveSystem } from '../systems/SaveSystem';
 import { TileRenderer } from '../world/TileRenderer';
 import { TimeSystem } from '../systems/TimeSystem';
 import { CloneManager } from '../systems/CloneManager';
+import { ActiveSkills } from '../systems/ActiveSkills';
 import { CreatureManager } from '../systems/CreatureManager';
+import { ShockChain } from '../mining/ShockChain';
 import { CREATURE_CONFIG } from '../data/creatures';
 import { Vitals } from '../systems/Vitals';
 import { TechScreen } from '../ui/TechScreen';
@@ -97,6 +99,8 @@ export class Game {
   private mapScreen: MapScreen;
   private creatures: CreatureManager;
   private vitals = new Vitals(this.attrs);
+  private activeSkills = new ActiveSkills(this.attrs);
+  private shock: ShockChain;
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
   /** Alvo que ja disparou sozinho neste encontro. */
@@ -232,6 +236,16 @@ export class Game {
     this.creatures = new CreatureManager(this.world, this.drops, this.exploration);
     this.creatures.buildGuardPosts();
     this.mining.strike = (dirX, dirY) => this.strikeCreatures(dirX, dirY);
+
+    // Choque: a corrente sai do bloco atingido e gasta uma martelada.
+    this.shock = new ShockChain(this.world, this.attrs);
+    this.mining.shock = (col, row, damage, tier) => {
+      if (!this.activeSkills.isActive('shock')) return 0;
+      this.activeSkills.consume('shock');
+      return this.shock.fire(col, row, damage, tier, (c, r, def) =>
+        this.mining.breakFromOutside(c, r, def)
+      );
+    };
 
     this.buildEntities();
     this.buildMarkers();
@@ -483,6 +497,7 @@ export class Game {
     this.automation.fromJSON(data.automation);
     this.creatures.fromJSON(data.creatures);
     this.vitals.fromJSON(data.vitals);
+    this.activeSkills.fromJSON(data.activeSkills);
     this.mining.blocksMined = data.stats?.blocksMined ?? 0;
     this.deepestMeters = data.stats?.deepestMeters ?? 0;
     this.playTime = data.stats?.playTime ?? 0;
@@ -551,6 +566,26 @@ export class Game {
       this.player.update(dt, this.input, this.world);
       if (!building) this.mining.update(dt, this.input, this.touch.isVisible());
     }
+    this.activeSkills.update(dt);
+    this.shock.update(dt);
+    if (!uiBlocking && this.input.wasPressed('skill')) {
+      if (!this.activeSkills.activate('shock')) {
+        const st = this.activeSkills.state('shock');
+        Events.emit('ui:toast', {
+          text: st.unlocked
+            ? `Choque recarregando (${Math.ceil(st.cooldown)} s)`
+            : 'Aprenda Choque na arvore de habilidades.',
+          tone: 'warn',
+        });
+      }
+    }
+    this.touch.setSkillState(
+      this.activeSkills.state('shock').unlocked,
+      this.activeSkills.isActive('shock'),
+      this.activeSkills.readyRatio('shock'),
+      this.activeSkills.state('shock').charges
+    );
+
     const depthNow = this.world.depthOfPixel(this.player.cy);
     if (this.vitals.update(dt, depthNow)) this.rescueAfterDeath();
     if (!uiBlocking) {
@@ -844,6 +879,7 @@ export class Game {
       Math.round(-this.camera.top * this.camera.scale * this.dpr)
     );
     for (const e of this.interactables) e.renderOverlay?.(ctx);
+    this.shock.render(ctx);
     this.floating.render(ctx);
 
     if (this.vitals.hurtFlash > 0 || this.vitals.dead) {
@@ -960,6 +996,7 @@ export class Game {
       automation: this.automation.toJSON(),
       creatures: this.creatures.toJSON(),
       vitals: this.vitals.toJSON(),
+      activeSkills: this.activeSkills.toJSON(),
       stats: {
         blocksMined: this.mining.blocksMined,
         deepestMeters: this.deepestMeters,

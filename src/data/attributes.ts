@@ -68,6 +68,11 @@ export type AttrId =
   | 'combatCriticalChance'
   | 'combatCriticalMultiplier'
   | 'bossDamage'
+  | 'shockCharges'
+  | 'shockJumps'
+  | 'shockPower'
+  | 'shockCooldown'
+  | 'shockRange'
   | 'gadgetDamage'
   | 'explosiveDamage'
   | 'explosiveRadius'
@@ -103,6 +108,7 @@ export type FlagId =
   | 'airDash'
   | 'rareOreGlow'
   | 'secretSense'
+  | 'shockUnlocked'
   | 'legacyTreeVisible';
 
 export interface AttrMeta {
@@ -182,6 +188,13 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   combatCriticalChance: { id: 'combatCriticalChance', name: 'Critico em criaturas', base: 0.05, format: 'percent', max: 0.6, live: true },
   combatCriticalMultiplier: { id: 'combatCriticalMultiplier', name: 'Multiplicador critico', base: 1.5, format: 'multiplier', live: true },
   bossDamage: { id: 'bossDamage', name: 'Dano em chefes', base: 0, format: 'percent', live: true },
+
+  // --- Choque: corrente eletrica que salta entre blocos ---
+  shockCharges: { id: 'shockCharges', name: 'Marteladas com choque', base: 3, format: 'flat', live: true },
+  shockJumps: { id: 'shockJumps', name: 'Saltos da corrente', base: 4, format: 'flat', live: true },
+  shockPower: { id: 'shockPower', name: 'Forca do choque', base: 0.55, format: 'percent', live: true },
+  shockCooldown: { id: 'shockCooldown', name: 'Recarga do choque', base: 16, format: 'flat', min: 3, live: true },
+  shockRange: { id: 'shockRange', name: 'Alcance do salto', base: 2.6, format: 'flat', live: true },
   gadgetDamage: { id: 'gadgetDamage', name: 'Dano de gadgets', base: 0, format: 'percent', live: false },
   explosiveDamage: { id: 'explosiveDamage', name: 'Dano explosivo', base: 0, format: 'percent', live: false },
   explosiveRadius: { id: 'explosiveRadius', name: 'Raio explosivo', base: 0, format: 'percent', live: false },

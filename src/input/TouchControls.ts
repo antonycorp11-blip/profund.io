@@ -18,6 +18,7 @@ export class TouchControls {
   private stickBase: HTMLDivElement;
   private stickKnob: HTMLDivElement;
   private stickId: number | null = null;
+  private skillBtn: HTMLButtonElement | null = null;
   private stickOx = 0;
   private stickOy = 0;
   private readonly radius = 56;
@@ -41,9 +42,9 @@ export class TouchControls {
     const buttons = this.root.querySelector('.touch-buttons') as HTMLDivElement;
     // Sem botao AGIR: chegar perto ja resolve o que e instantaneo, e o que
     // abre tela vira um toque no proprio aviso na tela.
+    // GADGET e DASH sairam: o lugar deles e da habilidade ativa.
     const specs: PadButtonSpec[] = [
-      { id: 'btn-gadget', label: 'GADGET', button: 'gadget', cls: 'small locked', locked: true },
-      { id: 'btn-dash', label: 'DASH', button: 'dash', cls: 'small locked', locked: true },
+      { id: 'btn-skill', label: '⚡', button: 'skill', cls: 'skill locked', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];
@@ -53,6 +54,10 @@ export class TouchControls {
       el.className = `touch-btn ${spec.cls}`;
       el.textContent = spec.label;
       el.setAttribute('aria-label', spec.label);
+      if (spec.button === 'skill') {
+        el.innerHTML = '⚡<span class="pad-badge" data-charges hidden></span>';
+        this.skillBtn = el;
+      }
       buttons.appendChild(el);
       if (spec.locked) {
         el.disabled = true;
@@ -70,6 +75,24 @@ export class TouchControls {
       () => this.setVisible(true),
       { once: true, passive: true }
     );
+  }
+
+  /**
+   * Estado do botao de habilidade: bloqueado, pronto, ligado ou recarregando.
+   * O anel mostra a recarga sem precisar de numero.
+   */
+  setSkillState(unlocked: boolean, active: boolean, ratio: number, charges: number): void {
+    const el = this.skillBtn;
+    if (!el) return;
+    el.classList.toggle('locked', !unlocked);
+    el.classList.toggle('armed', active);
+    el.classList.toggle('ready', unlocked && !active && ratio >= 1);
+    el.style.setProperty('--ring', `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`);
+    const badge = el.querySelector('[data-charges]') as HTMLElement | null;
+    if (badge) {
+      badge.textContent = active ? String(charges) : '';
+      badge.hidden = !active;
+    }
   }
 
   setVisible(v: boolean): void {

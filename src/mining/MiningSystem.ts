@@ -48,6 +48,11 @@ export class MiningSystem {
    * para que mirar na criatura seja uma escolha clara e nao um acidente.
    */
   strike: ((dirX: number, dirY: number) => boolean) | null = null;
+  /**
+   * Gancho do Choque: chamado depois de cada martelada que acerta bloco.
+   * Devolve quantos blocos a corrente atingiu (0 = nao estava ligada).
+   */
+  shock: ((col: number, row: number, damage: number, toolTier: number) => number) | null = null;
 
   constructor(
     private world: World,
@@ -86,6 +91,15 @@ export class MiningSystem {
       this.timer -= interval;
       if (!this.swingAt()) break;
     }
+  }
+
+  /**
+   * Quebra causada por outro sistema (corrente do Choque, fratura em area).
+   * Passa pelo mesmo caminho do golpe normal: drop, particula, som e contador.
+   */
+  breakFromOutside(col: number, row: number, def: ReturnType<typeof blockDef>): void {
+    const ts = this.world.tileSize;
+    this.onBreak(col, row, col * ts + ts / 2, row * ts + ts / 2, def);
   }
 
   /** Um golpe: criatura primeiro, bloco depois. @returns false quando nao ha o que golpear. */
@@ -179,6 +193,10 @@ export class MiningSystem {
   private hit(): void {
     const col = this.targetCol;
     const row = this.targetRow;
+    // Olhar para o que se esta batendo. Sem isto o heroi mantem a direcao da
+    // ultima caminhada e mina de costas — o que acontece o tempo todo no
+    // celular, onde se solta o analogico para segurar MINERAR.
+    if (Math.abs(this.aimX) > 0.3) this.player.facing = this.aimX > 0 ? 1 : -1;
     const ts = this.world.tileSize;
     const stats = this.player.stats;
     const target = this.world.getDef(col, row);
@@ -233,6 +251,8 @@ export class MiningSystem {
     }
 
     this.targetProgress = res.progress;
+    // A corrente sai do bloco atingido, entao roda depois do dano do golpe.
+    this.shock?.(col, row, damage, stats.toolTier);
     // Particulas saindo da face atingida, na direcao do jogador.
     this.particles.burst(
       cx - this.aimX * (ts * 0.35),

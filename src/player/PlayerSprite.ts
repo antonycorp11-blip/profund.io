@@ -212,7 +212,7 @@ export class PlayerSprite {
     }
 
     // Espelha so quando o lado desejado difere do lado que a arte ja olha.
-    const artFacing = usingStrip ? art.stripFacing : 1;
+    const artFacing = usingStrip && strip ? art.strips[strip.name].facing : 1;
     const flipped = player.facing !== artFacing;
 
     ctx.save();

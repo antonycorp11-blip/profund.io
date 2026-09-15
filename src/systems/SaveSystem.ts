@@ -30,6 +30,7 @@ export interface SaveData {
   /** Opcionais: saves anteriores ao sistema de criaturas continuam validos. */
   creatures?: CreatureSave;
   vitals?: VitalsSave;
+  activeSkills?: Record<string, { charges: number; cooldown: number }>;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;
 }

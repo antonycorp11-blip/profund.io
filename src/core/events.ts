@@ -62,6 +62,10 @@ export interface GameEvents {
     critical: boolean;
     name: string;
   };
+  'skill:activated': { id: string; charges: number };
+  'skill:spent': { id: string };
+  'skill:ready': { id: string };
+  'skill:shock': { worldX: number; worldY: number; hits: number };
   'player:hurt': { damage: number; health: number; max: number };
   'player:died': { lost: number };
   'player:revived': Record<string, never>;

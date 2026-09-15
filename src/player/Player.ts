@@ -129,14 +129,18 @@ export class Player {
 
     const wasClimbing = this.climbingWall !== 0;
     const holdingUp = clamp(input.axisY, -1, 1) < -0.3;
-    const pushingIn = wallDir !== 0 && Math.sign(moveX) === wallDir && Math.abs(moveX) > 0.25;
+    const pushingIn = wallDir !== 0 && Math.sign(moveX) === wallDir && Math.abs(moveX) > 0.35;
 
-    // Regra de agarre, em uma frase: encostou na parede e segurou para cima.
-    // Empurrar contra a parede tambem agarra, mas so no ar — senao andar de
-    // encontro a um paredao grudaria o jogador sem ele pedir.
-    const canGrab = this.chimney
-      ? holdingUp
-      : wallDir !== 0 && (holdingUp || (!this.onGround && pushingIn));
+    /*
+     * Regra de agarre: escalar e uma DECISAO, nunca um acidente.
+     *
+     * Exige empurrar contra a parede E pedir para subir. Segurar so para cima
+     * perto de uma parede nao agarra mais — era isso que grudava o jogador o
+     * tempo todo e atrapalhava andar, pular e minerar perto de qualquer
+     * paredao. Poco de 1 tile (chamine) continua sendo o caso facil: ali so
+     * para cima basta, porque ali nao ha mais nada que o jogador possa querer.
+     */
+    const canGrab = this.chimney ? holdingUp : pushingIn && holdingUp;
 
     this.climbingWall = 0;
     this.mantling = false;
@@ -172,6 +176,14 @@ export class Player {
       this.climbTired = true;
       this.vy = climbCfg.slideSpeed;
       this.vx = this.climbingWall * climbCfg.stick;
+    }
+
+    // Empurrar para o lado oposto solta na hora: sair da parede tem que ser
+    // tao imediato quanto agarrar nela.
+    if (this.climbingWall !== 0 && Math.sign(moveX) === -this.climbingWall && Math.abs(moveX) > 0.5) {
+      this.climbingWall = 0;
+      this.grabGrace = 0;
+      this.vx = moveX * this.stats.moveSpeed * 0.5;
     }
 
     if (this.onGround) {

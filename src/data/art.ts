@@ -18,6 +18,14 @@ export interface StripDef {
   file: string;
   frames: number;
   fps: number;
+  /**
+   * Para que lado ESTA tira olha: 1 direita, -1 esquerda.
+   *
+   * Por tira, e nao global: a arte gerada nao sai toda virada para o mesmo
+   * lado (aqui, so `walk` olha para a esquerda). Um valor unico deixava o
+   * heroi minerando e escalando de costas.
+   */
+  facing: 1 | -1;
 }
 
 export interface CharacterArt {
@@ -33,12 +41,6 @@ export interface CharacterArt {
    * encolheria ao trocar de formato de arte.
    */
   stripDrawHeight: number;
-  /**
-   * Para que lado a arte das tiras olha: 1 direita, -1 esquerda.
-   * A folha 4x4 antiga olhava para a direita; estas tiras olham para a
-   * esquerda. Sem este dado o heroi anda de costas.
-   */
-  stripFacing: 1 | -1;
   strips: Record<string, StripDef>;
   cols: number;
   /** Tamanho de cada quadro dentro da folha. */
@@ -177,14 +179,13 @@ export const ART = {
      */
     stripFrame: 128,
     stripDrawHeight: 66,
-    stripFacing: -1,
     strips: {
-      idle: { file: 'idle.png', frames: 8, fps: 6 },
-      walk: { file: 'walk.png', frames: 8, fps: 13 },
-      jump: { file: 'jump.png', frames: 8, fps: 12 },
-      mine: { file: 'mine.png', frames: 8, fps: 12 },
-      climb: { file: 'climb.png', frames: 8, fps: 10 },
-    } as Record<string, { file: string; frames: number; fps: number }>,
+      idle: { file: 'idle.png', frames: 8, fps: 6, facing: 1 },
+      walk: { file: 'walk.png', frames: 8, fps: 13, facing: -1 },
+      jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
+      mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
+      climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
+    } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,
     frameH: 128,
