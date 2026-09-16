@@ -18,6 +18,23 @@ export const CONFIG = {
     maxScale: 3.5,
     /** Cap de devicePixelRatio (performance mobile). */
     maxDpr: 2,
+    /** Piso da resolucao adaptativa. Abaixo disto a arte comeca a papar. */
+    adaptiveMinScale: 0.6,
+    /** Acima deste tempo de quadro (ms) a resolucao desce. ~45 fps. */
+    adaptiveTargetMs: 22,
+    /**
+     * Abaixo deste tempo ha folga para subir de volta.
+     *
+     * Tem que ficar ACIMA do piso do vsync. Estava em 14 ms, e num monitor de
+     * 60 Hz o quadro nunca desce de 16,7 — entao a resolucao caia uma vez e
+     * nunca mais voltava, mesmo com a maquina sobrando. A faixa morta entre
+     * 18 e 22 ms e o que impede o ping-pong.
+     */
+    adaptiveRelaxMs: 18,
+    /** Passo de cada ajuste. */
+    adaptiveStep: 0.15,
+    /** Quanto tempo de media antes de mexer de novo. */
+    adaptiveWindowSec: 2.5,
     /** Margem extra (em tiles) desenhada fora da viewport. */
     cullPadding: 2,
   },
@@ -318,6 +335,14 @@ export const CONFIG = {
   },
 
   light: {
+    /**
+     * Brilho minimo para um bloco valer um halo de luz.
+     *
+     * O tijolo antigo emite 0,05 — invisivel na pratica, e mesmo assim cada
+     * tile dele pintava um halo. Numa sala de pista isso eram dezenas de
+     * estampas por quadro que ninguem jamais enxergou.
+     */
+    minEmissive: 0.1,
     /** A escuridao comeca a aparecer nesta profundidade (m) ... */
     darkStartDepth: 4,
     /** ... e chega ao maximo aqui. */

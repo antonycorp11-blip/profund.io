@@ -3,6 +3,7 @@ import { BASE_CAMPS, type BaseCampDef, type StructureSlot } from '../data/baseca
 import { CONFIG } from '../data/config';
 import { RESOURCES, type ResourceId } from '../data/resources';
 import type { BaseCamps } from '../systems/BaseCamps';
+import type { Camera } from '../core/camera';
 import type { World } from './World';
 
 /** Quantos quadros cada folha tem. */
@@ -40,8 +41,8 @@ export class BaseCampRenderer {
    * lampiao no teto (ver BaseCampCarve), entao a arte nao precisa daquela
    * camada para ser vista — precisava so estar na ordem certa.
    */
-  render(ctx: CanvasRenderingContext2D): void {
-    this.paraCada(ctx, (ctx2, base, slot, x, chao, largura, st) => {
+  render(ctx: CanvasRenderingContext2D, camera?: Camera): void {
+    this.paraCada(ctx, camera, (ctx2, base, slot, x, chao, largura, st) => {
       if (st.state === 'disponivel' && st.hits === 0) return;
       this.peca(ctx2, base, slot, x, chao, largura);
       // A plataforma do elevador e uma peca solta que o CODIGO move. Animar
@@ -59,8 +60,8 @@ export class BaseCampRenderer {
    * Contorno do encaixe vazio, barra de obra e o convite para melhorar. Texto
    * que some no escuro nao e aviso nenhum.
    */
-  renderOverlay(ctx: CanvasRenderingContext2D): void {
-    this.paraCada(ctx, (ctx2, base, slot, x, chao, largura, st) => {
+  renderOverlay(ctx: CanvasRenderingContext2D, camera?: Camera): void {
+    this.paraCada(ctx, camera, (ctx2, base, slot, x, chao, largura, st) => {
       if (st.state === 'disponivel' && st.hits === 0) {
         this.fantasma(ctx2, x, chao, largura, slot);
         return;
@@ -74,8 +75,17 @@ export class BaseCampRenderer {
     });
   }
 
+  /**
+   * Percorre so o que da para ver.
+   *
+   * Sao cinco bases de sete encaixes cada, e todas as 35 eram percorridas e
+   * DESENHADAS a cada quadro, incluindo as do abismo enquanto o jogador estava
+   * na superficie. O overlay era o pior: texto, troca de fonte e medicao de
+   * largura, 35 vezes por quadro, quase tudo a mil metros de distancia.
+   */
   private paraCada(
     ctx: CanvasRenderingContext2D,
+    camera: Camera | undefined,
     fn: (
       ctx: CanvasRenderingContext2D,
       base: BaseCampDef,
@@ -89,10 +99,17 @@ export class BaseCampRenderer {
     const ts = this.world.tileSize;
     for (const base of BASE_CAMPS) {
       const chao = (this.world.surfaceRow + base.depth + 1) * ts;
+      // Uma camara inteira fora da tela sai do laco de uma vez.
+      if (camera && !camera.sees((base.col + base.largura / 2) * ts, chao, (base.largura / 2 + 6) * ts)) {
+        continue;
+      }
       for (const slot of base.slots) {
         const st = this.camps.stateOf(base.id, slot.kind);
         if (st.state === 'bloqueado') continue;
-        fn(ctx, base, slot, (base.col + slot.col) * ts, chao, slot.tiles * ts, st);
+        const x = (base.col + slot.col) * ts;
+        const largura = slot.tiles * ts;
+        if (camera && !camera.sees(x + largura / 2, chao, largura / 2 + 140)) continue;
+        fn(ctx, base, slot, x, chao, largura, st);
       }
     }
   }

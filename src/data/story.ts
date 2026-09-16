@@ -37,6 +37,19 @@ export interface ClueDef {
   /** Sala escavada ao redor: largura x altura em tiles. */
   roomW: number;
   roomH: number;
+  /**
+   * Deixa a trilha de marcas do Santiago ate esta sala.
+   *
+   * So a primeira usa. O caderno da a profundidade mas nao a coluna, e varrer
+   * vinte e tantos tiles as cegas no minuto cinco de jogo nao ensina nada —
+   * ensina a desistir. As marcas sao a mesma coisa que ele descreve no
+   * pergaminho do dia um ("duas linhas e um corte no meio"), entao seguir elas
+   * e o jogador fazendo o que o pai mandou fazer.
+   *
+   * Nas salas fundas, nao: la o jogador ja sabe procurar, e achar sozinho e o
+   * premio.
+   */
+  marcas?: boolean;
   prompt: string;
   lines: DialogLine[];
   /** Texto do toast ao registrar a pista. */
@@ -101,8 +114,11 @@ export const CLUES: ClueDef[] = [
     title: 'A marca do pai',
     col: 46,
     row: 18 + 26,
-    roomW: 9,
-    roomH: 5,
+    // Bem mais larga que as outras (9 x 5). E a primeira sala do jogo e a
+    // unica que o jogador procura sem saber ainda o que esta procurando.
+    roomW: 21,
+    roomH: 6,
+    marcas: true,
     prompt: 'Examinar marca',
     lines: [
       { speaker: 'Elias', text: 'Duas linhas e um corte no meio... igual ao caderno.' },

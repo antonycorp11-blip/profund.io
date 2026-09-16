@@ -26,6 +26,19 @@ export class Lighting {
   private h = 1;
   private readonly downscale = 0.5;
   private flicker = 0;
+  /**
+   * Cache de halos ja desenhados, por (raio, intensidade) arredondados.
+   *
+   * Cada luz criava um `createRadialGradient` NOVO e pintava um arco com ele.
+   * Isso era barato com duas ou tres luzes, e o jogo nao tem duas ou tres:
+   * cristal, rubi, relíquia e o proprio SELO sao blocos emissivos, e um selo e
+   * uma parede de largura inteira — perto dele eram centenas de gradientes
+   * construidos do zero a cada quadro.
+   *
+   * O formato de um halo so depende do raio e da intensidade. Entao ele vira
+   * uma estampa desenhada UMA vez, e a partir dai e um drawImage.
+   */
+  private halos = new Map<string, HTMLCanvasElement>();
 
   constructor() {
     const c = this.canvas.getContext('2d');
@@ -103,8 +116,20 @@ export class Lighting {
     const r1 = Math.min(world.height - 1, Math.ceil((camera.top + camera.viewH) / ts) + pad);
     for (let row = r0; row <= r1; row++) {
       for (let col = c0; col <= c1; col++) {
-        const def = blockDef(world.getTile(col, row));
+        const id = world.getTile(col, row);
+        const def = blockDef(id);
         if (!def.emissive) continue;
+        // Brilho fraco demais para se enxergar nao vale um halo. O tijolo
+        // antigo (0,05) enchia a tela de estampas que ninguem nunca viu.
+        if (def.emissive < CONFIG.light.minEmissive) continue;
+        /*
+         * Parede grande de um mesmo bloco emissivo — um SELO, uma veia larga
+         * de cristal — pinta um halo sim e um nao, em xadrez. Os halos se
+         * sobrepoem muito mais do que o passo de um tile, entao o resultado e
+         * indistinguivel e o custo cai pela metade justo onde ele era pior:
+         * um selo e uma parede da largura inteira do mundo.
+         */
+        if (((col + row) & 1) === 1 && this.cercado(world, col, row, id)) continue;
         const sx = (col * ts + ts / 2 - camera.left) * s;
         const sy = (row * ts + ts / 2 - camera.top) * s;
         this.punch(sx, sy, ts * (1 + def.emissive * 2.4) * s, def.emissive * 0.9);
@@ -119,19 +144,58 @@ export class Lighting {
     target.drawImage(this.canvas, 0, 0, cssW, cssH);
   }
 
+  /** Os quatro vizinhos sao o mesmo bloco? (Para o xadrez dos emissivos.) */
+  private cercado(world: World, col: number, row: number, id: number): boolean {
+    return (
+      world.getTile(col - 1, row) === id &&
+      world.getTile(col + 1, row) === id &&
+      world.getTile(col, row - 1) === id &&
+      world.getTile(col, row + 1) === id
+    );
+  }
+
   private punch(x: number, y: number, r: number, intensity: number): void {
-    const ctx = this.ctx;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    const a = clamp(intensity, 0, 1);
+    if (r < 1) return;
+    const halo = this.halo(r, clamp(intensity, 0, 1));
+    const lado = halo.width;
+    this.ctx.drawImage(halo, Math.round(x - lado / 2), Math.round(y - lado / 2));
+  }
+
+  /**
+   * A estampa de um halo, desenhada uma vez e reaproveitada.
+   *
+   * Raio e intensidade sao arredondados de proposito — 4 px e 1/16 de alfa. A
+   * lanterna do jogador muda de raio a cada quadro por causa do bruxuleio, e
+   * sem esse arredondamento o cache nunca acertaria: seriam sessenta estampas
+   * novas por segundo, que e pior do que nao ter cache nenhum.
+   */
+  private halo(r: number, a: number): HTMLCanvasElement {
+    const raio = Math.max(4, Math.round(r / 4) * 4);
+    const alfa = Math.max(1, Math.round(a * 16));
+    const chave = `${raio}:${alfa}`;
+    const pronto = this.halos.get(chave);
+    if (pronto) return pronto;
+
+    const alvo = alfa / 16;
+    const c = document.createElement('canvas');
+    c.width = raio * 2;
+    c.height = raio * 2;
+    const cc = c.getContext('2d');
+    if (!cc) return c;
+    const g = cc.createRadialGradient(raio, raio, 0, raio, raio, raio);
     // Queda suave: um circulo com borda dura denuncia o truque da lanterna.
-    g.addColorStop(0, `rgba(0,0,0,${a})`);
-    g.addColorStop(0.35, `rgba(0,0,0,${a * 0.88})`);
-    g.addColorStop(0.65, `rgba(0,0,0,${a * 0.52})`);
-    g.addColorStop(0.85, `rgba(0,0,0,${a * 0.2})`);
+    g.addColorStop(0, `rgba(0,0,0,${alvo})`);
+    g.addColorStop(0.35, `rgba(0,0,0,${alvo * 0.88})`);
+    g.addColorStop(0.65, `rgba(0,0,0,${alvo * 0.52})`);
+    g.addColorStop(0.85, `rgba(0,0,0,${alvo * 0.2})`);
     g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
+    cc.fillStyle = g;
+    cc.fillRect(0, 0, c.width, c.height);
+
+    // O cache nao pode crescer sem fim: raio e alfa sao discretos, entao ele
+    // estabiliza sozinho em poucas dezenas de entradas. O teto e so um seguro.
+    if (this.halos.size > 96) this.halos.clear();
+    this.halos.set(chave, c);
+    return c;
   }
 }

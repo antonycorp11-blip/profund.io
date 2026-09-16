@@ -35,6 +35,10 @@ export interface PanelHost {
   /** 0 = sem tremor, 1 = normal. */
   shakeScale(): number;
   setShakeScale(v: number): void;
+  /** 0 = automatico. Caso contrario, a escala fixa de resolucao. */
+  renderScale(): number;
+  setRenderScale(v: number, fixar: boolean): void;
+  renderScaleFixa(): boolean;
 }
 
 type PanelKind = 'workshop' | 'settings';
@@ -104,6 +108,44 @@ export class PanelUI {
     row.appendChild(group);
     return row;
   }
+  /**
+   * Qualidade de imagem.
+   *
+   * Em tela Retina o jogo rasteriza quatro vezes mais pixel, e numa maquina
+   * apertada isso e a diferenca entre 20 e 45 fps — nenhuma otimizacao de
+   * codigo compete com pintar menos pixel. No automatico o jogo mede o proprio
+   * quadro e ajusta sozinho; quem vai GRAVAR costuma querer fixar, porque uma
+   * mudanca de nitidez no meio da tomada aparece no video.
+   */
+  private qualidadeRow(): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<span>Qualidade da imagem</span>';
+    const group = document.createElement('div');
+    group.className = 'seg-group';
+    const opcoes: [string, number][] = [
+      ['Auto', 0],
+      ['Alta', 1],
+      ['Media', 0.8],
+      ['Baixa', 0.65],
+    ];
+    const atual = this.host.renderScaleFixa() ? this.host.renderScale() : 0;
+    for (const [label, value] of opcoes) {
+      const b = document.createElement('button');
+      b.className = 'seg-btn';
+      b.textContent = label;
+      b.classList.toggle('on', Math.abs(atual - value) < 0.01);
+      b.addEventListener('click', () => {
+        this.host.setRenderScale(value === 0 ? 1 : value, value !== 0);
+        for (const other of group.children) other.classList.remove('on');
+        b.classList.add('on');
+      });
+      group.appendChild(b);
+    }
+    row.appendChild(group);
+    return row;
+  }
+
   private render(): void {
     this.panel.innerHTML = '';
     const header = document.createElement('header');
@@ -251,6 +293,7 @@ export class PanelUI {
     );
     // Tremor de tela incomoda gente diferente de jeitos diferentes; e um ajuste,
     // nao um numero fixo escondido no codigo.
+    this.panel.appendChild(this.qualidadeRow());
     this.panel.appendChild(this.shakeRow());
 
     this.panel.appendChild(sectionTitle('Desenvolvimento — habilidades'));

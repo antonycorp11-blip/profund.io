@@ -257,6 +257,7 @@ export function generateWorld(world: World): GeneratedWorldInfo {
 
   // ---- 5. Salas feitas a mao ----------------------------------------------
   for (const clue of CLUES) {
+    if (clue.marcas) trilhaDeMarcas(world, shaftCol, clue.col, clue.row);
     carveRoom(world, clue.col, clue.row, clue.roomW, clue.roomH, BLOCK_IDS.RUIN_BRICK);
   }
   for (const npc of RESCUE_NPCS) {
@@ -293,6 +294,29 @@ function growVein(world: World, col: number, row: number, oreId: number, size: n
  * Escava uma sala retangular centrada em (col,row) e coloca uma borda de `wallId`.
  * O piso fica sempre na linha `row` (o objeto/NPC fica em cima dela).
  */
+/**
+ * A trilha de marcas do Santiago ate uma sala.
+ *
+ * Tijolo antigo de dois em dois tiles, na altura da sala, do poco principal ate
+ * a porta dela. Cavando naquela profundidade o jogador esbarra numa pedra que
+ * obviamente foi POSTA ali, e seguir a fileira leva ao lugar — que e exatamente
+ * o que o pai escreveu que fazia.
+ *
+ * So troca pedra por marca: onde ja e ar, nao poe nada. Marca flutuando no vao
+ * de uma caverna denunciaria que foi o gerador, e nao um homem com uma picareta.
+ */
+function trilhaDeMarcas(world: World, deCol: number, ateCol: number, row: number): void {
+  const passo = deCol > ateCol ? -4 : 4;
+  for (let c = deCol; passo > 0 ? c <= ateCol : c >= ateCol; c += passo) {
+    for (let r = row - 1; r <= row; r++) {
+      if (!world.inBounds(c, r)) continue;
+      const atual = world.getTile(c, r);
+      if (atual === BLOCK_IDS.AIR || atual === BLOCK_IDS.BEDROCK) continue;
+      world.setTileRaw(c, r, BLOCK_IDS.RUIN_BRICK);
+    }
+  }
+}
+
 function carveRoom(world: World, col: number, row: number, w: number, h: number, wallId: number): void {
   const halfW = Math.floor(w / 2);
   const c0 = col - halfW;

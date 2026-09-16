@@ -182,6 +182,23 @@ export class Game {
   private cssW = 1;
   private cssH = 1;
   private dpr = 1;
+  /*
+   * RESOLUCAO ADAPTATIVA.
+   *
+   * Num Mac de tela Retina o `devicePixelRatio` e 2, e isso significa QUATRO
+   * vezes mais pixels para rasterizar a cada quadro. Numa maquina folgada nem
+   * se nota; numa apertada e a diferenca entre 20 e 45 fps, e nenhuma otimizacao
+   * de codigo compete com simplesmente pintar menos pixel.
+   *
+   * Entao o jogo mede o proprio quadro e ajusta: apertou, desce a escala; sobrou
+   * folga por um tempo, sobe de novo. A escada e curta e o passo e grosso de
+   * proposito — reescalar canvas custa, e ficar oscilando seria pior que o
+   * problema. Quem quiser fixar resolve em Ajustes (`setRenderScale`).
+   */
+  private renderScale = 1;
+  private renderScaleFixa = false;
+  private quadroMedio = 16.7;
+  private tempoNaFaixa = 0;
   private lastTime = 0;
   private accumulatedSave = 0;
   private running = false;
@@ -298,6 +315,16 @@ export class Game {
         return next;
       },
       isTouchVisible: () => this.touch.isVisible(),
+      renderScale: () => this.renderScale,
+      renderScaleFixa: () => this.renderScaleFixa,
+      setRenderScale: (v, fixar) => {
+        this.setRenderScale(v, fixar);
+        try {
+          localStorage.setItem('profundezas.qualidade', fixar ? String(v) : 'auto');
+        } catch {
+          /* preferencia e opcional */
+        }
+      },
       shakeScale: () => this.camera.shakeScale,
       setShakeScale: (v) => {
         this.camera.shakeScale = v;
@@ -589,6 +616,11 @@ export class Game {
     try {
       const saved = localStorage.getItem('profundezas.shake');
       if (saved !== null) this.camera.shakeScale = Number(saved);
+      const q = localStorage.getItem('profundezas.qualidade');
+      if (q && q !== 'auto') {
+        this.renderScale = Number(q);
+        this.renderScaleFixa = true;
+      }
     } catch {
       /* sem preferencia salva: usa o padrao */
     }
@@ -1359,6 +1391,7 @@ export class Game {
     this.hud.setLevel(this.progression.level, this.progression.ratio);
     this.hud.setJournalUnread(this.journal.unread);
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
+    this.ajustarResolucao(dt);
     this.hud.setJet(this.player.jetRatio, this.player.jetUnlocked, this.player.jetting);
     // A camera abre ao entrar numa base. Sao 38 colunas de maquinaria que so
     // fazem sentido vistas juntas — com o enquadramento de tunel o jogador nao
@@ -1697,7 +1730,7 @@ export class Game {
     this.collectors.render(ctx, this.camera);
     // As estruturas da base ficam AQUI, antes do jogador: ele tem que passar
     // na frente delas. Os avisos delas continuam na camada pos-luz.
-    this.campsRenderer.render(ctx);
+    this.campsRenderer.render(ctx, this.camera);
     this.mining.render(ctx);
     // Sprite real quando a arte existe; senao o placeholder vetorial.
     if (!this.playerSprite.render(ctx, this.player)) {
@@ -1748,7 +1781,7 @@ export class Game {
     );
     for (const e of this.interactables) e.renderOverlay?.(ctx);
     this.renderSense(ctx);
-    this.campsRenderer.renderOverlay(ctx);
+    this.campsRenderer.renderOverlay(ctx, this.camera);
     this.shock.render(ctx);
     this.floating.render(ctx);
 
@@ -1836,13 +1869,53 @@ export class Game {
     const rect = this.canvas.getBoundingClientRect();
     this.cssW = Math.max(1, rect.width);
     this.cssH = Math.max(1, rect.height);
-    this.dpr = Math.min(window.devicePixelRatio || 1, CONFIG.render.maxDpr);
+    this.dpr = Math.min(window.devicePixelRatio || 1, CONFIG.render.maxDpr) * this.renderScale;
     this.canvas.width = Math.floor(this.cssW * this.dpr);
     this.canvas.height = Math.floor(this.cssH * this.dpr);
     this.camera.resize(this.cssW, this.cssH);
     this.lighting.resize(this.cssW, this.cssH);
     // Arte HD e reduzida na tela: precisa de suavizacao. Placeholder nao.
     this.ctx.imageSmoothingEnabled = Assets.hasBlockArt || Assets.hasCharacterArt;
+  }
+
+  /**
+   * Sobe ou desce a resolucao conforme o quadro esta cabendo.
+   *
+   * A media e exponencial e lenta de proposito: um engasgo isolado — um chunk
+   * novo, uma explosao — nao pode derrubar a resolucao do jogo inteiro. So uma
+   * janela inteira acima do orcamento e que conta.
+   */
+  private ajustarResolucao(dt: number): void {
+    if (this.renderScaleFixa) return;
+    const ms = Math.min(120, dt * 1000);
+    this.quadroMedio += (ms - this.quadroMedio) * 0.05;
+    this.tempoNaFaixa += dt;
+    if (this.tempoNaFaixa < CONFIG.render.adaptiveWindowSec) return;
+    this.tempoNaFaixa = 0;
+
+    const { adaptiveMinScale, adaptiveTargetMs, adaptiveRelaxMs, adaptiveStep } = CONFIG.render;
+    if (this.quadroMedio > adaptiveTargetMs && this.renderScale > adaptiveMinScale) {
+      this.setRenderScale(Math.max(adaptiveMinScale, this.renderScale - adaptiveStep));
+    } else if (this.quadroMedio < adaptiveRelaxMs && this.renderScale < 1) {
+      this.setRenderScale(Math.min(1, this.renderScale + adaptiveStep));
+    }
+  }
+
+  /** Fixa a resolucao (0 volta para o automatico). Usado pelos Ajustes. */
+  setRenderScale(v: number, fixar = false): void {
+    if (fixar) this.renderScaleFixa = v > 0;
+    if (v <= 0) {
+      this.renderScaleFixa = false;
+      return;
+    }
+    if (Math.abs(v - this.renderScale) < 0.01) return;
+    this.renderScale = v;
+    this.quadroMedio = 16.7;
+    this.resize();
+  }
+
+  get renderScaleAtual(): number {
+    return this.renderScale;
   }
 
   /**
