@@ -17,6 +17,8 @@ export class RescueNpc implements Interactable {
   y: number;
   radius = CONFIG.player.interactRadius + 10;
   state: NpcState = 'trapped';
+  /** Conta para o proximo grito. Ver `listen()`. */
+  private shoutTimer = 2;
 
   private vy = 0;
   private targetX: number;
@@ -92,6 +94,45 @@ export class RescueNpc implements Interactable {
       if (!this.world.isSolid(c1, r)) return true;
     }
     return false;
+  }
+
+  /**
+   * O grito que leva o jogador ate aqui.
+   *
+   * E o "quente e frio" da infancia, e e de proposito que nao exista seta nem
+   * numero: quanto mais perto, mais curto o intervalo e mais clara a frase.
+   * O jogador triangula sozinho, e triangular e a parte divertida. Se houvesse
+   * um marcador no mapa, o caminho inteiro viraria uma linha reta chata.
+   *
+   * Fora do raio de escuta nada acontece — o mineiro nao existe para quem
+   * ainda nao chegou perto.
+   */
+  listen(dt: number, px: number, py: number): void {
+    if (this.state !== 'trapped') return;
+    const dist = Math.hypot(px - this.x, py - this.y);
+    const raio = CONFIG.voices.hearRadius;
+    if (dist > raio) {
+      this.shoutTimer = Math.min(this.shoutTimer, 1.5);
+      return;
+    }
+    // 0 na borda da audicao, 1 colado nele.
+    const strength = 1 - dist / raio;
+    this.shoutTimer -= dt;
+    if (this.shoutTimer > 0) return;
+    const { minGapSec, maxGapSec } = CONFIG.voices;
+    this.shoutTimer = maxGapSec - (maxGapSec - minGapSec) * strength;
+
+    const linhas = this.def.callLines;
+    // A frase fica mais nitida conforme aperta: no limite da audicao e so um
+    // ruido na pedra, colado nele e um pedido de socorro inteiro.
+    const faixa = Math.min(linhas.length - 1, Math.floor(strength * linhas.length));
+    Events.emit('npc:shout', {
+      id: this.def.id,
+      x: this.x,
+      y: this.y,
+      text: linhas[faixa],
+      strength,
+    });
   }
 
   update(dt: number): void {

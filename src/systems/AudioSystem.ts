@@ -172,6 +172,9 @@ class AudioSystemImpl {
     Events.on('delivery:done', () => this.play('deliver', 0.9));
     Events.on('quota:complete', () => this.play('quota', 1));
     Events.on('clue:found', () => this.play('story', 0.9));
+    // O grito soa mais alto conforme o jogador chega perto: e o feedback que
+    // faz o "quente e frio" funcionar sem seta nenhuma.
+    Events.on('npc:shout', (p) => this.play('story', 0.12 + 0.5 * p.strength));
     Events.on('tool:upgraded', () => this.play('quota', 0.8));
     Events.on('tech:researched', () => this.play('progress', 0.85));
     Events.on('skill:learned', () => this.play('progress', 0.75));

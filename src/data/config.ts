@@ -162,6 +162,22 @@ export const CONFIG = {
    * chuva deles logo abaixo do selo quando o chefe do bioma cai — a camada
    * nova se abre literalmente brilhando.
    */
+  /**
+   * A voz dos mineiros presos.
+   *
+   * O jogador nao devia tropecar no Jonas por acaso — devia ouvi-lo e ir
+   * atras. Estes numeros sao o "quente e frio": raio de escuta generoso e
+   * intervalo que aperta conforme chega perto.
+   */
+  voices: {
+    /** Distancia maxima em que da para ouvir (px). */
+    hearRadius: 1400,
+    /** Intervalo entre gritos colado nele (s). */
+    minGapSec: 2.6,
+    /** Intervalo no limite da audicao (s). */
+    maxGapSec: 7,
+  },
+
   rich: {
     /** Multiplicador de recurso do bloco com aura. */
     multiplier: 4,

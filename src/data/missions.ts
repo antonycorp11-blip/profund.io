@@ -34,21 +34,30 @@ export interface MissionDef {
 
 export const MISSIONS: MissionDef[] = [
   {
-    id: 'm1_a_primeira_barreira',
-    title: 'A Primeira Barreira',
-    goal: 'Derrote a Mae dos Esporos e resgate Jonas para romper o selo da Pedra',
-    requires: ['boss_golem_escombros', 'npc_jonas', 'gate_stone'],
-    onDone: 'Jonas subiu. O selo caiu. E alguem colocou aquela coisa ali de proposito.',
-    rewardMoney: 350,
+    id: 'm1_a_voz_na_pedra',
+    title: 'A Voz na Pedra',
+    goal: 'Alguem esta gritando por socorro la embaixo. Siga a voz e tire essa pessoa de la.',
+    requires: ['npc_jonas'],
+    onDone: 'Jonas subiu. E avisou: mais fundo tem uma parede que picareta nao arranha.',
+    rewardMoney: 250,
     rewardPoints: 1,
   },
   {
     id: 'm2_marcas_na_pedra',
     title: 'Marcas na Pedra',
-    goal: 'Encontre a marca que Santiago deixou na rocha (62 m)',
+    goal: 'Santiago deixou uma marca na galeria antiga. Encontre.',
     requires: ['clue_marca_do_pai'],
     onDone: 'A marca aponta para baixo. Ele nao estava marcando a volta.',
     rewardMoney: 200,
+    rewardPoints: 1,
+  },
+  {
+    id: 'm2b_a_primeira_barreira',
+    title: 'A Primeira Barreira',
+    goal: 'A parede que Jonas descreveu tem guarda. Derrube a Mae dos Esporos.',
+    requires: ['boss_golem_escombros', 'gate_stone'],
+    onDone: 'A parede cedeu junto com ela. Alguem colocou aquilo ali de proposito.',
+    rewardMoney: 350,
     rewardPoints: 1,
   },
   {
@@ -125,7 +134,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm11_a_voz',
-    title: 'A Voz',
+    title: 'Quem Ainda Fala',
     goal: 'Encontre quem ainda fala no Abismo e recupere a Pagina 10',
     requires: ['npc_ultima_luz', 'clue_pagina_10'],
     onDone: 'Um carregou o outro para cima. Depois voltou sozinho.',

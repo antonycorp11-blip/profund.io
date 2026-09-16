@@ -52,6 +52,11 @@ export interface RescueNpcDef {
   roomH: number;
   /** Quantos tiles solidos ao redor precisam ser removidos para libertar. */
   freeRadius: number;
+  /**
+   * O que ele grita enquanto o jogador se aproxima, do MAIS LONGE para o mais
+   * perto. E assim que se acha um mineiro preso: pelo ouvido, nao pelo mapa.
+   */
+  callLines: string[];
   trappedLines: DialogLine[];
   freedLines: DialogLine[];
   /** Para onde ele caminha depois de livre (offset em tiles a partir da posicao). */
@@ -73,7 +78,7 @@ export const CLUES: ClueDef[] = [
     id: 'clue_marca_do_pai',
     title: 'A marca do pai',
     col: 46,
-    row: 18 + 62,
+    row: 18 + 26,
     roomW: 9,
     roomH: 5,
     prompt: 'Examinar marca',
@@ -184,10 +189,16 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     id: 'npc_jonas',
     name: 'Jonas',
     col: 74,
-    row: 18 + 118,
+    row: 18 + 38,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
+    callLines: [
+      '(alguma coisa bate na pedra, longe)',
+      '...tem... alguem ai?...',
+      'EI! Aqui embaixo!',
+      'AQUI! Segue a minha voz!',
+    ],
     trappedLines: [
       { speaker: 'Jonas', text: 'Ei! Tem alguem ai? Estou preso!' },
       { speaker: 'Jonas', text: 'A galeria desabou. Quebra essas pedras, por favor!' },
@@ -201,7 +212,12 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Elias', text: 'Voce conheceu meu pai?' },
       { speaker: 'Jonas', text: 'Vi ele uma vez, quatorze anos atras, descendo com pressa.' },
       { speaker: 'Jonas', text: 'Perguntei se ele tinha visto o desabamento la em cima. Nem olhou pra mim.' },
-      { speaker: 'Jonas', text: 'Quem desce com pressa nao esta procurando pedra. Vou esperar na base.' },
+      { speaker: 'Jonas', text: 'Quem desce com pressa nao esta procurando pedra.' },
+      { speaker: 'Elias', text: 'Entao eu sigo por onde ele foi.' },
+      { speaker: 'Jonas', text: 'Segue nada. Mais uns metros e tem uma parede que picareta nao arranha.' },
+      { speaker: 'Elias', text: 'Uma parede?' },
+      { speaker: 'Jonas', text: 'E tem coisa viva guardando ela. Foi o que me deixou preso aqui.' },
+      { speaker: 'Jonas', text: 'Derruba o bicho e a parede cede. Nao me pergunta por que. Vou esperar na base.' },
     ],
     walkToOffsetCols: -2,
     layer: 'stone',
@@ -214,6 +230,12 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
+    callLines: [
+      '(um tilintar de cristal, ritmado)',
+      '...alguem escuta?...',
+      'Aqui! Cuidado com as lascas!',
+      'AQUI! Nao pisa forte, isso tudo cede!',
+    ],
     trappedLines: [
       { speaker: 'Vilma', text: 'Cuidado! Os cristais aqui cortam fundo.' },
       { speaker: 'Vilma', text: 'Um bloco caiu na minha perna. Nao consigo me mexer.' },
@@ -240,6 +262,12 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
+    callLines: [
+      '(tres batidas secas, pausa, tres batidas)',
+      '...aqui embaixo!...',
+      'Segue a batida! Tres e para!',
+      'AQUI! Eu bato, voce cava!',
+    ],
     trappedLines: [
       { speaker: 'Teo', text: 'Aqui embaixo! O teto cedeu bem em cima de mim.' },
       { speaker: 'Teo', text: 'Minhas ferramentas ficaram do outro lado. Preciso de uma mao.' },
@@ -266,6 +294,12 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
+    callLines: [
+      '(um assobio rouco, quase sem ar)',
+      '...calor... demais...',
+      'Aqui! Vem pelo lado frio!',
+      'AQUI! Anda, rapaz, eu to assando!',
+    ],
     trappedLines: [
       { speaker: 'Ozias', text: '(tossindo) Aqui... o calor deste lugar nao e normal.' },
       { speaker: 'Ozias', text: 'A rocha em cima de mim ainda esta quente. Rapido, por favor.' },
@@ -292,6 +326,12 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
+    callLines: [
+      '(um raspar leve de metal na pedra)',
+      '...devagar...',
+      '(quase um sussurro) Aqui. Sem barulho.',
+      'Aqui. Fala baixo. Elas ouvem.',
+    ],
     trappedLines: [
       { speaker: 'Braga', text: '(quase sussurrando) Nao faz barulho. Elas ouvem.' },
       { speaker: 'Braga', text: 'Estou preso ha dias. Tira essas pedras, mas devagar.' },
@@ -318,6 +358,12 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
+    callLines: [
+      '(silencio, e entao um suspiro)',
+      '...passos?...',
+      '...faz tempo que nao ouco passos...',
+      'Estou aqui. Nao precisa correr.',
+    ],
     trappedLines: [
       { speaker: '???', text: '(uma voz fraca, quase sem forca) ...alguem?' },
       { speaker: '???', text: 'Faz tempo que nao ouco passos que nao sejam meus.' },

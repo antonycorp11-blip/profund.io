@@ -66,6 +66,12 @@ export interface GameEvents {
     worldY: number;
   };
   /** Um selo entre biomas se abriu porque o chefe da camada foi derrotado. */
+  /**
+   * Um mineiro preso gritou. `strength` 0..1 e o quao perto o jogador esta —
+   * e o unico numero que o jogo da: nao ha seta nem distancia em metros,
+   * so "esta esquentando".
+   */
+  'npc:shout': { id: string; x: number; y: number; text: string; strength: number };
   'mission:done': { id: string; title: string; text: string };
   'boss:summon': { id: string; name: string; count: number };
   'gate:opened': { layerId: string; layerName: string };

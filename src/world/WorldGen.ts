@@ -164,6 +164,17 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     });
   }
 
+  // ---- 3b2. A trilha do Jonas ---------------------------------------------
+  // O primeiro mineiro preso nao pode ser um achado por acaso. Ele grita (ver
+  // RescueNpc.listen), e daqui sai uma galeria ANTIGA, meio desabada, que
+  // serpenteia do poco da base ate perto dele.
+  //
+  // Ela nao chega ate o Jonas de proposito: para nos ultimos metros, e o
+  // jogador cava o resto guiado so pela voz. Uma trilha que termina na porta
+  // entregaria o final; uma que termina perto transforma o ultimo trecho no
+  // momento em que ele percebe que esta a um metro de alguem vivo.
+  carveTrail(world, rng, surfaceRow);
+
   // ---- 3c. Veios prosperos espalhados -------------------------------------
   // Um punhado de minerios ja nasce com aura, permanentes. Sao a recompensa de
   // quem anda de lado em vez de so cavar reto para baixo — e o sorteio sai do
@@ -270,5 +281,67 @@ function sealRing(world: World, col: number, row: number, span: number): void {
         world.setTileRaw(c, r, BLOCK_IDS.STONE);
       }
     }
+  }
+}
+
+
+/**
+ * Galeria antiga que leva ao primeiro mineiro preso.
+ *
+ * Serpenteia em vez de descer reto (um corredor reto e um elevador, nao uma
+ * mina) e vem com trechos desabados: o jogador anda, esbarra em entulho, quebra
+ * pouca coisa e segue. E o que faz parecer um lugar que existiu antes dele.
+ */
+function carveTrail(world: World, rng: Rng, surfaceRow: number): void {
+  const jonas = RESCUE_NPCS.find((n) => n.id === 'npc_jonas');
+  if (!jonas) return;
+
+  const inicio = CONFIG.base.centerCol + CONFIG.base.layout.shaft;
+  const fimRow = jonas.row - 8; // para antes dele: os ultimos metros sao do ouvido
+  let col = inicio;
+  let row = surfaceRow + CONFIG.base.shaftDepth + 4;
+  // Serpenteia sempre para o lado do Jonas, mas sem mirar nele diretamente.
+  let dir: 1 | -1 = jonas.col > inicio ? 1 : -1;
+
+  while (row < fimRow) {
+    // Um trecho horizontal, depois uma descida. O tamanho varia para o ritmo
+    // nao virar escada.
+    const largura = rng.int(4, 11);
+    for (let n = 0; n < largura; n++) {
+      col += dir;
+      if (col < 4 || col > world.width - 5) {
+        dir = -dir as 1 | -1;
+        col += dir * 2;
+      }
+      carveCell(world, rng, col, row);
+    }
+    const queda = rng.int(5, 12);
+    for (let n = 0; n < queda && row < fimRow; n++) {
+      row++;
+      carveCell(world, rng, col, row);
+    }
+    // Vira para o lado do Jonas com mais frequencia do que para longe: a
+    // trilha vagueia, mas vagueia na direcao certa.
+    if (rng.next() < 0.28) dir = -dir as 1 | -1;
+    else dir = (jonas.col > col ? 1 : -1) as 1 | -1;
+  }
+}
+
+/**
+ * Abre um pedaco de galeria de 2 tiles de altura.
+ *
+ * Uma em cada seis celulas fica entupida: sem isso o caminho e um corredor
+ * limpo e o jogador so anda. Com o entulho ele ainda usa a picareta, e a
+ * galeria parece velha em vez de recem-cavada.
+ */
+function carveCell(world: World, rng: Rng, col: number, row: number): void {
+  if (col < 1 || col >= world.width - 1 || row < 1 || row >= world.height - 1) return;
+  if (rng.next() < 0.17) return;
+  // O selo nunca cede a uma galeria antiga: a trilha morre nele. Ver essa
+  // parede cortar um tunel que claramente continuava do outro lado e a melhor
+  // apresentacao possivel da regra da barreira.
+  for (const r of [row, row - 1]) {
+    if (world.getTile(col, r) === BLOCK_IDS.SEAL) continue;
+    world.setTileRaw(col, r, BLOCK_IDS.AIR);
   }
 }

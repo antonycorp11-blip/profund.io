@@ -42,6 +42,7 @@ import { RescueNpc } from '../entities/RescueNpc';
 import { SaveSystem } from '../systems/SaveSystem';
 import { TileRenderer } from '../world/TileRenderer';
 import { TimeSystem } from '../systems/TimeSystem';
+import { VoiceEcho } from '../ui/VoiceEcho';
 import { CloneCompass } from '../ui/CloneCompass';
 import { CloneManager } from '../systems/CloneManager';
 import { CollectorManager } from '../systems/CollectorManager';
@@ -132,6 +133,7 @@ export class Game {
   private interactables: Interactable[] = [];
   private clueObjects: ClueObject[] = [];
   private npcs: RescueNpc[] = [];
+  private voices = new VoiceEcho();
   private decor: SurfaceDecor;
   private worldInfo: GeneratedWorldInfo;
 
@@ -860,6 +862,10 @@ export class Game {
     this.procs.update(dt);
     this.player.loadRatio = this.inventory.loadRatio;
     this.drops.update(dt, this.player);
+    // Os mineiros presos chamam. E o unico jeito de achar o primeiro deles.
+    for (const npc of this.npcs) npc.listen(dt, this.player.cx, this.player.cy);
+    this.voices.update(dt);
+
     this.particles.update(dt);
     this.floating.update(dt);
 
@@ -1208,6 +1214,7 @@ export class Game {
     // Bussola por ultimo: ela vive na borda da tela, nao no mundo.
     if (!this.mapScreen.isOpen) {
       this.compass.render(ctx, this.camera, this.cssW, this.cssH, this.dpr);
+      this.voices.render(ctx, this.camera, this.cssW, this.cssH, this.dpr);
     }
 
     if (this.vitals.hurtFlash > 0 || this.vitals.dead) {
@@ -1323,11 +1330,15 @@ export class Game {
       if (money > 0) this.stock.money += money;
       if (points > 0) this.skills.addPoints(points, m.title);
     });
-    if (!this.quota.completed) {
+    const m = this.missions.current();
+    // A primeira missao NUNCA perde o card para a cota. O inicio do jogo tem
+    // que dizer "siga a voz", nao "colete 90 carvoes" — senao o jogador
+    // aprende a planilha antes de aprender que ha alguem vivo la embaixo.
+    const abertura = this.missions.completedCount() === 0;
+    if (!abertura && !this.quota.completed) {
       this.hud.setMissionObjective(null);
       return;
     }
-    const m = this.missions.current();
     this.hud.setMissionObjective(m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.');
   }
 
