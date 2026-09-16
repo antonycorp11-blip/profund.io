@@ -243,6 +243,12 @@ export class Game {
       max: () => this.collectors.max,
       custo: () => this.collectors.costFor(),
       moedas: () => this.stock.money,
+      // Quantas estao trabalhando NESTA camada: e a resposta para "vale a pena
+      // contratar mais uma aqui?", que nao e a mesma pergunta que o total.
+      naBase: (base) =>
+        this.collectors.units.filter(
+          (u) => Math.abs(this.world.depthOfPixel(u.y) - base.depth) <= 120
+        ).length,
       // Nasce no proprio balcao: a toupeira contratada na base do magma nao
       // tem por que aparecer na superficie e descer 900 m a pe.
       contratar: (base) => {
@@ -540,6 +546,7 @@ export class Game {
       return base ? this.camps.depotPos(base, this.world.surfaceRow, CONFIG.tileSize) : null;
     };
     this.collectors.depositosProntos = () => this.camps.depotsBuilt();
+    this.collectors.depositosMelhorados = () => this.camps.depotsUpgraded();
 
     this.buildMode = new BuildMode(uiRoot, {
       automation: this.automation,
@@ -1583,7 +1590,12 @@ export class Game {
     this.drops.render(ctx);
     this.creatures.render(ctx);
     this.cloneManager.render(ctx);
-    this.collectors.render(ctx);
+    this.collectors.render(ctx, {
+      left: this.camera.left,
+      top: this.camera.top,
+      right: this.camera.left + this.camera.viewW,
+      bottom: this.camera.top + this.camera.viewH,
+    });
     // As estruturas da base ficam AQUI, antes do jogador: ele tem que passar
     // na frente delas. Os avisos delas continuam na camada pos-luz.
     this.campsRenderer.render(ctx);

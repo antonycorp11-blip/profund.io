@@ -31,6 +31,16 @@ export class Collector {
   private targetY = 0;
   private hasTarget = false;
   private idleTimer = 0;
+  /**
+   * Espacamento da busca por drop.
+   *
+   * Procurar e uma varredura na lista inteira de drops. Com uma duzia de
+   * toupeiras isso nao custava nada; com sessenta, TODAS varrendo todo quadro
+   * quando nao ha nada no chao, custa. Cada uma procura quatro vezes por
+   * segundo, e o desencontro inicial vem do indice: assim elas nem procuram no
+   * mesmo quadro umas das outras.
+   */
+  private buscaTimer = 0;
   /** Dentro da rocha agora (muda a velocidade e liga a poeira). */
   buried = false;
   private dustTimer = 0;
@@ -134,19 +144,27 @@ export class Collector {
     });
 
     if (!this.hasTarget) {
-      const raio = COLLECTOR_CONFIG.searchRadius * this.attrs.get('collectorRange');
-      const alvo = findDrop(this.x, this.y, raio);
-      if (alvo) {
-        this.targetX = alvo.x;
-        this.targetY = alvo.y;
-        this.hasTarget = true;
-        this.state = 'buscando';
-      } else if (this.carried > 0) {
-        // Nada mais para buscar e com carga na bolsa: entrega o que tem em vez
-        // de esperar encher. Segurar recurso parado nao ajuda ninguem.
-        this.state = 'voltando';
-        return;
-      } else {
+      // So a VARREDURA e espacada. A ronda continua contando em tempo real —
+      // amarrar o relogio dela ao intervalo de busca deixaria sessenta
+      // toupeiras paradas feito estatua entre um passeio e outro.
+      this.buscaTimer -= dt;
+      if (this.buscaTimer <= 0) {
+        this.buscaTimer = 0.25 + (this.index % 8) * 0.02;
+        const raio = COLLECTOR_CONFIG.searchRadius * this.attrs.get('collectorRange');
+        const alvo = findDrop(this.x, this.y, raio);
+        if (alvo) {
+          this.targetX = alvo.x;
+          this.targetY = alvo.y;
+          this.hasTarget = true;
+          this.state = 'buscando';
+        } else if (this.carried > 0) {
+          // Nada mais para buscar e com carga na bolsa: entrega o que tem em
+          // vez de esperar encher. Segurar recurso parado nao ajuda ninguem.
+          this.state = 'voltando';
+          return;
+        }
+      }
+      if (!this.hasTarget) {
         // Nada na mina e de maos vazias: ronda o poco, pronta para descer.
         this.state = 'procurando';
         this.idleTimer -= dt;

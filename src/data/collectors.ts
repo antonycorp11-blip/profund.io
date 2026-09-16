@@ -19,8 +19,21 @@ export const COLLECTOR_CONFIG = {
    * um objeto — e o custo de nunca mais precisar voltar naquele lugar.
    */
   cost: 250,
-  /** Cada toupeira seguinte custa isto vezes a anterior. */
-  costGrowth: 1.45,
+  /**
+   * Cada toupeira seguinte custa isto vezes a anterior.
+   *
+   * A curva ficou bem mais mansa (era 1,45). Ela foi feita quando cabiam doze
+   * e a ultima tinha que doer; agora que os depositos abrem 61 vagas, uma
+   * curva ingreme nao encareceria o exercito — ela simplesmente tornaria as
+   * ultimas vagas decorativas, e vaga que ninguem alcanca e pior do que vaga
+   * que nao existe. O freio de verdade passou a ser a VAGA, que se conquista
+   * construindo, e nao o preco, que so se espera acumular.
+   *
+   * Contas com 1,1: a decima sai por 589, a vigesima por 1.528, a sexagesima
+   * por 76 mil. O exercito inteiro custa umas 760 mil — muito dinheiro, e
+   * dinheiro que so existe para quem montou as cinco bases.
+   */
+  costGrowth: 1.1,
   /**
    * Quantas cabem sem base nenhuma.
    *
@@ -31,7 +44,9 @@ export const COLLECTOR_CONFIG = {
    */
   maxUnits: 6,
   /** Vagas que cada deposito de base construido acrescenta. */
-  unitsPerDepot: 3,
+  unitsPerDepot: 5,
+  /** Vagas extras quando aquele deposito e MELHORADO (galpao maior). */
+  unitsPerDepotUpgrade: 6,
 
   /** Velocidade horizontal (px/s). */
   moveSpeed: 96,

@@ -52,11 +52,14 @@ export class CollectorManager {
   pontoDeEntrega?: (depth: number) => { x: number; y: number } | null;
   /** Quantos depositos de base estao de pe. Cada um abre vagas. */
   depositosProntos?: () => number;
+  /** Quantos desses depositos ja foram MELHORADOS (galpao maior). */
+  depositosMelhorados?: () => number;
 
   get max(): number {
     return (
       COLLECTOR_CONFIG.maxUnits +
-      COLLECTOR_CONFIG.unitsPerDepot * (this.depositosProntos?.() ?? 0)
+      COLLECTOR_CONFIG.unitsPerDepot * (this.depositosProntos?.() ?? 0) +
+      COLLECTOR_CONFIG.unitsPerDepotUpgrade * (this.depositosMelhorados?.() ?? 0)
     );
   }
 
@@ -84,7 +87,10 @@ export class CollectorManager {
     if (this.units.length >= this.max) {
       // Dizer o que DESTRAVA. "Toupeiras demais" e um nao sem porta de saida.
       Events.emit('ui:toast', {
-        text: `Sem vaga para mais toupeiras (${this.max}). Construa o deposito de uma base: cada um abre mais ${COLLECTOR_CONFIG.unitsPerDepot}.`,
+        text:
+          `Sem vaga para mais toupeiras (${this.max}). Construa o deposito de uma base ` +
+          `(+${COLLECTOR_CONFIG.unitsPerDepot}) ou melhore um que ja esta de pe ` +
+          `(+${COLLECTOR_CONFIG.unitsPerDepotUpgrade}).`,
         tone: 'warn',
       });
       return null;
@@ -242,8 +248,30 @@ export class CollectorManager {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    for (const unit of this.units) unit.render(ctx);
+  /**
+   * Desenha so quem esta na tela.
+   *
+   * Nao havia corte nenhum: as sessenta e uma toupeiras de um exercito completo
+   * eram desenhadas todo quadro, inclusive as que estavam a trezentos metros
+   * dali. Medido com 61 unidades, o corte devolveu boa parte do quadro.
+   */
+  render(ctx: CanvasRenderingContext2D, vista?: { left: number; top: number; right: number; bottom: number }): void {
+    if (!vista) {
+      for (const unit of this.units) unit.render(ctx);
+      return;
+    }
+    const folga = 48;
+    for (const unit of this.units) {
+      if (
+        unit.x < vista.left - folga ||
+        unit.x > vista.right + folga ||
+        unit.y < vista.top - folga ||
+        unit.y > vista.bottom + folga
+      ) {
+        continue;
+      }
+      unit.render(ctx);
+    }
   }
 
   toJSON(): CollectorSave {

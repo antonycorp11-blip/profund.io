@@ -142,6 +142,12 @@ const SLOTS_PADRAO: StructureSlot[] = [
     hits: 24,
     buildSec: 30,
     requires: ['refinador'],
+    melhoria: {
+      cost: { coal_coke: 8, gold_bar: 3 },
+      hits: 20,
+      buildSec: 35,
+      ganho: 'Galpao maior: mais vagas de toupeira nesta base.',
+    },
     nome: 'Deposito Bruto',
     descricao: 'As toupeiras passam a entregar aqui em vez de subir ate a base.',
   },

@@ -68,6 +68,19 @@ export class BaseCamps {
    * Prisma nunca teriam de onde sair. Girar a vez resolve sem fila nenhuma.
    */
   private giro = new Map<string, number>();
+  /**
+   * Quanto cada base produz, medido em vez de estimado.
+   *
+   * O painel precisa responder "isto aqui esta rendendo?" e essa resposta nao
+   * pode ser uma conta de multiplicadores na cabeca do jogador — sao cinco
+   * fatores (fogo, esteira, nivel, trabalhador, alimentacao) e nenhum deles
+   * esta escrito na tela. Entao a base conta o que realmente saiu no ultimo
+   * segundo e mostra isso.
+   */
+  private ritmo = new Map<
+    string,
+    { t: number; refAcc: number; subAcc: number; refSec: number; subSec: number }
+  >();
   /** Quem trabalha em cada base: bonus -> ativo. */
   private equipe = new Map<string, Set<'refino' | 'elevador'>>();
 
@@ -135,6 +148,62 @@ export class BaseCamps {
         nivel: 0,
       }
     );
+  }
+
+  /** Refinado por minuto e carga que sobe por minuto, medidos agora. */
+  ritmoDe(baseId: string): { refino: number; subida: number } {
+    const r = this.ritmo.get(baseId);
+    return { refino: (r?.refSec ?? 0) * 60, subida: (r?.subSec ?? 0) * 60 };
+  }
+
+  private janela(baseId: string) {
+    let r = this.ritmo.get(baseId);
+    if (!r) {
+      r = { t: 0, refAcc: 0, subAcc: 0, refSec: 0, subSec: 0 };
+      this.ritmo.set(baseId, r);
+    }
+    return r;
+  }
+
+  private marcar(baseId: string, ref: number, sub: number): void {
+    const r = this.janela(baseId);
+    r.refAcc += ref;
+    r.subAcc += sub;
+  }
+
+  /**
+   * Fecha a janela de medicao da base.
+   *
+   * Roda ANTES de qualquer `continue` do laco de producao, de proposito: se a
+   * contagem so avancasse quando ha producao, uma base que parou ficaria
+   * mostrando para sempre o ultimo numero bom que ela teve. O jogador abriria
+   * o painel de uma base sem carvao e leria "30/min".
+   */
+  private fecharJanela(baseId: string, dt: number): void {
+    const r = this.janela(baseId);
+    r.t += dt;
+    if (r.t < 1) return;
+    // Janela de um segundo: curta o bastante para reagir quando o fogo apaga,
+    // longa o bastante para o numero nao tremer na tela.
+    r.refSec = r.refAcc / r.t;
+    r.subSec = r.subAcc / r.t;
+    r.t = 0;
+    r.refAcc = 0;
+    r.subAcc = 0;
+  }
+
+  /** Quantos depositos estao de pe, e quantos desses ja foram melhorados. */
+  depotsUpgraded(): number {
+    return BASE_CAMPS.filter(
+      (b) => this.built(b.id, 'deposito') && this.nivelDe(b.id, 'deposito') >= 1
+    ).length;
+  }
+
+  /** Total guardado no deposito bruto de uma base. */
+  brutoTotal(baseId: string): number {
+    let n = 0;
+    for (const v of this.bruto.get(baseId)?.values() ?? []) n += v;
+    return n;
   }
 
   /** Nivel da estrutura: 0 de pe, 1 melhorada. */
@@ -356,6 +425,8 @@ export class BaseCamps {
 
   update(dt: number): void {
     for (const base of BASE_CAMPS) {
+      this.fecharJanela(base.id, dt);
+
       // --- obra em andamento ---
       for (const slot of base.slots) {
         const st = this.slots.get(this.key(base.id, slot.kind));
@@ -451,6 +522,7 @@ export class BaseCamps {
       if (feito > 0) {
         this.fuel.set(base.id, Math.max(0, this.fuelOf(base.id) - REFINERY_FUEL_PER_SEC * dt));
       }
+      this.marcar(base.id, feito, 0);
 
       // --- elevador: o que sobe vira moeda la em cima ---
       if (!this.built(base.id, 'elevador')) continue;
@@ -466,6 +538,7 @@ export class BaseCamps {
         const sobe = Math.min(qtd, dt * 1.2 * ritmo * cabine * entrega) * fracao;
         if (sobe < 0.01) continue;
         saida.set(res, qtd - sobe);
+        this.marcar(base.id, 0, sobe);
         this.stock.deliver([[res, sobe]], 1);
       }
     }

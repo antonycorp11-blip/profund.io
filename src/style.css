@@ -3697,6 +3697,99 @@ body:has(.hud-map-slot.folded) .toasts {
   color: #e0a94b;
 }
 
+/* --- painel da base: producao medida e lista de maquinas --- */
+.camp-rate {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 8px 0 2px;
+}
+
+.camp-rate-card {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 7px 10px;
+  background: rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.camp-rate-card b {
+  display: block;
+  font-size: 18px;
+  color: var(--ink-dim);
+  line-height: 1.1;
+}
+
+.camp-rate-card.on b {
+  color: var(--accent);
+}
+
+.camp-rate-card span {
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  letter-spacing: 0.4px;
+}
+
+.camp-machines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.camp-machine {
+  border: 1px solid var(--stroke);
+  border-radius: 9px;
+  padding: 6px 9px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.camp-machine-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.camp-machine-head b {
+  font-size: 11.5px;
+}
+
+.camp-machine small {
+  display: block;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  line-height: 1.35;
+}
+
+.camp-machine .camp-ganho {
+  color: #7ee7a8;
+}
+
+.camp-nivel {
+  font-size: 8.5px;
+  letter-spacing: 1px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.camp-prog {
+  display: block;
+  height: 4px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.camp-prog > i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
 .camp-hint {
   margin: 4px 0 6px;
   font-size: 10px;
