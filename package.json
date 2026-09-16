@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "slice-assets": "node tools/slice-assets.mjs",
     "icons": "node tools/make-icons.mjs",
-    "slice-npcs": "node tools/slice-npcs.mjs"
+    "slice-npcs": "node tools/slice-npcs.mjs",
+    "slice-journal": "node tools/slice-journal.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

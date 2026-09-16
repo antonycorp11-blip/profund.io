@@ -480,3 +480,29 @@ continuam como silhueta vetorial, sem quebrar nada.
 
 Para adicionar mais: solte a folha em `arte-bruta/npcs/<id>.png`, acrescente o
 id em `ART.npcArts` (`/data/art.ts`) e rode o fatiador.
+
+
+## Guia de Campo de Santiago
+
+Seis pecas entregues em 16/09/2026 em `arte-bruta/journal/`:
+
+| arquivo | uso |
+|---|---|
+| `capa.png` | icone do botao GUIA na HUD (160 px) |
+| `pagina_1..5.png` | fundo de cada aba do caderno (620 px) |
+
+```bash
+npm run slice-journal
+```
+
+So reduz — sao desenhos inteiros, nao grades, entao nao ha o que fatiar. Mas
+reduzir importa: as originais tem 1254 px e 2,5 MB cada, e o jogo carrega tudo
+no primeiro acesso. Papel rasgado em 1254 px numa tela de celular e desperdicio
+puro.
+
+A reducao faz media da area de origem, nao vizinho mais proximo (arte pintada
+serrilha), e **premultiplica o alfa antes de somar** — sem isso a borda
+irregular do papel puxa preto do fundo vazio e fica com contorno sujo.
+
+Para trocar uma pagina: substitua o arquivo em `arte-bruta/journal/` e rode o
+script de novo.

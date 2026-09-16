@@ -46,6 +46,7 @@ export interface SaveData {
   collectors?: import('./CollectorManager').CollectorSave;
   equipment?: import('./Equipment').EquipmentSave;
   /** Selos entre biomas: chefe morto / selo aberto, por camada. */
+  journal?: import('./Journal').JournalSave;
   reputation?: import('./Reputation').ReputationSave;
   /** Moradores de cidade com quem o jogador ja conversou. */
   cityMet?: string[];

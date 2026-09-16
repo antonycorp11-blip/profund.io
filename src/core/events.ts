@@ -74,6 +74,7 @@ export interface GameEvents {
    * so "esta esquentando".
    */
   'npc:shout': { id: string; x: number; y: number; text: string; strength: number };
+  'journal:written': { title: string; novo: boolean };
   'city:met': { id: string; name: string; city: string; trust: number };
   'rep:changed': { city: string; axis: string; value: number };
   'mission:done': { id: string; title: string; text: string };

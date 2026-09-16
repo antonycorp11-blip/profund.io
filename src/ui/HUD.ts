@@ -1,3 +1,4 @@
+import { ART } from '../data/art';
 import { Assets } from '../core/Assets';
 import { Events } from '../core/events';
 import { RESOURCES, RESOURCE_ORDER, type ResourceId } from '../data/resources';
@@ -44,6 +45,8 @@ export class HUD {
   private lastPoints = -1;
   private skillBadge: HTMLElement | null = null;
   private clonerBtn!: HTMLButtonElement;
+  private journalBtn!: HTMLButtonElement;
+  private journalBadge!: HTMLElement;
   private lastMoney: number | null = null;
   private shownMoney = 0;
   private moneyFrame = 0;
@@ -60,7 +63,7 @@ export class HUD {
     private onMenu: () => void,
     private onWorkshop: () => void,
     private onSkills: () => void,
-    private onBuild: () => void,
+    private onJournal: () => void,
     private onCloner: () => void = () => {},
     private onActiveSkills: () => void = () => {}
   ) {
@@ -223,7 +226,17 @@ export class HUD {
 
     buttons.appendChild(this.buildIconButton('⚡', 'Skills', () => this.onActiveSkills()));
     buttons.appendChild(this.buildSkillButton());
-    buttons.appendChild(this.buildIconButton('⚒', 'Construir', () => this.onBuild()));
+    // O Guia de Campo toma o lugar de CONSTRUIR. Construir era um modo que o
+    // jogador quase nunca abria; o caderno e o que ele vai querer reler.
+    this.journalBtn = this.buildIconButton('📕', 'Guia', () => this.onJournal());
+    const capa = `${ART.basePath}journal/capa.png`;
+    const icone = this.journalBtn.querySelector('.ib-icon') as HTMLElement;
+    icone.innerHTML = `<img class="ib-img" src="${capa}" alt="">`;
+    this.journalBadge = document.createElement('span');
+    this.journalBadge.className = 'ib-badge';
+    this.journalBadge.hidden = true;
+    this.journalBtn.appendChild(this.journalBadge);
+    buttons.appendChild(this.journalBtn);
     buttons.appendChild(btnWorkshop);
     buttons.appendChild(btnMenu);
     right.appendChild(buttons);
@@ -373,6 +386,12 @@ export class HUD {
         label: item.querySelector('[data-q-label]') as HTMLElement,
       });
     }
+  }
+
+  /** Quantas anotacoes novas esperam no guia. 0 esconde o selo. */
+  setJournalUnread(n: number): void {
+    this.journalBadge.hidden = n <= 0;
+    this.journalBadge.textContent = n > 9 ? '9+' : String(n);
   }
 
   /**

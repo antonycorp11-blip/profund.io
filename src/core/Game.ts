@@ -51,6 +51,8 @@ import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { gateBandRows, gateLayerDef } from '../data/gates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
+import { Journal } from '../systems/Journal';
+import { JournalUI } from '../ui/JournalUI';
 import { Missions } from '../systems/Missions';
 import { Reputation } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
@@ -119,6 +121,8 @@ export class Game {
   private creatures: CreatureManager;
   private biomeGate!: BiomeGate;
   private missions!: Missions;
+  private journal: Journal;
+  private journalUI!: JournalUI;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
   private progression = new Progression(this.skills);
@@ -192,6 +196,10 @@ export class Game {
 
     this.touch = new TouchControls(this.input, uiRoot);
     this.dialog = new DialogUI(uiRoot);
+    // Nasce antes de tudo que emite evento: o guia so anota o que ele ouve, e
+    // um evento perdido e uma anotacao que nunca existiu.
+    this.journal = new Journal(() => this.world.depthOfPixel(this.player.cy));
+
     this.hud = new HUD(
       uiRoot,
       this.inventory,
@@ -200,10 +208,11 @@ export class Game {
       () => this.panels.toggle('settings'),
       () => this.techScreen.toggle(),
       () => this.skillUI.toggle(),
-      () => this.buildMode.toggle(),
+      () => this.journalUI.toggle(),
       () => this.techScreen.openCloner(),
       () => this.activeUI.toggle()
     );
+    this.journalUI = new JournalUI(uiRoot, this.journal);
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
       stock: this.stock,
@@ -827,6 +836,7 @@ export class Game {
     this.skills.fromJSON(data.skills);
     this.exploration.fromJSON(data.exploration);
     this.reputation.fromJSON(data.reputation);
+    this.journal.fromJSON(data.journal);
     const conhecidos = new Set(data.cityMet ?? []);
     for (const n of this.cityNpcs) n.met = conhecidos.has(n.id);
     this.clock.fromJSON(data.clock);
@@ -992,6 +1002,7 @@ export class Game {
     this.hud.setHealth(this.vitals.health, this.vitals.max);
     this.hud.setLevel(this.progression.level, this.progression.ratio);
     this.hud.setClonerAvailable(this.tech.unlocked('cloner'));
+    this.hud.setJournalUnread(this.journal.unread);
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
     // O aviso de "falar" some enquanto o dialogo esta aberto. Ele ficava por
     // cima da conversa e aceitava toque, entao um segundo toque reabria o
@@ -1473,6 +1484,7 @@ export class Game {
       player: { x: this.player.cx, y: this.player.cy },
       worldWidth: this.world.width,
       reputation: this.reputation.toJSON(),
+      journal: this.journal.toJSON(),
       cityMet: this.cityNpcs.filter((n) => n.met).map((n) => n.id),
       tiles: flat,
       regrow: this.world.serializeRegrow(),
