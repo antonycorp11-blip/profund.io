@@ -1998,6 +1998,32 @@ body:has(.hud-map-slot.folded) .toasts {
   transform-origin: 0 0;
 }
 
+/* Atalho de aba: a vista DESLIZA ate a camara em vez de saltar. Saltar num
+   mapa grande custa a orientacao do jogador; deslizar mostra o caminho. */
+.skill-canvas.gliding {
+  transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Placa da camara: sem ela o ninho inteiro numa pagina so vira um monte de
+   bolinha solta e ninguem sabe onde comeca cada caminho. */
+.skill-chamber {
+  position: absolute;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--cat);
+  opacity: 0.75;
+  white-space: nowrap;
+  pointer-events: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--cat) 34%, transparent);
+  background: rgba(12, 8, 5, 0.72);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
 /* A terra em volta do ninho. Duas camadas de manchas radiais dao grao sem
    pedir textura nenhuma — e o fundo precisa ser TERRA para o tunel fazer
    sentido; galeria cavada no vazio nao le. */

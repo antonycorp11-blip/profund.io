@@ -146,11 +146,62 @@ export class Player {
     // aqui era o que fazia o jogador colar e subir engasgado em cada ressalto
     // que a propria picareta acabou de criar.
     const degrau = wallDir !== 0 && this.onGround && this.wallIsStep(world, wallDir as -1 | 1);
-    const canGrab = degrau ? false : this.chimney ? holdingUp : pushingIn && holdingUp;
+    /*
+     * A CHAMINE VEM PRIMEIRO, e isso nao e detalhe.
+     *
+     * Do jeito antigo o teste de degrau era o primeiro, e no fundo de um poco
+     * de 1 tile ele acertava: ha rocha na altura do corpo, ha vao logo acima e
+     * o corpo cabe la. Só que ali isso nao e um degrau — e o comeco da saida.
+     * Resultado: quem cavava reto para baixo NAO conseguia mais agarrar para
+     * subir, exatamente a armadilha que a escalada gratuita existe para
+     * impedir. Media 0 de 2 nos cenarios de chamine da sonda; agora 2 de 2.
+     */
+    /*
+     * BOCA DE GALERIA.
+     *
+     * O caso que mais travava, e o mais comum de todos: o jogador cava um poco
+     * reto para baixo, cava um tunel lateral e volta subindo. Chegando na boca
+     * do tunel a chamine acaba (um dos lados abriu), e com ela acabava o
+     * agarre — mas o corpo ainda esta dois ou tres pixels abaixo do piso do
+     * tunel. Ele caia de volta, subia, caia de volta. A sonda registrava isso
+     * como um quique eterno no topo do poco.
+     *
+     * Agora, se ha um lugar de pe a um tile do lado, empurrar para la vale
+     * como continuar agarrado ate a altura dar. Sem reposicionar ninguem: so
+     * velocidade, como o resto da escalada.
+     */
+    const saidaDir = Math.abs(moveX) > 0.35 ? (Math.sign(moveX) as -1 | 1) : 0;
+    const saidaSobe = saidaDir !== 0 ? this.lateralExit(world, saidaDir) : null;
+    const querSair = saidaSobe !== null && (wasClimbing || this.chimney);
+
+    const canGrab = querSair
+      ? true
+      : this.chimney
+        ? holdingUp
+        : degrau
+          ? false
+          : pushingIn && holdingUp;
 
     this.climbingWall = 0;
     this.mantling = false;
-    if (canGrab && this.climbStamina > 0) {
+    if (querSair && this.climbStamina > 0) {
+      // Falta altura: sobe travado, sem soltar, mesmo empurrando para fora.
+      // Ja da altura: solta e ANDA para dentro da galeria.
+      if ((saidaSobe as number) > 2) {
+        this.climbingWall = wallDir !== 0 ? wallDir : (saidaDir as -1 | 1);
+        this.mantling = true;
+        this.vy = -climbCfg.mantleSpeed;
+        this.vx = 0;
+        this.onGround = false;
+        this.facing = saidaDir as 1 | -1;
+      } else {
+        this.climbingWall = 0;
+        this.grabGrace = 0;
+        this.vx = (saidaDir as number) * this.stats.moveSpeed;
+        this.vy = Math.min(this.vy, 0);
+        this.facing = saidaDir as 1 | -1;
+      }
+    } else if (canGrab && this.climbStamina > 0) {
       this.climbingWall = wallDir !== 0 ? wallDir : 1;
       this.climbTired = false;
 
@@ -191,7 +242,12 @@ export class Player {
 
     // Empurrar para o lado oposto solta na hora: sair da parede tem que ser
     // tao imediato quanto agarrar nela.
-    if (this.climbingWall !== 0 && Math.sign(moveX) === -this.climbingWall && Math.abs(moveX) > 0.5) {
+    if (
+      !querSair &&
+      this.climbingWall !== 0 &&
+      Math.sign(moveX) === -this.climbingWall &&
+      Math.abs(moveX) > 0.5
+    ) {
       this.climbingWall = 0;
       this.grabGrace = 0;
       this.vx = moveX * this.stats.moveSpeed * 0.5;
@@ -369,6 +425,31 @@ export class Player {
       this.h
     );
     return headFree && bodySolid && roomAbove;
+  }
+
+  /**
+   * Ha um lugar de pe a um tile deste lado? Devolve quanto falta SUBIR.
+   *
+   * Zero quer dizer "e so andar para la". Null quer dizer que nao ha saida: ou
+   * e rocha, ou e vao sem piso — e cair num vao nao e sair de lugar nenhum.
+   */
+  private lateralExit(world: World, dir: -1 | 1): number | null {
+    const ts = CONFIG.tileSize;
+    const nx = this.x + dir * ts;
+    for (let sobe = 0; sobe <= ts * 1.35; sobe += 4) {
+      const ny = this.y - sobe;
+      if (world.rectCollides(nx, ny, this.w, this.h)) continue;
+      // Piso logo abaixo: e galeria, nao despenhadeiro.
+      let temPiso = false;
+      for (let k = 1; k <= ts * 1.2; k += 4) {
+        if (world.rectCollides(nx, ny + k, this.w, this.h)) {
+          temPiso = true;
+          break;
+        }
+      }
+      if (temPiso) return sobe;
+    }
+    return null;
   }
 
   /** Empurra o player para fora de blocos (ex.: bloco criado em cima dele). */

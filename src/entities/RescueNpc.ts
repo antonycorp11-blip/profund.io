@@ -65,8 +65,16 @@ export class RescueNpc implements Interactable {
     Events.emit('ui:toast', { text: `${this.def.name} agora vive na base.`, tone: 'good' });
   }
 
-  /** Resgate acontece ao alcancar a pessoa. */
-  readonly auto = true;
+  /**
+   * So dispara sozinho enquanto a pessoa esta PRESA.
+   *
+   * Depois de resgatada ela mora na base, e o jogador passa por ela vinte
+   * vezes por corrida — cada passagem abria a mesma fala de novo. Quem ja esta
+   * a salvo espera ser chamado: vira prompt, como qualquer conversa.
+   */
+  get auto(): boolean {
+    return this.state === 'trapped';
+  }
 
   prompt(): string | null {
     if (this.state === 'trapped' || this.state === 'safe' || this.state === 'home') {

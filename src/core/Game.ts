@@ -152,7 +152,16 @@ export class Game {
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
   /** Alvo que ja disparou sozinho neste encontro. */
-  private autoArmedFor: string | null = null;
+  /**
+   * Quem ja disparou sozinho NESTA aproximacao.
+   *
+   * Era um id unico mais um relogio, e isso e que fazia o NPC falar sem parar:
+   * bastava outro interagivel ficar por um quadro mais perto — um pergaminho,
+   * o deposito, o proprio mineiro andando — para o id trocar, o anterior
+   * desarmar e tudo comecar de novo. Agora cada alvo lembra do proprio estado
+   * e so rearma quando o jogador REALMENTE se afasta dele.
+   */
+  private autoArmed = new Set<string>();
   private autoCooldown = 0;
 
   private interactables: Interactable[] = [];
@@ -1417,28 +1426,33 @@ export class Game {
    */
   private updateInteraction(dt: number, target: Interactable | null, uiBlocking: boolean): void {
     this.autoCooldown = Math.max(0, this.autoCooldown - dt);
+    this.rearmarAutos();
 
     if (!target) {
-      this.autoArmedFor = null;
       this.hud.setPromptTarget(null);
       return;
     }
     this.hud.setPromptTarget(target.auto ? null : () => target.interact());
 
     if (uiBlocking) return;
+    // A MESMA tecla avanca o dialogo e interage (Espaco/Enter/E, e o toque na
+    // caixa). Fechar a fala no ultimo toque deixava esse toque valendo tambem
+    // como "interagir" no quadro seguinte, e a conversa reabria na hora — sem
+    // fim, enquanto o jogador continuasse encostado no NPC.
+    if (this.dialog.justClosed) return;
 
     // Tecla/botao explicito continua valendo para tudo.
     if (this.input.wasPressed('interact')) {
       target.interact();
-      this.autoArmedFor = target.id;
+      this.autoArmed.add(target.id);
       this.autoCooldown = CONFIG.player.autoInteractCooldown;
       return;
     }
 
     if (!target.auto) return;
-    // Ja disparou neste encontro: so rearma depois de sair e voltar.
-    if (this.autoArmedFor === target.id && this.autoCooldown > 0) return;
-    if (this.autoArmedFor === target.id) {
+    if (this.autoCooldown > 0) return;
+    // Ja disparou nesta aproximacao: so rearma depois de sair do raio.
+    if (this.autoArmed.has(target.id)) {
       // Deposito com mochila nova: vale entregar de novo.
       if (!this.inventory.isEmpty && target.id === 'depot') {
         this.autoCooldown = CONFIG.player.autoInteractCooldown;
@@ -1446,9 +1460,27 @@ export class Game {
       }
       return;
     }
-    this.autoArmedFor = target.id;
+    this.autoArmed.add(target.id);
     this.autoCooldown = CONFIG.player.autoInteractCooldown;
     target.interact();
+  }
+
+  /**
+   * Desarma o que ficou para tras.
+   *
+   * Com folga de 40% no raio: sem essa histerese, ficar parado bem na borda do
+   * alcance rearmava e redisparava a cada quadro, que e a mesma conversa sem
+   * fim por outro caminho.
+   */
+  private rearmarAutos(): void {
+    if (this.autoArmed.size === 0) return;
+    for (const e of this.interactables) {
+      if (!this.autoArmed.has(e.id)) continue;
+      const dx = e.x - this.player.cx;
+      const dy = e.y - this.player.cy;
+      const fora = e.radius * 1.4;
+      if (dx * dx + dy * dy > fora * fora) this.autoArmed.delete(e.id);
+    }
   }
 
   /** Copias e toupeiras para o mapa e a bussola. */

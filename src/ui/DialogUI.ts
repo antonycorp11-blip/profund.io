@@ -14,6 +14,14 @@ export class DialogUI {
   private typed = '';
   private typeTimer = 0;
   private typing = false;
+  /**
+   * Sobrevida depois de fechar.
+   *
+   * O toque (ou o Espaco/Enter/E) que fecha a ultima linha e o MESMO gesto que
+   * o jogo le como "interagir". Sem essa carencia curta, fechar a fala colado
+   * no NPC reabria a fala no quadro seguinte, para sempre.
+   */
+  private graca = 0;
   private faceEl!: HTMLImageElement;
   /** Cache dos retratos ja recortados: um canvas por falante. */
   private faces = new Map<string, string | null>();
@@ -117,8 +125,14 @@ export class DialogUI {
     return url;
   }
 
+  /** True no instante seguinte ao fechamento: ver `graca`. */
+  get justClosed(): boolean {
+    return this.graca > 0;
+  }
+
   /** Efeito de digitacao (chamado pelo loop do jogo). */
   update(dt: number): void {
+    this.graca = Math.max(0, this.graca - dt);
     if (!this.isOpen || !this.typing) return;
     const full = this.lines[this.index].text;
     this.typeTimer += dt;
@@ -150,6 +164,7 @@ export class DialogUI {
   }
 
   close(): void {
+    if (this.isOpen) this.graca = 0.35;
     this.root.classList.remove('open');
     const cb = this.onClose;
     this.onClose = undefined;

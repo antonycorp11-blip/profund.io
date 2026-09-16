@@ -19,6 +19,30 @@ const CELL_Y = 108;
 const NODE = 60;
 
 /**
+ * O ninho inteiro numa pagina so.
+ *
+ * Antes cada categoria era uma ABA, e aba e o oposto de arvore: escondia as
+ * outras ramificacoes justamente na hora em que o jogador precisa compara-las
+ * para escolher um caminho. Agora todas as camaras estao no mesmo mapa, e a
+ * escolha volta a ser dele — as abas do topo viraram atalhos que levam a vista
+ * ate a camara, sem esconder nada.
+ *
+ * Cada categoria ocupa uma CAMARA em coordenadas de celula. Os valores sao
+ * fixos e nao dependem de quais categorias estao visiveis: um ninho que muda
+ * de planta conforme o jogador desbloqueia coisas nunca vira lugar na cabeca
+ * de ninguem. As camaras se alternam esquerda/direita e descem, como galerias
+ * saindo de um poco central.
+ */
+const CAMARA: Record<string, { x: number; y: number }> = {
+  mining: { x: 0, y: 0 },
+  collect: { x: 6.2, y: 1.6 },
+  movement: { x: 0.6, y: 5.2 },
+  survival: { x: 6.8, y: 6.4 },
+  engineering: { x: 0, y: 9.4 },
+  legacy: { x: 3.2, y: 9.2 },
+};
+
+/**
  * Deslocamento organico por no, em pixels.
  *
  * A grade perfeita e o que fazia a arvore parecer planilha. Um empurrao de ate
@@ -38,10 +62,22 @@ function hash01(texto: string): number {
 function nodePos(def: SkillDef): { x: number; y: number } {
   const jx = (hash01(def.id + 'x') - 0.5) * 36;
   const jy = (hash01(def.id + 'y') - 0.5) * 30;
+  const c = CAMARA[def.category] ?? { x: 0, y: 0 };
   return {
-    x: def.position.x * CELL_X + jx,
-    y: def.position.y * CELL_Y + jy,
+    x: (def.position.x + c.x) * CELL_X + jx,
+    y: (def.position.y + c.y) * CELL_Y + jy,
   };
+}
+
+/**
+ * Tudo que entra no ninho.
+ *
+ * As ativas tem tela propria e ficam de fora. Camara ainda nao revelada
+ * tambem: uma pagina unica nao e desculpa para entregar de graca o que a
+ * historia ainda nao contou — quando ela abre, ela aparece inteira no mapa.
+ */
+function nosDoNinho(visivel: (c: SkillCategory) => boolean): SkillDef[] {
+  return SKILLS.filter((s) => s.category !== 'active' && visivel(s.category));
 }
 
 export interface SkillTreeHost {
@@ -59,9 +95,11 @@ export interface SkillTreeHost {
 }
 
 /**
- * Tela da arvore de habilidades.
- * Mobile landscape: uma categoria por vez, arrastavel e com zoom,
- * painel lateral com o detalhe do no selecionado.
+ * Tela da arvore de atributos.
+ *
+ * Mobile landscape: UM ninho so, arrastavel e com zoom, painel lateral com o
+ * detalhe do no selecionado. Nao ha mais "categoria atual" — o que existe e
+ * uma camara em foco, que so muda para onde a vista aponta.
  */
 export class SkillTreeUI {
   private wrap: HTMLDivElement;
@@ -72,13 +110,15 @@ export class SkillTreeUI {
   private pointsEl: HTMLElement;
   private svg: SVGSVGElement;
 
+  /** Camara em foco: serve ao painel lateral e ao destaque da aba. */
   private category: SkillCategory = 'mining';
   private selected: string | null = null;
   private nodes = new Map<string, HTMLButtonElement>();
+  private montado = false;
 
   private panX = 0;
   private panY = 0;
-  private zoom = 1;
+  private zoom = 0.72;
   private dragging = false;
   private lastX = 0;
   private lastY = 0;
@@ -135,6 +175,12 @@ export class SkillTreeUI {
     this.wrap.classList.add('open');
     this.buildTabs();
     this.buildNodes();
+    // Abre onde o jogador parou de olhar. Na primeira vez, na camara de
+    // mineracao: e a unica que todo mundo tem no minuto zero.
+    if (!this.montado) {
+      this.montado = true;
+      this.irParaCamara('mining', false);
+    }
     this.refresh();
   }
 
@@ -149,35 +195,87 @@ export class SkillTreeUI {
 
   // ------------------------------------------------------------- estrutura --
 
+  /**
+   * As abas viraram ATALHOS, nao filtros.
+   *
+   * Clicar leva a vista ate a camara daquela categoria; nada some da tela. A
+   * marcada e so a camara que esta em foco agora.
+   */
   private buildTabs(): void {
     this.tabsEl.innerHTML = '';
     for (const cat of Object.values(CATEGORIES)) {
       // Ativas tem tela propria.
       if (cat.id === 'active') continue;
       if (!this.host.tree.isCategoryVisible(cat.id)) continue;
+      if (!nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).some((sk) => sk.category === cat.id)) continue;
       const btn = document.createElement('button');
       btn.className = `skill-tab ${cat.id === this.category ? 'active' : ''}`;
       btn.style.setProperty('--cat', cat.color);
       btn.innerHTML = `<span class="tab-icon">${iconMarkup(CATEGORY_ART[cat.id], cat.icon)}</span><span>${cat.name}</span>`;
       btn.addEventListener('click', () => {
-        this.category = cat.id;
-        this.selected = null;
-        this.panX = 0;
-        this.panY = 0;
-        this.buildTabs();
-        this.buildNodes();
-        this.refresh();
+        this.irParaCamara(cat.id, true);
+        Haptics.ui();
       });
       this.tabsEl.appendChild(btn);
     }
   }
 
+  /** Centraliza a vista numa camara, sem esconder o resto do ninho. */
+  private irParaCamara(cat: SkillCategory, animar: boolean): void {
+    this.category = cat;
+    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter((sk) => sk.category === cat);
+    if (lista.length === 0) return;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const def of lista) {
+      const q = nodePos(def);
+      minX = Math.min(minX, q.x);
+      minY = Math.min(minY, q.y);
+      maxX = Math.max(maxX, q.x + NODE);
+      maxY = Math.max(maxY, q.y + NODE);
+    }
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const r = this.viewport.getBoundingClientRect();
+    // O canvas ja nasce deslocado pelo CSS (left/top); descontar isso e o que
+    // faz a camara parar no meio da tela, e nao um pouco fora dela.
+    this.panX = r.width / 2 - cx * this.zoom - 40;
+    this.panY = r.height / 2 - cy * this.zoom - 20;
+    this.canvasEl.classList.toggle('gliding', animar);
+    this.applyTransform();
+    this.buildTabs();
+    this.refresh();
+  }
+
   private buildNodes(): void {
     this.nodes.clear();
     for (const el of Array.from(this.canvasEl.querySelectorAll('.skill-node'))) el.remove();
+    for (const el of Array.from(this.canvasEl.querySelectorAll('.skill-chamber'))) el.remove();
 
-    const list = SKILLS.filter((s) => s.category === this.category);
-    const color = CATEGORIES[this.category].color;
+    const list = nosDoNinho((c) => this.host.tree.isCategoryVisible(c));
+
+    // Placa de cada camara, para o ninho nao virar um monte de bolinha solta.
+    for (const cat of Object.values(CATEGORIES)) {
+      if (cat.id === 'active') continue;
+      const daCamara = list.filter((sk) => sk.category === cat.id);
+      if (daCamara.length === 0) continue;
+      let minX = Infinity;
+      let minY = Infinity;
+      for (const def of daCamara) {
+        const q = nodePos(def);
+        minX = Math.min(minX, q.x);
+        minY = Math.min(minY, q.y);
+      }
+      const placa = document.createElement('div');
+      placa.className = 'skill-chamber';
+      placa.style.left = `${minX - 10}px`;
+      placa.style.top = `${minY - 52}px`;
+      placa.style.setProperty('--cat', cat.color);
+      placa.textContent = cat.name;
+      this.canvasEl.appendChild(placa);
+    }
 
     for (const def of list) {
       const btn = document.createElement('button');
@@ -185,13 +283,15 @@ export class SkillTreeUI {
       const p = nodePos(def);
       btn.style.left = `${p.x}px`;
       btn.style.top = `${p.y}px`;
-      btn.style.setProperty('--cat', color);
+      btn.style.setProperty('--cat', CATEGORIES[def.category].color);
       btn.innerHTML = `
         <span class="node-icon">${iconMarkup(def.art, def.icon)}</span>
         <span class="node-name">${def.name}</span>
         <span class="node-level"></span>`;
       btn.addEventListener('click', () => {
         this.selected = def.id;
+        this.category = def.category;
+        this.buildTabs();
         this.refresh();
         Haptics.ui();
       });
@@ -228,7 +328,11 @@ export class SkillTreeUI {
       maxY = Math.max(maxY, a.y + NODE);
       for (const reqId of def.requiredSkills) {
         const req = skillDef(reqId);
-        if (!req || req.category !== def.category) continue;
+        // Ligacao entre camaras agora DESENHA. Antes era descartada porque as
+        // duas pontas nunca estavam na mesma aba; num ninho so, ela e
+        // justamente a informacao que faltava — e o tunel que mostra que um
+        // caminho depende do outro.
+        if (!req || req.category === 'active') continue;
         const b = nodePos(req);
         const aberto = this.host.tree.levelOf(reqId) > 0;
 
@@ -284,18 +388,21 @@ export class SkillTreeUI {
       const lvl = btn.querySelector('.node-level') as HTMLElement;
       lvl.textContent = def.maxLevel > 1 ? `${level}/${def.maxLevel}` : level > 0 ? '✓' : '';
     }
-    this.drawLinks(SKILLS.filter((s) => s.category === this.category));
+    this.drawLinks(nosDoNinho((c) => this.host.tree.isCategoryVisible(c)));
     this.renderDetail();
   }
 
   private renderDetail(): void {
-    const cat = CATEGORIES[this.category];
     if (!this.selected) {
+      const cat = CATEGORIES[this.category];
       this.detailEl.innerHTML = `
         <div class="detail-empty">
-          <div class="detail-fantasy" style="color:${cat.color}">${cat.name}</div>
-          <p>${cat.fantasy}</p>
-          <p class="hint">Toque em um no para ver o efeito.</p>
+          <div class="detail-fantasy" style="color:${cat.color}">O ninho</div>
+          <p>Todas as camaras estao neste mesmo mapa. Arraste para andar por
+             ele, junte os dedos para afastar, e escolha voce que caminho
+             cavar.</p>
+          <p class="hint">Em foco agora: <b style="color:${cat.color}">${cat.name}</b> — ${cat.fantasy}</p>
+          <p class="hint">Toque em uma camara para ver o efeito.</p>
         </div>`;
       return;
     }
@@ -307,6 +414,9 @@ export class SkillTreeUI {
     const cost = skillCost(def, Math.min(level, def.cost.length - 1));
 
     const effects = this.describeEffects(def, level);
+    // A cor e o nome vem da camara DO NO, nao da que esta em foco: num ninho
+    // unico o jogador seleciona atravessando camaras o tempo todo.
+    const cat = CATEGORIES[def.category];
 
     this.detailEl.innerHTML = `
       <div class="detail-head" style="--cat:${cat.color}">
@@ -405,7 +515,7 @@ export class SkillTreeUI {
         const [a, b] = Array.from(this.pointers.values());
         const dist = Math.hypot(a.x - b.x, a.y - b.y);
         if (this.pinchDist > 0) {
-          this.zoom = Math.max(0.55, Math.min(1.6, this.zoom * (dist / this.pinchDist)));
+          this.zoom = Math.max(0.28, Math.min(1.6, this.zoom * (dist / this.pinchDist)));
           this.applyTransform();
         }
         this.pinchDist = dist;
@@ -429,7 +539,7 @@ export class SkillTreeUI {
       'wheel',
       (e) => {
         e.preventDefault();
-        this.zoom = Math.max(0.55, Math.min(1.6, this.zoom - e.deltaY * 0.001));
+        this.zoom = Math.max(0.28, Math.min(1.6, this.zoom - e.deltaY * 0.001));
         this.applyTransform();
       },
       { passive: false }
