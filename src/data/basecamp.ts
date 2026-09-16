@@ -98,7 +98,20 @@ const SLOTS_PADRAO: StructureSlot[] = [
     kind: 'deposito',
     col: 4,
     tiles: 4,
-    cost: { iron: 25, coal_coke: 8 },
+    /*
+     * O deposito e a UNICA estrutura que nao custa material refinado, e isso
+     * nao e generosidade: e o que impede uma trava dura.
+     *
+     * Ele custava Coque. Coque so sai de refinaria, e a refinaria da base so
+     * processa com a esteira de entrada, que por sua vez exige o deposito. O
+     * deposito exigia a si mesmo por um caminho de tres passos, e quem nao
+     * tivesse montado a refinaria da superficie ficava travado no selo dos
+     * Minerais para sempre — porque o selo exige a missao da base.
+     *
+     * Alem disso ele e uma caixa de madeira e ferro. Caixa nao precisa de
+     * coque.
+     */
+    cost: { iron: 25, stone: 40 },
     hits: 24,
     buildSec: 30,
     requires: ['refinador'],

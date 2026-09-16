@@ -231,13 +231,17 @@ export class BaseCamps {
 
       // --- refino ---
       if (this.fuelOf(base.id) <= 0) continue;
+      // Sem esteira o refinador AINDA funciona, a passo de tartaruga: alguem
+      // tem que jogar minerio na boca dele a mao. E o que a esteira compra —
+      // velocidade, nao existencia. Travar o refino por completo criava um no:
+      // sem refino nao havia refinado, e a esteira custa refinado.
       const temEntrada = this.built(base.id, 'esteira_entrada');
-      if (!temEntrada) continue;
+      const alimentacao = temEntrada ? 1 : 0.25;
       const velho = !this.built(base.id, 'casa_capataz');
       // Alguem cuidando do fogo rende 70% a mais: e trabalho humano, nao
       // upgrade de maquina.
       const maos = this.hasWorker(base.id, 'refino') ? 1.7 : 1;
-      const taxa = REFINERY_RATE * (velho ? OLD_REFINERY_PENALTY : 1) * maos * dt;
+      const taxa = REFINERY_RATE * (velho ? OLD_REFINERY_PENALTY : 1) * maos * alimentacao * dt;
       let feito = 0;
       for (const [res, qtd] of brutos) {
         if (qtd <= 0) continue;
