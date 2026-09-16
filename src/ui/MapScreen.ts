@@ -42,7 +42,15 @@ export class MapScreen {
     parent: HTMLElement,
     private world: World,
     private exploration: Exploration,
-    private playerTile: () => { col: number; row: number }
+    private playerTile: () => { col: number; row: number },
+    /**
+     * Atalho de teste: leva o jogador direto para a praca de Blockia.
+     *
+     * Existe porque a cidade fica a 604 m atras de um selo, e conferir se ela
+     * ficou boa nao pode custar meia hora de picareta toda vez. Deve sair
+     * quando a cidade tiver uma rota de verdade.
+     */
+    private onTeleportBlockia: () => void = () => {}
   ) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap mapscreen';
@@ -51,6 +59,7 @@ export class MapScreen {
         <header class="map-header">
           <h3>Mapa da Mina</h3>
           <div class="map-info"></div>
+          <button class="icon-btn map-tp" data-tp title="Ir direto para Blockia (teste)">🏙</button>
           <button class="icon-btn" data-center title="Centralizar no jogador">◎</button>
           <button class="icon-btn" data-close>✕</button>
         </header>
@@ -80,6 +89,10 @@ export class MapScreen {
     (this.wrap.querySelector('[data-close]') as HTMLElement).addEventListener('click', () =>
       this.close()
     );
+    (this.wrap.querySelector('[data-tp]') as HTMLElement).addEventListener('click', () => {
+      this.onTeleportBlockia();
+      this.close();
+    });
     (this.wrap.querySelector('[data-center]') as HTMLElement).addEventListener('click', () =>
       this.centerOnPlayer()
     );

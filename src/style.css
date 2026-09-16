@@ -3087,3 +3087,10 @@ body {
 .quota-days.free {
   color: var(--good);
 }
+
+/* Atalho de teste para Blockia no cabecalho do mapa. Cor propria para nao se
+   confundir com os botoes de verdade — e para ficar obvio quando sair. */
+.map-tp {
+  border-color: rgba(154, 79, 224, 0.75) !important;
+  color: #d3b4ff !important;
+}

@@ -275,7 +275,8 @@ export class Game {
     this.mapScreen = new MapScreen(uiRoot, this.world, this.exploration, () => ({
       col: Math.floor(this.player.cx / CONFIG.tileSize),
       row: Math.floor(this.player.cy / CONFIG.tileSize),
-    }));
+    }),
+    () => this.teleportToBlockia());
     this.minimap = new Minimap(
       this.hud.mapSlot(),
       this.world,
@@ -1370,6 +1371,32 @@ export class Game {
   private settleMissions(): void {
     this.missions.check(true, () => {});
     this.refreshObjective();
+  }
+
+  /**
+   * Atalho de teste: poe o jogador na praca de Blockia.
+   *
+   * Procura chao de verdade antes de soltar (a praca e escavada, mas o piso
+   * ondula), abre o mapa da regiao e marca a cidade como descoberta — chegar
+   * la sem a cidade aparecer no mapa seria pior que nao chegar.
+   */
+  private teleportToBlockia(): void {
+    const bl = CONFIG.blockia;
+    const col = Math.round((bl.col0 + bl.col1) / 2);
+    const row = this.world.surfaceRow + bl.depth1;
+    const spot = this.world.findStandingSpot(col, row, 60) ?? { col, row };
+    const ts = CONFIG.tileSize;
+    this.player.setPosition(spot.col * ts + ts / 2, spot.row * ts + ts / 2);
+    this.camera.snapTo(this.player.cx, this.player.cy);
+    this.exploration.addMarker({
+      id: 'blockia',
+      kind: 'npc',
+      col: spot.col,
+      row: spot.row,
+      label: 'Blockia',
+      alwaysVisible: true,
+    });
+    this.hud.toast('Blockia — 604 m. "A pedra nos fechou uma porta e nos construimos uma casa."', 'story');
   }
 
   private refreshObjective(): void {
