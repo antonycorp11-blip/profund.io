@@ -64,6 +64,12 @@ export class PlayerStats {
     return this.attrs.get('climbStamina');
   }
 
+  get jetThrust(): number {
+    return this.attrs.get('jetThrust');
+  }
+  get jetFuel(): number {
+    return this.attrs.get('jetFuel');
+  }
   get climbSpeed(): number {
     return this.attrs.get('climbSpeed');
   }

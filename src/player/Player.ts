@@ -48,6 +48,12 @@ export class Player {
   wallJumpUnlocked = false;
   /** Asas/jato: a queda fica lenta o bastante para escolher onde pousar. */
   glideUnlocked = false;
+  /** Mochila a jato: segurar PULAR no ar empurra para cima. */
+  jetUnlocked = false;
+  /** Combustivel restante, em segundos de empuxo. */
+  jetFuel = 0;
+  /** True no quadro em que o jato esta empurrando (para som e particula). */
+  jetting = false;
   private coyote = 0;
   private jumpBufferTimer = 0;
   /** Fase do ciclo de caminhada (usada tambem pelo sprite animado). */
@@ -79,6 +85,7 @@ export class Player {
 
   update(dt: number, input: InputManager, world: World): void {
     const p = CONFIG.physics;
+    const jetCfg = CONFIG.player.jet;
     const moveX = clamp(input.axisX, -1, 1);
 
     // --- horizontal ---
@@ -105,7 +112,7 @@ export class Player {
       this.coyote = 0;
       this.onGround = false;
     }
-    if (input.wasReleased('jump') && this.vy < 0) {
+    if (input.wasReleased('jump') && this.vy < 0 && !this.jetting) {
       this.vy *= p.jumpCutMultiplier;
     }
 
@@ -267,6 +274,34 @@ export class Player {
       this.vy = -climbCfg.wallJumpY;
       this.climbingWall = 0;
       this.climbStamina = Math.max(0, this.climbStamina - 0.5);
+    }
+
+    // --- mochila a jato ---
+    //
+    // Ela nao fazia NADA. A ficha dela prometia "empuxo para subir" e o que
+    // estava ligado ali era o mesmo planeio das asas — um item de 6000 moedas
+    // que repetia um de 2200. Agora ela empurra de verdade: segurar PULAR no
+    // ar acende o jato enquanto houver tanque.
+    //
+    // O `armAfter` existe para o jato nao roubar o pulo: quem segura PULAR
+    // para pular alto continua so pulando no comeco da subida, e o empuxo so
+    // entra depois. Sem isso todo pulo viraria decolagem.
+    this.jetting = false;
+    if (this.onGround) {
+      this.jetFuel = Math.min(
+        this.stats.jetFuel,
+        this.jetFuel + (this.stats.jetFuel / jetCfg.refillSec) * dt
+      );
+    } else if (
+      this.jetUnlocked &&
+      this.climbingWall === 0 &&
+      input.isHeld('jump') &&
+      this.airTime > jetCfg.armAfter &&
+      this.jetFuel > 0
+    ) {
+      this.jetting = true;
+      this.jetFuel = Math.max(0, this.jetFuel - dt);
+      this.vy = Math.max(-jetCfg.maxRise, this.vy - this.stats.jetThrust * dt);
     }
 
     // --- gravidade ---
@@ -472,6 +507,11 @@ export class Player {
         }
       }
     }
+  }
+
+  /** 0..1 do tanque do jato, para a HUD. */
+  get jetRatio(): number {
+    return this.jetFuel / Math.max(0.01, this.stats.jetFuel);
   }
 
   /** 0..1 da resistencia de escalada, para a HUD/sprite. */

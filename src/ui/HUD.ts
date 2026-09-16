@@ -24,6 +24,9 @@ export class HUD {
   private barsRow!: HTMLDivElement;
   private climbEl: HTMLDivElement;
   private climbFill: HTMLElement;
+  private jetEl: HTMLDivElement;
+  private jetFill: HTMLElement;
+  private lastJet = -1;
   private lastClimb = -1;
   private moneyEl: HTMLDivElement;
   private moneyValue: HTMLElement;
@@ -183,6 +186,17 @@ export class HUD {
       <span class="slim-bar"><i></i></span>`;
     this.climbFill = this.climbEl.querySelector('.slim-bar > i') as HTMLElement;
 
+    // Tanque do jato. Mesma barra fina, mesmo canto: quem esta no ar com o
+    // dedo no PULAR precisa ver quanto falta para o motor morrer, e precisa
+    // ver isso SEM tirar o olho do buraco para onde esta subindo.
+    this.jetEl = document.createElement('div');
+    this.jetEl.className = 'slim jet-gauge';
+    this.jetEl.hidden = true;
+    this.jetEl.innerHTML = `
+      <span class="slim-icon">🚀</span>
+      <span class="slim-bar"><i></i></span>`;
+    this.jetFill = this.jetEl.querySelector('.slim-bar > i') as HTMLElement;
+
     const bars = document.createElement('div');
     bars.className = 'hud-bars';
     bars.appendChild(this.bagEl);
@@ -193,6 +207,7 @@ export class HUD {
     bars.hidden = true;
     this.moneyEl.appendChild(bars);
     this.moneyEl.appendChild(this.climbEl);
+    this.moneyEl.appendChild(this.jetEl);
 
     // Minimapa fecha a coluna da esquerda. E o unico canto fora das duas zonas
     // de toque: o joystick fica no rodape esquerdo e os botoes no rodape
@@ -578,6 +593,24 @@ export class HUD {
     this.lastClimb = pct;
     this.climbFill.style.width = `${pct}%`;
     this.climbEl.classList.toggle('low', pct <= 25);
+  }
+
+  /**
+   * Tanque do jato.
+   *
+   * Some quando esta cheio E o jogador esta no chao: barra que nunca muda vira
+   * decoracao, e o HUD deste jogo ja e apertado. Ela aparece no instante em que
+   * o tanque comeca a importar.
+   */
+  setJet(ratio: number, unlocked: boolean, emUso: boolean): void {
+    const mostrar = unlocked && (emUso || ratio < 0.999);
+    if (this.jetEl.hidden === mostrar) this.jetEl.hidden = !mostrar;
+    if (!mostrar) return;
+    const pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+    if (pct === this.lastJet) return;
+    this.lastJet = pct;
+    this.jetFill.style.width = `${pct}%`;
+    this.jetEl.classList.toggle('low', pct <= 25);
   }
 
   /** Barra de vida; escreve so quando muda. */

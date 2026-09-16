@@ -50,6 +50,22 @@ export const CONFIG = {
   player: {
     width: 20,
     height: 28,
+    /**
+     * MOCHILA A JATO.
+     *
+     * Segurar PULAR no ar liga o empuxo. Nao e voo livre: o tanque e curto de
+     * proposito, e recarrega so no chao — o jato serve para VOLTAR de um poco
+     * e corrigir um pulo, nao para pular a mina inteira. Se desse para voar,
+     * escalar, corda e elevador deixariam de existir no mesmo dia.
+     */
+    jet: {
+      /** Velocidade maxima de subida com o jato (px/s). */
+      maxRise: 260,
+      /** Segundos no chao para encher o tanque inteiro. */
+      refillSec: 1.4,
+      /** So liga depois deste tempo de voo, para nao roubar o pulo normal. */
+      armAfter: 0.09,
+    },
     /** Escalada: sempre disponivel (a arvore so melhora), senao o jogador fica preso. */
     climb: {
       /**

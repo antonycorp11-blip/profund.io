@@ -1206,6 +1206,7 @@ export class Game {
     this.buildMode.updateEnergy();
     this.player.wallJumpUnlocked = this.attrs.has('wallJump');
     this.player.glideUnlocked = this.attrs.has('glide');
+    this.player.jetUnlocked = this.attrs.has('jetpack');
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     this.playerSprite.update(dt, this.player);
 
@@ -1258,6 +1259,18 @@ export class Game {
     this.hud.setLevel(this.progression.level, this.progression.ratio);
     this.hud.setJournalUnread(this.journal.unread);
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
+    this.hud.setJet(this.player.jetRatio, this.player.jetUnlocked, this.player.jetting);
+    // Chama do jato: sem ela o empuxo e um numero invisivel. Sai DEBAIXO dos
+    // pes e para baixo, que e para onde o gas vai.
+    if (this.player.jetting) {
+      this.particles.burst(this.player.cx, this.player.feetY - 2, 2, ['#ffd08a', '#ff7a2a'], {
+        speed: 120,
+        size: 2.2,
+        dirY: 1,
+        spread: 0.9,
+        life: 0.28,
+      });
+    }
     // O aviso de "falar" some enquanto o dialogo esta aberto. Ele ficava por
     // cima da conversa e aceitava toque, entao um segundo toque reabria o
     // mesmo dialogo por cima do que ja estava rolando.

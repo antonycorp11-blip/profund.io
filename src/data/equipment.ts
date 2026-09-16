@@ -152,20 +152,69 @@ export const EQUIPMENT: EquipDef[] = [
     ],
     icon: '🪽',
   },
+  /*
+   * A LINHA DO JATO.
+   *
+   * Tres modelos no mesmo slot, como toda linha de equipamento daqui: o
+   * seguinte nao muda de funcao, muda de TANQUE. O que se compra com a
+   * profundidade e tempo de voo, nao um truque novo — assim o jogador aprende
+   * o jato uma vez e depois so ganha folga.
+   *
+   * O primeiro deles nao fazia nada, e por muito tempo: a ficha prometia
+   * "empuxo para subir" e os modificadores ligavam o mesmo planeio das asas.
+   * Seis mil moedas para repetir um item de duas mil.
+   */
   {
     id: 'eq_jato',
     slot: 'costas',
     name: 'Mochila a Jato',
-    description: 'Empuxo para subir: escalar deixa de ser o unico jeito de voltar.',
+    description: 'Segure PULAR no ar para subir. O tanque e curto e enche no chao.',
     cost: 6000,
     requiredDepth: 400,
     modifiers: [
+      { target: 'jetpack', op: 'unlock', value: 1 },
+      { target: 'glide', op: 'unlock', value: 1 },
       { target: 'climbSpeed', op: 'percentAdd', value: 0.6 },
       { target: 'climbStamina', op: 'percentAdd', value: 0.8 },
       { target: 'jumpForce', op: 'percentAdd', value: 0.22 },
-      { target: 'glide', op: 'unlock', value: 1 },
     ],
     icon: '🚀',
+  },
+  {
+    id: 'eq_jato_duplo',
+    slot: 'costas',
+    name: 'Jato de Dois Bicos',
+    description: 'Mais empuxo e quase o dobro de tanque: da para vencer um poco inteiro.',
+    cost: 14000,
+    requiredDepth: 900,
+    modifiers: [
+      { target: 'jetpack', op: 'unlock', value: 1 },
+      { target: 'glide', op: 'unlock', value: 1 },
+      { target: 'jetFuel', op: 'percentAdd', value: 0.9 },
+      { target: 'jetThrust', op: 'percentAdd', value: 0.25 },
+      { target: 'climbSpeed', op: 'percentAdd', value: 0.6 },
+      { target: 'jumpForce', op: 'percentAdd', value: 0.22 },
+    ],
+    icon: '🚀',
+  },
+  {
+    id: 'eq_jato_abissal',
+    slot: 'costas',
+    name: 'Turbina Abissal',
+    description: 'Tanque longo o bastante para o abismo deixar de ser um caminho so de ida.',
+    cost: 32000,
+    requiredDepth: 1500,
+    modifiers: [
+      { target: 'jetpack', op: 'unlock', value: 1 },
+      { target: 'glide', op: 'unlock', value: 1 },
+      { target: 'jetFuel', op: 'percentAdd', value: 2.1 },
+      { target: 'jetThrust', op: 'percentAdd', value: 0.45 },
+      { target: 'climbSpeed', op: 'percentAdd', value: 0.8 },
+      { target: 'climbStamina', op: 'percentAdd', value: 1.2 },
+      { target: 'jumpForce', op: 'percentAdd', value: 0.3 },
+      { target: 'inventoryCapacity', op: 'flat', value: 20 },
+    ],
+    icon: '🛸',
   },
 
   // ---------------------------------------------------------------- pes ---

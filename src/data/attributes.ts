@@ -14,6 +14,8 @@ export type AttrId =
   | 'airControl'
   | 'climbSpeed'
   | 'climbStamina'
+  | 'jetThrust'
+  | 'jetFuel'
   | 'dashSpeed'
   | 'dashDistance'
   | 'dashCooldown'
@@ -124,6 +126,7 @@ export type AttrId =
 export type FlagId =
   | 'wallJump'
   | 'glide'
+  | 'jetpack'
   | 'autoPickup'
   | 'dashUnlocked'
   | 'airDash'
@@ -159,6 +162,12 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   jumpForce: { id: 'jumpForce', name: 'Forca do salto', base: 470, format: 'flat', live: true },
   airControl: { id: 'airControl', name: 'Controle aereo', base: 1, format: 'multiplier', live: true },
   climbStamina: { id: 'climbStamina', name: 'Folego de escalada', base: 7, format: 'flat', live: true },
+  // Empuxo da mochila a jato, em px/s de aceleracao contra a gravidade. A
+  // gravidade e 1500: qualquer coisa abaixo disso segura a queda sem subir, e
+  // e por isso que o valor base ja passa dela — segurar PULAR tem que SUBIR.
+  jetThrust: { id: 'jetThrust', name: 'Empuxo do jato', base: 2600, format: 'flat', live: true },
+  /** Segundos de empuxo continuo com o tanque cheio. */
+  jetFuel: { id: 'jetFuel', name: 'Tanque do jato', base: 1.6, format: 'seconds', live: true },
   climbSpeed: { id: 'climbSpeed', name: 'Escalada', base: 145, format: 'flat', live: true },
   dashSpeed: { id: 'dashSpeed', name: 'Velocidade do dash', base: 520, format: 'flat', live: false },
   dashDistance: { id: 'dashDistance', name: 'Distancia do dash', base: 120, format: 'pixels', live: false },

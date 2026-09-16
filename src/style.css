@@ -500,6 +500,27 @@ body {
   background: linear-gradient(90deg, #d8683f, #ffb199);
 }
 
+/* --- tanque do jato --- */
+.jet-gauge[hidden] {
+  display: none;
+}
+
+.jet-gauge {
+  width: 100%;
+  animation: gauge-in 0.16s ease-out;
+}
+
+.slim.jet-gauge .slim-bar > i,
+.jet-gauge .bar > i {
+  background: linear-gradient(90deg, #d8791f, #ffd08a);
+  transition: width 0.08s linear;
+}
+
+.jet-gauge.low .slim-bar > i,
+.jet-gauge.low .bar > i {
+  background: linear-gradient(90deg, #d83f3f, #ffb199);
+}
+
 @keyframes gauge-in {
   from {
     opacity: 0;
