@@ -228,7 +228,9 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     id: 'npc_jonas',
     name: 'Jonas',
     col: 74,
-    row: 18 + 38,
+    // 64 m, e nao 38: o primeiro bioma foi de 50 para 90 m e o Jonas desceu
+    // junto. Entre a marca do pai (26 m) e ele agora ha caminho de verdade.
+    row: 18 + 64,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,

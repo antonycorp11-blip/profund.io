@@ -223,7 +223,9 @@ export class SkillTreeUI {
   /** Centraliza a vista numa camara, sem esconder o resto do ninho. */
   private irParaCamara(cat: SkillCategory, animar: boolean): void {
     this.category = cat;
-    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter((sk) => sk.category === cat);
+    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
+      (sk) => sk.category === cat && this.host.tree.visibility(sk.id) !== 'escondido'
+    );
     if (lista.length === 0) return;
     let minX = Infinity;
     let minY = Infinity;
@@ -259,7 +261,9 @@ export class SkillTreeUI {
     // Placa de cada camara, para o ninho nao virar um monte de bolinha solta.
     for (const cat of Object.values(CATEGORIES)) {
       if (cat.id === 'active') continue;
-      const daCamara = list.filter((sk) => sk.category === cat.id);
+      const daCamara = list.filter(
+        (sk) => sk.category === cat.id && this.host.tree.visibility(sk.id) !== 'escondido'
+      );
       if (daCamara.length === 0) continue;
       let minX = Infinity;
       let minY = Infinity;
@@ -278,8 +282,10 @@ export class SkillTreeUI {
     }
 
     for (const def of list) {
+      const visao = this.host.tree.visibility(def.id);
+      if (visao === 'escondido') continue;
       const btn = document.createElement('button');
-      btn.className = 'skill-node';
+      btn.className = `skill-node${visao === 'vizinho' ? ' apagado' : ''}`;
       const p = nodePos(def);
       btn.style.left = `${p.x}px`;
       btn.style.top = `${p.y}px`;
@@ -289,6 +295,16 @@ export class SkillTreeUI {
         <span class="node-name">${def.name}</span>
         <span class="node-level"></span>`;
       btn.addEventListener('click', () => {
+        // Camara ainda nao acesa nao abre ficha: o nome dela ja e o convite, e
+        // ler o efeito inteiro de algo a tres passos de distancia devolveria a
+        // planilha que a revelacao progressiva veio tirar.
+        if (this.host.tree.visibility(def.id) === 'vizinho') {
+          Events.emit('ui:toast', {
+            text: `${def.name}: cave a galeria que chega ate aqui primeiro.`,
+            tone: 'info',
+          });
+          return;
+        }
         this.selected = def.id;
         this.category = def.category;
         this.buildTabs();
@@ -333,6 +349,10 @@ export class SkillTreeUI {
         // justamente a informacao que faltava — e o tunel que mostra que um
         // caminho depende do outro.
         if (!req || req.category === 'active') continue;
+        // Galeria para camara que ainda nao existe na tela nao se desenha:
+        // seria um tunel saindo do nada para lugar nenhum.
+        if (this.host.tree.visibility(def.id) === 'escondido') continue;
+        if (this.host.tree.visibility(reqId) === 'escondido') continue;
         const b = nodePos(req);
         const aberto = this.host.tree.levelOf(reqId) > 0;
 

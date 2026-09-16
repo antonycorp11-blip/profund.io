@@ -42,9 +42,37 @@ export interface ScrollDef {
 }
 
 export const SCROLLS: ScrollDef[] = [
+  // -------------------------------------------------- solo superficial (0+) --
+  // O primeiro bioma nao tinha pergaminho NENHUM: os noventa metros de
+  // abertura — os que aparecem em qualquer video do jogo — eram carvao e mais
+  // carvao. Estas sao as duas primeiras paginas do Santiago, os dias um e dois,
+  // e as duas empurram para onde o jogador precisa ir em seguida.
+  {
+    id: 'scr_solo_1', cron: 10, layer: 'surface', depth: 18, col: 52,
+    title: 'Dia um', author: 'Santiago',
+    text: [
+      'O capataz me deu duas horas e um lampiao que pisca. Disse que depois disso a responsabilidade e minha.',
+      'John sumiu ha onze dias. Onze. Contei de novo agora, com o dedo na parede, porque parei de confiar na minha cabeca nesse assunto.',
+      'Vou marcar a volta a cada vinte metros. Duas linhas e um corte no meio. Se alguem ler isto, e assim que se acha o caminho de casa aqui embaixo.',
+      'A primeira marca de verdade vai ficar nos vinte e seis. E ali que a pedra muda de som.',
+    ],
+  },
+  {
+    id: 'scr_solo_2', cron: 11, layer: 'surface', depth: 40, col: 88,
+    title: 'Dia dois', author: 'Santiago',
+    text: [
+      'Passei a marca dos vinte e seis e continuei. A pedra fica mais quieta daqui para baixo, e isso nao e alivio nenhum.',
+      'Ouvi alguem. Nao foi vento, nao foi assentamento: foi alguem, e estava abaixo de mim.',
+      'Gritei de volta quatro vezes. Na quinta desisti e comecei a cavar na direcao do som, que e a unica coisa que presta quando se ouve gente na pedra.',
+      'Anoto aqui porque amanha eu vou querer ter certeza de que nao inventei: ha mais alguem nesta mina, e ele esta preso.',
+    ],
+  },
   // ---------------------------------------------------------- pedra (50+) --
   {
-    id: 'scr_pedra_1', cron: 10, layer: 'stone', depth: 58, col: 38,
+    // 'pedra' no id e heranca: a Camada de Pedra comecava aos 50 m. Hoje
+    // comeca aos 90, entao estes dois caem no primeiro bioma. O id fica —
+    // renomear quebraria a flag de quem ja achou.
+    id: 'scr_pedra_1', cron: 12, layer: 'surface', depth: 58, col: 38,
     title: 'Sobre descer com pressa', author: 'Santiago',
     text: [
       'Dia tres. Desci rapido demais e paguei com dois dedos roxos.',
@@ -71,7 +99,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_pedra_4', cron: 11, layer: 'stone', depth: 128, col: 100,
+    id: 'scr_pedra_4', cron: 13, layer: 'stone', depth: 128, col: 100,
     title: 'Oleo fresco', author: 'Santiago',
     text: [
       'Achei um lampiao pendurado numa viga. Reservatorio pela metade, pavio queimado ate a metade.',
@@ -100,7 +128,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_cristal_2', cron: 12, layer: 'crystal', depth: 246, col: 104,
+    id: 'scr_cristal_2', cron: 14, layer: 'crystal', depth: 246, col: 104,
     title: 'Lanternas azuis', author: 'Santiago',
     text: [
       'Vi luz la embaixo que nao era minha. Azul, parada, a uns duzentos metros de desnivel.',
@@ -119,7 +147,7 @@ export const SCROLLS: ScrollDef[] = [
   },
   // ------------------------------------------------------ minerais (500+) --
   {
-    id: 'scr_min_1', cron: 13, layer: 'minerals', depth: 524, col: 40,
+    id: 'scr_min_1', cron: 15, layer: 'minerals', depth: 524, col: 40,
     title: 'Onze dias', author: 'Santiago',
     text: [
       'Contei de novo no registro de carga. John entrou onze dias antes de mim.',
@@ -128,7 +156,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_min_2', cron: 14, layer: 'minerals', depth: 566, col: 112,
+    id: 'scr_min_2', cron: 16, layer: 'minerals', depth: 566, col: 112,
     title: 'Sobre os mapas', author: 'Santiago',
     text: [
       'Os mapas oficiais acabam nos quatrocentos e vinte. Os tuneis nao.',
@@ -147,7 +175,7 @@ export const SCROLLS: ScrollDef[] = [
   },
   // --------------------------------------------------------- magma (900+) --
   {
-    id: 'scr_magma_1', cron: 15, layer: 'magma', depth: 928, col: 48,
+    id: 'scr_magma_1', cron: 17, layer: 'magma', depth: 928, col: 48,
     title: 'O calor nao e daqui', author: 'Santiago',
     text: [
       'Medi o gradiente por tres dias. Ele nao sobe como deveria: sobe em degraus, e os degraus tem intervalo regular.',
@@ -165,7 +193,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_magma_3', cron: 16, layer: 'magma', depth: 1012, col: 62,
+    id: 'scr_magma_3', cron: 18, layer: 'magma', depth: 1012, col: 62,
     title: 'O medidor', author: 'Santiago',
     text: [
       'Montei o receptor com as notas do John. Funcionou na primeira tentativa, o que me assustou mais do que se tivesse falhado.',
@@ -175,7 +203,7 @@ export const SCROLLS: ScrollDef[] = [
   },
   // -------------------------------------------------------- ruinas (1300+) --
   {
-    id: 'scr_ruinas_1', cron: 17, layer: 'ruins', depth: 1326, col: 42,
+    id: 'scr_ruinas_1', cron: 19, layer: 'ruins', depth: 1326, col: 42,
     title: 'Pedra que nao e pedra', author: 'Santiago',
     text: [
       'Passei a mao na parede esperando rocha e encontrei junta. Junta reta, de dois metros, sem argamassa.',
@@ -184,7 +212,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_ruinas_2', cron: 18, layer: 'ruins', depth: 1368, col: 108,
+    id: 'scr_ruinas_2', cron: 20, layer: 'ruins', depth: 1368, col: 108,
     title: 'Marcas na altura do joelho', author: 'Santiago',
     text: [
       'A trilha do John continua, mas mudou. Os cortes que ele fazia na altura do ombro agora estao na altura do joelho.',
@@ -212,7 +240,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_abismo_2', cron: 19, layer: 'abyss', depth: 1766, col: 116,
+    id: 'scr_abismo_2', cron: 21, layer: 'abyss', depth: 1766, col: 116,
     title: 'Ultima entrada antes da camara', author: 'Santiago',
     text: [
       'Deixei comida e o caderno com o John numa area estavel. Ele pediu para eu ficar.',
@@ -221,7 +249,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_abismo_3', cron: 20, layer: 'abyss', depth: 1808, col: 74,
+    id: 'scr_abismo_3', cron: 22, layer: 'abyss', depth: 1808, col: 74,
     title: 'Tres dias', author: 'John',
     text: [
       'A porta acendeu uma vez. Contei tres dias com a perna assim e a lanterna racionada.',

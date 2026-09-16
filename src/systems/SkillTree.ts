@@ -52,6 +52,39 @@ export class SkillTree {
     return this.attrs.has('legacyTreeVisible') || this.levelOf('legacy_mark') > 0;
   }
 
+  /**
+   * Quanto deste no o jogador PODE VER.
+   *
+   *  - 'aberto': da para aprender agora, ou ja foi aprendido.
+   *  - 'vizinho': a galeria chega ate ele, mas ainda nao foi cavada. Aparece
+   *    como camara escura, com nome e tudo — e o convite.
+   *  - 'escondido': nem existe na tela ainda.
+   *
+   * A arvore mostrava TUDO desde o minuto zero, e isso e o contrario de uma
+   * arvore: o jogador via quarenta e tres camaras de uma vez, nenhuma delas
+   * significando nada, e a escolha virava uma planilha. Assim cada no aprendido
+   * ACENDE o proximo trecho do ninho, e o mapa cresce junto com quem cava.
+   */
+  visibility(id: string): 'aberto' | 'vizinho' | 'escondido' {
+    const def = skillDef(id);
+    if (!def) return 'escondido';
+    if (this.levelOf(id) > 0) return 'aberto';
+    // Raiz de ramo: sempre visivel, senao nao ha por onde comecar.
+    if (def.requiredSkills.length === 0) return 'aberto';
+    // Basta UM pre-requisito aprendido para a galeria chegar aqui. Exigir
+    // todos deixaria nos de convergencia invisiveis ate o ultimo momento, e
+    // sao justamente esses que fazem o jogador querer juntar dois caminhos.
+    if (def.requiredSkills.some((r) => this.levelOf(r) > 0)) return 'aberto';
+    // Um passo alem do que ja acendeu: silhueta, para o caminho ter futuro.
+    for (const r of def.requiredSkills) {
+      const pai = skillDef(r);
+      if (!pai) continue;
+      if (pai.requiredSkills.length === 0) return 'vizinho';
+      if (pai.requiredSkills.some((rr) => this.levelOf(rr) > 0)) return 'vizinho';
+    }
+    return 'escondido';
+  }
+
   canLearn(id: string, currentDepth = 0): LearnCheck {
     const def = skillDef(id);
     if (!def) return { ok: false, reason: 'Habilidade desconhecida' };

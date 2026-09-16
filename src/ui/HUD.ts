@@ -28,6 +28,17 @@ export class HUD {
   private jetFill: HTMLElement;
   private lastJet = -1;
   private objetivoTimer = 0;
+  /**
+   * Telas largas mostram vida e mochila o TEMPO TODO.
+   *
+   * Some-las so faz sentido no celular deitado, onde cada barra disputa espaco
+   * com o polegar. No PC ha sobra de tela, e barra que aparece do nada rouba a
+   * atencao justo no momento em que o jogador levou dano ou encheu a mochila —
+   * exatamente quando ele precisava ter visto aquilo CHEGANDO.
+   */
+  private get sempreVisiveis(): boolean {
+    return !window.matchMedia('(pointer: coarse)').matches && window.innerWidth >= 900;
+  }
   private lastClimb = -1;
   private moneyEl: HTMLDivElement;
   private moneyValue: HTMLElement;
@@ -203,9 +214,10 @@ export class HUD {
     bars.appendChild(this.bagEl);
     bars.appendChild(this.healthEl);
     this.barsRow = bars;
-    this.bagEl.hidden = true;
-    this.healthEl.hidden = true;
-    bars.hidden = true;
+    const escondeAoInicio = !this.sempreVisiveis;
+    this.bagEl.hidden = escondeAoInicio;
+    this.healthEl.hidden = escondeAoInicio;
+    bars.hidden = escondeAoInicio;
     this.moneyEl.appendChild(bars);
     this.moneyEl.appendChild(this.climbEl);
     this.moneyEl.appendChild(this.jetEl);
@@ -521,7 +533,7 @@ export class HUD {
       this.bagEl.classList.toggle('full', used >= cap);
       // Some enquanto ha espaco de sobra: barra cheia o tempo todo vira ruido.
       // Aparece a 80% — antes disso nao ha decisao a tomar, depois disso ha.
-      const showBag = ratio >= 0.8;
+      const showBag = this.sempreVisiveis || ratio >= 0.8;
       if (this.bagEl.hidden !== !showBag) this.bagEl.hidden = !showBag;
       this.syncBarsRow();
     }
@@ -645,7 +657,7 @@ export class HUD {
     this.healthLabel.textContent = String(cur);
     this.healthEl.classList.toggle('low', ratio <= 0.3);
     // So aparece depois de levar dano: com a vida cheia nao ha o que decidir.
-    const showHealth = ratio < 1;
+    const showHealth = this.sempreVisiveis || ratio < 1;
     if (this.healthEl.hidden !== !showHealth) this.healthEl.hidden = !showHealth;
     this.syncBarsRow();
   }

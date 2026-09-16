@@ -42,7 +42,7 @@ export const QUOTA_CONFIG = {
 export const QUOTA_TIERS: QuotaTierDef[] = [
   { fromWeek: 1, requiredDepth: 0, resource: 'coal', base: 90, weight: 5 },
   { fromWeek: 1, requiredDepth: 20, resource: 'stone', base: 120, weight: 2 },
-  { fromWeek: 2, requiredDepth: 55, resource: 'copper', base: 45, weight: 4 },
+  { fromWeek: 2, requiredDepth: 30, resource: 'copper', base: 45, weight: 4 },
   { fromWeek: 3, requiredDepth: 120, resource: 'iron', base: 35, weight: 4 },
   { fromWeek: 5, requiredDepth: 220, resource: 'crystal', base: 14, weight: 3 },
   { fromWeek: 6, requiredDepth: 260, resource: 'gold', base: 18, weight: 3 },

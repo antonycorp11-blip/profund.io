@@ -369,7 +369,21 @@ export const BLOCKS: BlockDef[] = [
     value: 2,
     minDepth: 0,
     maxDepth: Infinity,
-    minTool: 2,
+    /*
+     * TIER 1, e isto e regra: parede de HISTORIA nunca pede ferramenta.
+     *
+     * Ela pedia a de tier 2 e isso fechava um circulo perfeito: o tijolo veda
+     * a sala da pista dos 26 m; a picareta de tier 2 custa 40 de cobre; cobre
+     * so existe na camada de Pedra, que comeca aos 50 m; os 50 m estao atras
+     * do primeiro selo; e o primeiro selo exige a missao da pista dos 26 m.
+     * Num save novo a pista era literalmente inalcancavel.
+     *
+     * O que segura esta parede continua sendo o HP (120, e mais fundo ainda
+     * multiplicado pela camada): cavar ate a pista custa tempo, que e o certo.
+     * Gate de ferramenta e para MINERIO, onde travar significa "volte mais
+     * forte"; numa parede de historia significa "volte nunca".
+     */
+    minTool: 1,
     solid: true,
     indestructible: false,
     color: '#4a5352',

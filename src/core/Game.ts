@@ -52,6 +52,8 @@ import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
+import { StoryGates } from '../systems/StoryGates';
+import { storyGateAtRow } from '../data/storyGates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
@@ -129,6 +131,7 @@ export class Game {
   private mapScreen: MapScreen;
   private creatures: CreatureManager;
   private biomeGate!: BiomeGate;
+  private storyGates!: StoryGates;
   private missions!: Missions;
   private journal: Journal;
   private camps: BaseCamps;
@@ -358,6 +361,7 @@ export class Game {
     // DEPOIS do save (se houver) restaurar quem ja morreu — senao um chefe
     // ja derrotado em sessao anterior voltaria vivo por um instante.
     this.biomeGate = new BiomeGate(this.world, this.exploration, this.worldInfo.gates);
+    this.storyGates = new StoryGates(this.world, (id) => this.skills.hasStoryFlag(id));
     this.missions = new Missions(
       (id) => this.skills.hasStoryFlag(id),
       () => this.deepestMeters
@@ -842,6 +846,13 @@ export class Game {
       if (this.selAviso > 0) return;
       this.selAviso = 4;
       this.camera.addShake(2.4);
+      // Selo de HISTORIA vem primeiro: ele mora dentro da camada, entao a
+      // conta do selo de bioma nao o reconhece.
+      const historia = storyGateAtRow(this.world.surfaceRow, p.row);
+      if (historia) {
+        this.hud.celebrate(historia.titulo, 'Isto nao e pedra.', historia.aviso, 'quota', 3);
+        return;
+      }
       const camada = this.camadaDoSelo(p.row);
       if (!camada) {
         this.hud.toast('A parede nao cede.', 'warn');
@@ -1176,6 +1187,10 @@ export class Game {
       }
       if (this.biomeGate.isOpen(layerId)) this.skills.setStoryFlag(`gate_${layerId}`);
     }
+    // Selos de historia: quem ja tem a flag passa. Vale principalmente para
+    // save ANTIGO — o mundo e regerado do zero a cada carga, entao uma faixa
+    // criada depois do save nasceria selada com o jogador do outro lado dela.
+    this.storyGates.sync(true);
     const refechados = this.biomeGate.enforce();
     if (refechados.length > 0) {
       this.hud.toast(
@@ -2028,6 +2043,9 @@ export class Game {
   }
 
   private refreshObjective(): void {
+    // Toda flag de historia nova passa por aqui, entao e daqui que os selos de
+    // historia acordam. Um lugar so, para nenhum caminho novo esquecer disso.
+    this.storyGates.sync();
     // Paga o que acabou de fechar antes de perguntar qual e a proxima.
     this.missions.check(false, (money, points, m) => {
       if (money > 0) this.stock.money += money;

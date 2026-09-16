@@ -2,6 +2,7 @@ import { BLOCK_IDS, blockByKey, blockDef } from '../data/blocks';
 import { LAYERS, layerAt } from '../data/layers';
 import { bossForLayer } from '../data/creatures';
 import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
+import { STORY_GATES, storyGateRows } from '../data/storyGates';
 import { CONFIG } from '../data/config';
 import { carveBlockia, carveCityCorridor } from './Blockia';
 import { carvePostoNove } from './PostoNove';
@@ -239,6 +240,19 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   for (let row = baseFloorRow; row <= baseFloorRow + CONFIG.base.shaftDepth; row++) {
     world.setTileRaw(shaftCol - half - 1, row, BLOCK_IDS.PLANK);
     world.setTileRaw(shaftCol + half + 1, row, BLOCK_IDS.PLANK);
+  }
+
+  // ---- 4b. Selos de historia ----------------------------------------------
+  // Faixa fina e indestrutivel dentro da propria camada, sem arena e sem
+  // entrada: nao se passa lutando, se passa tendo achado. Ver /data/storyGates.
+  for (const sg of STORY_GATES) {
+    const { row0, row1 } = storyGateRows(surfaceRow, sg);
+    if (row0 <= 0 || row1 >= height - 1) continue;
+    for (let col = 1; col < width - 1; col++) {
+      for (let row = row0; row <= row1; row++) {
+        world.setTileRaw(col, row, BLOCK_IDS.SEAL);
+      }
+    }
   }
 
   // ---- 5. Salas feitas a mao ----------------------------------------------

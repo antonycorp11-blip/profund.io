@@ -27,6 +27,8 @@ export interface GameEvents {
   'block:blocked': { reason: 'tool' | 'indestructible'; requiredTool: number };
   /** O jogador bateu no Selo Ancestral. Quem explica o porque e o Game. */
   'seal:hit': { col: number; row: number };
+  /** Um selo de historia cedeu: a rocha voltou a ser rocha. */
+  'storygate:opened': { id: string };
   'resource:collect': { resource: ResourceId; amount: number; worldX: number; worldY: number };
   'inventory:full': { resource: ResourceId };
   'delivery:done': { total: number; value: number };

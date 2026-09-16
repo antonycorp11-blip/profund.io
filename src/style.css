@@ -2126,6 +2126,18 @@ body:has(.hud-map-slot.folded) .toasts {
   transition: transform 0.08s, border-color 0.12s;
 }
 
+/* Camara que a galeria ainda nao alcancou: silhueta. Ela existe para o
+   caminho ter futuro visivel, nao para ser lida. */
+.skill-node.apagado {
+  opacity: 0.32;
+  filter: grayscale(1);
+  cursor: default;
+}
+
+.skill-node.apagado .node-icon {
+  opacity: 0.5;
+}
+
 .skill-node .node-icon {
   font-size: 20px;
   line-height: 1;

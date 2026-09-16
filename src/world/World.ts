@@ -427,6 +427,26 @@ export class World {
   }
 
   /**
+   * Troca o selo de uma faixa por rocha comum.
+   *
+   * E o que um selo de HISTORIA faz ao abrir. O selo de bioma virar ar esta
+   * certo — a barreira estilhaca, e o jogo mostra isso. Mas um selo de historia
+   * ocupa a largura inteira do mundo dentro da propria camada: virar ar abriria
+   * um canyon horizontal de ponta a ponta do mapa. Virando pedra, a passagem
+   * simplesmente deixa de ser impossivel e volta a ser trabalho de picareta.
+   */
+  dissolveGateBand(row0: number, row1: number, blockId: number): void {
+    for (let row = row0; row <= row1; row++) {
+      for (let col = 1; col < this.width - 1; col++) {
+        const i = this.idx(col, row);
+        if (this.tiles[i] !== BLOCK_IDS.SEAL) continue;
+        this.tiles[i] = blockId;
+        this.markDirtyAround(col, row);
+      }
+    }
+  }
+
+  /**
    * Refaz o selo numa faixa, poupando a arena do chefe e a entrada dela.
    *
    * Existe para desfazer um selo aberto fora de ordem. E o inverso exato do

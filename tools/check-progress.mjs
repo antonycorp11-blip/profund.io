@@ -39,6 +39,9 @@ import { SKILLS } from '../src/data/skills';
 import { ATTRIBUTES, FLAG_IDS } from '../src/data/attributes';
 import { GATE_LAYERS, gateLayerDef } from '../src/data/gates';
 import { CONFIG } from '../src/data/config';
+import { LAYERS } from '../src/data/layers';
+import { TOOLS } from '../src/data/tools';
+import { BLOCKS } from '../src/data/blocks';
 import { World } from '../src/world/World';
 import { generateWorld } from '../src/world/WorldGen';
 
@@ -221,6 +224,57 @@ for (const k of SKILLS) {
       if (mortos.has(m.target)) {
         erros.push(\`habilidade \${k.id} gasta ponto em "\${m.target}", que e atributo morto.\`);
       }
+    }
+  }
+}
+
+// --- 7b. parede de historia nunca pede ferramenta que nao da para ter -----
+//
+// A trava mais fechada que este jogo ja teve, e ela passou por TODAS as outras
+// regras: a sala da pista dos 26 m era vedada por Tijolo antigo, que pedia a
+// picareta de tier 2; essa picareta custa 40 de cobre; cobre so nasce na
+// camada de Pedra, aos 50 m; os 50 m ficam atras do primeiro selo; e o
+// primeiro selo exige justamente a missao da pista dos 26 m. Circulo perfeito,
+// e a pista era literalmente inalcancavel num save novo.
+//
+// A regra geral: para cada ferramenta, calcula em que profundidade os minerios
+// que ela cobra passam a existir. Se uma parede de sala exige uma ferramenta
+// que so e possivel MAIS FUNDO do que a propria sala, e trava.
+const profundidadeDoMinerio = (res: string): number => {
+  // Pedra e terra sao a propria rocha da camada, nao entram em tabela de veio.
+  if (res === 'stone' || res === 'dirt') return 0;
+  // Refinado: vale a profundidade do minerio que o origina.
+  const bruto = Object.entries(REFINE_RECIPES).find(([, r]) => r?.out === res)?.[0];
+  if (bruto) return profundidadeDoMinerio(bruto);
+  let melhor = Infinity;
+  for (const l of LAYERS) {
+    if (l.ores.some((o) => o.key === res)) melhor = Math.min(melhor, l.minDepth);
+  }
+  return melhor;
+};
+const profundidadeDaFerramenta: number[] = [];
+let acumulado = 0;
+for (const t of TOOLS) {
+  for (const res of Object.keys(t.cost)) {
+    const d = profundidadeDoMinerio(res);
+    if (d === Infinity) {
+      erros.push(\`ferramenta "\${t.name}" cobra \${res}, que nao nasce em camada nenhuma.\`);
+      continue;
+    }
+    acumulado = Math.max(acumulado, d);
+  }
+  profundidadeDaFerramenta[t.index] = acumulado;
+}
+const tijolo = BLOCKS.find((b) => b.key === 'ruin_brick');
+if (tijolo) {
+  const precisa = profundidadeDaFerramenta[tijolo.minTool] ?? 0;
+  for (const c of CLUES) {
+    const prof = c.row - sr;
+    if (precisa > prof) {
+      erros.push(
+        \`pista \${c.id} esta a \${prof}m atras de "\${tijolo.name}", que pede a picareta \` +
+          \`de tier \${tijolo.minTool} — e essa so e possivel a partir de \${precisa}m.\`
+      );
     }
   }
 }

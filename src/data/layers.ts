@@ -82,12 +82,34 @@ export const LAYERS: LayerDef[] = [
     ambient: [26, 16, 8],
     darkness: 0.55,
     caveBonus: 0,
-    ores: [{ key: 'coal', chance: 0.038, sizeMin: 3, sizeMax: 7 }],
+    /*
+     * O cobre nasce AQUI, e nao so na Camada de Pedra.
+     *
+     * Ele so existia a partir dos 50 m, e isso fechava um circulo: a picareta
+     * de tier 2 custa 40 de cobre, os 50 m ficam atras do primeiro selo, e o
+     * selo exige a missao da pista dos 26 m — que ficava atras de uma parede
+     * de tier 2. Pouco cobre na superficie quebra o circulo pela raiz e ainda
+     * da o que procurar nos primeiros noventa metros, que antes tinham UM
+     * minerio so.
+     */
+    ores: [
+      { key: 'coal', chance: 0.038, sizeMin: 3, sizeMax: 7 },
+      { key: 'copper', chance: 0.013, sizeMin: 2, sizeMax: 4 },
+    ],
   },
   {
     id: 'stone',
     name: 'Camada de Pedra',
-    minDepth: 50,
+    /*
+     * 90 m, e nao 50.
+     *
+     * O primeiro bioma era uma linha reta de cinquenta metros com a pista aos
+     * 26, o Jonas aos 38 e o chefe aos 48 — tudo em cima de tudo, e o jogador
+     * tropecava nas tres coisas antes de entender qualquer uma. Quase o dobro
+     * de espaco, com a mesma pista de abertura aos 26 m (o caderno diz 26 e o
+     * caderno e canone), da lugar para procurar em vez de so cair dentro.
+     */
+    minDepth: 90,
     color: '#5c5c66',
     tunnelColor: '#1d1d22',
     rockKey: 'stone',

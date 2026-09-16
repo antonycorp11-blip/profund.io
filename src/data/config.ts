@@ -301,6 +301,14 @@ export const CONFIG = {
    * obrigatorio. Ver /systems/BiomeGate.ts e /data/gates.ts.
    */
   gate: {
+    /**
+     * Espessura da faixa de um selo de HISTORIA (ver /data/storyGates.ts).
+     *
+     * Mais fina que a do selo de bioma de proposito: ela nao e um evento, e um
+     * empurrao de volta. Tres tiles bastam para o jogador entender que aquilo
+     * nao e pedra sem transformar a subida numa parede de fortaleza.
+     */
+    storyBandThickness: 3,
     /** Espessura do selo em tiles (== metros, ja que metersPerTile = 1). */
     bandThickness: 6,
     /** Largura da arena do chefe, centrada no poco principal. */

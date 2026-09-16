@@ -70,7 +70,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm2_a_voz_na_pedra',
-    depth: 38,
+    depth: 64,
     title: 'A Voz na Pedra',
     goal: 'Tem alguem gritando abaixo da marca. Siga o som e tire essa pessoa de la.',
     requires: ['npc_jonas'],
@@ -80,7 +80,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3_a_primeira_barreira',
-    depth: 44,
+    depth: 84,
     title: 'A Primeira Barreira',
     goal: 'A parede que Jonas descreveu tem guarda. Derrube a Mae dos Esporos.',
     requires: ['boss_golem_escombros', 'gate_stone'],
