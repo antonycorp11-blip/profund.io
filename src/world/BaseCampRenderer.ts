@@ -31,28 +31,137 @@ export class BaseCampRenderer {
     this.t += dt;
   }
 
+  /**
+   * A ARTE das estruturas — desenhada ANTES do jogador.
+   *
+   * Estava depois, junto com os avisos, na camada que escapa da iluminacao. O
+   * efeito colateral era o jogador passar POR TRAS de tudo que construiu, como
+   * se as maquinas fossem adesivos colados na frente da tela. A camara ja tem
+   * lampiao no teto (ver BaseCampCarve), entao a arte nao precisa daquela
+   * camada para ser vista — precisava so estar na ordem certa.
+   */
   render(ctx: CanvasRenderingContext2D): void {
+    this.paraCada(ctx, (ctx2, base, slot, x, chao, largura, st) => {
+      if (st.state === 'disponivel' && st.hits === 0) return;
+      this.peca(ctx2, base, slot, x, chao, largura);
+      // A plataforma do elevador e uma peca solta que o CODIGO move. Animar
+      // a subida em quadros congelaria a velocidade dela na arte; assim ela
+      // acelera quando ha carga e para quando nao ha.
+      if (slot.kind === 'elevador' && this.camps.built(base.id, 'elevador')) {
+        this.plataforma(ctx2, base, x, chao, largura);
+      }
+    });
+  }
+
+  /**
+   * Os AVISOS — depois da luz, para serem legiveis no escuro.
+   *
+   * Contorno do encaixe vazio, barra de obra e o convite para melhorar. Texto
+   * que some no escuro nao e aviso nenhum.
+   */
+  renderOverlay(ctx: CanvasRenderingContext2D): void {
+    this.paraCada(ctx, (ctx2, base, slot, x, chao, largura, st) => {
+      if (st.state === 'disponivel' && st.hits === 0) {
+        this.fantasma(ctx2, x, chao, largura, slot);
+        return;
+      }
+      const prog = this.camps.progress(base, slot);
+      if (prog < 1) {
+        this.barra(ctx2, x, chao + 2, largura, prog);
+        return;
+      }
+      this.melhoria(ctx2, base, slot, x, chao, largura);
+    });
+  }
+
+  private paraCada(
+    ctx: CanvasRenderingContext2D,
+    fn: (
+      ctx: CanvasRenderingContext2D,
+      base: BaseCampDef,
+      slot: StructureSlot,
+      x: number,
+      chao: number,
+      largura: number,
+      st: { state: string; hits: number }
+    ) => void
+  ): void {
     const ts = this.world.tileSize;
     for (const base of BASE_CAMPS) {
       const chao = (this.world.surfaceRow + base.depth + 1) * ts;
       for (const slot of base.slots) {
-        const x = (base.col + slot.col) * ts;
-        const largura = slot.tiles * ts;
         const st = this.camps.stateOf(base.id, slot.kind);
         if (st.state === 'bloqueado') continue;
-        if (st.state === 'disponivel' && st.hits === 0) {
-          this.fantasma(ctx, x, chao, largura, slot);
-          continue;
-        }
-        this.peca(ctx, base, slot, x, chao, largura);
-        // A plataforma do elevador e uma peca solta que o CODIGO move. Animar
-        // a subida em quadros congelaria a velocidade dela na arte; assim ela
-        // acelera quando ha carga e para quando nao ha.
-        if (slot.kind === 'elevador' && this.camps.built(base.id, 'elevador')) {
-          this.plataforma(ctx, base, x, chao, largura);
-        }
+        fn(ctx, base, slot, (base.col + slot.col) * ts, chao, slot.tiles * ts, st);
       }
     }
+  }
+
+  private barra(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    largura: number,
+    prog: number
+  ): void {
+    ctx.fillStyle = 'rgba(20, 14, 10, 0.75)';
+    ctx.fillRect(x, y, largura, 5);
+    ctx.fillStyle = '#ffc453';
+    ctx.fillRect(x, y, largura * prog, 5);
+  }
+
+  /**
+   * O convite para melhorar, em cima da maquina pronta.
+   *
+   * Sem isto ninguem descobre que existe segundo nivel: bater numa coisa que ja
+   * esta de pe nao e um gesto que ocorra a ninguem. E o unico lugar do jogo que
+   * cobra REFINADO — entao o custo fica escrito ali, como no encaixe vazio.
+   */
+  private melhoria(
+    ctx: CanvasRenderingContext2D,
+    base: BaseCampDef,
+    slot: StructureSlot,
+    x: number,
+    chao: number,
+    largura: number
+  ): void {
+    const mel = slot.melhoria;
+    if (!mel) return;
+    const prog = this.camps.melhoriaProgress(base, slot);
+    if (prog === null) return;
+    const meio = x + largura / 2;
+    if (prog >= 1) {
+      // Melhorada: so uma marca discreta. Ninguem precisa de aviso permanente.
+      ctx.save();
+      ctx.fillStyle = 'rgba(126, 231, 168, 0.9)';
+      ctx.font = '600 9px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('II', meio, chao - CONFIG.tileSize * 3 - 6);
+      ctx.restore();
+      return;
+    }
+    ctx.save();
+    ctx.textAlign = 'center';
+    if (prog > 0) {
+      this.barra(ctx, x, chao + 2, largura, prog);
+      ctx.fillStyle = 'rgba(126, 231, 168, 0.9)';
+      ctx.font = '600 8px system-ui, sans-serif';
+      ctx.fillText('MELHORANDO', meio, chao - CONFIG.tileSize * 3 - 6);
+      ctx.restore();
+      return;
+    }
+    const pulso = 0.45 + Math.sin(this.t * 2.4) * 0.2;
+    ctx.globalAlpha = pulso + 0.35;
+    ctx.fillStyle = 'rgba(126, 231, 168, 0.95)';
+    ctx.font = '600 9px system-ui, sans-serif';
+    ctx.fillText('MELHORAR', meio, chao - CONFIG.tileSize * 3 - 16);
+    const custo = Object.entries(mel.cost)
+      .map(([id, n]) => `${n} ${RESOURCES[id as ResourceId].name}`)
+      .join('  ·  ');
+    ctx.font = '600 8px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(190, 245, 210, 0.85)';
+    ctx.fillText(custo, meio, chao - CONFIG.tileSize * 3 - 5);
+    ctx.restore();
   }
 
   /**
@@ -142,11 +251,11 @@ export class BaseCampRenderer {
     const img = Assets.baseArt(arte);
     const prog = this.camps.progress(base, slot);
     if (!img || !img.width) {
-      // Sem arte: barra de progresso, que ja e informacao suficiente.
-      ctx.fillStyle = 'rgba(20, 14, 10, 0.8)';
-      ctx.fillRect(x, chao - 20, largura, 8);
-      ctx.fillStyle = '#ffc453';
-      ctx.fillRect(x, chao - 20, largura * prog, 8);
+      // Sem arte: um bloco solido que cresce. A barra de progresso vem no
+      // overlay, que e onde mora tudo que e aviso.
+      ctx.fillStyle = 'rgba(92, 62, 36, 0.9)';
+      const alt = Math.max(4, prog * CONFIG.tileSize * 2.4);
+      ctx.fillRect(x, chao - alt, largura, alt);
       return;
     }
 
@@ -178,13 +287,6 @@ export class BaseCampRenderer {
     ctx.globalAlpha = prog >= 1 ? 1 : 0.85;
     ctx.drawImage(img, q * fw, 0, fw, fh, x, chao - altura, largura, altura);
     ctx.restore();
-
-    if (prog < 1) {
-      ctx.fillStyle = 'rgba(20, 14, 10, 0.75)';
-      ctx.fillRect(x, chao + 2, largura, 5);
-      ctx.fillStyle = '#ffc453';
-      ctx.fillRect(x, chao + 2, largura * prog, 5);
-    }
   }
 
   /** Qual dos tres estados do deposito mostrar, pela pilha guardada. */

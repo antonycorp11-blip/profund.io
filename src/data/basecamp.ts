@@ -20,10 +20,22 @@ import type { ResourceId } from './resources';
  *    material some na hora, e a estrutura leva golpes e segundos para ficar de
  *    pe. E o que faz a base parecer construida, e nao comprada.
  *
- * 3. O PRIMEIRO REFINADOR JA ESTA LA, VELHO. Tem que estar: as outras
- *    estruturas custam material REFINADO, e sem um refinador nao ha refinado
- *    nenhum. Ele funciona mal de proposito — e o gargalo que da vontade de
- *    melhorar a base.
+ * 3. CONSTRUIR E COM BRUTO. MELHORAR E COM REFINADO.
+ *
+ *    Erguer qualquer coisa aqui custa o que sai da picareta: ferro, pedra,
+ *    carvao, ouro, cristal. Material REFINADO nunca aparece num custo de obra,
+ *    e isso e regra, nao balanceamento — cobrar refinado para construir era
+ *    pedir ao jogador que usasse a saida da fabrica para montar a fabrica.
+ *    Deu trava dura duas vezes seguidas, por dois caminhos diferentes.
+ *
+ *    O refinado tem o outro lugar, e e o lugar certo dele: MELHORAR o que ja
+ *    esta de pe. Ai ele faz sentido — a maquina que produz o refinado e a que
+ *    fica melhor com ele.
+ *
+ * 4. O PRIMEIRO REFINADOR JA ESTA LA, VELHO. Ele rende um terco do que
+ *    deveria, e so a melhoria dele tira esse freio. E o gargalo que da vontade
+ *    de melhorar a base — e agora a melhoria e literalmente paga com o que
+ *    esse refinador cospe.
  *
  * ENERGIA e carvao queimado. Nao ha rede eletrica, nao ha bateria: o refinador
  * queima carvao, o fogo move tudo. Carvao era o recurso mais chato do jogo
@@ -45,8 +57,20 @@ export interface StructureSlot {
   col: number;
   /** Quantos tiles de largura ele ocupa (para desenhar e para a colisao). */
   tiles: number;
-  /** Custo para erguer. */
+  /** Custo para erguer. SO BRUTO — ver a regra 3 no topo do arquivo. */
   cost: Partial<Record<ResourceId, number>>;
+  /**
+   * Melhoria: o segundo nivel da estrutura, pago em REFINADO.
+   *
+   * Quem nao tem melhoria nao precisa de uma: deposito e caixa, poste e luz.
+   */
+  melhoria?: {
+    cost: Partial<Record<ResourceId, number>>;
+    hits: number;
+    buildSec: number;
+    /** O que muda, em uma linha, para o jogador saber se vale. */
+    ganho: string;
+  };
   /** Marteladas necessarias. */
   hits: number;
   /** Segundos de obra depois da ultima martelada. */
@@ -91,6 +115,12 @@ const SLOTS_PADRAO: StructureSlot[] = [
     hits: 30,
     buildSec: 45,
     requires: [],
+    melhoria: {
+      cost: { coal_coke: 14, gold_bar: 4 },
+      hits: 26,
+      buildSec: 50,
+      ganho: 'Tira o freio do refinador velho: quase tres vezes mais refinado.',
+    },
     nome: 'Refinador',
     descricao: 'Queima carvao e transforma minerio bruto em refinado.',
   },
@@ -99,17 +129,14 @@ const SLOTS_PADRAO: StructureSlot[] = [
     col: 4,
     tiles: 4,
     /*
-     * O deposito e a UNICA estrutura que nao custa material refinado, e isso
-     * nao e generosidade: e o que impede uma trava dura.
+     * Este deposito ja custou Coque, e foi a primeira trava dura do jogo:
+     * Coque so sai de refinaria, a refinaria da base so processa com a esteira
+     * de entrada, e a esteira de entrada exige o deposito. Ele exigia a si
+     * mesmo por um caminho de tres passos.
      *
-     * Ele custava Coque. Coque so sai de refinaria, e a refinaria da base so
-     * processa com a esteira de entrada, que por sua vez exige o deposito. O
-     * deposito exigia a si mesmo por um caminho de tres passos, e quem nao
-     * tivesse montado a refinaria da superficie ficava travado no selo dos
-     * Minerais para sempre — porque o selo exige a missao da base.
-     *
-     * Alem disso ele e uma caixa de madeira e ferro. Caixa nao precisa de
-     * coque.
+     * Hoje isso nao pode acontecer com estrutura nenhuma — obra e paga em
+     * bruto, sempre. Mas o comentario fica, porque foi esse bug que ensinou a
+     * regra.
      */
     cost: { iron: 25, stone: 40 },
     hits: 24,
@@ -122,10 +149,16 @@ const SLOTS_PADRAO: StructureSlot[] = [
     kind: 'esteira_entrada',
     col: 8,
     tiles: 4,
-    cost: { iron: 30, coal_coke: 6 },
+    cost: { iron: 30, coal: 40 },
     hits: 20,
     buildSec: 25,
     requires: ['deposito'],
+    melhoria: {
+      cost: { coal_coke: 10 },
+      hits: 16,
+      buildSec: 30,
+      ganho: 'Alimenta o refinador mais rapido: +60% de bruto na boca do fogo.',
+    },
     nome: 'Esteira de Entrada',
     descricao: 'Leva o bruto do deposito ate o refinador, sozinha.',
   },
@@ -133,10 +166,16 @@ const SLOTS_PADRAO: StructureSlot[] = [
     kind: 'esteira_saida',
     col: 16,
     tiles: 5,
-    cost: { iron: 30, gold_bar: 3 },
+    cost: { iron: 35, gold: 12 },
     hits: 20,
     buildSec: 25,
     requires: ['esteira_entrada'],
+    melhoria: {
+      cost: { gold_bar: 5 },
+      hits: 16,
+      buildSec: 30,
+      ganho: 'Entrega mais refinado ao elevador por segundo.',
+    },
     nome: 'Esteira de Saida',
     descricao: 'Leva o refinado do refinador ate o elevador.',
   },
@@ -144,10 +183,16 @@ const SLOTS_PADRAO: StructureSlot[] = [
     kind: 'elevador',
     col: 22,
     tiles: 3,
-    cost: { iron: 60, gold_bar: 6, crystal_prism: 2 },
+    cost: { iron: 60, gold: 20, crystal: 14 },
     hits: 40,
     buildSec: 70,
     requires: ['esteira_saida'],
+    melhoria: {
+      cost: { crystal_prism: 6, gold_bar: 6 },
+      hits: 30,
+      buildSec: 80,
+      ganho: 'Cabine maior: sobe bem mais carga em cada viagem.',
+    },
     nome: 'Elevador de Carga',
     descricao: 'Sobe o refinado ate a superficie. La em cima, vira moeda.',
   },
@@ -155,7 +200,7 @@ const SLOTS_PADRAO: StructureSlot[] = [
     kind: 'casa_capataz',
     col: 27,
     tiles: 6,
-    cost: { iron: 20, coal_coke: 10 },
+    cost: { iron: 20, stone: 60 },
     hits: 18,
     buildSec: 40,
     requires: ['elevador'],
@@ -183,13 +228,25 @@ const SLOTS_PADRAO: StructureSlot[] = [
  * nova quer material da camada em que ela esta.
  */
 function escalar(slots: StructureSlot[], mult: number, extra?: Partial<Record<ResourceId, number>>): StructureSlot[] {
+  const escalarCusto = (c: Partial<Record<ResourceId, number>>, ex?: Partial<Record<ResourceId, number>>) =>
+    Object.fromEntries(
+      Object.entries({ ...c, ...ex }).map(([k, v]) => [k, Math.round((v ?? 0) * mult)])
+    ) as Partial<Record<ResourceId, number>>;
   return slots.map((s) => ({
     ...s,
     hits: Math.round(s.hits * (1 + (mult - 1) * 0.4)),
     buildSec: Math.round(s.buildSec * (1 + (mult - 1) * 0.5)),
-    cost: Object.fromEntries(
-      Object.entries({ ...s.cost, ...extra }).map(([k, v]) => [k, Math.round((v ?? 0) * mult)])
-    ) as Partial<Record<ResourceId, number>>,
+    // O `extra` da camada entra so na OBRA. Melhoria e refinado por definicao,
+    // e rubi bruto numa melhoria quebraria a regra 3 sem que ninguem notasse.
+    cost: escalarCusto(s.cost, extra),
+    melhoria: s.melhoria
+      ? {
+          ...s.melhoria,
+          cost: escalarCusto(s.melhoria.cost),
+          hits: Math.round(s.melhoria.hits * (1 + (mult - 1) * 0.4)),
+          buildSec: Math.round(s.melhoria.buildSec * (1 + (mult - 1) * 0.5)),
+        }
+      : undefined,
   }));
 }
 

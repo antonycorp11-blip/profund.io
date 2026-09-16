@@ -12,19 +12,21 @@ import { REFINE_RECIPES } from '../data/structures';
 import { RESOURCES, type ResourceId } from '../data/resources';
 import type { BaseStock } from './BaseStock';
 
-export type BuildState = 'bloqueado' | 'disponivel' | 'erguendo' | 'pronto';
+export type BuildState = 'bloqueado' | 'disponivel' | 'erguendo' | 'pronto' | 'melhorando';
 
 interface SlotState {
   state: BuildState;
-  /** Marteladas ja dadas. */
+  /** Marteladas ja dadas na obra (ou na melhoria, depois de pronta). */
   hits: number;
   /** Segundos de obra restantes. */
   buildLeft: number;
+  /** 0 = de pe. 1 = melhorada. */
+  nivel: number;
 }
 
 export interface BaseCampSave {
   [baseId: string]: {
-    slots: Record<string, { state: BuildState; hits: number; buildLeft: number }>;
+    slots: Record<string, { state: BuildState; hits: number; buildLeft: number; nivel?: number }>;
     bruto: Partial<Record<ResourceId, number>>;
     refinado: Partial<Record<ResourceId, number>>;
     fuel: number;
@@ -57,6 +59,15 @@ export class BaseCamps {
   private refinado = new Map<string, Map<ResourceId, number>>();
   private fuel = new Map<string, number>();
   private sobe = new Map<string, number>();
+  /**
+   * De qual minerio o refinador comeca a olhar, por base.
+   *
+   * O laco pegava sempre o PRIMEIRO da pilha e parava ali. Como carvao e o que
+   * mais chega, a base virava uma fabrica exclusiva de Coque: ouro e cristal
+   * ficavam encostados para sempre, e as melhorias que pedem Barra de Ouro e
+   * Prisma nunca teriam de onde sair. Girar a vez resolve sem fila nenhuma.
+   */
+  private giro = new Map<string, number>();
   /** Quem trabalha em cada base: bonus -> ativo. */
   private equipe = new Map<string, Set<'refino' | 'elevador'>>();
 
@@ -74,6 +85,7 @@ export class BaseCamps {
           state: pronto ? 'pronto' : this.podeErguer(base, slot) ? 'disponivel' : 'bloqueado',
           hits: 0,
           buildLeft: 0,
+          nivel: 0,
         });
       }
       this.reavaliar(base);
@@ -116,15 +128,28 @@ export class BaseCamps {
 
   stateOf(baseId: string, kind: StructureKind): SlotState {
     return (
-      this.slots.get(this.key(baseId, kind)) ?? { state: 'bloqueado', hits: 0, buildLeft: 0 }
+      this.slots.get(this.key(baseId, kind)) ?? {
+        state: 'bloqueado',
+        hits: 0,
+        buildLeft: 0,
+        nivel: 0,
+      }
     );
+  }
+
+  /** Nivel da estrutura: 0 de pe, 1 melhorada. */
+  nivelDe(baseId: string, kind: StructureKind): number {
+    return this.stateOf(baseId, kind).nivel ?? 0;
   }
 
   /** O jogador bateu no encaixe. Retorna true se a martelada contou. */
   hit(base: BaseCampDef, slot: StructureSlot): boolean {
     const st = this.slots.get(this.key(base.id, slot.kind));
     if (!st) return false;
-    if (st.state === 'pronto' || st.state === 'erguendo') return false;
+    if (st.state === 'erguendo' || st.state === 'melhorando') return false;
+    // De pe: a picareta passa a MELHORAR. E o unico lugar do jogo onde
+    // material refinado e cobrado — ver a regra 3 em /data/basecamp.ts.
+    if (st.state === 'pronto') return this.hitMelhoria(base, slot, st);
     if (st.state === 'bloqueado') {
       Events.emit('ui:toast', { text: `${slot.nome}: falta o que vem antes.`, tone: 'warn' });
       return false;
@@ -132,32 +157,23 @@ export class BaseCamps {
     // A primeira martelada e a que cobra o material: cobrar ao terminar faria
     // o jogador martelar cinquenta vezes para descobrir que nao tinha ferro.
     if (st.hits === 0) {
-      if (!this.stock.canAfford(slot.cost)) {
-        // Dizer O QUE falta, e quanto. "Material insuficiente" manda o jogador
-        // adivinhar entre dez recursos qual e o que segura a obra.
-        const faltando = Object.entries(slot.cost)
-          .map(([id, qtd]) => {
-            const res = id as ResourceId;
-            const falta = (qtd ?? 0) - this.stock.count(res);
-            return falta > 0 ? `${Math.ceil(falta)} ${RESOURCES[res].name}` : null;
-          })
-          .filter(Boolean);
-        // Quando o que falta e REFINADO, dizer onde se consegue. O jogador
-        // olhava "falta 6 Coque" sem ter refinaria nenhuma e travava ali — e a
-        // resposta estava a dois metros dele, no refinador velho da propria
-        // base, que ja funciona (devagar) sem esteira.
-        const refinado = Object.keys(slot.cost).some((id) =>
-          Object.values(REFINE_RECIPES).some((r) => r?.out === id)
-        );
+      // Dizer O QUE falta, e quanto. "Material insuficiente" manda o jogador
+      // adivinhar entre dez recursos qual e o que segura a obra.
+      const faltando = Object.entries(slot.cost)
+        .map(([id, qtd]) => {
+          const res = id as ResourceId;
+          const falta = (qtd ?? 0) - this.disponivel(base.id, res);
+          return falta > 0 ? `${Math.ceil(falta)} ${RESOURCES[res].name}` : null;
+        })
+        .filter(Boolean);
+      if (faltando.length > 0) {
         Events.emit('ui:toast', {
-          text: refinado
-            ? `${slot.nome}: falta ${faltando.join(' e ')}. O refinador velho faz isso — despeje carvao e minerio no deposito e espere.`
-            : `${slot.nome}: falta ${faltando.join(' e ')}.`,
+          text: `${slot.nome}: falta ${faltando.join(' e ')}.`,
           tone: 'warn',
         });
         return false;
       }
-      this.stock.spend(slot.cost);
+      this.pagar(base.id, slot.cost);
       Events.emit('ui:toast', { text: `Obra iniciada: ${slot.nome}.`, tone: 'info' });
     }
     st.hits++;
@@ -169,6 +185,87 @@ export class BaseCamps {
     return true;
   }
 
+  /**
+   * Martelada numa estrutura que ja esta de pe: isso e melhoria.
+   *
+   * Mesmo ritual da obra — o material sai na primeira martelada, depois vem
+   * golpe e tempo. So o que ela cobra e diferente: aqui, e so aqui, o preco e
+   * em REFINADO.
+   */
+  private hitMelhoria(base: BaseCampDef, slot: StructureSlot, st: SlotState): boolean {
+    const mel = slot.melhoria;
+    if (!mel || (st.nivel ?? 0) >= 1) return false;
+    if (st.hits === 0) {
+      const faltando = Object.entries(mel.cost)
+        .map(([id, qtd]) => {
+          const res = id as ResourceId;
+          const falta = (qtd ?? 0) - this.disponivel(base.id, res);
+          return falta > 0 ? `${Math.ceil(falta)} ${RESOURCES[res].name}` : null;
+        })
+        .filter(Boolean);
+      if (faltando.length > 0) {
+        // Melhoria SEMPRE cobra refinado, entao a dica de onde conseguir vale
+        // sempre: o refinador da propria base faz isso, mesmo velho.
+        Events.emit('ui:toast', {
+          text: `Melhorar ${slot.nome}: falta ${faltando.join(' e ')}. O refinador faz isso — despeje carvao e minerio no deposito e espere.`,
+          tone: 'warn',
+        });
+        return false;
+      }
+      this.pagar(base.id, mel.cost);
+      Events.emit('ui:toast', { text: `Melhoria iniciada: ${slot.nome}.`, tone: 'info' });
+    }
+    st.hits++;
+    if (st.hits >= mel.hits) {
+      st.state = 'melhorando';
+      st.buildLeft = mel.buildSec;
+      Events.emit('base:building', { base: base.id, kind: slot.kind, nome: slot.nome });
+    }
+    return true;
+  }
+
+  /**
+   * Quanto de um material a obra pode gastar: o que esta AQUI mais o que ja
+   * subiu para a superficie.
+   *
+   * As duas pilhas da base contam — o bruto que as toupeiras trouxeram e o
+   * refinado que o fogo produziu. Sem isso a melhoria era impossivel de pagar:
+   * o refinado so chega ao estoque de cima pelo ELEVADOR, que e a ultima peca
+   * da cadeia. Seria a armadilha de sempre com outra fantasia — a melhoria do
+   * refinador exigindo o elevador que exige o refinador funcionando.
+   *
+   * Vale tambem para a obra em bruto, e ali e so bom senso: o minerio esta a
+   * dois metros do encaixe, dentro do deposito. Mandar o jogador subir 236 m
+   * para buscar o que ele mesmo acabou de despejar ali seria implicancia.
+   */
+  private disponivel(baseId: string, res: ResourceId): number {
+    return (
+      (this.bruto.get(baseId)?.get(res) ?? 0) +
+      (this.refinado.get(baseId)?.get(res) ?? 0) +
+      this.stock.count(res)
+    );
+  }
+
+  /** Tira das pilhas da propria base primeiro; o que faltar vem de cima. */
+  private pagar(baseId: string, cost: Partial<Record<ResourceId, number>>): void {
+    const pilhas = [this.bruto.get(baseId), this.refinado.get(baseId)];
+    const deCima: Partial<Record<ResourceId, number>> = {};
+    for (const [id, qtd] of Object.entries(cost)) {
+      const res = id as ResourceId;
+      let falta = qtd ?? 0;
+      for (const pilha of pilhas) {
+        if (!pilha || falta <= 0.001) continue;
+        const aqui = pilha.get(res) ?? 0;
+        const usa = Math.min(aqui, falta);
+        if (usa <= 0) continue;
+        pilha.set(res, aqui - usa);
+        falta -= usa;
+      }
+      if (falta > 0.001) deCima[res] = falta;
+    }
+    if (Object.keys(deCima).length > 0) this.stock.spend(deCima);
+  }
+
   /** Progresso visivel do encaixe, 0..1. */
   progress(base: BaseCampDef, slot: StructureSlot): number {
     const st = this.stateOf(base.id, slot.kind);
@@ -176,7 +273,24 @@ export class BaseCamps {
     if (st.state === 'erguendo') {
       return 1 - st.buildLeft / Math.max(0.001, slot.buildSec);
     }
+    if (st.state === 'melhorando') return 1;
     return st.hits / slot.hits;
+  }
+
+  /**
+   * Progresso da MELHORIA, 0..1, ou null quando nao ha melhoria em vista.
+   *
+   * Separado do `progress` de proposito: a estrutura continua funcionando
+   * enquanto melhora, entao a barra da obra nao serve para contar essa.
+   */
+  melhoriaProgress(base: BaseCampDef, slot: StructureSlot): number | null {
+    const mel = slot.melhoria;
+    if (!mel) return null;
+    const st = this.stateOf(base.id, slot.kind);
+    if ((st.nivel ?? 0) >= 1) return 1;
+    if (st.state === 'melhorando') return 1 - st.buildLeft / Math.max(0.001, mel.buildSec);
+    if (st.state !== 'pronto') return null;
+    return st.hits / mel.hits;
   }
 
   built(baseId: string, kind: StructureKind): boolean {
@@ -228,13 +342,23 @@ export class BaseCamps {
       // --- obra em andamento ---
       for (const slot of base.slots) {
         const st = this.slots.get(this.key(base.id, slot.kind));
-        if (!st || st.state !== 'erguendo') continue;
+        if (!st) continue;
+        if (st.state !== 'erguendo' && st.state !== 'melhorando') continue;
         st.buildLeft -= dt;
         if (st.buildLeft > 0) continue;
+        const eraMelhoria = st.state === 'melhorando';
         st.state = 'pronto';
         st.buildLeft = 0;
+        // Zerar as marteladas e o que abre a proxima etapa: depois da obra,
+        // elas passam a contar para a melhoria.
+        st.hits = 0;
+        if (eraMelhoria) st.nivel = (st.nivel ?? 0) + 1;
         this.reavaliar(base);
-        Events.emit('base:built', { base: base.id, kind: slot.kind, nome: slot.nome });
+        Events.emit(eraMelhoria ? 'base:upgraded' : 'base:built', {
+          base: base.id,
+          kind: slot.kind,
+          nome: slot.nome,
+        });
       }
 
       // --- carvao vira fogo ---
@@ -257,14 +381,20 @@ export class BaseCamps {
       // velocidade, nao existencia. Travar o refino por completo criava um no:
       // sem refino nao havia refinado, e a esteira custa refinado.
       const temEntrada = this.built(base.id, 'esteira_entrada');
-      const alimentacao = temEntrada ? 1 : 0.25;
-      const velho = !this.built(base.id, 'casa_capataz');
+      // Esteira melhorada empurra 60% mais bruto para dentro do fogo.
+      const alimentacao = temEntrada ? (this.nivelDe(base.id, 'esteira_entrada') >= 1 ? 1.6 : 1) : 0.25;
+      // O freio do refinador VELHO agora sai com a melhoria dele, e nao com a
+      // casa do capataz. E a maquina que esta velha; e ela que tem conserto.
+      const velho = this.nivelDe(base.id, 'refinador') < 1;
       // Alguem cuidando do fogo rende 70% a mais: e trabalho humano, nao
       // upgrade de maquina.
       const maos = this.hasWorker(base.id, 'refino') ? 1.7 : 1;
       const taxa = REFINERY_RATE * (velho ? OLD_REFINERY_PENALTY : 1) * maos * alimentacao * dt;
       let feito = 0;
-      for (const [res, qtd] of brutos) {
+      const pilha = Array.from(brutos.entries());
+      const vez = this.giro.get(base.id) ?? 0;
+      for (let i = 0; i < pilha.length; i++) {
+        const [res, qtd] = pilha[(vez + i) % pilha.length];
         if (qtd <= 0) continue;
         /*
          * Carvao e combustivel PRIMEIRO, materia-prima DEPOIS.
@@ -280,12 +410,25 @@ export class BaseCamps {
         if (res === 'coal' && this.fuelOf(base.id) < 25) continue;
         const receita = REFINE_RECIPES[res];
         if (!receita) continue;
+        /*
+         * O corte era `usa < 0.01`, e ele matava a refinaria inteira.
+         *
+         * `usa` e o que cabe NUM QUADRO: com o refinador velho e sem esteira
+         * dava 0,0012 por quadro — sempre abaixo de 0,01, sempre pulado. A
+         * base parecia acesa e nao produzia nada, nunca, em nenhum cenario.
+         * Medido depois do conserto: 400 de carvao viram 160 de Coque.
+         *
+         * Acumular fracao pequena em ponto flutuante nao tem problema nenhum;
+         * o que tinha problema era comparar um valor por quadro com um limiar
+         * pensado para valor por segundo.
+         */
         const usa = Math.min(qtd, taxa);
-        if (usa < 0.01) continue;
+        if (usa <= 0) continue;
         brutos.set(res, qtd - usa);
         const saida = this.refinado.get(base.id)!;
         saida.set(receita.out, (saida.get(receita.out) ?? 0) + usa * receita.ratio);
         feito += usa;
+        this.giro.set(base.id, (vez + i + 1) % pilha.length);
         break;
       }
       if (feito > 0) {
@@ -299,7 +442,11 @@ export class BaseCamps {
       for (const [res, qtd] of saida) {
         if (qtd < 1) continue;
         const ritmo = this.hasWorker(base.id, 'elevador') ? 1.8 : 1;
-        const sobe = Math.min(qtd, dt * 1.2 * ritmo) * fracao;
+        // Esteira de saida e elevador melhorados somam: uma entrega mais, o
+        // outro leva mais de uma vez.
+        const cabine = this.nivelDe(base.id, 'elevador') >= 1 ? 1.9 : 1;
+        const entrega = this.nivelDe(base.id, 'esteira_saida') >= 1 ? 1.5 : 1;
+        const sobe = Math.min(qtd, dt * 1.2 * ritmo * cabine * entrega) * fracao;
         if (sobe < 0.01) continue;
         saida.set(res, qtd - sobe);
         this.stock.deliver([[res, sobe]], 1);
@@ -313,7 +460,12 @@ export class BaseCamps {
       const slots: BaseCampSave[string]['slots'] = {};
       for (const slot of base.slots) {
         const st = this.stateOf(base.id, slot.kind);
-        slots[slot.kind] = { state: st.state, hits: st.hits, buildLeft: st.buildLeft };
+        slots[slot.kind] = {
+          state: st.state,
+          hits: st.hits,
+          buildLeft: st.buildLeft,
+          nivel: st.nivel ?? 0,
+        };
       }
       out[base.id] = {
         slots,
@@ -340,6 +492,7 @@ export class BaseCamps {
           state: s.state,
           hits: s.hits ?? 0,
           buildLeft: s.buildLeft ?? 0,
+          nivel: s.nivel ?? 0,
         });
       }
       this.bruto.set(base.id, new Map(Object.entries(saved.bruto ?? {}) as [ResourceId, number][]));

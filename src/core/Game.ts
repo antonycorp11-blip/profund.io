@@ -1545,6 +1545,9 @@ export class Game {
     this.creatures.render(ctx);
     this.cloneManager.render(ctx);
     this.collectors.render(ctx);
+    // As estruturas da base ficam AQUI, antes do jogador: ele tem que passar
+    // na frente delas. Os avisos delas continuam na camada pos-luz.
+    this.campsRenderer.render(ctx);
     this.mining.render(ctx);
     // Sprite real quando a arte existe; senao o placeholder vetorial.
     if (!this.playerSprite.render(ctx, this.player)) {
@@ -1595,7 +1598,7 @@ export class Game {
     );
     for (const e of this.interactables) e.renderOverlay?.(ctx);
     this.renderSense(ctx);
-    this.campsRenderer.render(ctx);
+    this.campsRenderer.renderOverlay(ctx);
     this.shock.render(ctx);
     this.floating.render(ctx);
 

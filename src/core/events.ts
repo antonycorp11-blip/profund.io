@@ -78,6 +78,7 @@ export interface GameEvents {
   /** Obra iniciada: a ultima martelada caiu, agora e tempo. */
   'base:building': { base: string; kind: string; nome: string };
   'base:built': { base: string; kind: string; nome: string };
+  'base:upgraded': { base: string; kind: string; nome: string };
   'base:deposit': { base: string; resource: string; amount: number };
   'journal:written': { title: string; novo: boolean };
   'city:met': { id: string; name: string; city: string; trust: number };

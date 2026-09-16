@@ -74,36 +74,40 @@ for (const l of GATE_LAYERS) {
 
 // --- 3. a base consegue produzir o que ela mesma cobra? -------------------
 //
-// Simula a cadeia: para cada estrutura, na ordem de dependencia, confere se
-// todo material refinado que ela pede pode sair do refinador da base a partir
-// do que ja esta disponivel. Pega os dois lados da mesma armadilha: estrutura
-// que pede o que so ela destrava, e material refinado que a base nunca produz.
+// A regra, escrita em /data/basecamp.ts: OBRA se paga em bruto, MELHORIA se
+// paga em refinado. Duas travas duras nasceram de quebrar isso — a estrutura
+// que exigia o produto da propria fabrica para montar a fabrica. Aqui as duas
+// metades da regra viram teste.
 const refinaveis = new Map(Object.entries(REFINE_RECIPES).map(([ent, r]) => [r.out, ent]));
 const BRUTOS_DA_MINA = new Set(['stone', 'coal', 'copper', 'iron', 'gold', 'crystal', 'ruby', 'relic', 'voidstone']);
 for (const base of BASE_CAMPS) {
   for (const slot of base.slots) {
+    // 3a. nenhuma obra cobra refinado.
     for (const r of Object.keys(slot.cost)) {
       if (BRUTOS_DA_MINA.has(r)) continue;
+      if (refinaveis.has(r)) {
+        erros.push(
+          \`\${base.nome}/\${slot.nome}: a OBRA custa \${r}, que e refinado. \` +
+            'Refinado so pode aparecer em melhoria — senao a fabrica exige a si mesma.'
+        );
+        continue;
+      }
+      erros.push(\`\${base.nome}/\${slot.nome}: custa \${r}, que nao e minerio nem sai de receita.\`);
+    }
+    // 3b. toda melhoria cobra refinado, e refinado que a base sabe produzir.
+    const mel = slot.melhoria;
+    if (!mel) continue;
+    for (const r of Object.keys(mel.cost)) {
       const origem = refinaveis.get(r);
       if (!origem) {
-        erros.push(\`\${base.nome}/\${slot.nome}: custa \${r}, que nao e minerio nem sai de receita.\`);
+        erros.push(
+          \`\${base.nome}/\${slot.nome}: a melhoria custa \${r}, que nao sai de refinaria nenhuma.\`
+        );
         continue;
       }
       if (!BRUTOS_DA_MINA.has(origem)) {
-        erros.push(\`\${base.nome}/\${slot.nome}: \${r} vem de \${origem}, que tambem nao e minerio bruto.\`);
+        erros.push(\`\${base.nome}/\${slot.nome}: melhoria pede \${r}, que vem de \${origem}, que nao e minerio bruto.\`);
       }
-    }
-  }
-  // A primeira estrutura da cadeia nao pode pedir nada refinado: nesse momento
-  // o refinador ainda nao tem de onde tirar minerio.
-  const primeira = base.slots.find((s) => s.requires.length === 1 && s.requires[0] === 'refinador');
-  if (!primeira) continue;
-  for (const r of Object.keys(primeira.cost)) {
-    if (!BRUTOS_DA_MINA.has(r)) {
-      erros.push(
-        \`\${base.nome}: a primeira estrutura (\${primeira.nome}) custa \${r}, que e refinado — \` +
-          'e a base ainda nao tem deposito para alimentar o refinador. Trava dura.'
-      );
     }
   }
 }
