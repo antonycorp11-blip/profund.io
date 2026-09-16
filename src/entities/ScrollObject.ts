@@ -42,6 +42,7 @@ export class ScrollObject implements Interactable {
           title: this.def.title,
           author: this.def.author,
           layer: this.def.layer,
+          cron: this.def.cron,
           text: this.def.text,
         });
       },

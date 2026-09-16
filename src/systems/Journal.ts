@@ -50,7 +50,7 @@ export class Journal {
     // unica cujo total e conhecido de antemao — e ele mostra quantas faltam
     // por camada, que e o que faz o jogador cavar de lado.
     Events.on('scroll:found', (p) => {
-      this.write('paginas', `scroll:${p.id}`, p.title, p.text.join('\n'), undefined, p.layer);
+      this.write('paginas', `scroll:${p.id}`, p.title, p.text.join('\n'), undefined, p.layer, p.cron);
     });
 
     Events.on('clue:found', (p) => {
@@ -108,7 +108,9 @@ export class Journal {
     title: string,
     note: string,
     face?: string,
-    layer?: string
+    layer?: string,
+    /** Ordem forcada (cronologia da historia). Sem ela, vale a descoberta. */
+    cron?: number
   ): void {
     const depth = Math.round(this.depthNow());
     const existente = this.entries.get(id);
@@ -125,7 +127,8 @@ export class Journal {
       title,
       notes: [note],
       depth,
-      order: this.next++,
+      // A ordem de leitura das anotacoes e a da HISTORIA, nao a da descoberta.
+      order: cron ?? this.next++,
       face,
       layer,
     });

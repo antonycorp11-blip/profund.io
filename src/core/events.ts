@@ -74,7 +74,7 @@ export interface GameEvents {
    * so "esta esquentando".
    */
   'npc:shout': { id: string; x: number; y: number; text: string; strength: number };
-  'scroll:found': { id: string; title: string; author: string; layer: string; text: string[] };
+  'scroll:found': { id: string; title: string; author: string; layer: string; cron: number; text: string[] };
   /** Obra iniciada: a ultima martelada caiu, agora e tempo. */
   'base:building': { base: string; kind: string; nome: string };
   'base:built': { base: string; kind: string; nome: string };
@@ -84,6 +84,8 @@ export interface GameEvents {
   'rep:changed': { city: string; axis: string; value: number };
   'mission:done': { id: string; title: string; text: string };
   'boss:summon': { id: string; name: string; count: number };
+  /** Chefe caiu mas o selo nao abriu: ha missao pendente na faixa. */
+  'gate:blocked': { layerId: string; faltam: string[] };
   'gate:opened': { layerId: string; layerName: string };
   'creature:hurt': {
     worldX: number;

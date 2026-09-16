@@ -113,9 +113,16 @@ export class Minimap {
     const toNext = metersToNextLayer(depth);
     // A profundidade mora aqui: e a mesma informacao que o mapa ja conta, e um
     // card so no lugar de dois deixa a coluna respirar.
+    // Profundidade E coluna.
+    //
+    // Com 240 colunas, "236 m" nao localiza nada: a base do Cristal esta na
+    // coluna 30 e Blockia na 180, na mesma profundidade de muita coisa. Sem a
+    // coluna o jogador nao tem como saber se precisa andar para a esquerda ou
+    // para a direita, e as missoes citam coluna.
     this.label.innerHTML =
       `<b>${layer.name}</b>` +
       `<strong>${Math.max(0, Math.round(depth))}<small>m</small></strong>` +
+      `<span class="mini-col">col <b>${col}</b></span>` +
       (toNext !== null
         ? `<span>proxima em ${Math.max(0, Math.round(toNext))} m</span>`
         : '<span>fundo da mina</span>');

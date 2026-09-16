@@ -1352,18 +1352,50 @@ body {
 /* --- botao de habilidade ativa --- */
 /* Coluna propria das habilidades, a esquerda dos botoes grandes. Cada uma tem
    o seu botao: e assim que se escolhe qual usar. */
+/*
+ * Habilidades EM VOLTA do MINERAR, em arco, como todo jogo de celular faz.
+ *
+ * Elas viviam numa coluna a esquerda, longe do polegar: para usar uma
+ * habilidade o jogador tirava o dedo do botao de minerar, atravessava a tela e
+ * voltava. Num jogo em que a habilidade se usa ENQUANTO se minera, isso e o
+ * pior lugar possivel.
+ *
+ * O arco e feito com posicao absoluta dentro de uma caixa ancorada no centro
+ * do MINERAR: cada botao fica a um angulo e a um raio fixos dele.
+ */
 .touch-skills {
   position: absolute;
-  right: calc(var(--safe-r) + 190px);
-  bottom: calc(var(--safe-b) + 18px);
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
+  /* Centro do botao MINERAR: 14px de margem + metade dos 92px dele. */
+  right: calc(var(--safe-r) + 60px);
+  bottom: calc(var(--safe-b) + 60px);
+  width: 0;
+  height: 0;
   pointer-events: none;
 }
 
+.touch-skills .touch-btn.skill {
+  position: absolute;
+  margin: 0;
+}
+
+/* Raio de 96px do centro do MINERAR, abrindo para cima e para a esquerda. */
+.touch-skills .touch-btn.skill:nth-child(1) {
+  right: -22px;
+  bottom: 96px;
+}
+
+.touch-skills .touch-btn.skill:nth-child(2) {
+  right: 54px;
+  bottom: 78px;
+}
+
+.touch-skills .touch-btn.skill:nth-child(3) {
+  right: 106px;
+  bottom: 24px;
+}
+
 .touch-btn.skill {
-  position: relative;
+  /* `absolute` vem da regra do arco acima; aqui so o visual. */
   width: 52px;
   height: 52px;
   font-size: 20px;
@@ -3307,9 +3339,9 @@ body {
 
 .touch-fold {
   pointer-events: auto;
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: center;
+  position: absolute;
+  right: calc(var(--safe-r) + 172px);
+  bottom: calc(var(--safe-b) + 150px);
   width: 34px;
   height: 22px;
   border-radius: 9px;
@@ -3601,4 +3633,14 @@ body {
 
 .journal-entry.pendente {
   opacity: 0.72;
+}
+
+/* Coluna ao lado da profundidade: com 240 colunas o metro sozinho nao localiza. */
+.mini-col {
+  letter-spacing: 0.06em;
+}
+
+.mini-col b {
+  color: #ffdc83;
+  font-variant-numeric: tabular-nums;
 }

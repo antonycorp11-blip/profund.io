@@ -26,23 +26,26 @@ export class Missions {
   }
 
   /**
-   * A missao em andamento.
+   * A missao em andamento: a primeira em aberto, e ponto.
    *
-   * NAO e simplesmente a primeira em aberto. Quem ja desceu muito passa por
-   * cima de objetivos rasos sem fechar todos, e a fila travava na primeira
-   * pendencia — o jogador derrubava a Matriarca aos 194 m e continuava lendo
-   * "Trilhos Novos, 112 m" para sempre, com a sensacao de que nada acontecia.
-   *
-   * Entao a escolhida e a mais FUNDA entre as que ele ja alcanca. As rasas nao
-   * somem: viram pendencias, listadas no Guia com a profundidade de cada uma.
+   * Cheguei a fazer ela escolher a mais funda alcancavel, para quem corre na
+   * frente nao ficar olhando um objetivo raso. Era o conserto errado: tratava
+   * o sintoma. O certo e ninguem CONSEGUIR correr na frente — quem garante
+   * isso e o selo de bioma, que passou a exigir as missoes da faixa alem do
+   * chefe. Ver `missingBefore`.
    */
   current(): MissionDef | null {
-    const abertas = MISSIONS.filter((m) => !this.done_(m));
-    if (abertas.length === 0) return null;
-    const fundo = this.deepest() + 40;
-    const alcancaveis = abertas.filter((m) => m.depth <= fundo);
-    if (alcancaveis.length === 0) return abertas[0];
-    return alcancaveis.reduce((a, b) => (b.depth > a.depth ? b : a));
+    return MISSIONS.find((m) => !this.done_(m)) ?? null;
+  }
+
+  /**
+   * Missoes ainda em aberto acima de uma profundidade.
+   *
+   * E o que o selo consulta: nao basta derrubar o guardiao, e preciso nao ter
+   * deixado nada para tras no caminho ate ele.
+   */
+  missingBefore(depth: number): MissionDef[] {
+    return MISSIONS.filter((m) => m.depth <= depth && !this.done_(m));
   }
 
   /**

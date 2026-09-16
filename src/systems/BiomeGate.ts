@@ -107,10 +107,25 @@ export class BiomeGate {
     }
   }
 
+  /**
+   * Missoes que faltam para este selo poder abrir. Definido pelo Game.
+   *
+   * O selo deixou de ser so "mate o chefe". Derrubar o guardiao e a ULTIMA
+   * coisa, nao a unica: quem pulou a pista dos trilhos ou nao falou com o Rui
+   * encontra a parede aberta pela metade e sabe exatamente o que falta.
+   */
+  missingMissions: (layerId: string) => { title: string; goal: string }[] = () => [];
+
   private open(layerId: string): void {
     const st = this.states.get(layerId);
     if (!st || st.opened) return;
     if (!st.bossDefeated) return;
+
+    const faltam = this.missingMissions(layerId);
+    if (faltam.length > 0) {
+      Events.emit('gate:blocked', { layerId, faltam: faltam.map((m) => m.title) });
+      return;
+    }
 
     st.opened = true;
     const layer = gateLayerDef(layerId);
@@ -118,6 +133,39 @@ export class BiomeGate {
     this.world.openGateBand(row0, row1);
     this.exploration.setMarkerDone(this.markerId(layerId));
     Events.emit('gate:opened', { layerId, layerName: layer.name });
+  }
+
+  /**
+   * Refecha selos abertos que nao deviam estar abertos.
+   *
+   * Roda ao carregar. Um save feito quando o selo so pedia o chefe pode ter a
+   * parede aberta com missoes pendentes atras dela; sem isto, esse save
+   * continuaria burlando a ordem para sempre.
+   *
+   * O chefe morto CONTINUA morto — nao se perde essa luta. Assim que a missao
+   * que falta fechar, o selo abre sozinho.
+   */
+  enforce(): string[] {
+    const refechados: string[] = [];
+    for (const layerId of GATE_LAYERS) {
+      const st = this.states.get(layerId);
+      if (!st || !st.opened) continue;
+      if (this.missingMissions(layerId).length === 0) continue;
+      st.opened = false;
+      const layer = gateLayerDef(layerId);
+      const { row0, row1 } = gateBandRows(this.world.surfaceRow, layer);
+      this.world.closeGateBand(row0, row1);
+      refechados.push(layer.name);
+    }
+    return refechados;
+  }
+
+  /** Tenta abrir tudo que ja cumpriu as condicoes (missao recem-concluida). */
+  recheck(): void {
+    for (const layerId of GATE_LAYERS) {
+      const st = this.states.get(layerId);
+      if (st?.bossDefeated && !st.opened) this.open(layerId);
+    }
   }
 
   toJSON(): BiomeGateSave {

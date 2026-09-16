@@ -329,6 +329,18 @@ export class Game {
       (id) => this.skills.hasStoryFlag(id),
       () => this.deepestMeters
     );
+    // O selo passou a exigir as missoes daquela faixa, alem do chefe. Derrubar
+    // o guardiao e a ULTIMA coisa, nao a unica — assim ninguem pula nada.
+    this.biomeGate.missingMissions = (layerId) => {
+      const layer = gateLayerDef(layerId);
+      // O corte e o TOPO da faixa do selo, nao o inicio da camada.
+      //
+      // Usando minDepth - 1 o selo exigia a propria missao dele: "O Segundo
+      // Selo" fica a 194 m, dentro da faixa, e ela so fecha quando o selo
+      // abre. O selo esperava a missao, a missao esperava o selo.
+      const topo = layer.minDepth - CONFIG.gate.bandThickness - 1;
+      return this.missions.missingBefore(topo);
+    };
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
     // As bases ficam no mapa desde sempre: sao lugares, nao segredos, e o
     // jogador precisa saber que existe um para onde voltar.
@@ -356,8 +368,15 @@ export class Game {
       const cx = col * ts + ts / 2;
       const cy = row * ts + ts / 2;
       if (this.activeSkills.isActive('drill')) {
-        this.activeSkills.consume('drill');
-        hits += this.drill.fire(col, row, dirX, dirY, damage, tier, quebra);
+        // So cobra a martelada se a broca PEGOU alguma coisa.
+        //
+        // Antes ela gastava carga mesmo furando ar: bastava mirar perto de um
+        // vao e as quatro marteladas iam embora sem quebrar um bloco. Era esse
+        // o "nao funciona bem" — a habilidade funcionava, mas se gastava
+        // sozinha.
+        const furou = this.drill.fire(col, row, dirX, dirY, damage, tier, quebra);
+        if (furou > 0) this.activeSkills.consume('drill');
+        hits += furou;
         // A Broca perfura o que estiver no caminho, e bicho esta no caminho.
         // Ela atravessava uma galeria inteira e ignorava a criatura parada no
         // meio dela — o jogador aprendia a habilidade minerando e descobria na
@@ -371,8 +390,9 @@ export class Game {
         );
       }
       if (this.activeSkills.isActive('shock')) {
-        this.activeSkills.consume('shock');
-        hits += this.shock.fire(col, row, damage, tier, quebra);
+        const pegou = this.shock.fire(col, row, damage, tier, quebra);
+        if (pegou > 0) this.activeSkills.consume('shock');
+        hits += pegou;
         // O Choque e uma corrente: ela pega tudo em volta do ponto de impacto.
         this.creatures.damageArea(cx, cy, ts * 3.2, damage * 0.9, true);
       }
@@ -695,7 +715,18 @@ export class Game {
     });
 
     Events.on('mission:done', (p) => {
+      // Fechar uma missao pode ser a ultima condicao de um selo.
+      this.biomeGate.recheck();
       this.hud.celebrate('MISSAO CONCLUIDA', p.title, p.text, 'progress', 3);
+    });
+
+    Events.on('gate:blocked', (p) => {
+      this.camera.addShake(4);
+      // So os tres primeiros: a lista inteira num selo fundo tem dez itens e
+      // vira um paredao de texto que ninguem le.
+      const mostra = p.faltam.slice(0, 3).join(' · ');
+      const resto = p.faltam.length > 3 ? ` (+${p.faltam.length - 3})` : '';
+      this.hud.celebrate('A PAREDE NAO CEDE', 'Falta fechar o que ficou para tras', mostra + resto, 'quota', 3);
     });
 
     Events.on('gate:opened', (p) => {
@@ -1004,6 +1035,13 @@ export class Game {
         if (boss) this.skills.setStoryFlag(boss.id);
       }
       if (this.biomeGate.isOpen(layerId)) this.skills.setStoryFlag(`gate_${layerId}`);
+    }
+    const refechados = this.biomeGate.enforce();
+    if (refechados.length > 0) {
+      this.hud.toast(
+        `O selo de ${refechados.join(' e ')} se refez: ha objetivo pendente antes dele.`,
+        'warn'
+      );
     }
     this.biomeGate.reopenSavedGates();
     this.biomeGate.spawnBosses(this.creatures);

@@ -426,6 +426,33 @@ export class World {
     }
   }
 
+  /**
+   * Refaz o selo numa faixa, poupando a arena do chefe e a entrada dela.
+   *
+   * Existe para desfazer um selo aberto fora de ordem. E o inverso exato do
+   * passo 3b do WorldGen, e precisa continuar sendo: se as duas contas
+   * divergirem, o selo refeito enterra a arena e tranca o chefe dentro da
+   * pedra.
+   */
+  closeGateBand(row0: number, row1: number): void {
+    const arena = CONFIG.base.centerCol + CONFIG.base.layout.shaft;
+    const meiaArena = Math.floor(CONFIG.gate.arenaWidth / 2);
+    const meiaPorta = Math.floor(CONFIG.gate.entranceWidth / 2);
+    for (let row = row0; row <= row1; row++) {
+      for (let col = 1; col < this.width - 1; col++) {
+        const naArena =
+          col >= arena - meiaArena && col <= arena + meiaArena && row > row0 && row < row1;
+        const naEntrada = row === row0 && col >= arena - meiaPorta && col <= arena + meiaPorta;
+        if (naArena || naEntrada) continue;
+        const i = this.idx(col, row);
+        if (this.tiles[i] === BLOCK_IDS.SEAL) continue;
+        this.tiles[i] = BLOCK_IDS.SEAL;
+        this.overrides.set(i, BLOCK_IDS.SEAL);
+        this.markDirtyAround(col, row);
+      }
+    }
+  }
+
   /** Onde o jogador esta agora (o renascimento evita a vizinhanca dele). */
   setWatchPoint(x: number, y: number): void {
     this.watchX = x;
