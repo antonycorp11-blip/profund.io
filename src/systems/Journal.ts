@@ -1,6 +1,6 @@
 import { Events } from '../core/events';
 
-export type JournalTab = 'paginas' | 'pistas' | 'pessoas' | 'bichos' | 'lugares';
+export type JournalTab = 'missoes' | 'paginas' | 'pistas' | 'pessoas' | 'bichos' | 'lugares';
 
 export interface JournalEntry {
   id: string;

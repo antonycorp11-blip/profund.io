@@ -225,7 +225,10 @@ export class Game {
       () => this.activeUI.toggle()
     );
     this.campUI = new BaseCampUI(uiRoot, this.camps);
-    this.journalUI = new JournalUI(uiRoot, this.journal);
+    this.journalUI = new JournalUI(uiRoot, this.journal, {
+      current: () => this.missions.current(),
+      done: () => this.missions.done(),
+    });
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
       stock: this.stock,
@@ -752,6 +755,10 @@ export class Game {
     });
 
     Events.on('base:built', (p) => {
+      // Construir estrutura vira flag de historia: e assim que a missao da
+      // base sabe que ela foi fundada.
+      this.skills.setStoryFlag(`${p.base}:${p.kind}`);
+      this.refreshObjective();
       this.hud.celebrate('CONSTRUIDO', p.nome, 'A base ficou um pouco mais viva', 'progress', 2);
       this.journal.write('lugares', `base:${p.base}:${p.kind}`, p.nome, 'Construi isto com as minhas maos.');
       this.save();

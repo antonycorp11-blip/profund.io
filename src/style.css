@@ -3549,3 +3549,42 @@ body {
   font-size: 10.5px;
   color: #e0a94b;
 }
+
+/* Objetivo aberto: o texto inteiro, sem corte. */
+.quota.objective.aberto {
+  width: min(52vw, 340px);
+}
+
+.quota.objective.aberto .quota-mission {
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: visible;
+}
+
+.quota.objective .quota-mission {
+  cursor: pointer;
+}
+
+.quota.objective .quota-mission::after {
+  content: ' ▾';
+  opacity: 0.5;
+  font-size: 9px;
+}
+
+.quota.objective.aberto .quota-mission::after {
+  content: ' ▴';
+}
+
+/* Objetivo atual no Guia: destacado acima das missoes ja feitas. */
+.journal-entry.atual {
+  background: rgba(255, 196, 83, 0.16);
+  border-radius: 9px;
+  padding: 9px 10px;
+  margin-bottom: 4px;
+  border-bottom: none;
+}
+
+.journal-entry.atual .journal-depth {
+  color: #8a5a10;
+  opacity: 1;
+}

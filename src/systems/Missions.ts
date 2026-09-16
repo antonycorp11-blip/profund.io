@@ -17,17 +17,22 @@ export class Missions {
 
   constructor(private hasFlag: (id: string) => boolean) {}
 
-  private done(m: MissionDef): boolean {
+  private done_(m: MissionDef): boolean {
     return m.requires.every((f) => this.hasFlag(f));
   }
 
   /** A missao em andamento: a primeira ainda nao concluida. */
   current(): MissionDef | null {
-    return MISSIONS.find((m) => !this.done(m)) ?? null;
+    return MISSIONS.find((m) => !this.done_(m)) ?? null;
+  }
+
+  /** As ja concluidas, na ordem em que foram fechadas. */
+  done(): MissionDef[] {
+    return MISSIONS.filter((m) => this.done_(m));
   }
 
   completedCount(): number {
-    return MISSIONS.filter((m) => this.done(m)).length;
+    return MISSIONS.filter((m) => this.done_(m)).length;
   }
 
   /**
@@ -39,7 +44,7 @@ export class Missions {
    */
   check(silent: boolean, pay: (money: number, points: number, m: MissionDef) => void): void {
     for (const m of MISSIONS) {
-      if (!this.done(m) || this.announced.has(m.id)) continue;
+      if (!this.done_(m) || this.announced.has(m.id)) continue;
       this.announced.add(m.id);
       if (silent) continue;
       pay(m.rewardMoney, m.rewardPoints, m);

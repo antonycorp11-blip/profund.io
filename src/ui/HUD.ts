@@ -374,6 +374,14 @@ export class HUD {
     const el = document.createElement('div');
     el.className = 'quota-mission';
     el.textContent = text;
+    // Tocar abre o texto inteiro. A faixa mostra tres linhas para nao invadir
+    // a tela, e isso cortava o objetivo no meio — o jogador via "trilho
+    // remendado algo assim" e nao sabia o que fazer.
+    el.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      this.quotaEl.classList.toggle('aberto');
+    });
+    this.quotaEl.style.pointerEvents = 'auto';
     this.quotaEl.appendChild(el);
   }
 

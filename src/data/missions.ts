@@ -103,6 +103,15 @@ export const MISSIONS: MissionDef[] = [
     rewardPoints: 2,
   },
   {
+    id: 'm4b_a_base_do_cristal',
+    title: 'A Base do Cristal',
+    goal: 'Ha uma camara abandonada a 236 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 236 metros e passam a entregar ali.',
+    requires: ['base_cristal:deposito'],
+    onDone: 'A base respira. Daqui para baixo, o minerio nao sobe mais nas costas de ninguem.',
+    rewardMoney: 700,
+    rewardPoints: 2,
+  },
+  {
     id: 'm5_luzes_abaixo',
     title: 'Luzes Abaixo',
     goal: 'Tem outra voz nas Cavernas de Cristal. E a Pagina 01 do caderno, a 230 m.',

@@ -1,10 +1,12 @@
 import { ART } from '../data/art';
 import { LAYERS } from '../data/layers';
 import { scrollsOfLayer } from '../data/scrolls';
+import type { MissionDef } from '../data/missions';
 import { Assets } from '../core/Assets';
 import type { Journal, JournalEntry, JournalTab } from '../systems/Journal';
 
 const ABAS: { id: JournalTab; nome: string; vazio: string }[] = [
+  { id: 'missoes', nome: 'Objetivo', vazio: 'Nenhum objetivo.' },
   { id: 'paginas', nome: 'Anotacoes', vazio: 'Nenhuma anotacao recolhida. Elas estao espalhadas — cave de lado, nao so para baixo.' },
   { id: 'pistas', nome: 'Pistas', vazio: 'Nenhuma pagina do caderno ainda.' },
   { id: 'pessoas', nome: 'Pessoas', vazio: 'Ninguem anotado. Ainda nao encontrei ninguem la embaixo.' },
@@ -26,7 +28,11 @@ export class JournalUI {
   private corpo: HTMLElement;
   private abaAtual: JournalTab = 'pistas';
 
-  constructor(parent: HTMLElement, private journal: Journal) {
+  constructor(
+    parent: HTMLElement,
+    private journal: Journal,
+    private missions: { current(): MissionDef | null; done(): MissionDef[] }
+  ) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap journal';
     this.wrap.innerHTML = `
@@ -87,7 +93,7 @@ export class JournalUI {
     for (const b of this.wrap.querySelectorAll<HTMLElement>('.journal-tab')) {
       const aba = b.dataset.tab as JournalTab;
       b.classList.toggle('active', aba === this.abaAtual);
-      const n = this.journal.count(aba);
+      const n = aba === 'missoes' ? 0 : this.journal.count(aba);
       b.textContent = n > 0 ? `${ABAS.find((a) => a.id === aba)!.nome} ${n}` : ABAS.find((a) => a.id === aba)!.nome;
     }
 
@@ -110,6 +116,35 @@ export class JournalUI {
         .join('');
     } else {
       placar.hidden = true;
+    }
+
+    // A aba do objetivo nao vem do caderno: ela le as missoes direto, porque
+    // o objetivo ATUAL precisa estar sempre completo e no topo. Era o texto
+    // que a faixa da HUD cortava.
+    if (this.abaAtual === 'missoes') {
+      this.corpo.innerHTML = '';
+      const atual = this.missions.current();
+      if (atual) {
+        const el = document.createElement('article');
+        el.className = 'journal-entry atual';
+        el.innerHTML = `<div class="journal-text">
+          <h4>${atual.title}<span class="journal-depth">agora</span></h4>
+          <p>${atual.goal}</p></div>`;
+        this.corpo.appendChild(el);
+      }
+      const feitas = this.missions.done();
+      for (const m of [...feitas].reverse()) {
+        const el = document.createElement('article');
+        el.className = 'journal-entry';
+        el.innerHTML = `<div class="journal-text">
+          <h4>${m.title}<span class="journal-depth">feito</span></h4>
+          <p>${m.onDone}</p></div>`;
+        this.corpo.appendChild(el);
+      }
+      if (!atual && feitas.length === 0) {
+        this.corpo.innerHTML = '<p class="journal-vazio">Nenhum objetivo.</p>';
+      }
+      return;
     }
 
     const itens = this.journal.byTab(this.abaAtual);
