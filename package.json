@@ -12,7 +12,8 @@
     "slice-assets": "node tools/slice-assets.mjs",
     "icons": "node tools/make-icons.mjs",
     "slice-npcs": "node tools/slice-npcs.mjs",
-    "slice-journal": "node tools/slice-journal.mjs"
+    "slice-journal": "node tools/slice-journal.mjs",
+    "slice-base": "node tools/slice-base.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

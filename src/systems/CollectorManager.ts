@@ -33,6 +33,16 @@ export class CollectorManager {
     private onDelivered?: (r: ResourceId, n: number) => void
   ) {}
 
+  /**
+   * Base com deposito pronto na profundidade dada. Definido pelo Game.
+   *
+   * Sao ganchos e nao dependencia direta de proposito: o gerente de toupeiras
+   * nao precisa saber o que e uma base de extracao, so precisa saber se ha
+   * um lugar mais perto para entregar.
+   */
+  baseFor?: (depth: number) => string | null;
+  onBaseDeposit?: (baseId: string, resource: ResourceId, amount: number) => void;
+
   get max(): number {
     return COLLECTOR_CONFIG.maxUnits;
   }
@@ -174,7 +184,23 @@ export class CollectorManager {
         (items) => {
           let total = 0;
           for (const [, n] of items) total += n;
-          // A toupeira vende como qualquer entrega: o que ela traz vira moeda.
+          // Com deposito de pe na camada, a toupeira entrega LA e nao sobe
+          // duzentos metros. E o ponto inteiro de existir uma base: encurtar a
+          // viagem, nao so guardar coisa.
+          const base = this.baseFor?.(this.world.depthOfPixel(unit.y));
+          if (base) {
+            for (const [r, n] of items) this.onBaseDeposit?.(base, r, n);
+            for (const [r, n] of items) this.onDelivered?.(r, n);
+            if (total > 0) {
+              Events.emit('collector:delivered', {
+                index: unit.index,
+                total,
+                money: 0,
+                depth: this.world.depthOfPixel(unit.y),
+              });
+            }
+            return;
+          }
           const moedas = this.stock.deliver(items, this.attrs.get('deliveryValue'));
           for (const [r, n] of items) this.onDelivered?.(r, n);
           if (total > 0) {

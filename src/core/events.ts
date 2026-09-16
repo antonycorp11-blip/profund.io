@@ -75,6 +75,10 @@ export interface GameEvents {
    */
   'npc:shout': { id: string; x: number; y: number; text: string; strength: number };
   'scroll:found': { id: string; title: string; author: string; layer: string; text: string[] };
+  /** Obra iniciada: a ultima martelada caiu, agora e tempo. */
+  'base:building': { base: string; kind: string; nome: string };
+  'base:built': { base: string; kind: string; nome: string };
+  'base:deposit': { base: string; resource: string; amount: number };
   'journal:written': { title: string; novo: boolean };
   'city:met': { id: string; name: string; city: string; trust: number };
   'rep:changed': { city: string; axis: string; value: number };

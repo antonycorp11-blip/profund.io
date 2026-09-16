@@ -53,6 +53,9 @@ import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { gateBandRows, gateLayerDef } from '../data/gates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
+import { BaseCamps } from '../systems/BaseCamps';
+import { BaseCampRenderer } from '../world/BaseCampRenderer';
+import { BASE_CAMPS } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
 import { Missions } from '../systems/Missions';
@@ -125,6 +128,8 @@ export class Game {
   private biomeGate!: BiomeGate;
   private missions!: Missions;
   private journal: Journal;
+  private camps: BaseCamps;
+  private campsRenderer!: BaseCampRenderer;
   private journalUI!: JournalUI;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
@@ -202,6 +207,7 @@ export class Game {
     this.dialog = new DialogUI(uiRoot);
     // Nasce antes de tudo que emite evento: o guia so anota o que ele ouve, e
     // um evento perdido e uma anotacao que nunca existiu.
+    this.camps = new BaseCamps(this.stock);
     this.journal = new Journal(() => this.world.depthOfPixel(this.player.cy));
 
     this.hud = new HUD(
@@ -312,6 +318,20 @@ export class Game {
     // ja derrotado em sessao anterior voltaria vivo por um instante.
     this.biomeGate = new BiomeGate(this.world, this.exploration, this.worldInfo.gates);
     this.missions = new Missions((id) => this.skills.hasStoryFlag(id));
+    this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
+    // As bases ficam no mapa desde sempre: sao lugares, nao segredos, e o
+    // jogador precisa saber que existe um para onde voltar.
+    for (const base of BASE_CAMPS) {
+      this.exploration.addMarker({
+        id: base.id,
+        kind: 'npc',
+        col: base.col + Math.floor(base.largura / 2),
+        row: this.world.surfaceRow + base.depth,
+        label: base.nome,
+        alwaysVisible: true,
+      });
+    }
+
 
     // Choque: a corrente sai do bloco atingido e gasta uma martelada.
     this.shock = new ShockChain(this.world, this.attrs);
@@ -416,6 +436,10 @@ export class Game {
       },
       (r, n) => this.quota.registerDelivery(r, n)
     );
+    // Ganchos da base: a toupeira nao precisa saber o que e uma base de
+    // extracao, so precisa saber se ha um lugar mais perto para entregar.
+    this.collectors.baseFor = (depth) => this.camps.depotFor(depth)?.id ?? null;
+    this.collectors.onBaseDeposit = (baseId, r, n) => this.camps.deposit(baseId, r, n);
 
     this.buildMode = new BuildMode(uiRoot, {
       automation: this.automation,
@@ -689,6 +713,24 @@ export class Game {
     );
     Events.on('time:week', (p) => this.quota.onWeekChanged(p.week));
     // --- fontes de XP: tudo que e "jogar" empurra a barra ---
+    // Martelada em encaixe de base constroi, em vez de quebrar pedra.
+    //
+    // Reaproveita o golpe que o jogador ja da: nao ha modo de construcao, nao
+    // ha botao. Voce chega no encaixe, mina, e a coisa sobe.
+    Events.on('block:hit', () => {
+      const alvo = this.encaixeSobOJogador();
+      if (alvo) this.camps.hit(alvo.base, alvo.slot);
+    });
+
+    Events.on('base:built', (p) => {
+      this.hud.celebrate('CONSTRUIDO', p.nome, 'A base ficou um pouco mais viva', 'progress', 2);
+      this.journal.write('lugares', `base:${p.base}:${p.kind}`, p.nome, 'Construi isto com as minhas maos.');
+      this.save();
+    });
+    Events.on('base:building', (p) => {
+      this.hud.toast(`${p.nome}: estrutura erguendo. Leva um tempo.`, 'info');
+    });
+
     Events.on('block:break', (p) => {
       const c = CONFIG.progression;
       const def = blockDef(p.blockId);
@@ -891,6 +933,7 @@ export class Game {
     this.exploration.fromJSON(data.exploration);
     this.reputation.fromJSON(data.reputation);
     this.journal.fromJSON(data.journal);
+    this.camps.fromJSON(data.camps);
     const lidos = new Set(data.scrolls ?? []);
     for (const sc of this.scrollObjects) sc.found = lidos.has(sc.id);
     const conhecidos = new Set(data.cityMet ?? []);
@@ -987,6 +1030,8 @@ export class Game {
       Math.abs(this.player.vx) < 12 &&
       this.vitals.hurtFlash <= 0;
     this.activeSkills.update(dt, podeCanalizar);
+    this.camps.update(dt);
+    this.campsRenderer.update(dt);
     this.shock.update(dt);
     if (!uiBlocking) this.pollSkillButtons();
     this.touch.syncSkills(this.activeSkills);
@@ -1365,6 +1410,7 @@ export class Game {
       Math.round(-this.camera.top * this.camera.scale * this.dpr)
     );
     for (const e of this.interactables) e.renderOverlay?.(ctx);
+    this.campsRenderer.render(ctx);
     this.shock.render(ctx);
     this.floating.render(ctx);
 
@@ -1507,6 +1553,27 @@ export class Game {
     this.hud.toast('Blockia — 604 m. "A pedra nos fechou uma porta e nos construimos uma casa."', 'story');
   }
 
+  /**
+   * O encaixe de base em que o jogador esta encostado, se houver.
+   *
+   * Procura por proximidade horizontal e pela linha do chao da camara: o
+   * jogador precisa estar EM PE na base, nao passando 20 metros acima dela.
+   */
+  private encaixeSobOJogador(): { base: (typeof BASE_CAMPS)[number]; slot: (typeof BASE_CAMPS)[number]['slots'][number] } | null {
+    const ts = CONFIG.tileSize;
+    const col = Math.floor(this.player.cx / ts);
+    const row = Math.floor(this.player.cy / ts);
+    for (const base of BASE_CAMPS) {
+      const chao = this.world.surfaceRow + base.depth;
+      if (row < chao - base.altura || row > chao + 1) continue;
+      for (const slot of base.slots) {
+        const c0 = base.col + slot.col;
+        if (col >= c0 - 1 && col <= c0 + slot.tiles) return { base, slot };
+      }
+    }
+    return null;
+  }
+
   private refreshObjective(): void {
     // Paga o que acabou de fechar antes de perguntar qual e a proxima.
     this.missions.check(false, (money, points, m) => {
@@ -1538,6 +1605,7 @@ export class Game {
       worldWidth: this.world.width,
       reputation: this.reputation.toJSON(),
       journal: this.journal.toJSON(),
+      camps: this.camps.toJSON(),
       cityMet: this.cityNpcs.filter((n) => n.met).map((n) => n.id),
       scrolls: this.scrollObjects.filter((s) => s.found).map((s) => s.id),
       tiles: flat,

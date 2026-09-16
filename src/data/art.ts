@@ -177,6 +177,17 @@ export const ART = {
    * aqui continua sendo silhueta vetorial — nada quebra, so fica feio.
    */
   npcDir: 'npc/',
+  /** Estruturas das bases de extracao (ver tools/slice-base.mjs). */
+  baseDir: 'base/',
+  baseArts: [
+    'refinador',
+    'deposito',
+    'esteira',
+    'elevador_torre',
+    'elevador_plataforma',
+    'casa_capataz',
+    'poste_cristal',
+  ],
   npcAnims: ['idle', 'walk'],
   npcArts: [
     'mara_avelar',

@@ -87,6 +87,15 @@ class AssetsImpl {
     // aqui, e nao depender de continuar sendo monstro.
     for (const art of ART.helperArts) artes.add(art);
 
+    // Estruturas das bases de extracao.
+    for (const peca of manifest.baseArts) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}${manifest.baseDir}${peca}.png`).then((img) => {
+          if (img) this.images.set(`base:${peca}`, img);
+        })
+      );
+    }
+
     // Folhas de NPC: moradores de Blockia e mineiros presos.
     for (const npc of manifest.npcArts) {
       for (const anim of manifest.npcAnims) {
@@ -302,6 +311,11 @@ class AssetsImpl {
   /** Tira de uma animacao do heroi, ou null quando aquele arquivo nao existe. */
   characterStrip(name: string): HTMLImageElement | null {
     return this.images.get('char:' + name) ?? null;
+  }
+
+  /** Folha de uma estrutura de base, ou null se ainda nao existe. */
+  baseArt(id: string): HTMLImageElement | null {
+    return this.images.get('base:' + id) ?? null;
   }
 
   /** Tira de animacao de um NPC, ou null quando a folha nao existe. */
