@@ -49,6 +49,7 @@ import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { gateBandRows, gateLayerDef } from '../data/gates';
+import { Missions } from '../systems/Missions';
 import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
@@ -111,6 +112,7 @@ export class Game {
   private mapScreen: MapScreen;
   private creatures: CreatureManager;
   private biomeGate!: BiomeGate;
+  private missions!: Missions;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
   private progression = new Progression(this.skills);
@@ -287,6 +289,7 @@ export class Game {
     // DEPOIS do save (se houver) restaurar quem ja morreu — senao um chefe
     // ja derrotado em sessao anterior voltaria vivo por um instante.
     this.biomeGate = new BiomeGate(this.world, this.exploration, this.worldInfo.gates);
+    this.missions = new Missions((id) => this.skills.hasStoryFlag(id));
 
     // Choque: a corrente sai do bloco atingido e gasta uma martelada.
     this.shock = new ShockChain(this.world, this.attrs);
@@ -524,6 +527,10 @@ export class Game {
       this.refreshObjective();
       this.save();
     });
+    Events.on('mission:done', (p) => {
+      this.hud.celebrate('MISSAO CONCLUIDA', p.title, p.text, 'progress', 3);
+    });
+
     Events.on('gate:opened', (p) => {
       // A camada nova se abre brilhando: uma chuva de veios prosperos logo
       // abaixo do selo, com prazo. E o convite para descer AGORA, enquanto
@@ -551,6 +558,8 @@ export class Game {
         `A barreira de ${p.layerName} se rompeu! ${lit} veios prosperos acesos por ${Math.round(cfg.gateDurationSec / 60)} minutos.`,
         'story'
       );
+      this.skills.setStoryFlag(`gate_${p.layerId}`);
+      this.refreshObjective();
       this.save();
     });
     // Toda entrega (jogador, copia ou linha) conta para a cota da semana.
@@ -667,7 +676,9 @@ export class Game {
           16
         );
         this.hud.toast(`${p.name} caiu. A barreira está se rompendo!`, 'story');
+        this.skills.setStoryFlag(p.id);
         this.biomeGate.onBossKilled(p.id);
+        this.refreshObjective();
         this.save();
       } else if (p.guardian) {
         this.save();
@@ -711,6 +722,7 @@ export class Game {
       this.hud.toast('Pegue a picareta do seu pai e desca.', 'story');
       // Jogo novo: nenhum selo foi aberto, nenhum chefe morreu — spawna os 6.
       this.biomeGate.spawnBosses(this.creatures);
+      this.settleMissions();
       return;
     }
 
@@ -738,6 +750,7 @@ export class Game {
     // spawnar: selo ja aberto vira ar de novo; chefe ja morto nao volta.
     this.biomeGate.reopenSavedGates();
     this.biomeGate.spawnBosses(this.creatures);
+    this.settleMissions();
     this.vitals.fromJSON(data.vitals);
     this.activeSkills.fromJSON(data.activeSkills);
     this.progression.fromJSON(data.progression);
@@ -1292,22 +1305,30 @@ export class Game {
    * pista ou o mineiro mais raso que ainda falta. E o que faz o jogador querer
    * descer mais, e descer mais exige evoluir.
    */
+  /**
+   * Alinha as missoes ao que o save ja contem, sem festa.
+   *
+   * Carregar um jogo com oito missoes feitas despejaria oito toasts e oito
+   * pagamentos de uma vez; a primeira passada apenas registra que elas ja
+   * estavam fechadas.
+   */
+  private settleMissions(): void {
+    this.missions.check(true, () => {});
+    this.refreshObjective();
+  }
+
   private refreshObjective(): void {
+    // Paga o que acabou de fechar antes de perguntar qual e a proxima.
+    this.missions.check(false, (money, points, m) => {
+      if (money > 0) this.stock.money += money;
+      if (points > 0) this.skills.addPoints(points, m.title);
+    });
     if (!this.quota.completed) {
       this.hud.setMissionObjective(null);
       return;
     }
-    const pending: { row: number; text: string }[] = [];
-    for (const npc of RESCUE_NPCS) {
-      if (this.skills.hasStoryFlag(npc.id)) continue;
-      pending.push({ row: npc.row, text: `Resgatar um mineiro preso a ${npc.row - CONFIG.world.surfaceRow} m` });
-    }
-    for (const clue of STORY_CLUES) {
-      if (this.skills.hasStoryFlag(clue.id)) continue;
-      pending.push({ row: clue.row, text: `Procurar um vestigio de Santiago a ${clue.row - CONFIG.world.surfaceRow} m` });
-    }
-    pending.sort((a, b) => a.row - b.row);
-    this.hud.setMissionObjective(pending[0]?.text ?? 'Descer. A mina ainda nao acabou.');
+    const m = this.missions.current();
+    this.hud.setMissionObjective(m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.');
   }
 
   save(): void {

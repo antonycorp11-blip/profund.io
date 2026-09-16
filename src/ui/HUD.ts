@@ -602,7 +602,7 @@ export class HUD {
     this.moneyPulseTimer = window.setTimeout(() => this.moneyFloat.classList.remove('show'), 1400);
   }
 
-  private celebrate(
+  celebrate(
     eyebrow: string,
     title: string,
     detail: string,

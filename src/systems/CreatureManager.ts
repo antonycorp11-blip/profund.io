@@ -100,6 +100,32 @@ export class CreatureManager {
     return null;
   }
 
+  /**
+   * Atende o pedido de lacaios de um chefe.
+   *
+   * Nascem colados nele, dentro da arena selada, e como criatura comum: se
+   * afastarem demais somem sozinhos pelo despawn, entao uma luta longa nao
+   * entulha o mapa.
+   */
+  private resolveSummon(boss: Creature): void {
+    const cfg = boss.def.boss;
+    const pedido = boss.summonRequest;
+    boss.summonRequest = 0;
+    if (!cfg) return;
+    const def = creatureDef(cfg.summonId);
+    if (!def) return;
+    const vivos = this.creatures.filter((c) => c.alive && c.summonedBy === boss).length;
+    const cabem = Math.min(pedido, cfg.summonMax - vivos);
+    if (cabem <= 0) return;
+    for (let n = 0; n < cabem; n++) {
+      const lado = n % 2 === 0 ? -1 : 1;
+      const c = new Creature(def, boss.x + lado * (26 + n * 8), boss.y - 10);
+      c.summonedBy = boss;
+      this.creatures.push(c);
+    }
+    Events.emit('boss:summon', { id: boss.def.id, name: boss.def.name, count: cabem });
+  }
+
   update(
     dt: number,
     player: { x: number; y: number; invulnerable: boolean },
@@ -151,6 +177,12 @@ export class CreatureManager {
         this.creatures.splice(i, 1);
         continue;
       }
+      // Lacaios do chefe. Quem resolve isto e o manager porque e ele que
+      // conhece o teto de populacao — o chefe so levanta a mao.
+      if (c.summonRequest > 0) {
+        this.resolveSummon(c);
+      }
+
       if (c.isStuck) {
         // Guardiao volta ao posto; criatura de ambiente simplesmente some.
         if (!c.isGuardian) {

@@ -44,6 +44,29 @@ export class Creature {
   /** Altura que quem voa persegue. */
   private flyTargetY = 0;
 
+  // --- mecanica de chefe ---
+  /** Ja entrou em furia? A virada acontece uma vez so. */
+  enraged = false;
+  /** Contagem para a proxima investida. */
+  private chargeTimer = 0;
+  /** > 0 = parado, preparando a investida (o telegrafo). */
+  private windup = 0;
+  /** > 0 = investindo nesta direcao. */
+  private charging = 0;
+  private chargeDir: 1 | -1 = 1;
+  /** Contagem para a proxima convocacao. */
+  private summonTimer = 0;
+  /**
+   * Sinalizador lido pelo CreatureManager: o chefe pediu lacaios.
+   *
+   * O chefe nao cria criatura sozinho de proposito — quem conhece o limite de
+   * populacao e as regras de spawn e o manager, e duplicar isso aqui daria
+   * duas verdades sobre quantos bichos podem existir.
+   */
+  summonRequest = 0;
+  /** Chefe que convocou este bicho (null = nasceu do mundo). */
+  summonedBy: Creature | null = null;
+
   constructor(readonly def: CreatureDef, x: number, y: number) {
     this.health = def.health;
     this.x = x;
@@ -116,6 +139,9 @@ export class Creature {
     this.hurtTimer = Math.max(0, this.hurtTimer - dt);
     this.attackTimer = Math.max(0, this.attackTimer - dt);
 
+    const boss = this.def.boss;
+    if (boss) this.bossTick(dt, world, boss);
+
     const dx = player.x - this.x;
     const dy = player.y - this.y;
     const dist = Math.hypot(dx, dy);
@@ -139,14 +165,42 @@ export class Creature {
       this.state = 'patrulha';
     }
 
+    // Investida em curso: ela manda no movimento. Quem esta no caminho toma
+    // o golpe, e a parede interrompe — e a saida do jogador e simplesmente
+    // sair do caminho, que e o ponto de existir uma investida.
+    if (this.charging > 0) {
+      this.charging -= dt;
+      this.facing = this.chargeDir;
+      this.vx = this.chargeDir * (this.def.boss?.chargeSpeed ?? 240);
+      if (this.blockedAhead(world, this.chargeDir)) this.charging = 0;
+      if (dist <= this.def.attackRange * 1.4 && !player.invulnerable && this.attackTimer <= 0) {
+        this.attackTimer = 0.5;
+        hitPlayer(Math.round(this.def.damage * this.damageMult() * 1.3), this.x);
+        this.charging = 0;
+      }
+      this.move(dt, world);
+      return;
+    }
+    if (this.windup > 0) {
+      this.windup -= dt;
+      this.vx *= 0.6;
+      this.facing = dx >= 0 ? 1 : -1;
+      if (this.windup <= 0) {
+        this.charging = 0.85;
+        this.chargeDir = this.facing;
+      }
+      this.move(dt, world);
+      return;
+    }
+
     switch (this.state) {
       case 'atacando':
         this.vx *= 0.7;
         this.facing = dx >= 0 ? 1 : -1;
         if (this.attackTimer <= 0 && !player.invulnerable) {
-          this.attackTimer = this.def.attackCooldown;
+          this.attackTimer = this.def.attackCooldown * this.cooldownMult();
           this.play('attack', 0.5);
-          hitPlayer(this.def.damage, this.x);
+          hitPlayer(Math.round(this.def.damage * this.damageMult()), this.x);
         }
         if (dist > this.def.attackRange * 1.3) this.state = 'perseguindo';
         break;
@@ -154,7 +208,7 @@ export class Creature {
       case 'perseguindo': {
         const dir = Math.sign(dx) || 1;
         this.facing = dir as 1 | -1;
-        this.vx = dir * this.def.moveSpeed;
+        this.vx = dir * this.def.moveSpeed * this.speedMult();
         // Sobe degrau: sem isso ela trava em qualquer desnivel.
         if (this.blockedAhead(world, dir) && this.onGround(world)) this.vy = -230;
         if (dist <= this.def.attackRange) this.state = 'atacando';
@@ -188,6 +242,48 @@ export class Creature {
         this.animTime = 0;
       }
     }
+  }
+
+  private speedMult(): number {
+    return this.enraged ? this.def.boss?.enrageSpeed ?? 1 : 1;
+  }
+
+  private damageMult(): number {
+    return this.enraged ? this.def.boss?.enrageDamage ?? 1 : 1;
+  }
+
+  private cooldownMult(): number {
+    return this.enraged ? this.def.boss?.enrageCooldown ?? 1 : 1;
+  }
+
+  /**
+   * Relogio das mecanicas de chefe.
+   *
+   * Investida e convocacao so contam quando o chefe ja viu o jogador: um chefe
+   * sozinho na arena investindo contra a parede por meia hora seria ridiculo e
+   * ainda gastaria criatura do teto de populacao.
+   */
+  private bossTick(dt: number, world: World, boss: NonNullable<CreatureDef['boss']>): void {
+    if (!this.enraged && this.health <= this.def.health * boss.enrageAt) {
+      this.enraged = true;
+      this.play('hurt', 0.45);
+    }
+    const engajado = this.state === 'perseguindo' || this.state === 'atacando';
+    if (!engajado) return;
+
+    this.chargeTimer -= dt;
+    if (this.chargeTimer <= 0 && this.charging <= 0 && this.windup <= 0) {
+      this.chargeTimer = boss.chargeEverySec * (this.enraged ? 0.65 : 1);
+      this.windup = boss.chargeWindupSec;
+      this.play('attack', boss.chargeWindupSec);
+    }
+
+    this.summonTimer -= dt;
+    if (this.summonTimer <= 0) {
+      this.summonTimer = boss.summonEverySec * (this.enraged ? 0.7 : 1);
+      this.summonRequest += boss.summonCount;
+    }
+    void world;
   }
 
   private move(dt: number, world: World): void {

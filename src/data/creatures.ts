@@ -55,6 +55,31 @@ export interface CreatureDef {
    * dispara. Nunca aparece em criatura ambiente nem no guardiao de veio.
    */
   bossOfLayer?: string;
+  /**
+   * Mecanica de chefe. Ausente em criatura comum.
+   *
+   * Sao tres pecas, e cada uma existe por um motivo diferente: a furia da a
+   * virada de luta, a investida obriga o jogador a sair do lugar (senao a
+   * briga vira trocar golpe parado), e a convocacao lembra de quem o chefe e
+   * — ele foi posto ali para comandar a barreira, nao para brigar sozinho.
+   */
+  boss?: {
+    /** Fracao de vida em que entra em furia (0.4 = 40%). */
+    enrageAt: number;
+    enrageSpeed: number;
+    enrageDamage: number;
+    /** Multiplicador do intervalo entre golpes na furia (menor = mais rapido). */
+    enrageCooldown: number;
+    /** Investida telegrafada: intervalo, tempo de preparo e velocidade. */
+    chargeEverySec: number;
+    chargeWindupSec: number;
+    chargeSpeed: number;
+    /** Convoca lacaios: intervalo, qual bicho, quantos por vez e o teto vivo. */
+    summonEverySec: number;
+    summonId: string;
+    summonCount: number;
+    summonMax: number;
+  };
   tagline: string;
 }
 
@@ -328,12 +353,12 @@ export const CREATURES: CreatureDef[] = [
     name: 'Mae dos Esporos',
     layers: ['stone'],
     behavior: 'guardiao',
-    health: 320,
-    damage: 20,
+    health: 190,
+    damage: 12,
     moveSpeed: 42,
     aggroRange: 320,
     attackRange: 40,
-    attackCooldown: 1.6,
+    attackCooldown: 1.9,
     spawnWeight: 0,
     w: 44,
     h: 40,
@@ -347,8 +372,21 @@ export const CREATURES: CreatureDef[] = [
     ],
     skillPoints: 2,
     moneyReward: 500,
+    boss: {
+      enrageAt: 0.4,
+      enrageSpeed: 1.5,
+      enrageDamage: 1.25,
+      enrageCooldown: 0.6,
+      chargeEverySec: 7,
+      chargeWindupSec: 0.7,
+      chargeSpeed: 260,
+      summonEverySec: 14,
+      summonId: 'larva',
+      summonCount: 1,
+      summonMax: 2,
+    },
     bossOfLayer: 'stone',
-    tagline: 'Pedra empilhada nao deveria ficar de pe sozinha.',
+    tagline: 'Blockia semeou os esporos na fronteira. Nada pessoal: ninguem sobe.',
   },
   {
     id: 'boss_arauto_quartzo',
@@ -374,8 +412,21 @@ export const CREATURES: CreatureDef[] = [
     ],
     skillPoints: 2,
     moneyReward: 1100,
+    boss: {
+      enrageAt: 0.4,
+      enrageSpeed: 1.5,
+      enrageDamage: 1.25,
+      enrageCooldown: 0.6,
+      chargeEverySec: 7,
+      chargeWindupSec: 0.7,
+      chargeSpeed: 260,
+      summonEverySec: 12,
+      summonId: 'aranha',
+      summonCount: 2,
+      summonMax: 3,
+    },
     bossOfLayer: 'crystal',
-    tagline: 'Os cristais brilhavam antes de voce entrar. Alguem os acendeu.',
+    tagline: 'As teias sao antigas. Quem as plantou queria a rota fechada.',
   },
   {
     id: 'boss_automato_enferrujado',
@@ -401,8 +452,21 @@ export const CREATURES: CreatureDef[] = [
     ],
     skillPoints: 3,
     moneyReward: 1900,
+    boss: {
+      enrageAt: 0.4,
+      enrageSpeed: 1.5,
+      enrageDamage: 1.25,
+      enrageCooldown: 0.6,
+      chargeEverySec: 7,
+      chargeWindupSec: 0.7,
+      chargeSpeed: 260,
+      summonEverySec: 11,
+      summonId: 'larva',
+      summonCount: 2,
+      summonMax: 4,
+    },
     bossOfLayer: 'minerals',
-    tagline: 'Engrenagem nao enferruja assim sozinha em mil anos. Alguem cuidava dele.',
+    tagline: 'Criada em cativeiro e solta na rota comercial. Blockia nunca admitiu.',
   },
   {
     id: 'boss_fundidor_incandescente',
@@ -428,8 +492,21 @@ export const CREATURES: CreatureDef[] = [
     ],
     skillPoints: 3,
     moneyReward: 3000,
+    boss: {
+      enrageAt: 0.4,
+      enrageSpeed: 1.5,
+      enrageDamage: 1.25,
+      enrageCooldown: 0.6,
+      chargeEverySec: 7,
+      chargeWindupSec: 0.7,
+      chargeSpeed: 260,
+      summonEverySec: 10,
+      summonId: 'vespa',
+      summonCount: 2,
+      summonMax: 4,
+    },
     bossOfLayer: 'magma',
-    tagline: 'Isto fundia minerio muito antes de existir picareta para minerar.',
+    tagline: 'Ferruria chama de "controle de acesso". Os mineiros chamam de outra coisa.',
   },
   {
     id: 'boss_escriba_selado',
@@ -455,8 +532,21 @@ export const CREATURES: CreatureDef[] = [
     ],
     skillPoints: 4,
     moneyReward: 4600,
+    boss: {
+      enrageAt: 0.4,
+      enrageSpeed: 1.5,
+      enrageDamage: 1.25,
+      enrageCooldown: 0.6,
+      chargeEverySec: 7,
+      chargeWindupSec: 0.7,
+      chargeSpeed: 260,
+      summonEverySec: 10,
+      summonId: 'cristalino',
+      summonCount: 2,
+      summonMax: 3,
+    },
     bossOfLayer: 'ruins',
-    tagline: 'Guarda registros. Alguns tem nomes de gente que nunca voltou.',
+    tagline: 'Lumora escutou antes de quebrar. Depois pos isto na porta.',
   },
   {
     id: 'boss_eco_portal',
@@ -482,8 +572,21 @@ export const CREATURES: CreatureDef[] = [
     ],
     skillPoints: 5,
     moneyReward: 7000,
+    boss: {
+      enrageAt: 0.4,
+      enrageSpeed: 1.5,
+      enrageDamage: 1.25,
+      enrageCooldown: 0.6,
+      chargeEverySec: 7,
+      chargeWindupSec: 0.7,
+      chargeSpeed: 260,
+      summonEverySec: 9,
+      summonId: 'alma',
+      summonCount: 2,
+      summonMax: 4,
+    },
     bossOfLayer: 'abyss',
-    tagline: 'Isto nunca foi uma mina. Isto foi construido para prender alguma coisa aqui.',
+    tagline: 'Vespera nao pos nada aqui. Isto ja estava.',
   },
 ];
 

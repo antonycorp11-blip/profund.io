@@ -66,6 +66,8 @@ export interface GameEvents {
     worldY: number;
   };
   /** Um selo entre biomas se abriu porque o chefe da camada foi derrotado. */
+  'mission:done': { id: string; title: string; text: string };
+  'boss:summon': { id: string; name: string; count: number };
   'gate:opened': { layerId: string; layerName: string };
   'creature:hurt': {
     worldX: number;
