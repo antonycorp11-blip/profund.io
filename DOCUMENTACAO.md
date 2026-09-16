@@ -645,6 +645,131 @@ O jogador termina esta leva sabendo que o pai **nao se perdeu** — foi mandado,
 e depois escolheu ficar guardando alguma coisa. Que coisa, e o gancho da
 proxima.
 
+## 4k. A campanha: missoes, Guia de Campo e a ordem que nao se pula
+
+```
+src/data/missions.ts      as 17 missoes, com profundidade
+src/systems/Missions.ts   le flags; nao guarda estado proprio
+src/data/scrolls.ts       20 anotacoes de Santiago e John
+src/systems/Journal.ts    o Guia: escuta eventos e anota sozinho
+src/ui/JournalUI.ts       quatro abas de papel
+src/data/prologue.ts      ATO 0 e o fim de run
+```
+
+**Missao nao guarda estado.** Uma missao esta feita quando TODAS as flags que
+ela pede existem. O save nao ganhou campo nenhum por causa disso, um save
+antigo entra na missao certa sozinho, e o progresso nao tem como discordar do
+que o jogador fez. So as ja anunciadas sao lembradas, para carregar um save nao
+despejar dez toasts.
+
+**Ninguem pula nada, e quem garante e o selo.** Derrubar o guardiao e a ULTIMA
+condicao, nao a unica: a parede so cede se nao houver objetivo pendente na
+faixa acima dela.
+
+Cheguei a resolver isso do jeito errado — fazendo a missao atual "seguir" a
+profundidade do jogador. Tratava o sintoma. O certo e ele nao CONSEGUIR correr
+na frente.
+
+O corte e o TOPO da faixa do selo, nao o inicio da camada. Com `minDepth - 1`
+o selo exigia a propria missao dele: "O Segundo Selo" fica a 194 m, dentro da
+faixa, e ela so fecha quando o selo abre. O selo esperava a missao e a missao
+esperava o selo.
+
+Save aberto fora de ordem e refeito ao carregar (`World.closeGateBand`, o
+inverso exato do passo 3b do WorldGen). O chefe morto continua morto.
+
+### O Guia de Campo
+
+Era de Santiago; vira do Elias por uso. **Nada ali e escrito a mao pelo
+designer** — o Guia escuta os eventos e anota: voz ouvida, pagina achada,
+pessoa resgatada, bicho enfrentado, camada alcancada, selo aberto, base
+fundada.
+
+Duas regras que o fazem ser leitura em vez de planilha:
+
+1. **Nunca anota o que o jogador nao viu.** Sem silhueta cinza, sem "???".
+   Pagina em branco tambem e informacao.
+2. **Visitar duas vezes rende duas LINHAS na mesma anotacao**, nao uma
+   substituicao.
+
+As 20 anotacoes sao ordenadas pela **cronologia da historia**, nao pela
+descoberta. A linha do tempo real e John descendo primeiro e sumindo, e
+Santiago indo atras onze dias depois — entao as anotacoes de John no fundo sao
+ANTERIORES as de Santiago no raso. Lendo nessa ordem, a revelacao dos onze dias
+acontece sozinha, sem ninguem explicar.
+
+### A cota virou contrato
+
+Semana que fecha sem a cota nao paga multa: **fecha a mina e reinicia a run**.
+Multa era um tapa no pulso e transformava o contrato numa taxa. O que da peso a
+cota e ela poder terminar o jogo — e o prologo estabelece isso antes da
+primeira picaretada.
+
+## 4l. Cidades, postos e bases de extracao
+
+```
+src/world/Blockia.ts        a cidade (600 m)
+src/world/PostoNove.ts      o microassentamento (150 m)
+src/data/basecamp.ts        as 5 bases e a cadeia de estruturas
+src/systems/BaseCamps.ts    construcao, estoque, refino, elevador
+src/world/BaseCampCarve.ts  as camaras
+```
+
+### Blockia e a licao da geometria
+
+A cidade nasceu inandavel: **27 celulas alcancaveis a pe, 0 de 4 passarelas**.
+Quatro causas, e as duas ultimas valem guardar porque valem para qualquer
+lugar vertical deste jogo:
+
+1. A galeria de chegada vinha 64 m acima do piso, e a rampa que descia esses
+   64 tiles era escavada por ultimo — passava por cima de tudo.
+2. As construcoes eram muros de tijolo do chao para cima. Agora sao arcadas, e
+   um passe de **calcamento** roda DEPOIS delas abrindo a forca as duas linhas
+   do corpo: quem invadiu o caminho perde o pedaco que invadiu. Garantia, nao
+   esperanca.
+3. **Escada saindo de dentro de uma passarela nao funciona.** Ela precisa de
+   vao livre acima de cada degrau, e esse vao E a cabeca de quem anda na
+   passarela de onde ela sai.
+4. **Escada em vai-e-vem nao existe em 2D de perfil.** Na virada, o primeiro
+   degrau da volta fica UM tile acima do ultimo degrau da ida, e o corpo do
+   jogador tem dois. O caminho morre na primeira curva.
+
+A solucao e TERRACO: niveis subindo para um lado, cada lance sobe fora de
+qualquer passarela. Depois: 190 celulas, 4/4 terracos 100%.
+
+Os moradores nao tem mais coluna escrita a mao — foi assim que os sete
+nasceram dentro da pedra. Tem NIVEL + deslocamento, resolvidos por
+`blockiaLayout`, a mesma funcao que esculpe a cidade. E `World.findStandingSpot`
+absorve o erro que sobrar.
+
+### As bases
+
+Cinco, uma por camada a partir do Cristal, sempre ~36 m DEPOIS do selo: o
+jogador derruba o guardiao, anda um pouco e acha onde montar a proxima
+operacao.
+
+**O jogo escolhe onde.** O jogador nao posiciona nada — a camara ja vem com os
+encaixes na ordem certa. Deixar alguem montar esteira tile a tile numa tela de
+celular e receita de base torta que nao liga em nada.
+
+**Constroi na picareta**, sem modo de construcao e sem botao: reaproveita o
+golpe que o jogador ja da. O material e cobrado na PRIMEIRA martelada, nao na
+ultima — cobrar no fim faria o jogador martelar cinquenta vezes para descobrir
+que nao tinha ferro.
+
+**Energia e carvao.** Sem rede, sem bateria. E na base o carvao e SO
+combustivel: refina-lo ali faria a maquina comer o proprio fogo.
+
+**A trava dura que quase passou.** O Deposito custava Coque; Coque so sai de
+refinaria; a refinaria da base so rodava com a esteira; a esteira exige o
+Deposito. Tres passos ate voltar em si mesmo. Hoje o Deposito e a unica
+estrutura sem material refinado, e o refinador velho roda a 25% sem esteira —
+a esteira compra velocidade, nao existencia.
+
+`npm run check` existe por causa disso: ele simula a campanha e para na
+primeira coisa impossivel. Rodar antes de mexer em custo, missao ou
+profundidade.
+
 ## 5. Problemas conhecidos
 
 0. **Tremor de tela somava impactos.** Com mineracao rapida a camera ficava
@@ -673,41 +798,50 @@ proxima.
    em areas grandes. Gerar `_1` e `_2` para esses 6 e o maior ganho visual restante.
 9. **Sem tela inicial / menu** — o jogo entra direto na base.
 10. **`noUnusedLocals` ligado**, mas não há lint/formatter configurado (sem ESLint/Prettier).
-11. **Os 6 chefes de bioma nao tem arte.** Sao silhuetas vetoriais; dois reaproveitam a arte de
-   `cristalino` e `alma`. Como agora eles sao o momento mais importante de cada camada, subiram
-   para o topo da fila de arte — a frente das criaturas comuns.
-12. **Chefe luta igual criatura comum**, so que com mais vida: anda, sobe degrau e bate. Sem fase,
-   sem ataque especial, sem area. Funciona, mas um "guardiao" merece pelo menos uma segunda fase.
-13. **Os 6 mineiros perdidos sao visualmente identicos** (`RescueNpc.render()` e vetor com cores
-   fixas). Helena, Baptista, Corvo e A Voz tem historias bem diferentes e a mesma silhueta.
-14. **Cidades subterraneas ainda nao existem** — os prompts estao em ASSETS.md, a geracao nao.
-   As Ruinas Antigas continuam sendo rocha tingida de verde com minerio melhor.
+11. **Os chefes usam arte de bicho comum ampliada.** Cada um e a versao colossal de uma
+   criatura que ja existe (cogumelo, aranha, larva, escaravelho, cristalino, alma). Funciona e
+   se reconhece, mas eles sao o climax de cada camada e mereciam folha propria.
+12. **Chefe tem furia, investida e convocacao — e so.** Nao ha segunda forma, nao ha ataque a
+   distancia. A luta e boa mas tem um unico ritmo.
+13. **Tres mineiros ainda sao silhueta vetorial**: Ozias, Braga e a Voz. Jonas, Vilma e Teo ja
+   tem folha. Rui Cabeca, do Posto Nove, tambem nao tem.
+14. **So Blockia existe.** Ferruria, Lumora e Vespera estao na biblia e nao no mundo. As Ruinas
+   e o Abismo continuam sendo rocha tingida com minerio melhor.
+15. **A base nao tem tela de construcao.** O jogador descobre o custo de cada encaixe batendo
+   nele e lendo o toast de "material insuficiente". Funciona, mas e adivinhacao.
+16. **O elevador da base nao leva o jogador.** Ele sobe carga; quem quiser voltar a superficie
+   ainda escala ou usa a Volta Rapida.
+17. **Reputacao de cidade nao destranca nada ainda.** Confianca sobe ao conhecer morador e fica
+   guardada; nenhum preco, dialogo ou rota depende dela.
+18. **`npm run check` cobre travas de progresso, nao equilibrio.** Ele garante que da para
+   terminar; nao garante que seja divertido chegar la.
 
 ## 6. Próximo passo recomendado
 
-**Playtest da nova curva.** Tudo que entrou nesta leva (rocha que endurece, selo de bioma,
-refino) existe para responder uma frase do dono do jogo: *"cheguei na zona das ruinas antigas
-bem rapido"*. So jogando da para saber se agora esta dificil ou chato.
+**Jogar.** Desde a ultima sessao entraram a cidade, o posto, as bases, o Guia,
+os pergaminhos, o prologo, o contrato da cota, as 17 missoes e o degrau
+automatico — e **nada disso foi visto por olho humano**. Tudo foi verificado
+por script: geometria medida, alcance por busca em largura, cadeia economica
+simulada, travas de progresso auditadas.
 
-O teste tem um alvo claro: **quanto tempo leva para abrir o primeiro selo** (matar o Golem de
-Escombros aos 50 m e resgatar Jonas aos 118 m). Se for menos de 10 minutos, `hpMultiplier` da
-pedra e a vida do Golem estao baixos demais.
+Script prova que funciona. Nao prova que e bom.
 
-Na ordem, depois do teste:
+A lista a seguir e o que eu faria DEPOIS desse teste, e ela deve mudar quando
+ele acontecer:
 
-1. **Ajustar `hpMultiplier` e a vida dos chefes.** Os dois numeros novos que controlam o ritmo
-   inteiro, em `src/data/layers.ts` e `src/data/creatures.ts`. Mexer neles antes de mexer em
-   qualquer outra coisa.
-2. **Arte dos 6 chefes.** Viraram o climax de cada camada e sao vetor. Prompts prontos em
-   ASSETS.md.
-3. **Segunda fase de chefe.** Abaixo de 40 % de vida, algo muda — velocidade, invocacao, area.
-   Hoje a luta e uma barra descendo.
-4. **Retratos dos mineiros perdidos.** Seis historias, uma silhueta. Prompts em ASSETS.md.
-5. **Cidades subterraneas nas Ruinas.** O maior salto de "lugar" que falta no mundo.
-6. **Som real.** O sintetizador cobre tudo, mas som e metade da sensacao de impacto.
-7. **Tela inicial + tutorial de 30 segundos.** Hoje o jogo entra direto na base.
+1. **Tela de construcao da base.** Hoje o custo de cada encaixe se descobre
+   batendo nele. E o unico lugar do jogo onde ainda se adivinha.
+2. **Arte dos chefes.** Eles viraram o climax de cada camada usando bicho
+   comum ampliado.
+3. **Folha para Ozias, Braga, a Voz e Rui.** Quatro personagens com fala e sem
+   rosto.
+4. **Segunda forma de chefe.** Furia, investida e convocacao dao uma luta boa
+   de um ritmo so.
+5. **Reputacao destrancando alguma coisa.** Ela existe, sobe e nao faz nada.
+6. **Ferruria.** A segunda cidade, com o arco do acidente da Galeria 12 — e o
+   proximo grande salto de historia.
 
-Nao adicionar sistema novo antes do item 1 estar aprovado.
+Antes de mexer em custo, profundidade ou missao: `npm run check`.
 
 ## 7. A biblia narrativa e o que o codigo precisa mudar
 

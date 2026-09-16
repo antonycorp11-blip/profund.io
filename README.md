@@ -67,6 +67,18 @@ visita. Os controles de toque aparecem sozinhos.
 
 Dá para forçar os controles de toque em **Ajustes → Controles na tela**.
 
+## Comandos
+
+```bash
+npm run dev            # servidor de desenvolvimento
+npm run build          # build de producao
+npm run check          # auditoria de travas de progresso
+npm run slice-assets   # arte bruta -> arte do jogo (blocos, heroi, criaturas)
+npm run slice-npcs     # folhas 5x3 de NPC -> tiras de idle e walk
+npm run slice-base     # estruturas da base (corte por celula exata)
+npm run slice-journal  # paginas do Guia de Campo
+```
+
 ## O que existe
 
 **Mundo.** 2 km de profundidade (120 × 2080 tiles), 8 camadas com rocha, minérios, cor de luz e
