@@ -50,8 +50,19 @@ export class VoiceEcho {
       const t = e.life / e.maxLife;
       // Sobe rapido e some devagar: o grito "chega" em vez de aparecer.
       const alpha = t > 0.85 ? (1 - t) / 0.15 : t / 0.85;
-      const sx = e.x - camera.x;
-      const sy = e.y - camera.y;
+      /*
+       * Mundo -> TELA. Estava `e.x - camera.x`, e `camera.x` e o CENTRO da
+       * camera em pixels de mundo: a conta devolvia um deslocamento em metros
+       * de mina, sem zoom e sem origem, e nao a posicao na tela.
+       *
+       * Na pratica o grito de Jonas — que e o gancho de abertura do jogo
+       * inteiro — nunca aparecia onde deveria. O eco existia (medido: um eco
+       * vivo quase o tempo todo a 95 px dele), so era desenhado fora de
+       * qualquer lugar visivel.
+       */
+      const tela = camera.worldToScreen(e.x, e.y);
+      const sx = tela.x;
+      const sy = tela.y;
       const margem = 46;
       const dentro = sx > margem && sx < cssW - margem && sy > margem && sy < cssH - margem;
 
@@ -98,7 +109,12 @@ export class VoiceEcho {
       ctx.fillStyle = cor;
       ctx.font = `600 ${Math.round(11 + 3 * e.strength)}px system-ui, sans-serif`;
       // O texto encosta na borda pelo lado de dentro, para nao sair da tela.
-      const tx = Math.max(90, Math.min(cssW - 90, bx - Math.cos(ang) * 40));
+      // A margem sai da LARGURA MEDIDA da frase: o valor fixo de 90 px servia
+      // para frase curta e cortava "AQUI! Segue a minha voz!" pela metade
+      // justamente na borda esquerda, que e para onde o jogador olha quando o
+      // grito vem de tras dele.
+      const meia = ctx.measureText(e.text).width / 2 + 8;
+      const tx = Math.max(meia, Math.min(cssW - meia, bx - Math.cos(ang) * 40));
       const ty = Math.max(28, Math.min(cssH - 28, by - Math.sin(ang) * 30));
       ctx.fillText(e.text, tx, ty);
     }

@@ -163,6 +163,8 @@ export class Game {
    */
   private autoArmed = new Set<string>();
   private autoCooldown = 0;
+  /** Carencia do aviso do selo: bater dez vezes nao pode dar dez cartazes. */
+  private selAviso = 0;
 
   private interactables: Interactable[] = [];
   private clueObjects: ClueObject[] = [];
@@ -373,8 +375,17 @@ export class Game {
       return this.missions.missingBefore(topo);
     };
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
-    // As bases ficam no mapa desde sempre: sao lugares, nao segredos, e o
-    // jogador precisa saber que existe um para onde voltar.
+    /*
+     * As bases sao lugares, nao segredos — mas so depois que existem para o
+     * jogador.
+     *
+     * Elas ficavam no mapa DESDE SEMPRE, e num save novo isso entregava a
+     * tabela de profundidades do jogo inteiro antes da primeira picaretada:
+     * Cristal 236, Minerais 536, Magma 936, Ruinas 1336, Abismo 1736. O mapa
+     * contava o fim no minuto zero, e o jogo e sobre descobrir que ha mais
+     * embaixo. Agora cada uma aparece quando o jogador chega perto da camada
+     * dela (ver `revelarBases`), e continua sendo o lugar para onde voltar.
+     */
     for (const base of BASE_CAMPS) {
       this.exploration.addMarker({
         id: base.id,
@@ -382,7 +393,7 @@ export class Game {
         col: base.col + Math.floor(base.largura / 2),
         row: this.world.surfaceRow + base.depth,
         label: base.nome,
-        alwaysVisible: true,
+        alwaysVisible: false,
       });
     }
 
@@ -813,6 +824,57 @@ export class Game {
       const mostra = p.faltam.slice(0, 3).join(' · ');
       const resto = p.faltam.length > 3 ? ` (+${p.faltam.length - 3})` : '';
       this.hud.celebrate('A PAREDE NAO CEDE', 'Falta fechar o que ficou para tras', mostra + resto, 'quota', 3);
+    });
+
+    /*
+     * Bater no selo tem que RESPONDER.
+     *
+     * Antes o golpe sumia no vazio: a mineracao via um bloco indestrutivel e
+     * parava o raio ali, sem rachadura, sem som, sem uma linha de texto. O
+     * jogador batia na parede que segura a campanha inteira e ficava sem saber
+     * se aquilo era uma parede especial ou um bug.
+     *
+     * A resposta muda conforme o que falta, porque sao duas situacoes bem
+     * diferentes: ou o guardiao ainda esta vivo em algum lugar da faixa, ou
+     * ele ja caiu e o que segura sao missoes deixadas para tras.
+     */
+    Events.on('seal:hit', (p) => {
+      if (this.selAviso > 0) return;
+      this.selAviso = 4;
+      this.camera.addShake(2.4);
+      const camada = this.camadaDoSelo(p.row);
+      if (!camada) {
+        this.hud.toast('A parede nao cede.', 'warn');
+        return;
+      }
+      const def = gateLayerDef(camada);
+      if (!this.biomeGate.bossDefeated(camada)) {
+        this.hud.celebrate(
+          'O SELO NAO CEDE',
+          'Isto nao e pedra. Alguem fechou esta passagem.',
+          `O guardiao de ${def?.name ?? 'la embaixo'} ainda respira — ache ele pelo poco principal.`,
+          'quota',
+          3
+        );
+        return;
+      }
+      const faltam = this.missions.missingBefore(
+        (def?.minDepth ?? 0) - CONFIG.gate.bandThickness - 1
+      );
+      if (faltam.length === 0) {
+        // Ja pode abrir: o `recheck` resolve no mesmo quadro.
+        this.biomeGate.recheck();
+        return;
+      }
+      const mostra = faltam.slice(0, 3).map((m) => m.title).join(' · ');
+      const resto = faltam.length > 3 ? ` (+${faltam.length - 3})` : '';
+      this.hud.celebrate(
+        'A PAREDE NAO CEDE',
+        'O guardiao caiu, mas ficou coisa para tras',
+        mostra + resto,
+        'quota',
+        3
+      );
     });
 
     Events.on('gate:opened', (p) => {
@@ -1293,6 +1355,7 @@ export class Game {
       CONFIG.camera.baseZoomMargin
     );
     this.camera.setZoomOut(naBase ? CONFIG.camera.baseZoomOut : 1, dt);
+    this.revelarBases();
     // Chama do jato: sem ela o empuxo e um numero invisivel. Sai DEBAIXO dos
     // pes e para baixo, que e para onde o gas vai.
     if (this.player.jetting) {
@@ -1472,6 +1535,7 @@ export class Game {
    */
   private updateInteraction(dt: number, target: Interactable | null, uiBlocking: boolean): void {
     this.autoCooldown = Math.max(0, this.autoCooldown - dt);
+    this.selAviso = Math.max(0, this.selAviso - dt);
     this.rearmarAutos();
 
     if (!target) {
@@ -1527,6 +1591,31 @@ export class Game {
       const fora = e.radius * 1.4;
       if (dx * dx + dy * dy > fora * fora) this.autoArmed.delete(e.id);
     }
+  }
+
+  /**
+   * Revela no mapa as bases cuja camada o jogador ja alcancou.
+   *
+   * A folga de 60 m e para a base aparecer um pouco ANTES: ela precisa ser um
+   * destino ("tem um lugar ali embaixo"), e nao uma descoberta tardia de algo
+   * por onde ele ja passou.
+   */
+  private revelarBases(): void {
+    for (const base of BASE_CAMPS) {
+      if (this.deepestMeters < base.depth - 60) continue;
+      this.exploration.discoverMarker(base.id);
+    }
+  }
+
+  /** De qual camada e o selo que esta nesta linha. */
+  private camadaDoSelo(row: number): string | null {
+    for (const id of GATE_LAYERS) {
+      const def = gateLayerDef(id);
+      if (!def) continue;
+      const { row0, row1 } = gateBandRows(this.world.surfaceRow, def);
+      if (row >= row0 && row <= row1) return id;
+    }
+    return null;
   }
 
   /** Copias e toupeiras para o mapa e a bussola. */

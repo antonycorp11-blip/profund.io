@@ -179,7 +179,16 @@ export class MiningSystem {
       if (!this.world.isSolid(col, row)) continue;
       const def = blockDef(this.world.getTile(col, row));
       if (def.indestructible) {
-        // Bedrock/estrutura bloqueia o raio, mas nao vira alvo.
+        /*
+         * Bedrock/estrutura bloqueia o raio, mas nao vira alvo.
+         *
+         * O SELO e diferente: ele e a porta da camada seguinte, e bater nele
+         * sem resposta nenhuma — sem rachadura, sem som, sem uma linha — era o
+         * pior silencio do jogo. O jogador chega na parede que segura a
+         * campanha inteira e o jogo nao diz nada. Quem explica e o Game, que
+         * sabe do chefe e das missoes; aqui so se avisa que houve a batida.
+         */
+        if (def.tags.includes('boss')) Events.emit('seal:hit', { col, row });
         break;
       }
       this.targetCol = col;

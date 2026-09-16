@@ -140,6 +140,37 @@ export type FlagId =
   | 'recallDive'
   | 'legacyTreeVisible';
 
+/**
+ * As mesmas flags, em tempo de execucao.
+ *
+ * O tipo acima nao existe depois da compilacao, e a auditoria precisa
+ * PERCORRER a lista para conferir se uma habilidade ou equipamento nao esta
+ * ligando uma flag que ninguem le. O `_conferir` abaixo quebra o build se
+ * alguem adicionar uma flag ao tipo e esquecer daqui — que e o unico jeito de
+ * uma lista espelhada nao apodrecer.
+ */
+export const FLAG_IDS = [
+  'wallJump',
+  'glide',
+  'jetpack',
+  'autoPickup',
+  'dashUnlocked',
+  'airDash',
+  'rareOreGlow',
+  'secretSense',
+  'shockUnlocked',
+  'drillUnlocked',
+  'recallUnlocked',
+  'blastUnlocked',
+  'senseUnlocked',
+  'recallDive',
+  'legacyTreeVisible',
+] as const;
+
+type FlagsQueFaltam = Exclude<FlagId, (typeof FLAG_IDS)[number]>;
+const _conferir: FlagsQueFaltam extends never ? true : FlagsQueFaltam[] = true;
+void _conferir;
+
 export interface AttrMeta {
   id: AttrId;
   name: string;

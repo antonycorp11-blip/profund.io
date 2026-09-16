@@ -27,6 +27,7 @@ export class HUD {
   private jetEl: HTMLDivElement;
   private jetFill: HTMLElement;
   private lastJet = -1;
+  private objetivoTimer = 0;
   private lastClimb = -1;
   private moneyEl: HTMLDivElement;
   private moneyValue: HTMLElement;
@@ -383,7 +384,10 @@ export class HUD {
     this.quotaEl.classList.add('mission');
     for (const el of quotaBody) (el as HTMLElement).hidden = el.classList.contains('quota-detail');
     if (line) {
-      line.textContent = text;
+      if (line.textContent !== text) {
+        line.textContent = text;
+        this.abrirObjetivo();
+      }
       return;
     }
     const el = document.createElement('div');
@@ -398,6 +402,24 @@ export class HUD {
     });
     this.quotaEl.style.pointerEvents = 'auto';
     this.quotaEl.appendChild(el);
+    this.abrirObjetivo();
+  }
+
+  /**
+   * Abre o card inteiro quando o objetivo MUDA, e fecha sozinho depois.
+   *
+   * A faixa mostra tres linhas para nao invadir a tela, e isso cortava
+   * justamente a frase nova — a unica que o jogador ainda nao leu. Ele via
+   * "entregue no deposito e fech..." e tinha que descobrir que o card abre no
+   * toque. Agora o objetivo novo chega aberto, fica oito segundos e recolhe;
+   * o toque continua valendo para reabrir quando quiser.
+   */
+  private abrirObjetivo(): void {
+    this.quotaEl.classList.add('aberto');
+    window.clearTimeout(this.objetivoTimer);
+    this.objetivoTimer = window.setTimeout(() => {
+      this.quotaEl.classList.remove('aberto');
+    }, 8000);
   }
 
   /** Monta as linhas da cota da semana atual. */

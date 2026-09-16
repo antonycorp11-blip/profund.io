@@ -25,6 +25,8 @@ export interface GameEvents {
     worldY: number;
   };
   'block:blocked': { reason: 'tool' | 'indestructible'; requiredTool: number };
+  /** O jogador bateu no Selo Ancestral. Quem explica o porque e o Game. */
+  'seal:hit': { col: number; row: number };
   'resource:collect': { resource: ResourceId; amount: number; worldX: number; worldY: number };
   'inventory:full': { resource: ResourceId };
   'delivery:done': { total: number; value: number };

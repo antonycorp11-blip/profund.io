@@ -3492,9 +3492,11 @@ body:has(.hud-map-slot.folded) .toasts {
 .quota.objective .quota-mission {
   font-size: 10.5px;
   line-height: 1.35;
-  /* Duas linhas bastam: o resto do texto vive no Guia. */
+  /* Cinco linhas. Eram tres, e tres cortavam a PRIMEIRA missao do jogo no
+     meio — a frase que explica o acordo inteiro terminava em "e fech...".
+     Abaixo do card so ha ceu; nao havia nada a proteger com o corte. */
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
