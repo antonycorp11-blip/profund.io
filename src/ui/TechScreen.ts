@@ -10,6 +10,7 @@ import {
 import { RESOURCES, type ResourceId } from '../data/resources';
 import { TECH_CATEGORIES, techsOf, type TechCategory, type TechDef } from '../data/tech';
 import { Haptics } from '../fx/Haptics';
+import type { Attributes } from '../systems/Attributes';
 import type { Clone, CloneFocus } from '../entities/Clone';
 import type { CloneManager } from '../systems/CloneManager';
 import type { CollectorManager } from '../systems/CollectorManager';
@@ -24,6 +25,8 @@ export interface TechHost {
   collectors: CollectorManager;
   equipment: Equipment;
   stock: BaseStock;
+  /** Para o resumo de atributos do boneco. */
+  attrs: Attributes;
   deepest(): number;
   /** Profundidade em metros de um Y de mundo (para o monitor das copias). */
   depthOf(y: number): number;
@@ -79,16 +82,34 @@ export class TechScreen {
   private wrap: HTMLDivElement;
   private tabsEl: HTMLElement;
   private bodyEl: HTMLElement;
+  private mainEl!: HTMLElement;
+  private asideEl!: HTMLElement;
+  /** O que esta escolhido na lista agora: e isso que o painel lateral mostra. */
+  private selecionado: string | null = null;
+  /** Lembra a escolha por aba: trocar de aba e voltar nao pode perder o foco. */
+  private ultimaEscolha = new Map<string, string>();
   private stockEl: HTMLElement;
   private tab: Tab = 'copias';
   /** True depois que o jogador escolheu uma aba a mao nesta sessao. */
   private tabChosen = false;
   /** Lembra se a gaveta de melhorias estava aberta. */
-  private upgradesOpen = false;
 
   constructor(parent: HTMLElement, private host: TechHost) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap techscreen';
+    /*
+     * TRES ZONAS, e nao uma coluna que rola.
+     *
+     * A tela inteira era um `overflow-y: auto` com secoes empilhadas: o topo
+     * com o titulo, a gaveta de melhorias fechada no meio e a lista embaixo.
+     * Quem queria comparar duas pesquisas rolava para cima e para baixo, e o
+     * detalhe de cada uma so existia dentro do proprio cartao — ou seja, nao
+     * cabia, e por isso era curto.
+     *
+     * Agora: cabecalho fixo, LISTA de um lado e DETALHE do outro. O detalhe
+     * fica parado enquanto a lista rola, que e a unica forma de escolher uma
+     * coisa olhando para ela. Em tela estreita as duas viram uma coluna so.
+     */
     this.wrap.innerHTML = `
       <div class="tech-screen">
         <header class="tech-header">
@@ -96,11 +117,16 @@ export class TechScreen {
           <div class="tech-stock"></div>
           <button class="icon-btn" data-close>✕</button>
         </header>
-        <div class="tech-body"></div>
+        <div class="tech-body">
+          <div class="tech-main"></div>
+          <aside class="tech-aside"></aside>
+        </div>
       </div>`;
     parent.appendChild(this.wrap);
     this.tabsEl = this.wrap.querySelector('.tech-tabs') as HTMLElement;
     this.bodyEl = this.wrap.querySelector('.tech-body') as HTMLElement;
+    this.mainEl = this.wrap.querySelector('.tech-main') as HTMLElement;
+    this.asideEl = this.wrap.querySelector('.tech-aside') as HTMLElement;
     this.stockEl = this.wrap.querySelector('.tech-stock') as HTMLElement;
 
     (this.wrap.querySelector('[data-close]') as HTMLElement).addEventListener('click', () =>
@@ -168,8 +194,8 @@ export class TechScreen {
   private render(): void {
     this.renderTabs();
     this.renderStock();
-    if (this.tab === 'copiadora') this.renderCloner();
-    else if (this.tab === 'toupeiras') this.renderCollectors();
+    this.bodyEl.classList.toggle('aside-esquerda', this.tab === 'equipamento');
+    if (this.tab === 'copiadora' || this.tab === 'toupeiras') this.renderAutomacao();
     else if (this.tab === 'equipamento') this.renderEquipment();
     else this.renderTechs(this.tab);
   }
@@ -178,10 +204,15 @@ export class TechScreen {
     const tabs: { id: Tab; name: string; icon: string; color: string }[] = Object.values(
       TECH_CATEGORIES
     ).map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }));
-    tabs.unshift({ id: 'toupeiras', name: 'Toupeiras', icon: '🐀', color: '#d8a35a' });
-    if (this.host.tech.unlocked('cloner')) {
-      tabs.unshift({ id: 'copiadora', name: 'Copiadora', icon: '⧉', color: '#5ac7d0' });
-    }
+    /*
+     * UMA aba para os ajudantes, nao duas.
+     *
+     * "Copiadora" e "Toupeiras" eram telas separadas que respondiam a MESMA
+     * pergunta — "minha operacao esta rodando?" — e obrigavam a trocar de aba
+     * para comparar as duas metades dela. Agora sao duas colunas da mesma
+     * tela, com a faixa de estado em cima somando as duas.
+     */
+    tabs.unshift({ id: 'copiadora', name: 'Automacao', icon: '⚙', color: '#5ac7d0' });
 
     this.tabsEl.innerHTML = '';
     for (const t of tabs) {
@@ -211,45 +242,99 @@ export class TechScreen {
     this.stockEl.innerHTML = parts.join('') || '<span class="dim">estoque vazio</span>';
   }
 
+  /**
+   * PESQUISA: grade a esquerda, prancheta a direita.
+   *
+   * Cada cartao carregava descricao, custo e botao dentro de si — e por isso
+   * nada cabia: a descricao virava uma linha, o custo uma fileira de numeros
+   * sem contexto e o efeito nao aparecia em lugar nenhum. O cartao agora so
+   * IDENTIFICA (icone, nome, estado); quem explica e o painel do lado, que tem
+   * espaco para dizer o que a pesquisa faz, o que ela cobra e o que muda.
+   */
   private renderTechs(cat: TechCategory): void {
     const meta = TECH_CATEGORIES[cat];
     const list = techsOf(cat);
-    let html = `<p class="tech-fantasy" style="color:${meta.color}">${meta.description}</p><div class="tech-grid">`;
-
-    for (const def of list) {
-      const done = this.host.tech.has(def.id);
-      const check = this.host.tech.canResearch(def.id, this.host.deepest());
-      const cls = done ? 'done' : check.ok ? 'ready' : 'locked';
-      html += `
-        <div class="tech-card ${cls}" style="--cat:${meta.color}">
-          <div class="tech-card-head">
-            <span class="tech-icon">${def.icon}</span>
-            <b>${def.name}</b>
-          </div>
-          <p>${def.description}</p>
-          <div class="tech-cost">${this.costHtml(def)}</div>
-          ${
-            done
-              ? '<div class="tech-status ok">Pesquisada</div>'
-              : check.ok
-                ? `<button class="btn primary" data-research="${def.id}"><img class="btn-icon" src="art/tech/frasco.png" alt="">PESQUISAR</button>`
-                : `<div class="tech-status">${check.reason ?? ''}</div>`
-          }
-        </div>`;
+    const lembrado = this.ultimaEscolha.get(cat);
+    if (!list.some((t) => t.id === this.selecionado)) {
+      this.selecionado = list.some((t) => t.id === lembrado) ? lembrado! : (list[0]?.id ?? null);
     }
-    html += '</div>';
-    this.bodyEl.innerHTML = html;
 
-    for (const btn of Array.from(this.bodyEl.querySelectorAll('[data-research]'))) {
+    this.mainEl.innerHTML = `
+      <p class="tech-fantasy" style="color:${meta.color}">${meta.description}</p>
+      <div class="tech-grid">
+        ${list
+          .map((def) => {
+            const done = this.host.tech.has(def.id);
+            const check = this.host.tech.canResearch(def.id, this.host.deepest());
+            const cls = done ? 'done' : check.ok ? 'ready' : 'locked';
+            const sel = def.id === this.selecionado ? ' sel' : '';
+            return `
+              <button class="tech-card ${cls}${sel}" style="--cat:${meta.color}" data-pick="${def.id}">
+                <span class="tech-icon">${def.icon}</span>
+                <b>${def.name}</b>
+                <span class="tech-flag">${
+                  done ? 'PESQUISADA' : check.ok ? 'DISPONIVEL' : 'BLOQUEADA'
+                }</span>
+              </button>`;
+          })
+          .join('')}
+      </div>`;
+
+    this.renderTechDetalhe(cat);
+
+    for (const btn of Array.from(this.mainEl.querySelectorAll('[data-pick]'))) {
       btn.addEventListener('click', () => {
-        const id = (btn as HTMLElement).dataset.research!;
-        if (!this.host.tech.research(id, this.host.deepest())) return;
+        this.selecionado = (btn as HTMLElement).dataset.pick!;
+        this.ultimaEscolha.set(cat, this.selecionado);
         Haptics.ui();
-        const unlocks = this.host.tech.maxToolIndex();
-        this.host.onToolUnlocked(unlocks);
         this.render();
       });
     }
+  }
+
+  /** A prancheta: o que a pesquisa escolhida faz, cobra e muda. */
+  private renderTechDetalhe(cat: TechCategory): void {
+    const meta = TECH_CATEGORIES[cat];
+    const def = techsOf(cat).find((t) => t.id === this.selecionado);
+    if (!def) {
+      this.asideEl.innerHTML = '<p class="dim">Escolha uma pesquisa ao lado.</p>';
+      return;
+    }
+    const done = this.host.tech.has(def.id);
+    const check = this.host.tech.canResearch(def.id, this.host.deepest());
+    const efeitos = (def.modifiers ?? [])
+      .map((m) => `<li>${describeMod(m)}</li>`)
+      .join('');
+
+    this.asideEl.innerHTML = `
+      <div class="det-prancheta">
+        <div class="det-head" style="--cat:${meta.color}">
+          <span class="det-icone">${def.icon}</span>
+          <div>
+            <b>${def.name}</b>
+            <small>${meta.name}</small>
+          </div>
+        </div>
+        <p class="det-desc">${def.description}</p>
+        ${efeitos ? `<h5 class="det-sub">O que muda</h5><ul class="det-efeitos">${efeitos}</ul>` : ''}
+        <h5 class="det-sub">Custo da pesquisa</h5>
+        <div class="tech-cost det-custo">${this.costHtml(def)}</div>
+        ${
+          done
+            ? '<div class="tech-status ok">Pesquisada</div>'
+            : check.ok
+              ? `<button class="btn primary det-acao" data-research="${def.id}"><img class="btn-icon" src="art/tech/frasco.png" alt="">PESQUISAR</button>`
+              : `<div class="tech-status">${check.reason ?? ''}</div>`
+        }
+      </div>`;
+
+    const btn = this.asideEl.querySelector('[data-research]');
+    btn?.addEventListener('click', () => {
+      if (!this.host.tech.research(def.id, this.host.deepest())) return;
+      Haptics.ui();
+      this.host.onToolUnlocked(this.host.tech.maxToolIndex());
+      this.render();
+    });
   }
 
   private costHtml(def: TechDef): string {
@@ -265,47 +350,108 @@ export class TechScreen {
 
   // ------------------------------------------------------------ copiadora --
 
-  private renderCloner(): void {
-    const mgr = this.host.clones;
-    const cost = mgr.costFor();
+  /**
+   * AUTOMACAO: faixa de estado em cima, duas colunas embaixo.
+   *
+   * A pergunta que esta tela existe para responder e uma so — "isto aqui esta
+   * rodando?" — e antes ela nao respondia: eram duas abas, cada uma com uma
+   * lista longa, e o numero que importa (quantos trabalhando, quanto ja veio)
+   * nao aparecia em lugar nenhum. A faixa de cima responde em cinco numeros,
+   * e as colunas mostram quem esta fazendo o que.
+   *
+   * As melhorias sairam da gaveta fechada no meio da lista e foram para o
+   * painel lateral: gaveta fechada e o mesmo que nao existir.
+   */
+  private renderAutomacao(): void {
+    const clones = this.host.clones;
+    const moles = this.host.collectors;
     const money = Math.floor(this.host.stock.money);
-    const costHtml =
-      `<span class="${money >= cost ? 'ok' : 'miss'}">` +
-      `✦ ${cost.toLocaleString('pt-BR')} moedas` +
-      `<small> (voce tem ${money.toLocaleString('pt-BR')})</small></span>`;
+    const custoMole = moles.costFor();
+    const trabalhando =
+      clones.clones.filter((c: Clone) => c.state !== 'parado').length +
+      moles.units.filter((u) => u.state !== 'procurando').length;
+    const carregando = moles.carriedTotal();
+    const entregue = moles.units.reduce((n, u) => n + u.delivered, 0);
 
-    let html = `
-      <div class="cloner-head">
-        <div>
-          <h4>Copiadora</h4>
-          <p>Cada copia mina, coleta e entrega sozinha. Camaras usadas:
-             <b>${mgr.clones.length}/${mgr.slots}</b></p>
-        </div>
-        <div class="cloner-new">
-          <div class="tech-cost">${costHtml}</div>
-          <button class="btn primary" data-create ${mgr.canCreate && mgr.canAfford() ? '' : 'disabled'}>
-            IMPRIMIR COPIA
+    const numero = (v: string, r: string, arte: string, on = true) => `
+      <div class="auto-stat ${on ? 'on' : ''}">
+        <img src="art/auto/${arte}.png" alt="">
+        <div><b>${v}</b><span>${r}</span></div>
+      </div>`;
+
+    const colunaCopias = `
+      <section class="auto-col">
+        <header>
+          <img src="art/auto/copia_aco.png" alt="">
+          <div>
+            <h4>Copias ativas <i>(${clones.clones.length}/${clones.slots})</i></h4>
+            <p>Mineram, coletam e entregam sozinhas.</p>
+          </div>
+          <button class="btn primary" data-newclone ${clones.canAfford() ? '' : 'disabled'}>
+            + NOVA
           </button>
+        </header>
+        <div class="auto-list">
           ${
-            !mgr.canCreate
-              ? '<div class="tech-status">Pesquise mais camaras para ampliar</div>'
-              : ''
+            clones.clones.length === 0
+              ? '<p class="map-empty">Nenhuma copia ainda.</p>'
+              : clones.clones.map((c: Clone) => this.cloneCard(c)).join('')
           }
         </div>
+      </section>`;
+
+    const colunaMoles = `
+      <section class="auto-col">
+        <header>
+          <img src="art/auto/toupeira.png" alt="">
+          <div>
+            <h4>Toupeiras ativas <i>(${moles.units.length}/${moles.max})</i></h4>
+            <p>Buscam o que ficou no chao e trazem para a base.</p>
+          </div>
+          <button class="btn primary" data-hire ${
+            moles.units.length < moles.max && moles.canAfford() ? '' : 'disabled'
+          }>
+            CONTRATAR ✦${custoMole.toLocaleString('pt-BR')}
+          </button>
+        </header>
+        <div class="auto-list">
+          ${
+            moles.units.length === 0
+              ? '<p class="map-empty">Nenhuma toupeira ainda.</p>'
+              : moles.units.map((u) => this.moleCard(u)).join('')
+          }
+        </div>
+      </section>`;
+
+    this.mainEl.innerHTML = `
+      <div class="auto-strip">
+        ${numero(`${clones.clones.length}/${clones.slots}`, 'copias', 'copia_aco', clones.clones.length > 0)}
+        ${numero(`${moles.units.length}/${moles.max}`, 'toupeiras', 'toupeira', moles.units.length > 0)}
+        ${numero(String(trabalhando), 'trabalhando agora', 'deslizador', trabalhando > 0)}
+        ${numero(String(carregando), 'carga em viagem', 'vagonete', carregando > 0)}
+        ${numero(String(entregue), 'ja entregue', 'caixote', entregue > 0)}
       </div>
-      ${this.cloneUpgrades()}
-      <div class="clone-list">`;
+      <div class="auto-cols">${colunaCopias}${colunaMoles}</div>`;
 
-    if (mgr.clones.length === 0) {
-      html += '<p class="map-empty">Nenhuma copia ativa. Imprima a primeira acima.</p>';
-    }
+    this.asideEl.innerHTML = `
+      <div class="auto-aside-head">
+        <img src="art/auto/placa.png" alt="">
+        <span>Melhorias</span>
+      </div>
+      <p class="dim">Valem para TODAS as unidades, agora e as que vierem depois.</p>
+      <h5 class="auto-sub">Toupeiras</h5>
+      <div class="up-col">${this.cloneUpgrades('mole')}</div>
+      <h5 class="auto-sub">Copias</h5>
+      <div class="up-col">${this.cloneUpgrades('clone')}</div>
+      <div class="auto-aside-foot">
+        <button class="btn" data-dumpall ${carregando > 0 ? '' : 'disabled'}>
+          MANDAR ENTREGAR (${carregando})
+        </button>
+        <span class="dim">✦ ${money.toLocaleString('pt-BR')} em caixa</span>
+      </div>`;
 
-    for (const c of mgr.clones) {
-      html += this.cloneCard(c);
-    }
-    html += '</div>';
-    this.bodyEl.innerHTML = html;
     this.bindCloner();
+    this.bindCollectors();
   }
 
   // ---------------------------------------------------------- equipamento --
@@ -320,51 +466,113 @@ export class TechScreen {
     const eq = this.host.equipment;
     const money = Math.floor(this.host.stock.money);
     const deepest = this.host.deepest();
+    const slots = Object.values(EQUIP_SLOTS);
+    const aberto = (this.ultimaEscolha.get('equip') ?? slots[0].id) as EquipSlot;
 
-    const blocos = Object.values(EQUIP_SLOTS)
-      .map((slot) => {
-        const itens = equipmentOfSlot(slot.id)
-          .map((def) => {
-            const tem = eq.has(def.id);
-            const vestido = eq.isEquipped(def.id);
-            const longe = deepest < def.requiredDepth;
-            const efeitos = def.modifiers.map((m) => describeMod(m)).join(' · ');
-
-            let acao: string;
-            if (vestido) {
-              acao = `<button class="btn" data-uneq="${slot.id}">TIRAR</button>`;
-            } else if (tem) {
-              acao = `<button class="btn primary" data-eq="${def.id}">EQUIPAR</button>`;
-            } else if (longe) {
-              acao = `<div class="tech-status">Chegue a ${def.requiredDepth} m</div>`;
-            } else {
-              acao = `<button class="btn ${money >= def.cost ? 'primary' : ''}" data-buyeq="${def.id}"
-                        ${money >= def.cost ? '' : 'disabled'}>✦ ${def.cost.toLocaleString('pt-BR')}</button>`;
-            }
-
-            return `
-              <div class="eq-card ${vestido ? 'on' : ''} ${longe && !tem ? 'locked' : ''}">
-                <div class="eq-head"><span class="eq-icon">${def.icon}</span><b>${def.name}</b></div>
-                <p>${def.description}</p>
-                <div class="eq-mods">${efeitos}</div>
-                <div class="eq-foot">${acao}</div>
-              </div>`;
-          })
+    /*
+     * VITRINE de UM slot por vez, e nao os quatro empilhados.
+     *
+     * Antes a tela era uma pilha de quatro secoes com todas as pecas de todos
+     * os encaixes: dezoito cartoes em coluna unica, e a peca que o jogador
+     * esta usando ficava a tres rolagens de distancia da peca que ele esta
+     * pensando em comprar. Comparar era impossivel, que e a unica coisa que se
+     * faz numa loja de equipamento.
+     */
+    const itens = equipmentOfSlot(aberto)
+      .map((def) => {
+        const tem = eq.has(def.id);
+        const vestido = eq.isEquipped(def.id);
+        const longe = deepest < def.requiredDepth;
+        const efeitos = def.modifiers
+          .map((m) => `<li>${describeMod(m)}</li>`)
           .join('');
 
-        const atual = eq.equippedIn(slot.id);
-        const nomeAtual = atual ? (equipDef(atual)?.name ?? '') : 'vazio';
+        let acao: string;
+        if (vestido) acao = `<button class="btn" data-uneq="${aberto}">EQUIPADO</button>`;
+        else if (tem) acao = `<button class="btn primary" data-eq="${def.id}">EQUIPAR</button>`;
+        else if (longe) {
+          acao = `<div class="tech-status"><img class="btn-icon" src="art/hud/cadeado.png" alt="">Chegue a ${def.requiredDepth} m</div>`;
+        } else {
+          acao = `<button class="btn ${money >= def.cost ? 'primary' : ''}" data-buyeq="${def.id}"
+                    ${money >= def.cost ? '' : 'disabled'}>✦ ${def.cost.toLocaleString('pt-BR')}</button>`;
+        }
+
         return `
-          <div class="eq-slot">
-            <h4><span>${slot.icon}</span> ${slot.name}
-              <small>${nomeAtual}</small></h4>
-            <div class="eq-grid">${itens}</div>
+          <div class="eq-card ${vestido ? 'on' : ''} ${longe && !tem ? 'locked' : ''}">
+            <div class="eq-head">
+              ${this.equipArte(def.id, def.icon)}
+              <b>${def.name}</b>
+            </div>
+            <p>${def.description}</p>
+            <ul class="eq-mods">${efeitos}</ul>
+            <div class="eq-foot">${acao}</div>
           </div>`;
       })
       .join('');
 
-    this.bodyEl.innerHTML = `<div class="eq-list">${blocos}</div>`;
+    this.mainEl.innerHTML = `
+      <div class="eq-filtros">
+        ${slots
+          .map(
+            (sl) => `
+              <button class="seg-btn ${sl.id === aberto ? 'on' : ''}" data-slot="${sl.id}">
+                ${sl.icon} ${sl.name}
+              </button>`
+          )
+          .join('')}
+      </div>
+      <div class="eq-grid">${itens}</div>`;
+
+    this.asideEl.innerHTML = `
+      <div class="boneco">
+        ${slots
+          .map((sl) => {
+            const atual = eq.equippedIn(sl.id);
+            const def = atual ? equipDef(atual) : null;
+            return `
+              <button class="boneco-slot ${def ? 'on' : ''} ${sl.id === aberto ? 'foco' : ''}"
+                      data-slot="${sl.id}">
+                <span class="boneco-arte">
+                  ${def ? this.equipArte(def.id, def.icon) : ''}
+                </span>
+                <span class="boneco-rotulo">
+                  <i>${sl.name}</i>
+                  <b>${def ? def.name : 'vazio'}</b>
+                </span>
+              </button>`;
+          })
+          .join('')}
+      </div>
+      <h5 class="det-sub">Seus atributos com equipamento</h5>
+      <div class="boneco-stats">
+        ${this.statLinha('vida', 'Vida', Math.round(this.host.attrs.get('maxHealth')))}
+        ${this.statLinha('forca', 'Forca', Math.round(this.host.attrs.get('miningPower')))}
+        ${this.statLinha('mobilidade', 'Mobilidade', Math.round(this.host.attrs.get('moveSpeed')))}
+        ${this.statLinha('recarga', 'Defesa', `${Math.round(this.host.attrs.get('defense') * 100)}%`)}
+      </div>`;
+
+    for (const b of Array.from(this.wrap.querySelectorAll('[data-slot]'))) {
+      b.addEventListener('click', () => {
+        this.ultimaEscolha.set('equip', (b as HTMLElement).dataset.slot!);
+        Haptics.ui();
+        this.render();
+      });
+    }
     this.bindEquipment();
+  }
+
+  /** Arte da peca quando existe; o emoji da ficha enquanto nao existe. */
+  private equipArte(id: string, emoji: string): string {
+    return `<span class="eq-icon"><img src="art/equip/${id}.png" alt=""
+      onerror="this.replaceWith(document.createTextNode('${emoji}'))"></span>`;
+  }
+
+  private statLinha(arte: string, nome: string, valor: number | string): string {
+    return `
+      <div class="stat-linha">
+        <img src="art/hud/encaixe/${arte}.png" alt="">
+        <b>${valor}</b><span>${nome}</span>
+      </div>`;
   }
 
   private bindEquipment(): void {
@@ -394,91 +602,6 @@ export class TechScreen {
   }
 
   // ------------------------------------------------------------ toupeiras --
-
-  /**
-   * Painel das toupeiras coletoras.
-   *
-   * Tudo aqui se paga com moeda. Elas existem para recolher o que ficou para
-   * tras quando a mochila encheu — e o dinheiro que compra mais toupeiras vem
-   * justamente do que elas trazem.
-   */
-  private renderCollectors(): void {
-    const mgr = this.host.collectors;
-    const money = Math.floor(this.host.stock.money);
-    const custo = mgr.costFor();
-    const cheio = mgr.units.length >= mgr.max;
-
-    const upgrades = COLLECTOR_UPGRADES.map((u) => {
-      const nivel = mgr.levelOf(u.id);
-      const max = nivel >= u.maxLevel;
-      const preco = mgr.upgradeCost(u.id);
-      return `
-        <div class="up-card ${max ? 'done' : ''}">
-          <div class="up-head"><span>${u.icon}</span><b>${u.name}</b>
-            <span class="up-level">${nivel}/${u.maxLevel}</span></div>
-          <p>${u.description}</p>
-          ${
-            max
-              ? '<div class="up-done">NO MAXIMO</div>'
-              : `<button class="btn" data-colup="${u.id}" ${money >= preco ? '' : 'disabled'}>
-                   ✦ ${preco.toLocaleString('pt-BR')}
-                 </button>`
-          }
-        </div>`;
-    }).join('');
-
-    let html = `
-      <div class="cloner-head">
-        <div>
-          <h4>Toupeiras coletoras</h4>
-          <p>Elas nao mineram: buscam o que ficou no chao e trazem para a base.
-             Cavam reto, entao chegam onde voce nao volta mais.
-             Ativas: <b>${mgr.units.length}/${mgr.max}</b></p>
-          <p class="dim">Cada <b>deposito de base</b> construido abre mais vagas — e vira
-             um balcao novo: a toupeira descarrega la em vez de subir a mina inteira.</p>
-        </div>
-        <div class="cloner-new">
-          <div class="tech-cost">
-            <span class="${money >= custo ? 'ok' : 'miss'}">✦ ${custo.toLocaleString('pt-BR')} moedas
-            <small> (voce tem ${money.toLocaleString('pt-BR')})</small></span>
-          </div>
-          <button class="btn primary" data-hire ${!cheio && mgr.canAfford() ? '' : 'disabled'}>
-            CONTRATAR TOUPEIRA
-          </button>
-          <button class="btn" data-dumpall ${mgr.carriedTotal() > 0 ? '' : 'disabled'}>
-            MANDAR ENTREGAR (${mgr.carriedTotal()})
-          </button>
-        </div>
-      </div>
-      <details class="clone-upgrades" open>
-        <summary>Melhorias das toupeiras</summary>
-        <div class="up-grid">${upgrades}</div>
-      </details>
-      <div class="clone-list">`;
-
-    if (mgr.units.length === 0) {
-      html += '<p class="map-empty">Nenhuma toupeira ainda. Contrate a primeira acima.</p>';
-    }
-    for (const u of mgr.units) {
-      html += `
-        <div class="clone-card" style="--tint:#d8a35a">
-          <div class="clone-card-head">
-            <img class="clone-face" src="art/auto/toupeira.png" alt="">
-            <b>Toupeira ${u.index + 1}</b>
-            <span class="clone-state" data-live-cstate="${u.id}">${u.statusLabel()}</span>
-            <span class="clone-depth" data-live-cdepth="${u.id}"></span>
-            <span class="clone-load" data-live-cload="${u.id}">${u.carried}/${u.capacity}</span>
-          </div>
-          <div class="clone-live">
-            <span data-live-ccarry="${u.id}"></span>
-            <b data-live-ctotal="${u.id}"></b>
-          </div>
-        </div>`;
-    }
-    html += '</div>';
-    this.bodyEl.innerHTML = html;
-    this.bindCollectors();
-  }
 
   private bindCollectors(): void {
     const dump = this.bodyEl.querySelector('[data-dumpall]');
@@ -520,9 +643,17 @@ export class TechScreen {
    * olhando as copias e querendo melhora-las. A pergunta "como deixo minhas
    * copias melhores?" tem que ser respondida onde as copias estao.
    */
-  private cloneUpgrades(): string {
+  /**
+   * Os cartoes de melhoria, em coluna e SEM gaveta.
+   *
+   * Eles viviam dentro de um `<details>` no meio da lista. Gaveta fechada e o
+   * mesmo que nao existir: o jogador chegava a dezesseis toupeiras sem nunca
+   * ter comprado Patas Rapidas, que custa 120 e vale para todas elas.
+   */
+  private cloneUpgrades(lado: 'clone' | 'mole'): string {
+    if (lado === 'mole') return this.moleUpgrades();
     const techs = techsOf('copias').filter((t) => t.id !== 'tech_cloner');
-    if (techs.length === 0) return '';
+    if (techs.length === 0) return '<p class="dim">Nada para melhorar ainda.</p>';
 
     const cartoes = techs
       .map((t) => {
@@ -548,11 +679,57 @@ export class TechScreen {
       })
       .join('');
 
+    return cartoes;
+  }
+
+  /** As melhorias das toupeiras, no mesmo formato de coluna. */
+  private moleUpgrades(): string {
+    const mgr = this.host.collectors;
+    const money = Math.floor(this.host.stock.money);
+    return COLLECTOR_UPGRADES.map((u) => {
+      const nivel = mgr.levelOf(u.id);
+      const cheio = nivel >= u.maxLevel;
+      const preco = mgr.upgradeCost(u.id);
+      return `
+        <div class="up-card ${cheio ? 'done' : ''}">
+          <div class="up-head">
+            <span>${u.icon}</span><b>${u.name}</b>
+            <span class="up-level">${nivel}/${u.maxLevel}</span>
+          </div>
+          <p>${u.description}</p>
+          ${
+            cheio
+              ? '<div class="up-done">NO MAXIMO</div>'
+              : `<button class="btn" data-colup="${u.id}" ${money >= preco ? '' : 'disabled'}>
+                   ✦ ${preco.toLocaleString('pt-BR')}
+                 </button>`
+          }
+        </div>`;
+    }).join('');
+  }
+
+  /** Cartao de uma toupeira na coluna da direita. */
+  private moleCard(u: {
+    id: string;
+    index: number;
+    carried: number;
+    capacity: number;
+    statusLabel(): string;
+  }): string {
     return `
-      <details class="clone-upgrades" ${this.upgradesOpen ? 'open' : ''}>
-        <summary>Melhorias das copias</summary>
-        <div class="up-grid">${cartoes}</div>
-      </details>`;
+      <div class="clone-card" style="--tint:#d8a35a">
+        <div class="clone-card-head">
+          <img class="clone-face" src="art/auto/toupeira.png" alt="">
+          <b>Toupeira ${u.index + 1}</b>
+          <span class="clone-state" data-live-cstate="${u.id}">${u.statusLabel()}</span>
+          <span class="clone-depth" data-live-cdepth="${u.id}"></span>
+          <span class="clone-load" data-live-cload="${u.id}">${u.carried}/${u.capacity}</span>
+        </div>
+        <div class="clone-live">
+          <span data-live-ccarry="${u.id}"></span>
+          <b data-live-ctotal="${u.id}"></b>
+        </div>
+      </div>`;
   }
 
   /**
@@ -657,12 +834,6 @@ export class TechScreen {
   private bindCloner(): void {
     const q = (sel: string) => Array.from(this.bodyEl.querySelectorAll(sel));
 
-    const det = this.bodyEl.querySelector('.clone-upgrades') as HTMLDetailsElement | null;
-    if (det) {
-      det.addEventListener('toggle', () => {
-        this.upgradesOpen = det.open;
-      });
-    }
     q('[data-up]').forEach((b) =>
       b.addEventListener('click', () => {
         const id = (b as HTMLElement).dataset.up!;

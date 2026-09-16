@@ -2831,10 +2831,480 @@ body:has(.hud-map-slot.folded) .toasts {
   vertical-align: middle;
 }
 
+/*
+ * O corpo da tela de tecnologia: LISTA e DETALHE lado a lado.
+ *
+ * Era uma coluna unica rolando. Duas mudancas que so essa divisao permite: o
+ * detalhe cabe (e pode mostrar efeito atual, proximo nivel e custo em vez de
+ * tres palavras dentro do cartao) e ele fica PARADO enquanto a lista rola.
+ */
 .tech-body {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 328px;
+  gap: 12px;
   padding: 12px;
+}
+
+.tech-main,
+.tech-aside {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.tech-aside {
+  border-left: 1px solid var(--stroke);
+  padding-left: 12px;
+}
+
+/* Equipamento inverte: o boneco a esquerda, a vitrine a direita. E a unica
+   tela em que o objeto escolhido tem um LUGAR no corpo, e lugar se ve antes
+   da lista. */
+.tech-body.aside-esquerda {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.tech-body.aside-esquerda .tech-aside {
+  order: -1;
+  border-left: 0;
+  border-right: 1px solid var(--stroke);
+  padding-left: 0;
+  padding-right: 12px;
+}
+
+/* Tela estreita (celular deitado): vira coluna unica e o detalhe vai para
+   cima, porque ali ele e a resposta e a lista e a pergunta. */
+@media (max-width: 880px) {
+  .tech-body,
+  .tech-body.aside-esquerda {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .tech-aside,
+  .tech-body.aside-esquerda .tech-aside {
+    order: -1;
+    border: 0;
+    border-bottom: 1px solid var(--stroke);
+    padding: 0 0 10px;
+    max-height: 42vh;
+  }
+}
+
+/* --- AUTOMACAO: faixa de estado + duas colunas --- */
+.auto-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.auto-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0.55;
+}
+
+.auto-stat.on {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--stroke));
+}
+
+.auto-stat img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.auto-stat b {
+  display: block;
+  font-size: 17px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.auto-stat.on b {
+  color: var(--accent);
+}
+
+.auto-stat span {
+  font-size: 9px;
+  color: var(--ink-dim);
+  letter-spacing: 0.3px;
+}
+
+.auto-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+/*
+ * Cabecalho da coluna em DUAS linhas, nao numa so.
+ *
+ * Em linha unica o botao ("CONTRATAR ✦11.315") comia a largura e o titulo
+ * quebrava uma palavra por linha, virando uma tira vertical ilegivel. Com a
+ * coluna valendo ~300 px nao ha o que negociar: retrato e titulo em cima, o
+ * botao inteiro embaixo.
+ */
+.auto-col > header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 9px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.auto-col > header .btn {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.auto-col > header img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.auto-col > header > div {
+  min-width: 0;
+}
+
+.auto-col h4 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.auto-col h4 i {
+  font-style: normal;
+  color: var(--ink-dim);
+  font-weight: normal;
+}
+
+.auto-col header p {
+  margin: 1px 0 0;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  line-height: 1.3;
+}
+
+.auto-col header .btn {
+  font-size: 10px;
+  padding: 7px 10px;
+}
+
+.auto-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Numa tela estreita as duas colunas viram uma pilha: dois cartoes lado a
+   lado em 400 px de largura nao cabem sem cortar o nome da unidade. */
+@media (max-width: 880px) {
+  .auto-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .auto-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.auto-aside-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.auto-aside-head img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.auto-aside-head span {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--ink);
+}
+
+.auto-sub,
+.det-sub {
+  margin: 12px 0 6px;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.up-col {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.auto-aside-foot {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--stroke);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* --- PESQUISA: cartao que so identifica, prancheta que explica --- */
+.tech-card.sel {
+  border-color: var(--cat);
+  box-shadow: 0 0 0 1px var(--cat), 0 0 16px color-mix(in srgb, var(--cat) 26%, transparent);
+}
+
+.tech-flag {
+  font-size: 8.5px;
+  letter-spacing: 1px;
+  color: var(--ink-dim);
+}
+
+.tech-card.ready .tech-flag {
+  color: var(--cat);
+}
+
+.tech-card.done .tech-flag {
+  color: #7ee7a8;
+}
+
+.det-prancheta {
+  padding: 2px;
+}
+
+.det-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.det-icone {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.det-head b {
+  display: block;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.det-head small {
+  font-size: 9.5px;
+  color: var(--cat);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.det-desc {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.det-efeitos {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #7ee7a8;
+}
+
+.det-custo {
+  margin-bottom: 12px;
+}
+
+.det-acao {
+  width: 100%;
+}
+
+/* --- EQUIPAMENTO: boneco a esquerda, vitrine de um encaixe a direita --- */
+.eq-filtros {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.eq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 9px;
+}
+
+.eq-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--stroke);
+  border-radius: 11px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.eq-card.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.eq-card.locked {
+  opacity: 0.6;
+}
+
+.eq-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.eq-head b {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.eq-icon img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  display: block;
+}
+
+.eq-card p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--ink-dim);
+}
+
+.eq-mods {
+  margin: 0;
+  padding-left: 15px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #7ee7a8;
+}
+
+.eq-foot {
+  margin-top: auto;
+}
+
+.eq-foot .btn {
+  width: 100%;
+}
+
+/* O boneco: os quatro encaixes em coluna, com a peca vestida dentro. Era uma
+   lista de titulos com o nome do item em letra pequena; agora se VE o que
+   esta vestido, que e a pergunta que a tela responde. */
+.boneco {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.boneco-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  font-family: var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.boneco-slot.foco {
+  border-color: var(--accent);
+}
+
+.boneco-arte {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: center / contain no-repeat url('/art/hud/encaixe/vazio.png');
+  font-size: 20px;
+}
+
+.boneco-slot.on .boneco-arte {
+  background-image: url('/art/hud/encaixe/aceso.png');
+}
+
+.boneco-arte .eq-icon img {
+  width: 34px;
+  height: 34px;
+}
+
+.boneco-rotulo i {
+  display: block;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.boneco-rotulo b {
+  font-size: 11.5px;
+  color: var(--ink);
+}
+
+.boneco-slot:not(.on) .boneco-rotulo b {
+  color: var(--ink-dim);
+  font-weight: normal;
+}
+
+.boneco-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.stat-linha {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.stat-linha img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.stat-linha b {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.stat-linha span {
+  font-size: 9px;
+  color: var(--ink-dim);
 }
 
 .tech-fantasy {
@@ -2844,15 +3314,60 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .tech-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
+  /* Cartoes bem menores: eles so identificam. Cabem cinco por linha onde antes
+     cabiam tres, e a lista inteira passa a ser vista de uma vez. */
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
   gap: 9px;
 }
 
+/*
+ * O cartao de pesquisa so IDENTIFICA agora.
+ *
+ * Ele carregava descricao, custo e botao dentro de si, e o CSS era feito para
+ * isso: cabecalho em linha, texto embaixo. Com o detalhe morando no painel do
+ * lado, o cartao ficou com tres coisas — icone, nome e estado — e o layout
+ * antigo empilhava as tres em cima umas das outras. Agora e uma pilha vertical
+ * centrada, que e o que cabe num alvo de toque de 130 px.
+ */
 .tech-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  min-height: 112px;
   border: 1px solid var(--stroke);
   border-radius: 11px;
-  padding: 10px;
+  padding: 12px 10px 10px;
   background: rgba(255, 255, 255, 0.03);
+  color: var(--ink-dim);
+  font-family: var(--font);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tech-card b {
+  font-size: 11.5px;
+  line-height: 1.25;
+  color: var(--ink);
+  /* Duas linhas de nome, e o resto vira reticencia: "Picareta das
+     Profundezas" nao cabe numa linha e nao vale alargar a grade por ela. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tech-card.locked {
+  opacity: 0.55;
+}
+
+.tech-card.locked b {
+  color: var(--ink-dim);
+}
+
+.tech-card:not(.locked):hover {
+  border-color: color-mix(in srgb, var(--cat) 50%, var(--stroke));
 }
 
 .tech-card.ready {
@@ -2876,14 +3391,14 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .tech-icon {
-  width: 26px;
-  height: 26px;
+  width: 42px;
+  height: 42px;
   display: grid;
   place-items: center;
   border-radius: 8px;
   background: color-mix(in srgb, var(--cat) 22%, transparent);
   border: 1px solid var(--cat);
-  font-size: 14px;
+  font-size: 22px;
 }
 
 .tech-card p {

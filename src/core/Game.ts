@@ -602,6 +602,7 @@ export class Game {
       clones: this.cloneManager,
       collectors: this.collectors,
       equipment: this.equipment,
+      attrs: this.attrs,
       stock: this.stock,
       deepest: () => this.deepestMeters,
       depthOf: (y) => this.world.depthOfPixel(y),
