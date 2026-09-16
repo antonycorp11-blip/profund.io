@@ -1,5 +1,7 @@
 import { BLOCK_IDS, blockByKey } from '../data/blocks';
 import { LAYERS, layerAt } from '../data/layers';
+import { bossForLayer } from '../data/creatures';
+import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
 import { CONFIG } from '../data/config';
 import { CLUES, RESCUE_NPCS } from '../data/story';
 import { fbm2d, hash2d, Rng } from '../core/rng';
@@ -14,6 +16,8 @@ export interface GeneratedWorldInfo {
   baseFloorRow: number;
   /** Coluna do deposito de entrega. */
   depotCol: number;
+  /** Um por camada com selo: onde a arena do chefe ficou e quem guarda ela. */
+  gates: { layerId: string; bossId: string; col: number; row: number }[];
 }
 
 /**
@@ -117,6 +121,49 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     }
   }
 
+  // ---- 3b. Selos entre biomas ----------------------------------------------
+  // Uma faixa indestrutivel na fronteira de cada camada, com uma arena
+  // escavada no meio: a UNICA passagem e enfrentar o chefe. O selo inteiro
+  // (nao so a arena) so vira ar quando o BiomeGate confirma chefe morto +
+  // todos os mineiros daquela camada resgatados — ver World.openGateBand.
+  const gates: { layerId: string; bossId: string; col: number; row: number }[] = [];
+  const arenaCol = gateArenaCol();
+  const arenaHalf = Math.floor(CONFIG.gate.arenaWidth / 2);
+  const entranceHalf = Math.floor(CONFIG.gate.entranceWidth / 2);
+  for (const layerId of GATE_LAYERS) {
+    const layer = gateLayerDef(layerId);
+    const boss = bossForLayer(layerId);
+    if (!boss) continue; // sem chefe cadastrado, sem selo — nao deveria acontecer
+    const { row0, row1 } = gateBandRows(surfaceRow, layer);
+    if (row0 <= 0 || row1 >= height - 1) continue; // fora do mundo, ignora
+
+    // Faixa inteira, indestrutivel, na largura toda.
+    for (let col = 1; col < width - 1; col++) {
+      for (let row = row0; row <= row1; row++) {
+        world.setTileRaw(col, row, BLOCK_IDS.SEAL);
+      }
+    }
+    // Arena: oca por dentro, paredes e piso continuam selados ate a vitoria.
+    for (let col = arenaCol - arenaHalf; col <= arenaCol + arenaHalf; col++) {
+      for (let row = row0 + 1; row <= row1 - 1; row++) {
+        world.setTileRaw(col, row, BLOCK_IDS.AIR);
+      }
+    }
+    // Entrada diggable no teto da arena: rocha normal da propria camada de
+    // cima, para o jogador cavar e cair dentro em vez de esbarrar em selo.
+    const entranceRock = blockByKey(layer.rockKey)?.id ?? BLOCK_IDS.STONE;
+    for (let col = arenaCol - entranceHalf; col <= arenaCol + entranceHalf; col++) {
+      world.setTileRaw(col, row0, entranceRock);
+    }
+
+    gates.push({
+      layerId,
+      bossId: boss.id,
+      col: arenaCol,
+      row: row1 - 1, // encosta no piso selado — o chefe guarda a saida
+    });
+  }
+
   // ---- 4. Base na superficie ----------------------------------------------
   const shaftCol = baseCenter + CONFIG.base.layout.shaft;
   const depotCol = baseCenter + CONFIG.base.layout.depot;
@@ -155,6 +202,7 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     shaftCol,
     baseFloorRow,
     depotCol,
+    gates,
   };
 }
 

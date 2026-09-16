@@ -1,6 +1,6 @@
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
-import { REFUND_RATIO, STRUCTURES, type StructureType } from '../data/structures';
+import { REFINE_RECIPES, REFUND_RATIO, STRUCTURES, type StructureType } from '../data/structures';
 import type { Attributes } from './Attributes';
 import type { BaseStock } from './BaseStock';
 import type { DropManager } from '../entities/DropManager';
@@ -286,8 +286,18 @@ export class Automation {
     if (s.processTimer < time) return;
     s.processTimer = 0;
     const item = s.items[0];
-    // Processar rende mais do que entrou — e o ponto da refinaria.
-    item.amount = Math.max(1, Math.round(item.amount * yieldMult));
+    const recipe = REFINE_RECIPES[item.resource];
+    if (recipe) {
+      // Refino de verdade: perde quantidade, ganha tipo (e valor por unidade).
+      // O yieldMult das habilidades ainda ajuda, aplicado ANTES da perda da
+      // receita — refinar bem continua compensando quem investiu em automacao.
+      const bruto = item.amount * yieldMult;
+      item.resource = recipe.out;
+      item.amount = Math.max(1, Math.round(bruto * recipe.ratio));
+    } else {
+      // Sem receita: comportamento antigo, so rende mais do mesmo recurso.
+      item.amount = Math.max(1, Math.round(item.amount * yieldMult));
+    }
     item.progress = 1;
     if (this.handOff(s, item)) s.items.shift();
   }

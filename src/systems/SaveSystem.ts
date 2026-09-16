@@ -36,6 +36,8 @@ export interface SaveData {
   progression?: { level: number; xp: number };
   collectors?: import('./CollectorManager').CollectorSave;
   equipment?: import('./Equipment').EquipmentSave;
+  /** Selos entre biomas: chefe morto / selo aberto, por camada. */
+  gates?: import('./BiomeGate').BiomeGateSave;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;
 }

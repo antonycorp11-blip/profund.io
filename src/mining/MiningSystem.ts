@@ -183,7 +183,7 @@ export class MiningSystem {
       this.targetRow = row;
       this.hasTarget = true;
       const dmg = this.world.getDamage(col, row);
-      this.targetProgress = def.hp > 0 ? dmg / def.hp : 0;
+      this.targetProgress = def.hp > 0 ? dmg / this.world.effectiveHp(col, row) : 0;
       return;
     }
   }

@@ -48,10 +48,11 @@ import { CollectorManager } from '../systems/CollectorManager';
 import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
+import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
 import { ShockChain } from '../mining/ShockChain';
-import { CREATURE_CONFIG } from '../data/creatures';
+import { CREATURE_CONFIG, creatureDef } from '../data/creatures';
 import { Vitals } from '../systems/Vitals';
 import { TechScreen } from '../ui/TechScreen';
 import { TechTree } from '../systems/TechTree';
@@ -108,6 +109,7 @@ export class Game {
   private minimap: Minimap;
   private mapScreen: MapScreen;
   private creatures: CreatureManager;
+  private biomeGate!: BiomeGate;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
   private progression = new Progression(this.skills);
@@ -277,6 +279,14 @@ export class Game {
     this.creatures = new CreatureManager(this.world, this.drops, this.exploration);
     this.creatures.buildGuardPosts();
     this.mining.strike = (dirX, dirY) => this.strikeCreatures(dirX, dirY);
+
+    // Selos entre biomas: um chefe fixo por camada, arena esculpida pelo
+    // WorldGen. So descem para a proxima camada quem matar o chefe E resgatar
+    // todos os mineiros presos NAQUELA camada — ver /systems/BiomeGate.ts.
+    // Spawnar chefes e reabrir selos ja vencidos acontece em loadOrStart(),
+    // DEPOIS do save (se houver) restaurar quem ja morreu — senao um chefe
+    // ja derrotado em sessao anterior voltaria vivo por um instante.
+    this.biomeGate = new BiomeGate(this.world, this.skills, this.exploration, this.worldInfo.gates);
 
     // Choque: a corrente sai do bloco atingido e gasta uma martelada.
     this.shock = new ShockChain(this.world, this.attrs);
@@ -508,6 +518,23 @@ export class Game {
       this.exploration.setMarkerDone(p.id);
       this.skills.setStoryFlag(p.id);
       this.skills.addPoints(2, 'resgate');
+      // Pode ser o ultimo mineiro que faltava na camada: reavalia o selo.
+      this.biomeGate.onNpcRescued(p.id);
+      this.save();
+    });
+    Events.on('gate:opened', (p) => {
+      this.camera.addShake(8);
+      this.floating.push(
+        this.player.cx,
+        this.player.cy - 40,
+        `SELO ABERTO: ${p.layerName.toUpperCase()}`,
+        '#ffd166',
+        16
+      );
+      this.particles.burst(this.player.cx, this.player.cy, 30, ['#9a4fe0', '#ffd166'], {
+        speed: 180,
+      });
+      this.hud.toast(`O selo de ${p.layerName} se abriu. O caminho continua.`, 'story');
       this.save();
     });
     // Toda entrega (jogador, copia ou linha) conta para a cota da semana.
@@ -603,12 +630,33 @@ export class Game {
       );
     });
     Events.on('creature:killed', (p) => {
-      this.particles.burst(p.worldX, p.worldY, p.guardian ? 22 : 10, ['#e0a94b', '#8d8d95'], {
-        speed: 120,
-      });
-      this.camera.addShake(p.guardian ? 6 : 2);
+      const isBiomeBoss = !!creatureDef(p.id)?.bossOfLayer;
+      this.particles.burst(
+        p.worldX,
+        p.worldY,
+        isBiomeBoss ? 40 : p.guardian ? 22 : 10,
+        isBiomeBoss ? ['#9a4fe0', '#ffd166', '#ffffff'] : ['#e0a94b', '#8d8d95'],
+        { speed: isBiomeBoss ? 220 : 120 }
+      );
+      this.camera.addShake(isBiomeBoss ? 12 : p.guardian ? 6 : 2);
       if (p.skillPoints > 0) this.skills.addPoints(p.skillPoints, `${p.name} derrotado`);
-      if (p.guardian) this.save();
+      if (isBiomeBoss) {
+        const money = creatureDef(p.id)?.moneyReward ?? 0;
+        if (money > 0) this.stock.money += money;
+        this.floating.push(
+          p.worldX,
+          p.worldY - 30,
+          `${p.name} DERROTADO${money > 0 ? ` · +${money}` : ''}`,
+          '#ffd166',
+          16
+        );
+        this.hud.toast(`${p.name} caiu. Falta resgatar quem ainda estiver preso aqui.`, 'story');
+        // Boss morto pode ser a ultima condicao que faltava para o selo abrir.
+        this.biomeGate.onBossKilled(p.id);
+        this.save();
+      } else if (p.guardian) {
+        this.save();
+      }
     });
     Events.on('player:hurt', (p) => {
       this.camera.addShake(4);
@@ -646,6 +694,8 @@ export class Game {
       this.player.setPosition(this.worldInfo.spawnX, this.worldInfo.spawnY);
       this.camera.snapTo(this.player.cx, this.player.cy);
       this.hud.toast('Pegue a picareta do seu pai e desca.', 'story');
+      // Jogo novo: nenhum selo foi aberto, nenhum chefe morreu — spawna os 6.
+      this.biomeGate.spawnBosses(this.creatures);
       return;
     }
 
@@ -668,6 +718,11 @@ export class Game {
     this.cloneManager.fromJSON(data.clones);
     this.automation.fromJSON(data.automation);
     this.creatures.fromJSON(data.creatures);
+    this.biomeGate.fromJSON(data.gates);
+    // So agora, com o estado certo carregado, decide o que reabrir e quem
+    // spawnar: selo ja aberto vira ar de novo; chefe ja morto nao volta.
+    this.biomeGate.reopenSavedGates();
+    this.biomeGate.spawnBosses(this.creatures);
     this.vitals.fromJSON(data.vitals);
     this.activeSkills.fromJSON(data.activeSkills);
     this.progression.fromJSON(data.progression);
@@ -1241,6 +1296,7 @@ export class Game {
       clones: this.cloneManager.toJSON(),
       automation: this.automation.toJSON(),
       creatures: this.creatures.toJSON(),
+      gates: this.biomeGate.toJSON(),
       vitals: this.vitals.toJSON(),
       activeSkills: this.activeSkills.toJSON(),
       progression: this.progression.toJSON(),

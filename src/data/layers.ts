@@ -56,6 +56,15 @@ export interface LayerDef {
   tint?: string;
   /** Forca do tingimento, 0..1. */
   tintStrength?: number;
+  /**
+   * Multiplicador de HP de todo bloco quebrado nesta camada.
+   *
+   * O jogador chegava nas Ruinas Antigas rapido demais: com picareta boa,
+   * pedra e minerio cediam quase igual em toda profundidade. Isto faz a MESMA
+   * pedra ficar mais dura conforme desce — sem duplicar bloco por bloco — e e
+   * a peça central de "nao deveria ser tao facil chegar la".
+   */
+  hpMultiplier: number;
 }
 
 export const LAYERS: LayerDef[] = [
@@ -69,6 +78,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 0,
     generated: true,
     tagline: 'O comeco de tudo.',
+    hpMultiplier: 1,
     ambient: [26, 16, 8],
     darkness: 0.55,
     caveBonus: 0,
@@ -84,6 +94,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 1,
     generated: true,
     tagline: 'Rocha solida, grandes possibilidades.',
+    hpMultiplier: 1,
     ambient: [8, 10, 18],
     darkness: 1,
     caveBonus: 0.02,
@@ -106,6 +117,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 2,
     generated: true,
     tagline: 'Cristais raros brilham nas sombras.',
+    hpMultiplier: 1.35,
     ambient: [16, 6, 26],
     darkness: 1.06,
     caveBonus: 0.055,
@@ -130,6 +142,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 2,
     generated: true,
     tagline: 'A rocha aqui guarda o que a superficie nunca viu.',
+    hpMultiplier: 1.75,
     ambient: [6, 20, 28],
     darkness: 1.08,
     caveBonus: 0.05,
@@ -153,6 +166,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 2,
     generated: true,
     tagline: 'Calor intenso, grandes riquezas.',
+    hpMultiplier: 2.3,
     ambient: [40, 10, 4],
     darkness: 1.02,
     caveBonus: 0.07,
@@ -176,6 +190,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 2,
     generated: true,
     tagline: 'Segredos de uma civilizacao perdida.',
+    hpMultiplier: 3,
     ambient: [6, 26, 22],
     darkness: 1.05,
     caveBonus: 0.05,
@@ -199,6 +214,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 2,
     generated: true,
     tagline: 'Alem da luz, apenas lendas.',
+    hpMultiplier: 3.9,
     ambient: [16, 4, 30],
     darkness: 1.12,
     caveBonus: 0.085,
@@ -222,6 +238,7 @@ export const LAYERS: LayerDef[] = [
     backwall: 2,
     generated: false,
     tagline: 'Isto nunca foi uma mina.',
+    hpMultiplier: 5,
     ambient: [24, 6, 40],
     darkness: 1.1,
     caveBonus: 0.05,

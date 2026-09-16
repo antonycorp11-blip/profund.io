@@ -225,7 +225,7 @@ export class Collector {
       return;
     }
     // A forca e uma fracao da vida do bloco: minerio duro resiste mais que terra.
-    this.world.applyDamage(col, row, def.hp * forca, 3);
+    this.world.applyDamage(col, row, this.world.effectiveHp(col, row) * forca, 3);
   }
 
   render(ctx: CanvasRenderingContext2D): void {

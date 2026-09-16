@@ -1,0 +1,156 @@
+import { bossForLayer } from '../data/creatures';
+import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
+import { RESCUE_NPCS } from '../data/story';
+import { Events } from '../core/events';
+import type { CreatureManager } from './CreatureManager';
+import type { Exploration } from './Exploration';
+import type { GeneratedWorldInfo } from '../world/WorldGen';
+import type { SkillTree } from './SkillTree';
+import type { World } from '../world/World';
+
+interface GateState {
+  bossDefeated: boolean;
+  opened: boolean;
+}
+
+export type BiomeGateSave = Record<string, { bossDefeated: boolean; opened: boolean }>;
+
+/**
+ * Torna cada chefe de bioma um limitador de verdade.
+ *
+ * Regra unica, sem excecao: uma camada so se abre quando o chefe FIXO daquela
+ * camada morre E todo mineiro preso naquela mesma camada foi resgatado.
+ * Antes disso o selo (`BLOCK_IDS.SEAL`, indestrutivel) bloqueia a passagem
+ * inteira — nao existe desvio por atalho, escalada ou construcao.
+ *
+ * A geometria do selo (linhas, coluna da arena) vem de /data/gates.ts, que o
+ * WorldGen tambem usa para esculpir a barreira — as duas pontas calculam a
+ * MESMA coisa a partir do mesmo lugar, entao nunca desalinham.
+ */
+export class BiomeGate {
+  private states = new Map<string, GateState>();
+
+  constructor(
+    private world: World,
+    private skills: SkillTree,
+    private exploration: Exploration,
+    gates: GeneratedWorldInfo['gates']
+  ) {
+    for (const g of gates) {
+      this.states.set(g.layerId, { bossDefeated: false, opened: false });
+      const boss = bossForLayer(g.layerId);
+      this.exploration.addMarker({
+        id: this.markerId(g.layerId),
+        kind: 'boss',
+        col: g.col,
+        row: g.row,
+        label: boss?.name ?? 'Guardiao do bioma',
+        alwaysVisible: false,
+      });
+    }
+  }
+
+  private markerId(layerId: string): string {
+    return `boss_${layerId}`;
+  }
+
+  /** Camada sem selo cadastrado (superficie, Portal) conta como sempre aberta. */
+  isOpen(layerId: string): boolean {
+    return this.states.get(layerId)?.opened ?? true;
+  }
+
+  bossDefeated(layerId: string): boolean {
+    return this.states.get(layerId)?.bossDefeated ?? true;
+  }
+
+  /**
+   * Cria o corpo de cada chefe cujo selo ainda esta fechado E que ainda nao
+   * morreu nesta partida. Chamar sempre DEPOIS de `fromJSON` (se houver save)
+   * — senao um chefe ja derrotado voltaria vivo por um instante ate o load
+   * terminar.
+   */
+  spawnBosses(creatures: CreatureManager): void {
+    const ts = this.world.tileSize;
+    const arenaCol = gateArenaCol();
+    for (const layerId of GATE_LAYERS) {
+      const st = this.states.get(layerId);
+      const def = bossForLayer(layerId);
+      if (!st || !def || st.bossDefeated) continue;
+      const layer = gateLayerDef(layerId);
+      const { row1 } = gateBandRows(this.world.surfaceRow, layer);
+      // Encosta no piso selado (row1 - 1): o chefe guarda a propria saida.
+      creatures.spawnBoss(def, arenaCol * ts + ts / 2, (row1 - 1) * ts + ts / 2);
+    }
+  }
+
+  /**
+   * Worldgen sempre carrega TODOS os selos fechados (e deterministico e nao
+   * sabe de save). Depois do load, qualquer selo que ja tinha sido aberto em
+   * sessao anterior precisa ser reaberto — mais barato que gravar centenas
+   * de tiles de diferenca por camada.
+   */
+  reopenSavedGates(): void {
+    for (const layerId of GATE_LAYERS) {
+      const st = this.states.get(layerId);
+      if (!st?.opened) continue;
+      const layer = gateLayerDef(layerId);
+      const { row0, row1 } = gateBandRows(this.world.surfaceRow, layer);
+      this.world.openGateBand(row0, row1);
+    }
+  }
+
+  /** Chamado pelo Game quando `creature:killed` traz um id de chefe. */
+  onBossKilled(creatureId: string): void {
+    for (const layerId of GATE_LAYERS) {
+      if (bossForLayer(layerId)?.id !== creatureId) continue;
+      const st = this.states.get(layerId);
+      if (!st) return;
+      st.bossDefeated = true;
+      this.tryOpen(layerId);
+      return;
+    }
+  }
+
+  /** Chamado pelo Game em todo `npc:rescued`. */
+  onNpcRescued(npcId: string): void {
+    const npc = RESCUE_NPCS.find((n) => n.id === npcId);
+    if (!npc) return;
+    this.tryOpen(npc.layer);
+  }
+
+  private allNpcsRescued(layerId: string): boolean {
+    const npcs = RESCUE_NPCS.filter((n) => n.layer === layerId);
+    return npcs.every((n) => this.skills.hasStoryFlag(n.id));
+  }
+
+  private tryOpen(layerId: string): void {
+    const st = this.states.get(layerId);
+    if (!st || st.opened) return;
+    if (!st.bossDefeated || !this.allNpcsRescued(layerId)) return;
+
+    st.opened = true;
+    const layer = gateLayerDef(layerId);
+    const { row0, row1 } = gateBandRows(this.world.surfaceRow, layer);
+    this.world.openGateBand(row0, row1);
+    this.exploration.setMarkerDone(this.markerId(layerId));
+    Events.emit('gate:opened', { layerId, layerName: layer.name });
+  }
+
+  toJSON(): BiomeGateSave {
+    const out: BiomeGateSave = {};
+    for (const [id, st] of this.states) {
+      out[id] = { bossDefeated: st.bossDefeated, opened: st.opened };
+    }
+    return out;
+  }
+
+  fromJSON(data: BiomeGateSave | undefined): void {
+    if (!data) return;
+    for (const [id, saved] of Object.entries(data)) {
+      const st = this.states.get(id);
+      if (!st) continue;
+      st.bossDefeated = !!saved.bossDefeated;
+      st.opened = !!saved.opened;
+    }
+  }
+}

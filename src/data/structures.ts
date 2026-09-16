@@ -119,3 +119,20 @@ export const BUILDABLE: StructureType[] = [
 
 /** Devolve metade do custo ao remover. */
 export const REFUND_RATIO = 0.5;
+
+/**
+ * O que a Refinaria transforma. Minerio SEM receita aqui continua no
+ * comportamento antigo (mesma linha, so multiplica pela quantidade) — nao
+ * quebra automacao ja construida.
+ *
+ * Existe para dar proposito real a refinaria: sem isto ela so rendia "mais do
+ * mesmo", e o jogador nunca precisava dela para nada alem de vender mais caro.
+ * Agora a MELHOR picareta (ver /data/tools.ts) exige Barra de Ouro — que so
+ * sai daqui — entao construir a linha deixa de ser opcional para quem quer
+ * chegar fundo rapido.
+ */
+export const REFINE_RECIPES: Partial<Record<ResourceId, { out: ResourceId; ratio: number }>> = {
+  coal: { out: 'coal_coke', ratio: 0.4 },
+  gold: { out: 'gold_bar', ratio: 0.5 },
+  crystal: { out: 'crystal_prism', ratio: 0.5 },
+};

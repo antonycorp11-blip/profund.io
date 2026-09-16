@@ -1,5 +1,5 @@
 import { blockDef } from '../data/blocks';
-import { CREATURE_CONFIG, creatureDef, creaturesOfLayer } from '../data/creatures';
+import { CREATURE_CONFIG, creatureDef, creaturesOfLayer, type CreatureDef } from '../data/creatures';
 import { Creature } from '../entities/Creature';
 import { Events } from '../core/events';
 import { layerAt } from '../data/layers';
@@ -201,6 +201,18 @@ export class CreatureManager {
       this.creatures.push(new Creature(def, col * ts + ts / 2, row * ts + ts / 2));
       return;
     }
+  }
+
+  /**
+   * Posiciona um chefe de bioma EXATAMENTE nas coordenadas da arena.
+   * Sem busca de ar (a arena ja e escavada pelo WorldGen) e sem chance de
+   * cair fora do lugar — o chefe precisa estar sempre no mesmo ponto para o
+   * marcador do mapa e a bussola baterem com o corpo dele.
+   */
+  spawnBoss(def: CreatureDef, x: number, y: number): Creature {
+    const c = new Creature(def, x, y);
+    this.creatures.push(c);
+    return c;
   }
 
   /** Coloca uma criatura no ar mais proximo do ponto pedido (ferramenta de teste). */

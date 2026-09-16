@@ -91,6 +91,7 @@ export const BLOCK_IDS = {
   RUBY: 13,
   RELIC: 14,
   VOIDSTONE: 15,
+  SEAL: 16,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -476,6 +477,37 @@ export const BLOCKS: BlockDef[] = [
     oreGlow: '#c08aff',
     emissive: 0.5,
     sfxMaterial: 'cristal',
+  },
+  {
+    id: BLOCK_IDS.SEAL,
+    key: 'seal',
+    name: 'Selo Ancestral',
+    type: 'especial',
+    hp: 0,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    /**
+     * A barreira dos chefes de bioma. Indestrutivel por definicao — a unica
+     * forma de tirar isto do mapa e `World.openGateBand`, chamado quando o
+     * BiomeGate confirma chefe morto + todos os mineiros daquela camada
+     * resgatados. Nunca cede a dano, nem com fratura ou explosivo.
+     */
+    tags: ['indestructible', 'special', 'boss'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 99,
+    solid: true,
+    indestructible: true,
+    color: '#241a38',
+    shade: '#150e22',
+    speckle: '#4a2f6e',
+    oreGlow: '#9a4fe0',
+    emissive: 0.35,
+    sfxMaterial: 'estrutura',
   },
   {
     id: BLOCK_IDS.BEDROCK,

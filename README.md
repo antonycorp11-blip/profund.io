@@ -85,7 +85,12 @@ elevadores, armazéns filtrados e refinarias levam a carga até a base. Gerador 
 energia multiplica a velocidade da linha.
 
 **Pressão.** Cota semanal que escala, relógio de dia/noite, e criaturas que guardam os depósitos
-generosos. Morrer custa 35 % da mochila e o tempo de descer de novo — nunca progressão.
+generosos. Morrer custa 35 % da mochila e o tempo de descer de novo — nunca progressão. Cada
+bloco fica mais duro conforme desce, e um **chefe fixo por bioma** trava a passagem: só se avança
+depois de matá-lo e resgatar todo mineiro preso naquela camada.
+
+**Refino.** Carvão, ouro e cristal viram coque, barra e prisma dentro da Refinaria — a melhor
+picareta só se compra com ouro refinado, então a linha de automação deixa de ser opcional.
 
 **Apresentação.** Arte real em blocos, herói animado, ícones e cenário; iluminação por
 profundidade; PWA landscape instalável.

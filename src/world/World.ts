@@ -1,6 +1,7 @@
 import { BLOCK_IDS, blockDef, type BlockDef } from '../data/blocks';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
+import { layerAt } from '../data/layers';
 
 export interface DamageResult {
   applied: boolean;
@@ -169,8 +170,18 @@ export class World {
     if (def.hp <= 0) return 0;
     const d = this.getDamage(col, row);
     if (d <= 0) return 0;
-    const t = d / def.hp;
+    const t = d / this.effectiveHp(col, row);
     return Math.min(CONFIG.mining.crackStages, Math.max(1, Math.ceil(t * CONFIG.mining.crackStages)));
+  }
+
+  /**
+   * HP efetivo do bloco nesta linha: a mesma pedra fica mais dura ao descer.
+   * Publico porque quem mostra progresso de dano (mira, toupeira cavando)
+   * precisa da MESMA conta usada por `applyDamage`, senao a barra de rachadura
+   * mente sobre quanto falta.
+   */
+  effectiveHp(col: number, row: number): number {
+    return this.getDef(col, row).hp * layerAt(this.depthOfRow(row)).hpMultiplier;
   }
 
   /** Aplica dano. Retorna se quebrou e o progresso atual. */
@@ -182,10 +193,11 @@ export class World {
     if (toolTier < def.minTool) {
       return { applied: false, broken: false, def, progress: 0, blockedBy: 'tool' };
     }
+    const hp = this.effectiveHp(col, row);
     const i = this.idx(col, row);
     const next = this.damage[i] + amount;
     this.lastHit[i] = this.time;
-    if (next >= def.hp) {
+    if (next >= hp) {
       this.damage[i] = 0;
       this.damaged.delete(i);
       this.setTile(col, row, BLOCK_IDS.AIR);
@@ -195,7 +207,7 @@ export class World {
     this.damage[i] = next;
     this.damaged.add(i);
     this.markDirtyAround(col, row);
-    return { applied: true, broken: false, def, progress: next / def.hp };
+    return { applied: true, broken: false, def, progress: next / hp };
   }
 
   /** Regenera dano de blocos que nao sao atingidos ha algum tempo. */
@@ -267,6 +279,30 @@ export class World {
     if (!flat) return;
     for (let i = 0; i + 2 < flat.length; i += 3) {
       this.regrowQueue.set(flat[i], { id: flat[i + 1], at: this.time + flat[i + 2] });
+    }
+  }
+
+  /**
+   * Abre um selo entre biomas: troca todo tile SEAL da faixa [row0,row1] por
+   * ar, na largura inteira do mundo.
+   *
+   * So troca tile que ainda for SEAL — nao mexe em nada que o jogador tenha
+   * construido ali (nada pode ter sido construido ali, na verdade, ja que o
+   * selo e indestrutivel; a checagem existe para o metodo ser seguro de
+   * chamar de novo sem duplicar trabalho). Usa `setTileRaw` + `markDirtyAround`
+   * direto, sem passar por `overrides`: o estado "aberto" fica guardado no
+   * save do BiomeGate (um booleano por camada), e ao carregar o jogo essa
+   * mesma funcao e chamada de novo — bem mais barato que gravar centenas de
+   * tiles de diferenca por selo.
+   */
+  openGateBand(row0: number, row1: number): void {
+    for (let row = row0; row <= row1; row++) {
+      for (let col = 1; col < this.width - 1; col++) {
+        const i = this.idx(col, row);
+        if (this.tiles[i] !== BLOCK_IDS.SEAL) continue;
+        this.tiles[i] = BLOCK_IDS.AIR;
+        this.markDirtyAround(col, row);
+      }
     }
   }
 

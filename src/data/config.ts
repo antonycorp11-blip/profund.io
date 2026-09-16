@@ -192,6 +192,19 @@ export const CONFIG = {
     shaftDepth: 8,
   },
 
+  /**
+   * Selos entre biomas: a barreira que torna o chefe de cada camada
+   * obrigatorio. Ver /systems/BiomeGate.ts e /data/gates.ts.
+   */
+  gate: {
+    /** Espessura do selo em tiles (== metros, ja que metersPerTile = 1). */
+    bandThickness: 6,
+    /** Largura da arena do chefe, centrada no poco principal. */
+    arenaWidth: 9,
+    /** Colunas de entrada diggable no topo da arena (numero impar, centrado). */
+    entranceWidth: 3,
+  },
+
   light: {
     /** A escuridao comeca a aparecer nesta profundidade (m) ... */
     darkStartDepth: 4,

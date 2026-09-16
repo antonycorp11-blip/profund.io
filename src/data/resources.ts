@@ -9,7 +9,10 @@ export type ResourceId =
   | 'crystal'
   | 'ruby'
   | 'relic'
-  | 'voidstone';
+  | 'voidstone'
+  | 'coal_coke'
+  | 'gold_bar'
+  | 'crystal_prism';
 
 export type Rarity = 'comum' | 'incomum' | 'raro' | 'epico';
 
@@ -135,6 +138,47 @@ export const RESOURCES: Record<ResourceId, ResourceDef> = {
     tint: '#7a2fd0',
     tintStrength: 0.9,
   },
+
+  // --- refinados: so saem da Refinaria, nunca do bloco direto ---
+  coal_coke: {
+    id: 'coal_coke',
+    name: 'Coque',
+    value: 14,
+    rarity: 'incomum',
+    color: '#4a1f1a',
+    accent: '#ff6a3a',
+    weight: 1,
+    showInHud: false,
+    tintFrom: 'coal',
+    tint: '#ff5a2a',
+    tintStrength: 0.7,
+  },
+  gold_bar: {
+    id: 'gold_bar',
+    name: 'Barra de Ouro',
+    value: 130,
+    rarity: 'raro',
+    color: '#f0d060',
+    accent: '#fff6c8',
+    weight: 1,
+    showInHud: false,
+    tintFrom: 'gold',
+    tint: '#fff2a0',
+    tintStrength: 0.55,
+  },
+  crystal_prism: {
+    id: 'crystal_prism',
+    name: 'Prisma de Cristal',
+    value: 300,
+    rarity: 'epico',
+    color: '#cfeeff',
+    accent: '#ffffff',
+    weight: 1,
+    showInHud: false,
+    tintFrom: 'crystal',
+    tint: '#bfe8ff',
+    tintStrength: 0.6,
+  },
 };
 
 export const RESOURCE_ORDER: ResourceId[] = [
@@ -146,6 +190,9 @@ export const RESOURCE_ORDER: ResourceId[] = [
   'ruby',
   'relic',
   'voidstone',
+  'coal_coke',
+  'gold_bar',
+  'crystal_prism',
   'stone',
 ];
 

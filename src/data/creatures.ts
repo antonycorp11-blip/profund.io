@@ -47,6 +47,14 @@ export interface CreatureDef {
   drops: { resource: ResourceId; min: number; max: number; chance: number }[];
   /** Pontos de habilidade por derrotar (raro: so guardioes). */
   skillPoints?: number;
+  /** Moedas pagas ao derrotar (chefes de bioma). */
+  moneyReward?: number;
+  /**
+   * Id da camada que este chefe tranca. Presente SO nos 6 chefes de bioma —
+   * e o que o BiomeGate usa para saber qual selo abrir quando `creature:killed`
+   * dispara. Nunca aparece em criatura ambiente nem no guardiao de veio.
+   */
+  bossOfLayer?: string;
   tagline: string;
 }
 
@@ -303,6 +311,176 @@ export const CREATURES: CreatureDef[] = [
     skillPoints: 1,
     tagline: 'Protege o que a mina ainda nao quer entregar.',
   },
+
+  // ------------------------------------------------- chefes de bioma ------
+  /*
+   * Um por camada gerada (exceto a superficie). Nascem fixos na arena que o
+   * WorldGen esculpe dentro do selo daquela camada — nunca como spawn
+   * ambiente. Ver /systems/BiomeGate.ts: matar o chefe + resgatar todos os
+   * mineiros da mesma camada e a UNICA forma de abrir o selo e descer.
+   *
+   * A progressao deles conta uma historia por baixo da mecanica: a mina nao
+   * e so geologia. Alguem — ou algo — construiu isto, e vinha reagindo a cada
+   * intruso muito antes do seu pai chegar.
+   */
+  {
+    id: 'boss_golem_escombros',
+    name: 'Golem de Escombros',
+    layers: ['stone'],
+    behavior: 'guardiao',
+    health: 320,
+    damage: 20,
+    moveSpeed: 42,
+    aggroRange: 320,
+    attackRange: 40,
+    attackCooldown: 1.6,
+    spawnWeight: 0,
+    w: 44,
+    h: 40,
+    drawHeight: 56,
+    color: '#5c5c66',
+    accent: '#b6b6be',
+    drops: [
+      { resource: 'coal', min: 6, max: 10, chance: 1 },
+      { resource: 'iron', min: 2, max: 4, chance: 0.6 },
+    ],
+    skillPoints: 2,
+    moneyReward: 500,
+    bossOfLayer: 'stone',
+    tagline: 'Pedra empilhada nao deveria ficar de pe sozinha.',
+  },
+  {
+    id: 'boss_arauto_quartzo',
+    name: 'Arauto de Quartzo',
+    layers: ['crystal'],
+    behavior: 'guardiao',
+    health: 700,
+    damage: 30,
+    moveSpeed: 54,
+    aggroRange: 360,
+    attackRange: 46,
+    attackCooldown: 1.5,
+    spawnWeight: 0,
+    w: 46,
+    h: 48,
+    art: 'cristalino',
+    drawHeight: 90,
+    color: '#5a4a78',
+    accent: '#d3b4ff',
+    drops: [
+      { resource: 'crystal', min: 4, max: 8, chance: 1 },
+      { resource: 'gold', min: 2, max: 4, chance: 0.5 },
+    ],
+    skillPoints: 2,
+    moneyReward: 1100,
+    bossOfLayer: 'crystal',
+    tagline: 'Os cristais brilhavam antes de voce entrar. Alguem os acendeu.',
+  },
+  {
+    id: 'boss_automato_enferrujado',
+    name: 'Automato Enferrujado',
+    layers: ['minerals'],
+    behavior: 'guardiao',
+    health: 1150,
+    damage: 42,
+    moveSpeed: 48,
+    aggroRange: 380,
+    attackRange: 50,
+    attackCooldown: 1.7,
+    spawnWeight: 0,
+    w: 50,
+    h: 58,
+    drawHeight: 100,
+    color: '#3f5a68',
+    accent: '#9aa3ad',
+    drops: [
+      { resource: 'iron', min: 8, max: 14, chance: 1 },
+      { resource: 'gold', min: 3, max: 6, chance: 0.6 },
+    ],
+    skillPoints: 3,
+    moneyReward: 1900,
+    bossOfLayer: 'minerals',
+    tagline: 'Engrenagem nao enferruja assim sozinha em mil anos. Alguem cuidava dele.',
+  },
+  {
+    id: 'boss_fundidor_incandescente',
+    name: 'Fundidor Incandescente',
+    layers: ['magma'],
+    behavior: 'guardiao',
+    health: 1750,
+    damage: 58,
+    moveSpeed: 50,
+    aggroRange: 400,
+    attackRange: 54,
+    attackCooldown: 1.8,
+    spawnWeight: 0,
+    w: 56,
+    h: 62,
+    drawHeight: 108,
+    color: '#7a3a28',
+    accent: '#ffb02f',
+    drops: [
+      { resource: 'gold', min: 6, max: 12, chance: 1 },
+      { resource: 'ruby', min: 2, max: 4, chance: 0.55 },
+    ],
+    skillPoints: 3,
+    moneyReward: 3000,
+    bossOfLayer: 'magma',
+    tagline: 'Isto fundia minerio muito antes de existir picareta para minerar.',
+  },
+  {
+    id: 'boss_escriba_selado',
+    name: 'Escriba Selado',
+    layers: ['ruins'],
+    behavior: 'guardiao',
+    health: 2500,
+    damage: 74,
+    moveSpeed: 46,
+    aggroRange: 420,
+    attackRange: 58,
+    attackCooldown: 1.9,
+    spawnWeight: 0,
+    w: 52,
+    h: 66,
+    drawHeight: 112,
+    color: '#2f5148',
+    accent: '#9affd8',
+    drops: [
+      { resource: 'relic', min: 2, max: 3, chance: 0.8 },
+      { resource: 'crystal', min: 5, max: 9, chance: 0.7 },
+    ],
+    skillPoints: 4,
+    moneyReward: 4600,
+    bossOfLayer: 'ruins',
+    tagline: 'Guarda registros. Alguns tem nomes de gente que nunca voltou.',
+  },
+  {
+    id: 'boss_eco_portal',
+    name: 'Eco do Portal',
+    layers: ['abyss'],
+    behavior: 'guardiao',
+    health: 3600,
+    damage: 96,
+    moveSpeed: 58,
+    aggroRange: 440,
+    attackRange: 60,
+    attackCooldown: 2,
+    spawnWeight: 0,
+    w: 58,
+    h: 70,
+    art: 'alma',
+    drawHeight: 118,
+    color: '#3a2352',
+    accent: '#7fe8ff',
+    drops: [
+      { resource: 'voidstone', min: 3, max: 5, chance: 1 },
+      { resource: 'relic', min: 1, max: 2, chance: 0.4 },
+    ],
+    skillPoints: 5,
+    moneyReward: 7000,
+    bossOfLayer: 'abyss',
+    tagline: 'Isto nunca foi uma mina. Isto foi construido para prender alguma coisa aqui.',
+  },
 ];
 
 const BY_ID = new Map(CREATURES.map((c) => [c.id, c]));
@@ -313,6 +491,11 @@ export function creatureDef(id: string): CreatureDef | undefined {
 
 export function creaturesOfLayer(layerId: string): CreatureDef[] {
   return CREATURES.filter((c) => c.layers.includes(layerId) && c.spawnWeight > 0);
+}
+
+/** O chefe fixo daquela camada, se houver. */
+export function bossForLayer(layerId: string): CreatureDef | undefined {
+  return CREATURES.find((c) => c.bossOfLayer === layerId);
 }
 
 export const CREATURE_CONFIG = {

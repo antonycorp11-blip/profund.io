@@ -301,8 +301,13 @@ Tres comportamentos que valem a pena conhecer:
 2. **Armazem com filtro e um separador.** Ele pega o que e dele e deixa o resto seguir (ate 4
    armazens em sequencia). E assim que se monta "armazens de recursos separados" ao longo de
    uma unica linha, sem entupir.
-3. **Refinaria rende mais do que entrou.** Segura o lote por alguns segundos e devolve
-   `amount * refineryYield` — o atributo que a pesquisa aumenta.
+3. **Refinaria transforma, nao so multiplica.** Carvao, ouro e cristal que passam por ela viram
+   Coque, Barra de Ouro e Prisma de Cristal (`REFINE_RECIPES` em `/data/structures.ts`) — menos
+   quantidade, mais valor por unidade. Minerio sem receita (ferro, cobre, pedra, rubi...)
+   continua no comportamento antigo: so multiplica pela quantidade (`refineryYield`), para nao
+   quebrar linha ja construida. **A Picareta das Profundezas (a melhor) agora custa Barra de
+   Ouro**, nao ouro cru — e o que da proposito real a refinaria: sem ela, essa picareta nunca
+   fica ao alcance.
 
 **Copia custa moeda, nao recurso.** Pagar com minerio bruto competia direto com
 a cota da semana — imprimir uma copia atrasava a entrega. Em moeda, a copia
@@ -552,6 +557,94 @@ cache anterior e apagado no `activate` — sem celular preso em versao antiga.
 Icones: `npm run icons` recorta o primeiro quadro de `miner_sheet.png` e escreve 192, 512,
 maskable 512 e apple-touch 180. Nenhuma arte nova foi necessaria.
 
+## 4j. Chefes de bioma: o limitador de progressao
+
+```
+src/data/gates.ts         geometria do selo (linhas e coluna da arena)
+src/data/creatures.ts     os 6 chefes (campo `bossOfLayer`)
+src/systems/BiomeGate.ts  estado por camada, abertura do selo, save
+src/world/WorldGen.ts     passo 3b: esculpe selo + arena
+src/world/World.ts        openGateBand()
+```
+
+**O problema.** Com picareta boa, pedra e minerio cediam quase igual em toda
+profundidade: dava para chegar nas Ruinas Antigas (1300 m) em poucos minutos.
+A mina tinha 2 km de conteudo e nenhuma razao para o jogador ficar em nenhum
+andar.
+
+**A regra, sem excecao.** Uma camada so abre quando DUAS coisas acontecem:
+
+1. o chefe fixo daquela camada morre;
+2. TODO mineiro preso naquela camada foi resgatado.
+
+Antes disso, uma faixa de 6 tiles de `SEAL` (indestrutivel) atravessa o mundo
+inteiro na fronteira. Nao ha desvio: o selo recusa picareta, Broca, Choque,
+fratura e ate a toupeira que atravessa rocha — todos ja checavam
+`indestructible`/`quest`/`boss` antes de tocar num tile.
+
+**A arena e a unica porta.** No meio do selo, na coluna do poco principal
+(col 70), o WorldGen escava uma sala de 9x4: paredes e piso continuam selados,
+so o teto tem 3 colunas de rocha normal para o jogador cavar e cair dentro. O
+chefe espera em cima do piso selado — ele guarda literalmente a saida.
+
+Quando as duas condicoes batem, o selo INTEIRO vira ar (nao so a arena). Isso
+importa por um motivo pratico: copia e toupeira cavam sozinhas em qualquer
+coluna, e ficariam presas para sempre num selo parcial.
+
+**Os seis, na ordem em que se encontra:**
+
+| camada | chefe | vida | onde o selo fica |
+|---|---|---|---|
+| Pedra (50 m) | Golem de Escombros | 320 | 44–49 m |
+| Cristal (200 m) | Arauto de Quartzo | 700 | 194–199 m |
+| Minerais (500 m) | Automato Enferrujado | 1150 | 494–499 m |
+| Magma (900 m) | Fundidor Incandescente | 1750 | 894–899 m |
+| Ruinas (1300 m) | Escriba Selado | 2500 | 1294–1299 m |
+| Abismo (1700 m) | Eco do Portal | 3600 | 1694–1699 m |
+
+Cada um paga pontos de habilidade (2 a 5) e moedas (500 a 7000), e reaparece
+NUNCA: chefe morto nao volta em sessao nenhuma.
+
+**Save barato.** O WorldGen sempre gera tudo selado (ele e deterministico e nao
+sabe de save). O save guarda so dois booleanos por camada; ao carregar,
+`reopenSavedGates()` reabre as faixas ja vencidas. Gravar os tiles daria
+centenas de diferencas por selo — assim sao 12 booleanos no total.
+
+Testado de ponta a ponta: selo fechado bloqueia; matar o chefe sozinho NAO
+abre (Jonas ainda preso); resgatar Jonas abre a faixa inteira no mesmo frame;
+recarregar mantem aberto e nao ressuscita o Golem; jogo novo volta com os 6.
+
+### A rocha tambem endurece
+
+`LayerDef.hpMultiplier` multiplica o HP de todo bloco daquela camada: 1x na
+superficie e na pedra, 1,35 no cristal, 1,75 nos minerais, 2,3 no magma, 3 nas
+ruinas, 3,9 no abismo. A MESMA pedra fica mais dura conforme desce, sem
+duplicar bloco por bloco. `World.effectiveHp()` e publico porque a mira e a
+toupeira precisam da mesma conta — senao a barra de rachadura mente.
+
+### A historia parou de ser "o pai esta no fundo"
+
+Cinco mineiros novos (um por camada) e cinco pistas novas montam um fio que
+NAO se resolve nesta leva:
+
+- **Helena** (cristal, 260 m) — geologa do "Setor 3"; o pai liderava a equipe.
+- **Baptista** (minerais, 600 m) — mecanico; achou pecas que nenhuma fabrica
+  conhecida fez.
+- **Ferreira** (magma, 980 m) — a empresa mandou continuar DEPOIS de o Setor 3
+  parar de responder.
+- **Corvo** (ruinas, 1400 m) — batedor; "as ruinas contam quem entra".
+- **A Voz** (abismo, 1780 m) — nao lembra o proprio nome. Fala de um homem que
+  "escolheu ficar", e nao confirma se era o pai.
+
+As pistas fecham o circulo: diario do Setor 3 (230 m), peca sem origem
+(560 m), registro da expedicao com o nome do pai numa "equipe avancada"
+(940 m), inscricao nao-humana (1340 m) e o gravador do pai (1740 m): *"se voce
+esta ouvindo isso, nao abra a porta"*.
+
+O jogador termina esta leva sabendo que o pai **nao se perdeu** — foi mandado,
+e depois escolheu ficar guardando alguma coisa. Que coisa, e o gancho da
+proxima.
+
 ## 5. Problemas conhecidos
 
 0. **Tremor de tela somava impactos.** Com mineracao rapida a camera ficava
@@ -579,27 +672,39 @@ maskable 512 e apple-touch 180. Nenhuma arte nova foi necessaria.
 8b. **Uma variação por bloco.** O espelhamento disfarça, mas terra/pedra/fundos ainda repetem
    em areas grandes. Gerar `_1` e `_2` para esses 6 e o maior ganho visual restante.
 9. **Sem tela inicial / menu** — o jogo entra direto na base.
-9b. **Equipamentos (capacete, traje, mochila, picareta) ainda nao existem** como itens: a
-   categoria esta na tela de tecnologia, mas os atributos deles ja funcionam (defesa, vida,
-   dano) porque a camada de modificadores nao distingue a fonte.
 10. **`noUnusedLocals` ligado**, mas não há lint/formatter configurado (sem ESLint/Prettier).
+11. **Os 6 chefes de bioma nao tem arte.** Sao silhuetas vetoriais; dois reaproveitam a arte de
+   `cristalino` e `alma`. Como agora eles sao o momento mais importante de cada camada, subiram
+   para o topo da fila de arte — a frente das criaturas comuns.
+12. **Chefe luta igual criatura comum**, so que com mais vida: anda, sobe degrau e bate. Sem fase,
+   sem ataque especial, sem area. Funciona, mas um "guardiao" merece pelo menos uma segunda fase.
+13. **Os 6 mineiros perdidos sao visualmente identicos** (`RescueNpc.render()` e vetor com cores
+   fixas). Helena, Baptista, Corvo e A Voz tem historias bem diferentes e a mesma silhueta.
+14. **Cidades subterraneas ainda nao existem** — os prompts estao em ASSETS.md, a geracao nao.
+   As Ruinas Antigas continuam sendo rocha tingida de verde com minerio melhor.
 
 ## 6. Próximo passo recomendado
 
-**Jogar no celular.** O jogo esta publicavel: `npm run build` gera `dist/`, a Vercel serve, o PWA
-instala na tela inicial em landscape. Tudo daqui em diante depende de sentir isso na mao.
+**Playtest da nova curva.** Tudo que entrou nesta leva (rocha que endurece, selo de bioma,
+refino) existe para responder uma frase do dono do jogo: *"cheguei na zona das ruinas antigas
+bem rapido"*. So jogando da para saber se agora esta dificil ou chato.
+
+O teste tem um alvo claro: **quanto tempo leva para abrir o primeiro selo** (matar o Golem de
+Escombros aos 50 m e resgatar Jonas aos 118 m). Se for menos de 10 minutos, `hpMultiplier` da
+pedra e a vida do Golem estao baixos demais.
 
 Na ordem, depois do teste:
 
-1. **Ajustar os numeros do combate e da cota.** Guardiao de 260 de vida contra 10 de dano base sao
-   26 golpes — tenso de proposito, mas so o playtest diz se e tenso ou chato. Os numeros estao em
-   `src/data/creatures.ts`, `src/data/quota.ts` e `CONFIG.combat`.
-2. **Arte das criaturas e das estruturas de automacao.** Sao os dois unicos sistemas grandes ainda
-   desenhados em vetor. Maior ganho visual por hora investida agora. (O heroi ja saiu dessa lista:
-   usa tiras de 8 quadros por animacao — ver ASSETS.md.)
-3. **Som real.** O sintetizador cobre tudo, mas som e metade da sensacao de impacto.
-4. **Equipamentos como itens** (capacete, traje, mochila, picareta): a camada de modificadores ja
-   aceita; falta a tela e os dados.
-5. **Tela inicial + tutorial de 30 segundos.** Hoje o jogo entra direto na base.
+1. **Ajustar `hpMultiplier` e a vida dos chefes.** Os dois numeros novos que controlam o ritmo
+   inteiro, em `src/data/layers.ts` e `src/data/creatures.ts`. Mexer neles antes de mexer em
+   qualquer outra coisa.
+2. **Arte dos 6 chefes.** Viraram o climax de cada camada e sao vetor. Prompts prontos em
+   ASSETS.md.
+3. **Segunda fase de chefe.** Abaixo de 40 % de vida, algo muda — velocidade, invocacao, area.
+   Hoje a luta e uma barra descendo.
+4. **Retratos dos mineiros perdidos.** Seis historias, uma silhueta. Prompts em ASSETS.md.
+5. **Cidades subterraneas nas Ruinas.** O maior salto de "lugar" que falta no mundo.
+6. **Som real.** O sintetizador cobre tudo, mas som e metade da sensacao de impacto.
+7. **Tela inicial + tutorial de 30 segundos.** Hoje o jogo entra direto na base.
 
 Nao adicionar sistema novo antes do item 1 estar aprovado.

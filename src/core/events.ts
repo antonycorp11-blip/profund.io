@@ -65,6 +65,8 @@ export interface GameEvents {
     worldX: number;
     worldY: number;
   };
+  /** Um selo entre biomas se abriu: chefe morto + todos os mineiros da camada resgatados. */
+  'gate:opened': { layerId: string; layerName: string };
   'creature:hurt': {
     worldX: number;
     worldY: number;

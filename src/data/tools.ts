@@ -77,9 +77,12 @@ export const TOOLS: ToolDef[] = [
     miningPower: 70,
     miningSpeed: 1.7,
     rangeBonus: 20,
-    cost: { iron: 90, gold: 12 },
+    // A melhor picareta pede Barra de Ouro, nao ouro cru — so sai da
+    // Refinaria (ver REFINE_RECIPES). E o que da proposito real a linha de
+    // automacao: sem refinar, esta picareta nunca fica ao alcance.
+    cost: { iron: 90, gold_bar: 6 },
     color: '#a88bd8',
-    description: 'Feita para o que existe la embaixo.',
+    description: 'Feita para o que existe la embaixo. Precisa de ouro refinado.',
   },
 ];
 
