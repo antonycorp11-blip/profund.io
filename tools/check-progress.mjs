@@ -72,16 +72,37 @@ for (const l of GATE_LAYERS) {
   }
 }
 
-// --- 3. estrutura que custa o que ela mesma produz ------------------------
-const refinados = new Set(Object.values(REFINE_RECIPES).map((r) => r?.out));
+// --- 3. a base consegue produzir o que ela mesma cobra? -------------------
+//
+// Simula a cadeia: para cada estrutura, na ordem de dependencia, confere se
+// todo material refinado que ela pede pode sair do refinador da base a partir
+// do que ja esta disponivel. Pega os dois lados da mesma armadilha: estrutura
+// que pede o que so ela destrava, e material refinado que a base nunca produz.
+const refinaveis = new Map(Object.entries(REFINE_RECIPES).map(([ent, r]) => [r.out, ent]));
+const BRUTOS_DA_MINA = new Set(['stone', 'coal', 'copper', 'iron', 'gold', 'crystal', 'ruby', 'relic', 'voidstone']);
 for (const base of BASE_CAMPS) {
+  for (const slot of base.slots) {
+    for (const r of Object.keys(slot.cost)) {
+      if (BRUTOS_DA_MINA.has(r)) continue;
+      const origem = refinaveis.get(r);
+      if (!origem) {
+        erros.push(\`\${base.nome}/\${slot.nome}: custa \${r}, que nao e minerio nem sai de receita.\`);
+        continue;
+      }
+      if (!BRUTOS_DA_MINA.has(origem)) {
+        erros.push(\`\${base.nome}/\${slot.nome}: \${r} vem de \${origem}, que tambem nao e minerio bruto.\`);
+      }
+    }
+  }
+  // A primeira estrutura da cadeia nao pode pedir nada refinado: nesse momento
+  // o refinador ainda nao tem de onde tirar minerio.
   const primeira = base.slots.find((s) => s.requires.length === 1 && s.requires[0] === 'refinador');
   if (!primeira) continue;
   for (const r of Object.keys(primeira.cost)) {
-    if (refinados.has(r as never)) {
+    if (!BRUTOS_DA_MINA.has(r)) {
       erros.push(
         \`\${base.nome}: a primeira estrutura (\${primeira.nome}) custa \${r}, que e refinado — \` +
-          'e a refinaria da base so roda depois dela. Trava dura.'
+          'e a base ainda nao tem deposito para alimentar o refinador. Trava dura.'
       );
     }
   }

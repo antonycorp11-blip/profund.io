@@ -42,6 +42,48 @@ export class ActiveSkills {
   }
 
   /** Todas, na ordem em que aparecem no pad. */
+  /**
+   * As tres equipadas, na ordem dos botoes.
+   *
+   * O pad tem TRES lugares e nao cinco, e isso e decisao de jogo, nao de tela:
+   * cinco botoes viram um teclado que ninguem le no meio de uma luta. Com tres,
+   * escolher o que levar e parte da preparacao — e trocar antes de descer vira
+   * uma decisao com peso.
+   */
+  equipped: (ActiveSkillId | null)[] = ['shock', 'drill', 'recall'];
+
+  /** Maximo de habilidades levadas ao mesmo tempo. */
+  static readonly SLOTS = 3;
+
+  /** Icone da habilidade, para o botao do pad. */
+  iconOf(id: string): string {
+    return activeSkillMeta(id as ActiveSkillId).icon;
+  }
+
+  isEquipped(id: ActiveSkillId): boolean {
+    return this.equipped.includes(id);
+  }
+
+  /**
+   * Poe ou tira do cinto.
+   *
+   * Sem slot livre, a nova entra no lugar da PRIMEIRA equipada — e mais util
+   * trocar direto do que receber um "cinto cheio" e ter que desequipar antes.
+   */
+  toggleEquip(id: ActiveSkillId): void {
+    const i = this.equipped.indexOf(id);
+    if (i >= 0) {
+      this.equipped[i] = null;
+      return;
+    }
+    const vaga = this.equipped.indexOf(null);
+    if (vaga >= 0) {
+      this.equipped[vaga] = id;
+      return;
+    }
+    this.equipped[0] = id;
+  }
+
   all(): ActiveSkillState[] {
     return ACTIVE_SKILLS.map((m) => this.state(m.id));
   }
@@ -157,6 +199,15 @@ export class ActiveSkills {
     if (st.charges > 0 || st.casting > 0) return 1;
     const total = this.cooldownOf(id);
     return total <= 0 ? 1 : 1 - st.cooldown / total;
+  }
+
+  equippedToJSON(): (ActiveSkillId | null)[] {
+    return [...this.equipped];
+  }
+
+  equippedFromJSON(data: (ActiveSkillId | null)[] | undefined): void {
+    if (!data || data.length === 0) return;
+    this.equipped = [0, 1, 2].map((i) => data[i] ?? null);
   }
 
   toJSON(): Record<string, { charges: number; cooldown: number }> {

@@ -69,11 +69,10 @@ export class TouchControls {
     // GADGET e DASH sairam: o lugar deles e das habilidades ativas — uma por
     // botao, e cada uma so aparece depois de aprendida.
     const specs: PadButtonSpec[] = [
-      { id: 'btn-skill1', label: '⚡', button: 'skill1', cls: 'skill', locked: false },
-      { id: 'btn-skill2', label: '🛠', button: 'skill2', cls: 'skill', locked: false },
-      { id: 'btn-skill3', label: '💥', button: 'skill3', cls: 'skill', locked: false },
-      { id: 'btn-skill4', label: '👁', button: 'skill4', cls: 'skill', locked: false },
-      { id: 'btn-skill5', label: '⟲', button: 'skill5', cls: 'skill', locked: false },
+      // Tres lugares fixos. O que cada um FAZ vem do cinto, nao daqui.
+      { id: 'btn-skill1', label: '', button: 'skill1', cls: 'skill', locked: false },
+      { id: 'btn-skill2', label: '', button: 'skill2', cls: 'skill', locked: false },
+      { id: 'btn-skill3', label: '', button: 'skill3', cls: 'skill', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];
@@ -84,7 +83,9 @@ export class TouchControls {
       el.textContent = spec.label;
       el.setAttribute('aria-label', spec.label);
       if (spec.cls === 'skill') {
-        el.innerHTML = `${spec.label}<span class="pad-badge" data-charges hidden></span>`;
+        el.innerHTML =
+          `<span class="pad-icon">${spec.label}</span>` +
+          '<span class="pad-badge" data-charges hidden></span>';
         el.hidden = true;
         this.skillBtns.push(el);
         // Habilidades vao para a propria coluna: no grid dos botoes elas
@@ -131,12 +132,25 @@ export class TouchControls {
    * solver que disse isso, depois de eu tentar tres vezes no olho e o
    * resultado ficar espalhado pela tela.
    */
+  /**
+   * O LEQUE de habilidades, acima do par MINERAR + PULAR.
+   *
+   * Sao coordenadas (right, bottom) em px a partir do canto inferior direito.
+   *
+   * Ja tentei anel em volta do MINERAR duas vezes. Nao funciona num celular: o
+   * anel que nao encosta em nada fica irregular, e irregular nao se le — o
+   * jogador precisa de RITMO para achar o botao sem olhar. Leque simetrico
+   * acima das duas teclas de acao e o que quase todo jogo de toque faz, e e
+   * por isso.
+   *
+   * Simetrico em torno do centro: com uma habilidade ela fica no meio, com
+   * cinco o leque abre para os dois lados. Calculado por solver, conferindo
+   * distancia ao MINERAR, ao PULAR, entre os proprios botoes e a borda.
+   */
   private static readonly ARCO: Record<number, [number, number][]> = {
-    1: [[153, 76]],
-    2: [[144, 101], [153, 47]],
-    3: [[123, 153], [165, 98], [168, 29]],
-    4: [[136, 115], [154, 60], [139, 178], [190, 118]],
-    5: [[136, 115], [154, 60], [134, 188], [191, 129], [208, 50]],
+    1: [[150, 120]],
+    2: [[122, 118], [178, 118]],
+    3: [[94, 133], [150, 140], [206, 133]],
   };
 
   /**
@@ -147,9 +161,7 @@ export class TouchControls {
    * abre. Posicao fixa por habilidade deixaria buracos no arco enquanto o
    * jogador nao comprou tudo.
    */
-  private posicionarArco(
-    estados: { unlocked: boolean }[]
-  ): void {
+  private posicionarArco(estados: ({ unlocked: boolean } | undefined)[]): void {
     const visiveis: HTMLButtonElement[] = [];
     for (let i = 0; i < this.skillBtns.length; i++) {
       if (estados[i]?.unlocked) visiveis.push(this.skillBtns[i]);
@@ -169,8 +181,23 @@ export class TouchControls {
     all(): { id: string; unlocked: boolean; charges: number; cooldown: number; casting: number }[];
     readyRatio(id: never): number;
     castRatio(id: never): number;
+    equipped: (string | null)[];
+    iconOf(id: string): string;
   }): void {
-    const estados = skills.all();
+    const todos = skills.all();
+    // Cada botao mostra a habilidade que esta NAQUELE lugar do cinto.
+    const estados = skills.equipped.map((id) => {
+      if (!id) return undefined;
+      const st = todos.find((x) => x.id === id);
+      return st && st.unlocked ? st : undefined;
+    });
+    for (let i = 0; i < this.skillBtns.length; i++) {
+      const st = estados[i];
+      const el = this.skillBtns[i];
+      const icone = st ? skills.iconOf(st.id) : '';
+      const atual = el.querySelector('.pad-icon');
+      if (atual && atual.textContent !== icone) atual.textContent = icone;
+    }
     this.posicionarArco(estados);
     for (let i = 0; i < this.skillBtns.length; i++) {
       const el = this.skillBtns[i];

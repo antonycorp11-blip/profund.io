@@ -1050,6 +1050,7 @@ export class Game {
     this.reputation.fromJSON(data.reputation);
     this.journal.fromJSON(data.journal);
     this.camps.fromJSON(data.camps);
+    this.activeSkills.equippedFromJSON(data.equipped as (ActiveSkillId | null)[] | undefined);
     // Quem ja foi resgatado num save antigo volta direto para o posto: sem
     // isso a base perdia a equipe a cada recarregamento.
     for (const ficha of RESCUE_NPCS) {
@@ -1295,11 +1296,18 @@ export class Game {
 
   /** Le os botoes de habilidade (tela e teclado) e liga o que der. */
   private pollSkillButtons(): void {
-    const ids: ActiveSkillId[] = ['shock', 'drill', 'blast', 'sense', 'recall'];
-    for (let i = 0; i < ids.length; i++) {
-      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3' | 'skill4' | 'skill5';
+    // Tres lugares; o que cada um dispara vem do cinto.
+    for (let i = 0; i < 3; i++) {
+      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3';
       if (!this.input.wasPressed(botao)) continue;
-      const id = ids[i];
+      const id = this.activeSkills.equipped[i];
+      if (!id) {
+        Events.emit('ui:toast', {
+          text: 'Lugar vazio no cinto. Escolha uma habilidade em SKILLS.',
+          tone: 'info',
+        });
+        continue;
+      }
       const st = this.activeSkills.state(id);
       const meta = activeSkillMeta(id);
       if (st.casting > 0) {
@@ -1881,6 +1889,7 @@ export class Game {
       reputation: this.reputation.toJSON(),
       journal: this.journal.toJSON(),
       camps: this.camps.toJSON(),
+      equipped: this.activeSkills.equippedToJSON(),
       cityMet: this.cityNpcs.filter((n) => n.met).map((n) => n.id),
       scrolls: this.scrollObjects.filter((s) => s.found).map((s) => s.id),
       tiles: flat,

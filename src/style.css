@@ -1352,11 +1352,11 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 /*
- * PULAR sobe para cima do MINERAR.
+ * PULAR volta para o lado do MINERAR, alinhado embaixo.
  *
- * Ele ficava a esquerda, ocupando exatamente a unica faixa em que o arco de
- * habilidades cabe perto do polegar — com ele ali o solver nao achava arranjo
- * valido nem para tres botoes sem jogar algum para o meio da tela.
+ * E o par de acao classico de jogo de toque, e liberar o espaco ACIMA dos dois
+ * e o que deixa o leque de habilidades caber com ritmo. Tentei ele em cima do
+ * MINERAR e ele empurrava o leque para o meio da tela.
  */
 .touch-btn.medium {
   width: 66px;
@@ -1365,8 +1365,8 @@ body:has(.hud-map-slot.folded) .toasts {
   background: rgba(40, 62, 84, 0.78);
   border-color: rgba(140, 190, 240, 0.4);
   position: absolute;
-  right: 27px;
-  bottom: 112px;
+  right: 116px;
+  bottom: 14px;
 }
 
 .touch-btn.small {
@@ -3408,8 +3408,8 @@ body:has(.hud-map-slot.folded) .toasts {
 .touch-fold {
   pointer-events: auto;
   position: absolute;
-  right: calc(var(--safe-r) + 236px);
-  bottom: calc(var(--safe-b) + 18px);
+  right: calc(var(--safe-r) + 300px);
+  bottom: calc(var(--safe-b) + 22px);
   width: 34px;
   height: 22px;
   border-radius: 9px;
@@ -3711,4 +3711,22 @@ body:has(.hud-map-slot.folded) .toasts {
 .mini-col b {
   color: #ffdc83;
   font-variant-numeric: tabular-nums;
+}
+
+/* Habilidade no cinto: a tela precisa dizer quais tres estao indo junto. */
+.active-card.equipada {
+  border-color: rgba(255, 196, 83, 0.65);
+  box-shadow: inset 0 0 0 1px rgba(255, 196, 83, 0.28);
+}
+
+.btn.on {
+  background: rgba(255, 196, 83, 0.9);
+  color: #2a1d10;
+  border-color: rgba(255, 196, 83, 0.9);
+  font-weight: 700;
+}
+
+/* Icone do botao do pad: trocado em tempo real conforme o cinto muda. */
+.pad-icon {
+  line-height: 1;
 }

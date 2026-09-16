@@ -101,8 +101,12 @@ export class ActiveSkillsUI {
     const money = Math.floor(this.host.stock.money);
     const podePagar = money >= preco;
 
+    const skills = this.host.active;
+    const equipada = skills.isEquipped(meta.id);
+    const cheio = skills.equipped.filter(Boolean).length >= 3;
+
     const el = document.createElement('div');
-    el.className = `active-card ${level > 0 ? 'owned' : ''}`;
+    el.className = `active-card ${level > 0 ? 'owned' : ''} ${equipada ? 'equipada' : ''}`;
     const art = def.art ? Assets.skillIcon(def.art) : null;
     const icone = art ? `<img src="${art}" alt="">` : meta.icon;
 
@@ -126,10 +130,31 @@ export class ActiveSkillsUI {
       <div class="active-next">${this.nextText(def, level)}</div>
       <div class="active-foot">
         <span class="active-req">${motivo}</span>
+        ${
+          level > 0
+            ? `<button class="btn ${equipada ? 'on' : ''}" data-equip>${
+                equipada ? 'NO CINTO' : 'LEVAR'
+              }</button>`
+            : ''
+        }
         <button class="btn primary" data-learn ${maxed || !check.ok || !podePagar ? 'disabled' : ''}>
           ${maxed ? 'COMPLETA' : `${level > 0 ? 'MELHORAR' : 'APRENDER'} · ✦${preco.toLocaleString('pt-BR')}`}
         </button>
       </div>`;
+
+    const eq = el.querySelector('[data-equip]') as HTMLButtonElement | null;
+    if (eq) {
+      eq.addEventListener('click', () => {
+        // Cinto cheio: a nova entra no lugar da primeira. Trocar direto e mais
+        // util do que receber um "cinto cheio" e ter que desequipar antes.
+        const trocou = !equipada && cheio;
+        skills.toggleEquip(meta.id);
+        if (trocou) {
+          Events.emit('ui:toast', { text: `${def.name} entrou no cinto.`, tone: 'info' });
+        }
+        this.render();
+      });
+    }
 
     const btn = el.querySelector('[data-learn]') as HTMLButtonElement;
     btn.addEventListener('click', () => {

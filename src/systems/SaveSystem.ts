@@ -46,6 +46,8 @@ export interface SaveData {
   collectors?: import('./CollectorManager').CollectorSave;
   equipment?: import('./Equipment').EquipmentSave;
   /** Selos entre biomas: chefe morto / selo aberto, por camada. */
+  /** As tres habilidades no cinto, por lugar. */
+  equipped?: (string | null)[];
   camps?: import('./BaseCamps').BaseCampSave;
   journal?: import('./Journal').JournalSave;
   reputation?: import('./Reputation').ReputationSave;

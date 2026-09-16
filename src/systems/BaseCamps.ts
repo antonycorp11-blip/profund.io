@@ -142,8 +142,17 @@ export class BaseCamps {
             return falta > 0 ? `${Math.ceil(falta)} ${RESOURCES[res].name}` : null;
           })
           .filter(Boolean);
+        // Quando o que falta e REFINADO, dizer onde se consegue. O jogador
+        // olhava "falta 6 Coque" sem ter refinaria nenhuma e travava ali — e a
+        // resposta estava a dois metros dele, no refinador velho da propria
+        // base, que ja funciona (devagar) sem esteira.
+        const refinado = Object.keys(slot.cost).some((id) =>
+          Object.values(REFINE_RECIPES).some((r) => r?.out === id)
+        );
         Events.emit('ui:toast', {
-          text: `${slot.nome}: falta ${faltando.join(' e ')}.`,
+          text: refinado
+            ? `${slot.nome}: falta ${faltando.join(' e ')}. O refinador velho faz isso — despeje carvao e minerio no deposito e espere.`
+            : `${slot.nome}: falta ${faltando.join(' e ')}.`,
           tone: 'warn',
         });
         return false;
@@ -257,9 +266,18 @@ export class BaseCamps {
       let feito = 0;
       for (const [res, qtd] of brutos) {
         if (qtd <= 0) continue;
-        // Carvao aqui e COMBUSTIVEL, nao materia-prima. Refina-lo na base faria
-        // a maquina comer o proprio fogo e nunca chegar no ouro.
-        if (res === 'coal') continue;
+        /*
+         * Carvao e combustivel PRIMEIRO, materia-prima DEPOIS.
+         *
+         * Eu tinha proibido refinar carvao aqui para a maquina nao comer o
+         * proprio fogo. So que a Esteira de Entrada custa Coque, e Coque so sai
+         * de carvao — entao a base nunca produzia o que ela mesma precisava
+         * para crescer. Outra trava dura, pelo caminho oposto da primeira.
+         *
+         * A regra certa: com o fogo folgado (acima de 25), o excedente de
+         * carvao vira Coque. Com o fogo apertado, tudo vai para a fornalha.
+         */
+        if (res === 'coal' && this.fuelOf(base.id) < 25) continue;
         const receita = REFINE_RECIPES[res];
         if (!receita) continue;
         const usa = Math.min(qtd, taxa);
