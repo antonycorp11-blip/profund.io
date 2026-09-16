@@ -1,4 +1,4 @@
-import { BLOCK_IDS, blockByKey } from '../data/blocks';
+import { BLOCK_IDS, blockByKey, blockDef } from '../data/blocks';
 import { LAYERS, layerAt } from '../data/layers';
 import { bossForLayer } from '../data/creatures';
 import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
@@ -162,6 +162,19 @@ export function generateWorld(world: World): GeneratedWorldInfo {
       col: arenaCol,
       row: row1 - 1, // encosta no piso selado — o chefe guarda a saida
     });
+  }
+
+  // ---- 3c. Veios prosperos espalhados -------------------------------------
+  // Um punhado de minerios ja nasce com aura, permanentes. Sao a recompensa de
+  // quem anda de lado em vez de so cavar reto para baixo — e o sorteio sai do
+  // `rng` semeado, entao o mesmo mundo sempre tem os mesmos.
+  for (let row = surfaceRow; row < height; row++) {
+    for (let col = 1; col < width - 1; col++) {
+      const id = world.getTile(col, row);
+      if (id === BLOCK_IDS.AIR) continue;
+      if (!blockDef(id).tags.includes('ore')) continue;
+      if (rng.next() < CONFIG.rich.worldChance) world.markRich(col, row, Infinity);
+    }
   }
 
   // ---- 4. Base na superficie ----------------------------------------------

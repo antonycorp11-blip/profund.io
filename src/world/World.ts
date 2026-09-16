@@ -11,6 +11,13 @@ export interface DamageResult {
   progress: number;
   /** Motivo de falha quando applied = false. */
   blockedBy?: 'tool' | 'indestructible';
+  /**
+   * O bloco tinha aura de veio prospero no instante da quebra.
+   *
+   * Vai no resultado pelo mesmo motivo que `def`: quem calcula o loot roda
+   * DEPOIS do tile virar ar, e ai a aura ja nao existe mais.
+   */
+  wasRich?: boolean;
 }
 
 /**
@@ -37,6 +44,15 @@ export class World {
   readonly chunkSize: number;
   readonly chunkCols: number;
   readonly chunkRows: number;
+
+  /**
+   * Veios prosperos: index -> quando a aura expira (Infinity = nasceu assim).
+   *
+   * Map esparso em vez de mais um array do tamanho do mundo: sao dezenas de
+   * tiles num mapa de centenas de milhares. Nao entra no save — os permanentes
+   * saem da geracao deterministica e os temporarios deviam mesmo acabar.
+   */
+  private rich = new Map<number, number>();
 
   private time = 0;
   /** Minerios quebrados esperando a hora de voltar: index -> bloco e quando. */
@@ -150,6 +166,70 @@ export class World {
     for (let i = 0; i < this.chunkCols * this.chunkRows; i++) this.dirtyChunks.add(i);
   }
 
+  /** Este bloco tem aura de veio prospero agora? */
+  isRich(col: number, row: number): boolean {
+    if (!this.inBounds(col, row)) return false;
+    const until = this.rich.get(this.idx(col, row));
+    return until !== undefined && until > this.time;
+  }
+
+  /** Acende a aura num bloco. `durationSec = Infinity` para permanente. */
+  markRich(col: number, row: number, durationSec: number): void {
+    if (!this.inBounds(col, row)) return;
+    const i = this.idx(col, row);
+    if (this.tiles[i] === BLOCK_IDS.AIR) return;
+    this.rich.set(i, durationSec === Infinity ? Infinity : this.time + durationSec);
+  }
+
+  /** Apaga a aura (o bloco foi quebrado ou o tempo acabou). */
+  private clearRich(i: number): void {
+    this.rich.delete(i);
+  }
+
+  /**
+   * Percorre os veios prosperos vivos. A aura e desenhada POR CIMA dos chunks,
+   * viva e pulsando — assar no cache faria cada expiracao repintar um chunk.
+   */
+  forEachRich(fn: (col: number, row: number) => void): void {
+    for (const [i, until] of this.rich) {
+      if (until <= this.time) {
+        this.rich.delete(i);
+        continue;
+      }
+      fn(i % this.width, Math.floor(i / this.width));
+    }
+  }
+
+  /**
+   * Acende uma chuva de veios prosperos numa faixa de linhas.
+   *
+   * So minerio recebe aura: dar aura a pedra comum faria o jogador quebrar
+   * pedra por engano atras de um brilho que nao paga nada.
+   */
+  richBurst(row0: number, row1: number, count: number, durationSec: number): number {
+    const candidates: number[] = [];
+    for (let row = Math.max(0, row0); row <= Math.min(this.height - 1, row1); row++) {
+      for (let col = 1; col < this.width - 1; col++) {
+        const i = this.idx(col, row);
+        const id = this.tiles[i];
+        if (id === BLOCK_IDS.AIR) continue;
+        if (!blockDef(id).tags.includes('ore')) continue;
+        candidates.push(i);
+      }
+    }
+    // Embaralha so o necessario: queremos `count` sorteados, nao a lista toda.
+    let lit = 0;
+    for (let n = 0; n < count && candidates.length > 0; n++) {
+      const pick = Math.floor(Math.random() * candidates.length);
+      const i = candidates[pick];
+      candidates[pick] = candidates[candidates.length - 1];
+      candidates.pop();
+      this.markRich(i % this.width, Math.floor(i / this.width), durationSec);
+      lit++;
+    }
+    return lit;
+  }
+
   /** Profundidade em metros de uma linha de tiles. */
   depthOfRow(row: number): number {
     return Math.max(0, (row - this.surfaceRow) * CONFIG.metersPerTile);
@@ -195,19 +275,21 @@ export class World {
     }
     const hp = this.effectiveHp(col, row);
     const i = this.idx(col, row);
+    const rich = this.isRich(col, row);
     const next = this.damage[i] + amount;
     this.lastHit[i] = this.time;
     if (next >= hp) {
       this.damage[i] = 0;
       this.damaged.delete(i);
       this.setTile(col, row, BLOCK_IDS.AIR);
+      this.clearRich(i);
       this.scheduleRegrow(i, def);
-      return { applied: true, broken: true, def, progress: 1 };
+      return { applied: true, broken: true, def, progress: 1, wasRich: rich };
     }
     this.damage[i] = next;
     this.damaged.add(i);
     this.markDirtyAround(col, row);
-    return { applied: true, broken: false, def, progress: next / hp };
+    return { applied: true, broken: false, def, progress: next / hp, wasRich: rich };
   }
 
   /** Regenera dano de blocos que nao sao atingidos ha algum tempo. */

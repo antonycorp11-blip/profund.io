@@ -154,6 +154,27 @@ export const CONFIG = {
    * carvao. So MINERIO volta: corredor aberto continua aberto, porque encher
    * o caminho de pedra de novo seria punir quem construiu passagem.
    */
+  /**
+   * Veio prospero: bloco com aura que rende muito mais.
+   *
+   * Dois nascedouros. Um punhado espalhado pelo mundo desde a geracao (achado
+   * por acaso, recompensa quem explora de lado em vez de so descer), e uma
+   * chuva deles logo abaixo do selo quando o chefe do bioma cai — a camada
+   * nova se abre literalmente brilhando.
+   */
+  rich: {
+    /** Multiplicador de recurso do bloco com aura. */
+    multiplier: 4,
+    /** Chance por tile de minerio de ja nascer prospero na geracao. */
+    worldChance: 0.006,
+    /** Quantos blocos a queda do chefe acende abaixo do selo. */
+    gateBurst: 90,
+    /** Quantas linhas abaixo do selo a chuva alcanca. */
+    gateRows: 22,
+    /** Quanto tempo a chuva do chefe dura (s). */
+    gateDurationSec: 240,
+  },
+
   regrow: {
     enabled: true,
     /** Tempo base ate um minerio quebrado voltar (s). */

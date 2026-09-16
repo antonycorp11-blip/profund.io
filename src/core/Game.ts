@@ -48,6 +48,7 @@ import { CollectorManager } from '../systems/CollectorManager';
 import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
+import { gateBandRows, gateLayerDef } from '../data/gates';
 import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
@@ -524,7 +525,17 @@ export class Game {
       this.save();
     });
     Events.on('gate:opened', (p) => {
-      const awakened = this.mining.awakenBiome(p.layerId);
+      // A camada nova se abre brilhando: uma chuva de veios prosperos logo
+      // abaixo do selo, com prazo. E o convite para descer AGORA, enquanto
+      // dura — e o que transforma "matei o chefe" em "vem comigo".
+      const cfg = CONFIG.rich;
+      const band = gateBandRows(this.world.surfaceRow, gateLayerDef(p.layerId));
+      const lit = this.world.richBurst(
+        band.row1 + 1,
+        band.row1 + cfg.gateRows,
+        cfg.gateBurst,
+        cfg.gateDurationSec
+      );
       this.camera.addShake(8);
       this.floating.push(
         this.player.cx,
@@ -537,7 +548,7 @@ export class Game {
         speed: 180,
       });
       this.hud.toast(
-        `A barreira de ${p.layerName} se rompeu! ${awakened} blocos despertaram por 3 minutos.`,
+        `A barreira de ${p.layerName} se rompeu! ${lit} veios prosperos acesos por ${Math.round(cfg.gateDurationSec / 60)} minutos.`,
         'story'
       );
       this.save();
