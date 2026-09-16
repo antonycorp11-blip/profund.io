@@ -104,6 +104,23 @@ export const CLUES: ClueDef[] = [
     layer: 'stone',
   },
   {
+    id: 'clue_trilhos',
+    title: 'Trilhos reparados',
+    col: 88,
+    row: 18 + 112,
+    roomW: 9,
+    roomH: 5,
+    prompt: 'Examinar trilho',
+    lines: [
+      { speaker: 'Elias', text: 'Um trilho de minerio. Torto, velho... e remendado.' },
+      { speaker: 'Elias', text: 'Solda nova em ferro velho. Isso tem semanas, nao decadas.' },
+      { speaker: 'Elias', text: 'A companhia fechou tudo isto ha quatorze anos.' },
+      { speaker: 'Elias', text: 'Entao quem consertou?' },
+    ],
+    logEntry: 'Pista registrada: Trilhos reparados (112 m)',
+    layer: 'stone',
+  },
+  {
     id: 'clue_pagina_01',
     title: 'Pagina 01 — O padrao',
     col: 50,

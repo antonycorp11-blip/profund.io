@@ -57,6 +57,25 @@ export const SCROLLS: ScrollDef[] = [
       'Espero que demore muito para ele descobrir a verdade sobre isso.',
     ],
   },
+  {
+    id: 'scr_pedra_4', layer: 'stone', depth: 128, col: 100,
+    title: 'Oleo fresco', author: 'Santiago',
+    text: [
+      'Achei um lampiao pendurado numa viga. Reservatorio pela metade, pavio queimado ate a metade.',
+      'Oleo evapora. Este nao evaporou.',
+      'Alguem acendeu esse lampiao esta semana, e nao fui eu.',
+    ],
+  },
+  {
+    id: 'scr_pedra_5', layer: 'stone', depth: 172, col: 46,
+    title: 'Sobre pedir licenca', author: 'John',
+    text: [
+      'O sujeito do posto me mandou embora tres vezes antes de me deixar encher o cantil.',
+      'Nao por mal. Ele disse que quem desce fazendo pergunta demais atrai atencao para eles.',
+      'Perguntei atencao de quem. Ele fingiu que nao ouviu e me deu pao.',
+    ],
+  },
+
   // -------------------------------------------------------- cristal (200+) --
   {
     id: 'scr_cristal_1', layer: 'crystal', depth: 212, col: 44,

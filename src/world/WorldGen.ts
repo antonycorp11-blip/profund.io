@@ -4,6 +4,7 @@ import { bossForLayer } from '../data/creatures';
 import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
 import { CONFIG } from '../data/config';
 import { carveBlockia, carveCityCorridor } from './Blockia';
+import { carvePostoNove } from './PostoNove';
 import { CLUES, RESCUE_NPCS } from '../data/story';
 import { SCROLLS } from '../data/scrolls';
 import { fbm2d, hash2d, Rng } from '../core/rng';
@@ -180,6 +181,7 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   // ---- 3b3. Blockia ------------------------------------------------------
   // Esculpida ANTES dos veios prosperos para que a cidade nao ganhe minerio
   // brilhando dentro das casas, e depois do selo para nao furar barreira.
+  carvePostoNove(world, surfaceRow);
   carveCityCorridor(world, rng, surfaceRow);
   carveBlockia(world, rng, surfaceRow);
 

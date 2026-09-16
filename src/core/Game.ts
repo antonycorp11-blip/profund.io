@@ -59,6 +59,7 @@ import { Missions } from '../systems/Missions';
 import { Reputation } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
 import { BLOCKIA_NPCS } from '../data/blockia';
+import { OUTPOST_NPCS } from '../data/outpost';
 import { blockiaLayout } from '../world/Blockia';
 import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
@@ -506,6 +507,12 @@ export class Game {
       ocupado.add(`${spot.col},${spot.row}`);
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
     }
+    // Posto Nove: coordenadas proprias, fora da geometria de Blockia.
+    for (const d of OUTPOST_NPCS) {
+      const alvo = { col: d.worldCol, row: this.world.surfaceRow + d.depth };
+      const spot = this.world.findStandingSpot(alvo.col, alvo.row, 20) ?? alvo;
+      this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
+    }
     this.scrollObjects = SCROLLS.map((sc) => new ScrollObject(sc, this.world.surfaceRow));
     this.interactables = [
       depot,
@@ -631,6 +638,14 @@ export class Game {
         lines: MINE_CLOSED,
         onClose: () => this.resetSave(),
       });
+    });
+
+    // Conhecer um morador tambem e progresso de missao: o Posto Nove inteiro
+    // e "converse com o Rui".
+    Events.on('city:met', (p) => {
+      this.skills.setStoryFlag(p.id);
+      this.refreshObjective();
+      this.save();
     });
 
     Events.on('mission:done', (p) => {
