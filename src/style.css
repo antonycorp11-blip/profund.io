@@ -3404,3 +3404,148 @@ body {
 .journal-entry .journal-text p {
   white-space: pre-line;
 }
+
+/* --- Painel da base de extracao --- */
+.camp-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(92vw, 460px);
+  max-height: 88vh;
+  background: linear-gradient(150deg, rgba(44, 34, 22, 0.97), rgba(20, 15, 11, 0.97));
+  border: 1px solid rgba(255, 206, 100, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.camp-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.camp-header h3 {
+  margin: 0;
+  flex: 1;
+  font-size: 14px;
+  color: #ffdc83;
+}
+
+.camp-body {
+  padding: 10px 12px 14px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* O fogo e o estado mais importante: sem ele nada anda. */
+.camp-fire {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid var(--stroke);
+  background: rgba(20, 15, 11, 0.6);
+  margin-bottom: 10px;
+}
+
+.camp-fire span {
+  font-size: 22px;
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.camp-fire.on span {
+  filter: none;
+  opacity: 1;
+}
+
+.camp-fire div {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.camp-fire b {
+  color: #ffdc83;
+}
+
+.camp-fire small {
+  display: block;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+}
+
+.camp-pool {
+  margin-bottom: 10px;
+}
+
+.camp-pool h4 {
+  margin: 0 0 4px;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.camp-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.camp-list span {
+  border: 1px solid var(--stroke);
+  border-radius: 7px;
+  padding: 2px 8px;
+}
+
+.camp-list b {
+  color: #ffdc83;
+}
+
+.camp-list i {
+  color: var(--ink-dim);
+  font-size: 11px;
+}
+
+.camp-share h4 {
+  margin: 0 0 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.camp-share input[type='range'] {
+  width: 100%;
+  accent-color: #ffc453;
+}
+
+.camp-share-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 3px;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+}
+
+.camp-share-labels b {
+  display: block;
+  font-size: 13px;
+  color: #ffdc83;
+}
+
+.camp-share-labels span:last-child {
+  text-align: right;
+}
+
+.camp-aviso {
+  margin: 10px 0 0;
+  font-size: 10.5px;
+  color: #e0a94b;
+}

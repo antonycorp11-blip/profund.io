@@ -77,6 +77,15 @@ export interface RescueNpcDef {
    * cheia e minerio no chao.
    */
   teaches?: { titulo: string; texto: string };
+  /**
+   * Base onde ele vai trabalhar depois de resgatado.
+   *
+   * Jonas e Vilma nao voltam para a superficie ficar parados num canto do
+   * acampamento. Eles descem e tocam a base — que e o que eles queriam desde o
+   * comeco: chegar mais fundo. E a diferenca deles para uma copia e que eles
+   * tem OPINIAO sobre o trabalho, e um bonus que vem disso.
+   */
+  worksAt?: { base: string; bonus: 'refino' | 'elevador'; fala: string[] };
 }
 
 /**
@@ -254,6 +263,15 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Jonas', text: 'Derruba o bicho e a parede cede. Nao me pergunta por que. Vou esperar na base.' },
     ],
     walkToOffsetCols: -2,
+    worksAt: {
+      base: 'base_cristal',
+      bonus: 'refino',
+      fala: [
+        'Eu cuido do fogo. Carvao na boca, fogo alto, refinador rodando.',
+        'Passei quatro dias debaixo de pedra pensando em ter um trabalho assim.',
+        'Nao me manda de volta pra cima. Aqui eu sirvo pra alguma coisa.',
+      ],
+    },
     teaches: { titulo: 'TOUPEIRAS', texto: 'Jonas deixou as toupeiras dele com voce. Elas recolhem sozinhas o minerio que voce largou no chao. Abra COPIAS para contratar e melhorar.' },
     layer: 'stone',
   },
@@ -287,6 +305,15 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Vilma', text: 'Se voce descer o bastante, olha pra baixo antes de acender a sua.' },
     ],
     walkToOffsetCols: -2,
+    worksAt: {
+      base: 'base_cristal',
+      bonus: 'elevador',
+      fala: [
+        'O elevador nao e forca, e ritmo. Carrega demais e ele emperra no meio.',
+        'Eu conto o peso de cada subida. Ninguem mais aqui conta.',
+        'E olha: continuo procurando as lanternas azuis. So estou mais perto agora.',
+      ],
+    },
     teaches: { titulo: 'COPIAS', texto: 'Vilma mostrou como usar a copiadora. Uma copia sua minera sozinha enquanto voce esta noutro lugar. Abra COPIAS.' },
     layer: 'crystal',
   },

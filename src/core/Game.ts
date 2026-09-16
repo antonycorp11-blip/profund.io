@@ -58,6 +58,8 @@ import { BaseCampRenderer } from '../world/BaseCampRenderer';
 import { BASE_CAMPS } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
+import { BaseCampUI } from '../ui/BaseCampUI';
+import { BaseTerminal } from '../entities/BaseTerminal';
 import { Missions } from '../systems/Missions';
 import { Reputation } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
@@ -131,6 +133,7 @@ export class Game {
   private camps: BaseCamps;
   private campsRenderer!: BaseCampRenderer;
   private journalUI!: JournalUI;
+  private campUI!: BaseCampUI;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
   private progression = new Progression(this.skills);
@@ -221,6 +224,7 @@ export class Game {
       () => this.journalUI.toggle(),
       () => this.activeUI.toggle()
     );
+    this.campUI = new BaseCampUI(uiRoot, this.camps);
     this.journalUI = new JournalUI(uiRoot, this.journal);
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
@@ -545,6 +549,9 @@ export class Game {
       ...this.scrollObjects,
       ...this.npcs,
       ...this.cityNpcs,
+      ...BASE_CAMPS.map(
+        (b) => new BaseTerminal(b, this.world.surfaceRow, (base) => this.campUI.open(base))
+      ),
     ];
   }
 
@@ -634,7 +641,15 @@ export class Game {
     Events.on('npc:rescued', (p) => {
       // Cada resgatado ensina um sistema. Quem foi tirado de debaixo da pedra
       // e a melhor pessoa possivel para explicar como o jogo funciona.
-      const aula = RESCUE_NPCS.find((n) => n.id === p.id)?.teaches;
+      const ficha = RESCUE_NPCS.find((n) => n.id === p.id);
+      // Quem tem posto vai trabalhar na base em vez de ficar parado na
+      // superficie. Eles queriam chegar mais fundo — agora chegaram.
+      if (ficha?.worksAt) {
+        this.camps.assign(ficha.worksAt.base, ficha.worksAt.bonus);
+        this.spawnWorker(ficha);
+        this.hud.toast(`${p.name} foi trabalhar na Base do Cristal.`, 'good');
+      }
+      const aula = ficha?.teaches;
       if (aula) {
         this.hud.celebrate(aula.titulo, p.name, aula.texto, 'progress', 3);
       }
@@ -934,6 +949,14 @@ export class Game {
     this.reputation.fromJSON(data.reputation);
     this.journal.fromJSON(data.journal);
     this.camps.fromJSON(data.camps);
+    // Quem ja foi resgatado num save antigo volta direto para o posto: sem
+    // isso a base perdia a equipe a cada recarregamento.
+    for (const ficha of RESCUE_NPCS) {
+      if (!ficha.worksAt) continue;
+      if (!this.skills.hasStoryFlag(ficha.id)) continue;
+      this.camps.assign(ficha.worksAt.base, ficha.worksAt.bonus);
+      this.spawnWorker(ficha);
+    }
     const lidos = new Set(data.scrolls ?? []);
     for (const sc of this.scrollObjects) sc.found = lidos.has(sc.id);
     const conhecidos = new Set(data.cityMet ?? []);
@@ -1031,6 +1054,7 @@ export class Game {
       this.vitals.hurtFlash <= 0;
     this.activeSkills.update(dt, podeCanalizar);
     this.camps.update(dt);
+    this.campUI.update(dt);
     this.campsRenderer.update(dt);
     this.shock.update(dt);
     if (!uiBlocking) this.pollSkillButtons();
@@ -1572,6 +1596,47 @@ export class Game {
       }
     }
     return null;
+  }
+
+  /**
+   * Coloca um resgatado na base como trabalhador.
+   *
+   * Reusa o `CityNpc`: ele ja sabe andar em volta de casa, conversar e usar a
+   * folha de arte certa. A ficha de morador e montada a partir da ficha do
+   * mineiro, entao Jonas la embaixo e o MESMO Jonas, com a mesma cara.
+   */
+  private spawnWorker(ficha: (typeof RESCUE_NPCS)[number]): void {
+    const posto = ficha.worksAt;
+    if (!posto) return;
+    // Deduplica pelo proprio id: a folha de arte do trabalhador e a mesma do
+    // mineiro, entao Jonas la embaixo tem a cara do Jonas.
+    if (this.cityNpcs.some((n) => n.id === ficha.id)) return;
+    const base = BASE_CAMPS.find((b) => b.id === posto.base);
+    if (!base) return;
+    const slot = base.slots.find((s) => s.kind === (posto.bonus === 'refino' ? 'refinador' : 'elevador'));
+    const alvo = {
+      col: base.col + (slot?.col ?? 4) + 2,
+      row: this.world.surfaceRow + base.depth,
+    };
+    const spot = this.world.findStandingSpot(alvo.col, alvo.row, 12) ?? alvo;
+    this.cityNpcs.push(
+      new CityNpc(
+        {
+          id: ficha.id,
+          name: ficha.name,
+          role: posto.bonus === 'refino' ? 'Cuida do fogo' : 'Cuida do elevador',
+          nivel: 0,
+          offset: 0,
+          color: '#ffc453',
+          trust: 0,
+          lines: posto.fala.map((t) => ({ speaker: ficha.name, text: t })),
+          idleLines: posto.fala,
+        },
+        spot.col,
+        spot.row
+      )
+    );
+    this.interactables.push(this.cityNpcs[this.cityNpcs.length - 1]);
   }
 
   private refreshObjective(): void {

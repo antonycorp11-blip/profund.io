@@ -57,6 +57,8 @@ export class BaseCamps {
   private refinado = new Map<string, Map<ResourceId, number>>();
   private fuel = new Map<string, number>();
   private sobe = new Map<string, number>();
+  /** Quem trabalha em cada base: bonus -> ativo. */
+  private equipe = new Map<string, Set<'refino' | 'elevador'>>();
 
   constructor(private stock: BaseStock) {
     for (const base of BASE_CAMPS) {
@@ -76,6 +78,23 @@ export class BaseCamps {
       }
       this.reavaliar(base);
     }
+  }
+
+  /**
+   * Poe alguem para tocar a base.
+   *
+   * Nao e um numero maior por si so: cada um cuida de uma PARTE, e so dessa.
+   * Jonas no fogo faz o refino render mais; Vilma no elevador faz subir mais.
+   * Contratar os dois nao dobra nada — sao gargalos diferentes.
+   */
+  assign(baseId: string, bonus: 'refino' | 'elevador'): void {
+    const set = this.equipe.get(baseId) ?? new Set();
+    set.add(bonus);
+    this.equipe.set(baseId, set);
+  }
+
+  hasWorker(baseId: string, bonus: 'refino' | 'elevador'): boolean {
+    return this.equipe.get(baseId)?.has(bonus) ?? false;
   }
 
   private key(baseId: string, kind: StructureKind): string {
@@ -215,7 +234,10 @@ export class BaseCamps {
       const temEntrada = this.built(base.id, 'esteira_entrada');
       if (!temEntrada) continue;
       const velho = !this.built(base.id, 'casa_capataz');
-      const taxa = REFINERY_RATE * (velho ? OLD_REFINERY_PENALTY : 1) * dt;
+      // Alguem cuidando do fogo rende 70% a mais: e trabalho humano, nao
+      // upgrade de maquina.
+      const maos = this.hasWorker(base.id, 'refino') ? 1.7 : 1;
+      const taxa = REFINERY_RATE * (velho ? OLD_REFINERY_PENALTY : 1) * maos * dt;
       let feito = 0;
       for (const [res, qtd] of brutos) {
         if (qtd <= 0) continue;
@@ -242,7 +264,8 @@ export class BaseCamps {
       const fracao = this.shareOf(base.id);
       for (const [res, qtd] of saida) {
         if (qtd < 1) continue;
-        const sobe = Math.min(qtd, dt * 1.2) * fracao;
+        const ritmo = this.hasWorker(base.id, 'elevador') ? 1.8 : 1;
+        const sobe = Math.min(qtd, dt * 1.2 * ritmo) * fracao;
         if (sobe < 0.01) continue;
         saida.set(res, qtd - sobe);
         this.stock.deliver([[res, sobe]], 1);
