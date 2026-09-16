@@ -74,6 +74,13 @@ export type AttrId =
   | 'shockPower'
   | 'shockCooldown'
   | 'shockRange'
+  | 'blastCharges'
+  | 'blastRadius'
+  | 'blastPower'
+  | 'blastCooldown'
+  | 'senseDuration'
+  | 'senseRadius'
+  | 'senseCooldown'
   | 'drillCharges'
   | 'drillDepth'
   | 'drillHeight'
@@ -125,6 +132,8 @@ export type FlagId =
   | 'shockUnlocked'
   | 'drillUnlocked'
   | 'recallUnlocked'
+  | 'blastUnlocked'
+  | 'senseUnlocked'
   | 'recallDive'
   | 'legacyTreeVisible';
 
@@ -215,6 +224,13 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   shockRange: { id: 'shockRange', name: 'Alcance do salto', base: 2.6, format: 'flat', live: true },
 
   // --- Broca: abre tunel a frente ---
+  blastCharges: { id: 'blastCharges', name: 'Cargas de detonacao', base: 1, format: 'flat', live: true },
+  blastRadius: { id: 'blastRadius', name: 'Raio da detonacao', base: 3, format: 'flat', live: true },
+  blastPower: { id: 'blastPower', name: 'Forca da detonacao', base: 2.4, format: 'multiplier', live: true },
+  blastCooldown: { id: 'blastCooldown', name: 'Recarga da detonacao', base: 55, format: 'flat', live: true },
+  senseDuration: { id: 'senseDuration', name: 'Duracao do faro', base: 12, format: 'flat', live: true },
+  senseRadius: { id: 'senseRadius', name: 'Alcance do faro', base: 16, format: 'flat', live: true },
+  senseCooldown: { id: 'senseCooldown', name: 'Recarga do faro', base: 70, format: 'flat', live: true },
   drillCharges: { id: 'drillCharges', name: 'Marteladas com broca', base: 4, format: 'flat', live: true },
   drillDepth: { id: 'drillDepth', name: 'Avanco da broca', base: 2, format: 'flat', live: true },
   drillHeight: { id: 'drillHeight', name: 'Altura do tunel', base: 3, format: 'flat', live: true },

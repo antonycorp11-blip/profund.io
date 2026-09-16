@@ -353,6 +353,67 @@ export const SKILLS: SkillDef[] = [
     position: { x: 0, y: 2 },
   },
   {
+    id: 'mining_blast',
+    category: 'active',
+    branch: 'detonacao',
+    name: 'Detonacao',
+    description:
+      'Uma carga que arrebenta tudo em volta do bloco atingido — rocha e bicho. Nao e ' +
+      'precisao, e forca bruta: serve para abrir camara, limpar um ninho ou sair de ' +
+      'uma toca sem saida.',
+    maxLevel: 4,
+    cost: [3, 3, 4, 4],
+    requiredSkills: ['mining_shock'],
+    requiredDepth: 200,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'blastUnlocked', op: 'unlock', value: 1 }],
+      [
+        { target: 'blastRadius', op: 'flat', value: 1 },
+        { target: 'blastPower', op: 'flat', value: 0.6 },
+      ],
+      [
+        { target: 'blastCharges', op: 'flat', value: 1 },
+        { target: 'blastCooldown', op: 'flat', value: -12 },
+      ],
+      [
+        { target: 'blastRadius', op: 'flat', value: 2 },
+        { target: 'blastPower', op: 'flat', value: 1.2 },
+      ],
+    ],
+    unlockEffect: 'Dano em area, em bloco E em criatura.',
+    icon: '💥',
+    position: { x: 2, y: 4 },
+  },
+  {
+    id: 'explore_sense',
+    category: 'active',
+    branch: 'faro',
+    name: 'Faro',
+    description:
+      'Encosta o ouvido na pedra e, por alguns segundos, o minerio em volta acende ' +
+      'atraves da rocha. Nao quebra nada: so mostra onde vale bater.',
+    maxLevel: 3,
+    cost: [2, 3, 3],
+    requiredSkills: [],
+    requiredDepth: 120,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'senseUnlocked', op: 'unlock', value: 1 }],
+      [
+        { target: 'senseRadius', op: 'flat', value: 8 },
+        { target: 'senseDuration', op: 'flat', value: 5 },
+      ],
+      [
+        { target: 'senseRadius', op: 'flat', value: 10 },
+        { target: 'senseCooldown', op: 'flat', value: -25 },
+      ],
+    ],
+    unlockEffect: 'Minerio visivel atraves da rocha.',
+    icon: '👁',
+    position: { x: 3, y: 3 },
+  },
+  {
     id: 'move_recall',
     category: 'active',
     branch: 'volta',

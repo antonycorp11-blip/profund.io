@@ -12,7 +12,7 @@
 
 import type { AttrId, FlagId } from './attributes';
 
-export type ActiveSkillId = 'shock' | 'drill' | 'recall';
+export type ActiveSkillId = 'shock' | 'drill' | 'blast' | 'sense' | 'recall';
 export type ActiveSkillKind = 'charges' | 'cast';
 
 export interface ActiveSkillMeta {
@@ -74,6 +74,39 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
       { attr: 'drillDepth', label: 'blocos de avanco' },
       { attr: 'drillHeight', label: 'de altura' },
       { attr: 'drillCooldown', label: 's de recarga' },
+    ],
+  },
+  {
+    id: 'blast',
+    skill: 'mining_blast',
+    prices: [2600, 5200, 11000, 22000],
+    name: 'Detonacao',
+    icon: '💥',
+    kind: 'charges',
+    flag: 'blastUnlocked',
+    cooldownAttr: 'blastCooldown',
+    chargesAttr: 'blastCharges',
+    stats: [
+      { attr: 'blastRadius', label: 'de raio' },
+      { attr: 'blastPower', label: 'de forca', percent: true },
+      { attr: 'blastCharges', label: 'cargas' },
+      { attr: 'blastCooldown', label: 's de recarga' },
+    ],
+  },
+  {
+    id: 'sense',
+    skill: 'explore_sense',
+    prices: [1800, 3600, 7200],
+    name: 'Faro',
+    icon: '👁',
+    kind: 'cast',
+    flag: 'senseUnlocked',
+    cooldownAttr: 'senseCooldown',
+    castAttr: 'senseDuration',
+    stats: [
+      { attr: 'senseRadius', label: 'tiles de alcance' },
+      { attr: 'senseDuration', label: 's acordado' },
+      { attr: 'senseCooldown', label: 's de recarga' },
     ],
   },
   {

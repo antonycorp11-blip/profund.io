@@ -70,7 +70,9 @@ export class TouchControls {
     const specs: PadButtonSpec[] = [
       { id: 'btn-skill1', label: '⚡', button: 'skill1', cls: 'skill', locked: false },
       { id: 'btn-skill2', label: '🛠', button: 'skill2', cls: 'skill', locked: false },
-      { id: 'btn-skill3', label: '⟲', button: 'skill3', cls: 'skill', locked: false },
+      { id: 'btn-skill3', label: '💥', button: 'skill3', cls: 'skill', locked: false },
+      { id: 'btn-skill4', label: '👁', button: 'skill4', cls: 'skill', locked: false },
+      { id: 'btn-skill5', label: '⟲', button: 'skill5', cls: 'skill', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];

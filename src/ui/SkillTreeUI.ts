@@ -18,6 +18,32 @@ const CELL_X = 132;
 const CELL_Y = 108;
 const NODE = 60;
 
+/**
+ * Deslocamento organico por no, em pixels.
+ *
+ * A grade perfeita e o que fazia a arvore parecer planilha. Um empurrao de ate
+ * ~18 px em cada eixo, deterministico pelo id, e o suficiente para o olho
+ * parar de ver as colunas — e pequeno demais para embaralhar a leitura de quem
+ * ja decorou onde fica cada coisa.
+ */
+function hash01(texto: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < texto.length; i++) {
+    h ^= texto.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+function nodePos(def: SkillDef): { x: number; y: number } {
+  const jx = (hash01(def.id + 'x') - 0.5) * 36;
+  const jy = (hash01(def.id + 'y') - 0.5) * 30;
+  return {
+    x: def.position.x * CELL_X + jx,
+    y: def.position.y * CELL_Y + jy,
+  };
+}
+
 export interface SkillTreeHost {
   tree: SkillTree;
   attrs: Attributes;
@@ -156,8 +182,9 @@ export class SkillTreeUI {
     for (const def of list) {
       const btn = document.createElement('button');
       btn.className = 'skill-node';
-      btn.style.left = `${def.position.x * CELL_X}px`;
-      btn.style.top = `${def.position.y * CELL_Y}px`;
+      const p = nodePos(def);
+      btn.style.left = `${p.x}px`;
+      btn.style.top = `${p.y}px`;
       btn.style.setProperty('--cat', color);
       btn.innerHTML = `
         <span class="node-icon">${iconMarkup(def.art, def.icon)}</span>
@@ -176,28 +203,66 @@ export class SkillTreeUI {
     this.applyTransform();
   }
 
+  /**
+   * As ligacoes como GALERIAS, nao como linhas.
+   *
+   * A arvore era uma grade de bolinhas ligadas por tracos retos — parecia
+   * organograma, que e a ultima coisa que este jogo devia parecer. Agora cada
+   * ligacao e um tunel escavado: uma curva com desvio proprio, desenhada em
+   * tres passadas (escavacao escura larga, parede, e o vao claro por dentro).
+   *
+   * O desvio sai de um hash dos dois ids, e nao de `Math.random`: a mesma
+   * dupla curva sempre para o mesmo lado, em toda sessao. Um ninho que muda de
+   * forma a cada abertura nao vira lugar na cabeca do jogador.
+   */
   private drawLinks(list: SkillDef[]): void {
     const ns = 'http://www.w3.org/2000/svg';
     this.svg.innerHTML = '';
     let maxX = 0;
     let maxY = 0;
+
+    const camadas: SVGPathElement[][] = [[], [], []];
     for (const def of list) {
-      maxX = Math.max(maxX, def.position.x * CELL_X + NODE);
-      maxY = Math.max(maxY, def.position.y * CELL_Y + NODE);
+      const a = nodePos(def);
+      maxX = Math.max(maxX, a.x + NODE);
+      maxY = Math.max(maxY, a.y + NODE);
       for (const reqId of def.requiredSkills) {
         const req = skillDef(reqId);
         if (!req || req.category !== def.category) continue;
-        const line = document.createElementNS(ns, 'line');
-        line.setAttribute('x1', String(req.position.x * CELL_X + NODE / 2));
-        line.setAttribute('y1', String(req.position.y * CELL_Y + NODE / 2));
-        line.setAttribute('x2', String(def.position.x * CELL_X + NODE / 2));
-        line.setAttribute('y2', String(def.position.y * CELL_Y + NODE / 2));
-        line.setAttribute('class', this.host.tree.levelOf(reqId) > 0 ? 'link on' : 'link');
-        this.svg.appendChild(line);
+        const b = nodePos(req);
+        const aberto = this.host.tree.levelOf(reqId) > 0;
+
+        const x1 = b.x + NODE / 2;
+        const y1 = b.y + NODE / 2;
+        const x2 = a.x + NODE / 2;
+        const y2 = a.y + NODE / 2;
+        // Controle perpendicular ao trecho: e o que curva o tunel.
+        const mx = (x1 + x2) / 2;
+        const my = (y1 + y2) / 2;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const comp = Math.hypot(dx, dy) || 1;
+        const desvio = (hash01(reqId + def.id) - 0.5) * comp * 0.42;
+        const cx = mx + (-dy / comp) * desvio;
+        const cy = my + (dx / comp) * desvio;
+        const d = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+
+        // Tres passadas: terra escavada, parede e vao.
+        const classes = ['tunel-terra', 'tunel-parede', aberto ? 'tunel-vao on' : 'tunel-vao'];
+        classes.forEach((cls, i) => {
+          const path = document.createElementNS(ns, 'path');
+          path.setAttribute('d', d);
+          path.setAttribute('class', cls);
+          camadas[i].push(path);
+        });
       }
     }
-    this.svg.setAttribute('width', String(maxX + 40));
-    this.svg.setAttribute('height', String(maxY + 40));
+    // Todas as terras primeiro, depois todas as paredes, depois todos os vaos:
+    // senao um tunel desenhado depois corta o de baixo ao meio.
+    for (const camada of camadas) for (const el of camada) this.svg.appendChild(el);
+
+    this.svg.setAttribute('width', String(maxX + 60));
+    this.svg.setAttribute('height', String(maxY + 60));
   }
 
   // ---------------------------------------------------------------- estado --

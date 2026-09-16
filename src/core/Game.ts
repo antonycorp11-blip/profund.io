@@ -144,6 +144,8 @@ export class Game {
   private equipment = new Equipment(this.attrs, this.stock);
   /** De onde o jogador saiu na ultima Volta Rapida (para o retorno). */
   private recallReturn: { x: number; y: number } | null = null;
+  /** Ate quando o Faro deixa o minerio visivel atraves da rocha (ms). */
+  private senseUntil = 0;
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
   /** Alvo que ja disparou sozinho neste encontro. */
@@ -389,6 +391,38 @@ export class Game {
           true
         );
       }
+      if (this.activeSkills.isActive('blast')) {
+        const raio = Math.max(1, Math.round(this.attrs.get('blastRadius')));
+        const forca = Math.max(1, this.attrs.get('blastPower'));
+        let pegou = 0;
+        for (let dr = -raio; dr <= raio; dr++) {
+          for (let dc = -raio; dc <= raio; dc++) {
+            if (dc * dc + dr * dr > raio * raio) continue;
+            const c = col + dc;
+            const r = row + dr;
+            if (!this.world.inBounds(c, r)) continue;
+            const def = this.world.getDef(c, r);
+            if (!def.solid || def.hp <= 0) continue;
+            if (
+              def.tags.includes('indestructible') ||
+              def.tags.includes('quest') ||
+              def.tags.includes('boss')
+            ) {
+              continue;
+            }
+            const res = this.world.applyDamage(c, r, damage * forca, tier);
+            if (res.applied) pegou++;
+            if (res.broken) quebra(c, r, def);
+          }
+        }
+        if (pegou > 0) {
+          this.activeSkills.consume('blast');
+          this.camera.addShake(5);
+          this.particles.burst(cx, cy, 34, ['#ffd166', '#ff7a3a', '#ffffff'], { speed: 240 });
+          this.creatures.damageArea(cx, cy, raio * ts, damage * forca * 0.8, true);
+        }
+        hits += pegou;
+      }
       if (this.activeSkills.isActive('shock')) {
         const pegou = this.shock.fire(col, row, damage, tier, quebra);
         if (pegou > 0) this.activeSkills.consume('shock');
@@ -400,6 +434,13 @@ export class Game {
     };
     this.activeSkills.onCast = (id) => {
       if (id === 'recall') this.doRecall();
+      if (id === 'sense') {
+        // O Faro nao quebra nada: acende o minerio em volta atraves da rocha,
+        // por um tempo. E a resposta para "cavei vinte metros e nao achei
+        // nada" sem entregar o mapa de graca.
+        this.senseUntil = performance.now() + this.attrs.get('senseDuration') * 1000;
+        this.hud.toast('A pedra fica translucida por alguns segundos.', 'good');
+      }
     };
 
     this.buildEntities();
@@ -1249,9 +1290,9 @@ export class Game {
 
   /** Le os botoes de habilidade (tela e teclado) e liga o que der. */
   private pollSkillButtons(): void {
-    const ids: ActiveSkillId[] = ['shock', 'drill', 'recall'];
+    const ids: ActiveSkillId[] = ['shock', 'drill', 'blast', 'sense', 'recall'];
     for (let i = 0; i < ids.length; i++) {
-      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3';
+      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3' | 'skill4' | 'skill5';
       if (!this.input.wasPressed(botao)) continue;
       const id = ids[i];
       const st = this.activeSkills.state(id);
@@ -1508,6 +1549,7 @@ export class Game {
       Math.round(-this.camera.top * this.camera.scale * this.dpr)
     );
     for (const e of this.interactables) e.renderOverlay?.(ctx);
+    this.renderSense(ctx);
     this.campsRenderer.render(ctx);
     this.shock.render(ctx);
     this.floating.render(ctx);
@@ -1711,6 +1753,44 @@ export class Game {
       )
     );
     this.interactables.push(this.cityNpcs[this.cityNpcs.length - 1]);
+  }
+
+  /**
+   * O Faro: minerio aceso atraves da rocha.
+   *
+   * Desenhado por cima dos tiles, nao dentro deles — um efeito com prazo nao
+   * pode sujar o cache de chunk, porque cada segundo do timer forcaria repintar
+   * a tela inteira.
+   */
+  private renderSense(ctx: CanvasRenderingContext2D): void {
+    const resta = this.senseUntil - performance.now();
+    if (resta <= 0) return;
+    const ts = this.world.tileSize;
+    const raio = Math.max(4, Math.round(this.attrs.get('senseRadius')));
+    const col0 = Math.floor(this.player.cx / ts);
+    const row0 = Math.floor(this.player.cy / ts);
+    // Some suave no fim: cortar de uma vez parece bug.
+    const fade = Math.min(1, resta / 1500);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let dr = -raio; dr <= raio; dr++) {
+      for (let dc = -raio; dc <= raio; dc++) {
+        const dist2 = dc * dc + dr * dr;
+        if (dist2 > raio * raio) continue;
+        const c = col0 + dc;
+        const r = row0 + dr;
+        if (!this.world.inBounds(c, r)) continue;
+        const def = this.world.getDef(c, r);
+        if (!def.drop || !def.oreGlow) continue;
+        // Mais fraco na borda do alcance: o faro tem limite, e o limite tem
+        // que ser sentido em vez de lido.
+        const queda = 1 - Math.sqrt(dist2) / raio;
+        ctx.globalAlpha = 0.5 * fade * queda;
+        ctx.fillStyle = def.oreGlow;
+        ctx.fillRect(c * ts + 3, r * ts + 3, ts - 6, ts - 6);
+      }
+    }
+    ctx.restore();
   }
 
   private refreshObjective(): void {

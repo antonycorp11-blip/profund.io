@@ -1378,20 +1378,39 @@ body {
   margin: 0;
 }
 
-/* Raio de 96px do centro do MINERAR, abrindo para cima e para a esquerda. */
+/*
+ * Cinco posicoes num arco de raio ~100px em volta do MINERAR.
+ *
+ * Os angulos abrem de cima para a esquerda, que e o caminho natural do polegar
+ * direito. As habilidades escondidas nao deixam buraco: o `nth-of-type` conta
+ * so as visiveis porque as travadas ficam `hidden` e nao entram no fluxo — mas
+ * como aqui a posicao e absoluta, o indice e FIXO por habilidade. E de
+ * proposito: o botao da Broca tem que estar sempre no mesmo lugar, mesmo antes
+ * de o Faro existir, senao a memoria muscular se perde a cada compra.
+ */
 .touch-skills .touch-btn.skill:nth-child(1) {
-  right: -22px;
-  bottom: 96px;
+  right: -26px;
+  bottom: 100px;
 }
 
 .touch-skills .touch-btn.skill:nth-child(2) {
-  right: 54px;
-  bottom: 78px;
+  right: 36px;
+  bottom: 92px;
 }
 
 .touch-skills .touch-btn.skill:nth-child(3) {
-  right: 106px;
-  bottom: 24px;
+  right: 84px;
+  bottom: 56px;
+}
+
+.touch-skills .touch-btn.skill:nth-child(4) {
+  right: 112px;
+  bottom: 2px;
+}
+
+.touch-skills .touch-btn.skill:nth-child(5) {
+  right: 100px;
+  bottom: -52px;
 }
 
 .touch-btn.skill {
@@ -1993,6 +2012,18 @@ body {
   transform-origin: 0 0;
 }
 
+/* A terra em volta do ninho. Duas camadas de manchas radiais dao grao sem
+   pedir textura nenhuma — e o fundo precisa ser TERRA para o tunel fazer
+   sentido; galeria cavada no vazio nao le. */
+.skill-tree .panel-body,
+.skill-scroll {
+  background-color: #2a1d12;
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(122, 85, 51, 0.22) 0 14%, transparent 60%),
+    radial-gradient(circle at 74% 64%, rgba(92, 62, 36, 0.2) 0 18%, transparent 62%),
+    radial-gradient(circle at 42% 86%, rgba(60, 40, 24, 0.24) 0 20%, transparent 64%);
+}
+
 .skill-links {
   position: absolute;
   left: 0;
@@ -2001,23 +2032,57 @@ body {
   overflow: visible;
 }
 
-.skill-links .link {
-  stroke: rgba(255, 255, 255, 0.12);
-  stroke-width: 3;
+/*
+ * NINHO DE FORMIGAS.
+ *
+ * A arvore era grade de bolinha com traco reto: organograma. Agora cada
+ * ligacao e uma galeria escavada, em tres passadas sobrepostas — terra, parede
+ * e vao. Sao tres `path` iguais com espessuras decrescentes, que e o mesmo
+ * truque de desenhar estrada em mapa.
+ */
+.skill-links .tunel-terra {
+  fill: none;
+  stroke: rgba(10, 7, 5, 0.85);
+  stroke-width: 26;
+  stroke-linecap: round;
 }
 
-.skill-links .link.on {
-  stroke: rgba(255, 196, 83, 0.55);
+.skill-links .tunel-parede {
+  fill: none;
+  stroke: rgba(74, 52, 30, 0.5);
+  stroke-width: 20;
+  stroke-linecap: round;
 }
 
+/* O vao: escuro enquanto a galeria nao foi aberta. */
+.skill-links .tunel-vao {
+  fill: none;
+  stroke: rgba(28, 20, 13, 0.95);
+  stroke-width: 13;
+  stroke-linecap: round;
+}
+
+/* Aberta: a galeria acende, como se houvesse lampiao la dentro. */
+.skill-links .tunel-vao.on {
+  stroke: rgba(255, 196, 83, 0.34);
+  filter: drop-shadow(0 0 5px rgba(255, 196, 83, 0.4));
+}
+
+/* Cada no e uma CAMARA do ninho: redonda, escavada na terra, com a borda
+   irregular de quem foi cavada a unha e nao moldada. */
 .skill-node {
   position: absolute;
   width: 60px;
   height: 60px;
   padding: 0;
-  border-radius: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.14);
-  background: rgba(20, 16, 12, 0.92);
+  border-radius: 48% 52% 55% 45% / 50% 46% 54% 50%;
+  border: 2px solid rgba(92, 62, 36, 0.8);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(122, 85, 51, 0.32), transparent 62%),
+    rgba(18, 13, 9, 0.95);
+  box-shadow:
+    inset 0 0 12px rgba(0, 0, 0, 0.75),
+    0 3px 10px rgba(0, 0, 0, 0.45);
   color: var(--ink-dim);
   font-family: var(--font);
   cursor: pointer;
@@ -2063,18 +2128,35 @@ body {
   box-shadow: 0 0 14px color-mix(in srgb, var(--cat) 35%, transparent);
 }
 
+/* Camara ocupada: acesa por dentro, como se alguem morasse ali. */
 .skill-node.owned {
-  background: color-mix(in srgb, var(--cat) 22%, rgba(20, 16, 12, 0.92));
+  background:
+    radial-gradient(circle at 36% 30%, color-mix(in srgb, var(--cat) 46%, transparent), transparent 66%),
+    color-mix(in srgb, var(--cat) 20%, rgba(18, 13, 9, 0.95));
   border-color: var(--cat);
   color: var(--ink);
+  box-shadow:
+    inset 0 0 14px color-mix(in srgb, var(--cat) 30%, transparent),
+    0 0 14px color-mix(in srgb, var(--cat) 26%, transparent),
+    0 3px 10px rgba(0, 0, 0, 0.45);
 }
 
 .skill-node.owned .node-name {
   color: var(--ink);
 }
 
+/* Camara cheia: anel duplo, e a unica coisa na arvore que brilha sozinha. */
 .skill-node.maxed {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cat) 60%, transparent);
+  border-width: 3px;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--cat) 55%, transparent),
+    inset 0 0 16px color-mix(in srgb, var(--cat) 40%, transparent),
+    0 0 20px color-mix(in srgb, var(--cat) 40%, transparent);
+}
+
+/* Camara ainda fechada: a terra por cima dela. */
+.skill-node.locked {
+  filter: saturate(0.4);
 }
 
 .skill-node.locked {
