@@ -1,8 +1,10 @@
+import { CONFIG } from '../data/config';
 import { blockDef } from '../data/blocks';
 import { CREATURE_CONFIG, creatureDef, creaturesOfLayer, type CreatureDef } from '../data/creatures';
 import { Creature } from '../entities/Creature';
 import { Events } from '../core/events';
 import { layerAt } from '../data/layers';
+import { insideBlockia } from '../data/gates';
 import { randInt } from '../core/math';
 import type { DropManager } from '../entities/DropManager';
 import type { Exploration } from './Exploration';
@@ -171,6 +173,13 @@ export class CreatureManager {
         // O corpo fica na tela ate a animacao de morte acabar.
         c.update(dt, this.world, player, hitPlayer);
         if (!c.fading) this.creatures.splice(i, 1);
+        continue;
+      }
+      // Blockia e zona segura. Nada de bicho na praca: e uma cidade, e o
+      // jogador precisa poder largar o controle e conversar. A margem cobre a
+      // galeria de chegada, entao nem perseguicao entra atras dele.
+      if (insideBlockia(Math.floor(c.x / this.world.tileSize), Math.floor(c.y / this.world.tileSize), this.world.surfaceRow, CONFIG.blockia.safeMargin)) {
+        this.creatures.splice(i, 1);
         continue;
       }
       if (c.distanceTo(player.x, player.y) > CREATURE_CONFIG.despawn && !c.isGuardian) {

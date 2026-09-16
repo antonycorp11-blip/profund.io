@@ -46,3 +46,32 @@ export function gateBandRows(surfaceRow: number, layer: LayerDef): { row0: numbe
 export function gateArenaCol(): number {
   return CONFIG.base.centerCol + CONFIG.base.layout.shaft;
 }
+
+
+/**
+ * O retangulo de Blockia em tiles, com a margem de zona segura ja somada.
+ *
+ * Fica aqui pelo mesmo motivo que a geometria dos selos: iluminacao, spawn de
+ * criatura e geracao precisam concordar sobre onde a cidade comeca. Tres
+ * copias desse calculo divergiriam na primeira vez que a cidade se mexesse.
+ */
+export function blockiaBounds(surfaceRow: number, margin = 0): {
+  col0: number;
+  col1: number;
+  row0: number;
+  row1: number;
+} {
+  const bl = CONFIG.blockia;
+  return {
+    col0: bl.col0 - margin,
+    col1: bl.col1 + margin,
+    row0: surfaceRow + bl.depth0 - 12 - margin,
+    row1: surfaceRow + bl.depth1 + 4 + margin,
+  };
+}
+
+/** O ponto (em tiles) esta dentro de Blockia? */
+export function insideBlockia(col: number, row: number, surfaceRow: number, margin = 0): boolean {
+  const b = blockiaBounds(surfaceRow, margin);
+  return col >= b.col0 && col <= b.col1 && row >= b.row0 && row <= b.row1;
+}

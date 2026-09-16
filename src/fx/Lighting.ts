@@ -1,4 +1,5 @@
 import { blockDef } from '../data/blocks';
+import { insideBlockia } from '../data/gates';
 import { CONFIG } from '../data/config';
 import { layerBlend } from '../data/layers';
 import { clamp } from '../core/math';
@@ -60,7 +61,15 @@ export class Lighting {
     nightDarkness = 0
   ): void {
     // Na superficie quem manda e a hora; fundo abaixo, a profundidade.
-    const darkness = Math.max(this.darknessAt(depthMeters), nightDarkness);
+    let darkness = Math.max(this.darknessAt(depthMeters), nightDarkness);
+    // Dentro de Blockia a camada nao manda. A cidade e o unico lugar aceso em
+    // 600 metros de mina, e essa e a chegada: sair de uma galeria de lanterna
+    // e entrar num lugar onde da para ver o teto.
+    const centroCol = Math.floor((camera.left + camera.viewW / 2) / world.tileSize);
+    const centroRow = Math.floor((camera.top + camera.viewH / 2) / world.tileSize);
+    if (insideBlockia(centroCol, centroRow, world.surfaceRow)) {
+      darkness = Math.min(darkness, CONFIG.blockia.darkness);
+    }
     if (darkness <= 0.02) return;
 
     this.flicker += dt * 7;

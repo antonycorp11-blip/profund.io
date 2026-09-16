@@ -1,3 +1,4 @@
+import { Assets } from '../core/Assets';
 import { Events } from '../core/events';
 import { CONFIG } from '../data/config';
 import type { CityNpcDef } from '../data/blockia';
@@ -58,6 +59,7 @@ export class CityNpc implements Interactable {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    if (this.renderArt(ctx)) return;
     // Silhueta vetorial ate existir arte de morador. Cada um tem a cor da
     // propria ficha, entao da para distinguir a praca de longe.
     const bob = Math.sin(this.t * 1.6) * 1.2;
@@ -79,6 +81,42 @@ export class CityNpc implements Interactable {
     ctx.beginPath();
     ctx.arc(this.x, y - 12, 6.5, Math.PI, 0);
     ctx.fill();
+  }
+
+  /**
+   * Desenha a folha real, se existir. Morador de cidade fica parado, entao so
+   * a tira `idle` importa — a `walk` esta carregada para quando alguem aqui
+   * comecar a andar.
+   */
+  private renderArt(ctx: CanvasRenderingContext2D): boolean {
+    const strip = Assets.npcStrip(this.def.id, 'idle');
+    if (!strip || !strip.width) return false;
+    const lado = strip.height;
+    const quadros = Math.max(1, Math.round(strip.width / lado));
+    // Cada um respira no proprio tempo: uma praca inteira em sincronia parece
+    // um vitrine de bonecos, nao um lugar com gente.
+    const q = Math.floor(this.t * 5) % quadros;
+    const altura = 46;
+    const largura = altura;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + 15, 10, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.drawImage(
+      strip,
+      q * lado,
+      0,
+      lado,
+      lado,
+      this.x - largura / 2,
+      this.y + 16 - altura,
+      largura,
+      altura
+    );
+    ctx.restore();
+    return true;
   }
 
   renderOverlay(ctx: CanvasRenderingContext2D): void {

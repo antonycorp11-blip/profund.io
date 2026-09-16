@@ -438,3 +438,45 @@ Rode `npm run slice-assets` depois de salvar.
 Entrada da cidade subterranea (peca unica, momento de "cheguei") · mobilia solta
 (carrinho de minerio virado, lampiao, caixote) · o gravador do pai como item ·
 a porta selada do fim · retrato de busto dos 6 mineiros para o balao de dialogo.
+
+
+---
+
+## NPCs — folhas 5x3 (leva real, ja no jogo)
+
+Dez folhas entregues em 16/09/2026, uma por personagem, em
+`arte-bruta/npcs/<id>.png`. Grade de **5 colunas x 3 linhas**: linha 1 parado,
+linhas 2 e 3 andando.
+
+```bash
+npm run slice-npcs
+```
+
+Saem duas tiras de 5 quadros por personagem em `public/art/npc/`:
+`<id>_idle.png` e `<id>_walk.png`.
+
+**O que o fatiador resolve:** cortar na grade exata nao serve, porque cada
+personagem ocupa uma parte diferente da propria celula — cada quadro sairia com
+um deslocamento proprio e a animacao tremeria. Entao ele recorta cada quadro
+pelo CONTEUDO (caixa do que nao e transparente), aplica a MESMA escala em toda
+a tira (a referencia e o quadro mais alto, senao o personagem cresce e encolhe
+enquanto anda) e alinha todos pelos PES.
+
+| id do arquivo | quem e | onde |
+|---|---|---|
+| `mara_avelar` | Primeira Lanterna | Blockia |
+| `silas_arcos` | ferreiro | Blockia |
+| `nina_candeia` | Mercado da Ponte | Blockia |
+| `breno_torga` | mestre dos elevadores | Blockia |
+| `irene_salles` | medica | Blockia |
+| `afonso_greda` | arquivista | Blockia |
+| `lio` | 11 anos | Blockia |
+| `npc_jonas` | mineiro preso | 38 m |
+| `npc_vilma` | mineira presa | 260 m |
+| `npc_teo` | mineiro preso | 600 m |
+
+Faltam folhas para `npc_ozias`, `npc_braga` e `npc_ultima_luz` — esses tres
+continuam como silhueta vetorial, sem quebrar nada.
+
+Para adicionar mais: solte a folha em `arte-bruta/npcs/<id>.png`, acrescente o
+id em `ART.npcArts` (`/data/art.ts`) e rode o fatiador.

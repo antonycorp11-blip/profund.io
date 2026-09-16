@@ -539,7 +539,13 @@ export class Game {
     Events.on('quota:complete', () => {
       this.camera.addShake(3);
       this.floating.push(this.player.cx, this.player.cy - 30, 'COTA CONCLUIDA!', '#9be09b', 14);
+      // A partir daqui a mina passa a responder: e quando as vozes comecam.
+      const primeira = !this.skills.hasStoryFlag('quota_paga');
+      this.skills.setStoryFlag('quota_paga');
       this.refreshObjective();
+      if (primeira) {
+        this.hud.toast('Alguma coisa bate na pedra, la embaixo. Ritmado demais para ser desabamento.', 'story');
+      }
     });
     Events.on('quota:new', () => this.refreshObjective());
 
@@ -912,7 +918,8 @@ export class Game {
     this.player.loadRatio = this.inventory.loadRatio;
     this.drops.update(dt, this.player);
     // Os mineiros presos chamam. E o unico jeito de achar o primeiro deles.
-    for (const npc of this.npcs) npc.listen(dt, this.player.cx, this.player.cy);
+    const podeOuvir = this.skills.hasStoryFlag('quota_paga');
+    for (const npc of this.npcs) npc.listen(dt, this.player.cx, this.player.cy, podeOuvir);
     this.voices.update(dt);
 
     this.particles.update(dt);

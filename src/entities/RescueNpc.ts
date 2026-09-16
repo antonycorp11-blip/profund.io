@@ -1,3 +1,4 @@
+import { Assets } from '../core/Assets';
 import { Events } from '../core/events';
 import { CONFIG } from '../data/config';
 import type { RescueNpcDef } from '../data/story';
@@ -106,9 +107,14 @@ export class RescueNpc implements Interactable {
    *
    * Fora do raio de escuta nada acontece — o mineiro nao existe para quem
    * ainda nao chegou perto.
+   *
+   * `podeOuvir` e falso ate a primeira cota ser paga. O jogo abre ensinando o
+   * trabalho (minerar, entregar, fechar o quadro); so quando o jogador ja sabe
+   * o que esta fazendo e volta a descer por conta propria e que a mina
+   * responde com uma voz. Uma voz no minuto zero seria so mais um tutorial.
    */
-  listen(dt: number, px: number, py: number): void {
-    if (this.state !== 'trapped') return;
+  listen(dt: number, px: number, py: number, podeOuvir: boolean): void {
+    if (!podeOuvir || this.state !== 'trapped') return;
     const dist = Math.hypot(px - this.x, py - this.y);
     const raio = CONFIG.voices.hearRadius;
     if (dist > raio) {
@@ -194,12 +200,49 @@ export class RescueNpc implements Interactable {
   }
 
   /** Usado pelo save. */
+  /**
+   * Folha real do mineiro, quando existe.
+   *
+   * Preso ele fica encolhido (tira parada, achatada e sem pulso de animacao —
+   * quem esta debaixo de pedra nao balanca); livre ele anda.
+   */
+  private renderArt(ctx: CanvasRenderingContext2D): boolean {
+    const andando = this.state === 'walking' || this.state === 'freed';
+    const strip =
+      Assets.npcStrip(this.def.id, andando ? 'walk' : 'idle') ??
+      Assets.npcStrip(this.def.id, 'idle');
+    if (!strip || !strip.width) return false;
+    const lado = strip.height;
+    const quadros = Math.max(1, Math.round(strip.width / lado));
+    const q = andando
+      ? Math.floor(this.walkPhase * 1.4) % quadros
+      : Math.floor(performance.now() / 260) % quadros;
+
+    const altura = this.state === 'trapped' ? 36 : 48;
+    const largura = altura;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(this.x, this.y + this.h / 2, 10, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Preso ele olha para a esquerda, para a cara ficar virada para quem chega
+    // cavando pela direita; livre ele segue o sentido da caminhada.
+    const dir = this.state === 'walking' ? Math.sign(this.targetX - this.x) || 1 : -1;
+    ctx.translate(this.x, this.y + this.h / 2);
+    ctx.scale(dir, 1);
+    ctx.drawImage(strip, q * lado, 0, lado, lado, -largura / 2, -altura, largura, altura);
+    ctx.restore();
+    return true;
+  }
+
   setState(state: NpcState): void {
     this.state = state;
     if (state === 'safe' || state === 'walking') this.x = this.targetX;
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    if (this.renderArt(ctx)) return;
     const x = Math.round(this.x);
     const y = Math.round(this.y + this.h / 2);
     const w = this.w;

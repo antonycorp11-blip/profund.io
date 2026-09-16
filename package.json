@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "slice-assets": "node tools/slice-assets.mjs",
-    "icons": "node tools/make-icons.mjs"
+    "icons": "node tools/make-icons.mjs",
+    "slice-npcs": "node tools/slice-npcs.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

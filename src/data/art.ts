@@ -169,6 +169,27 @@ export const ART = {
   creaturesDir: 'creatures/',
   /** Arte de /creatures usada por quem NAO e monstro (as toupeiras coletoras). */
   helperArts: ['toupeira'],
+
+  /**
+   * Pasta e elenco das folhas de NPC (moradores de cidade e mineiros presos).
+   *
+   * Sao tiras de 5 quadros geradas por `npm run slice-npcs`. Quem nao estiver
+   * aqui continua sendo silhueta vetorial — nada quebra, so fica feio.
+   */
+  npcDir: 'npc/',
+  npcAnims: ['idle', 'walk'],
+  npcArts: [
+    'mara_avelar',
+    'silas_arcos',
+    'nina_candeia',
+    'breno_torga',
+    'irene_salles',
+    'afonso_greda',
+    'lio',
+    'npc_jonas',
+    'npc_vilma',
+    'npc_teo',
+  ],
   creatureAnims: ['idle', 'walk', 'attack', 'hurt', 'death'] as const,
 
   /**

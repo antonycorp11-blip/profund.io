@@ -57,10 +57,15 @@ export function carveBlockia(world: World, rng: Rng, surfaceRow: number): void {
     for (let col = de; col <= ate; col++) {
       world.setTileRaw(col, row, plank);
     }
-    // Vaos de escada: buracos na passarela, dois por andar.
-    for (const vao of [de + 12 + n * 3, ate - 9 - n * 2]) {
-      for (let c = vao; c < vao + 3; c++) world.setTileRaw(c, row, BLOCK_IDS.AIR);
-    }
+    // Escadas de verdade, uma subindo e uma descendo por andar.
+    //
+    // Antes eram buracos na passarela: dava para cair de um nivel pro outro e
+    // nao dava para voltar. Escada e degrau de 1 tile, que e exatamente o que
+    // o passo do jogador sobe sozinho — nao precisa de bloco novo nem de
+    // fisica nova, so de geometria.
+    const alturaVao = Math.round(altura / (niveis + 1));
+    escada(world, de + 10 + n * 3, row, alturaVao, 1, plank);
+    escada(world, ate - 8 - n * 2, row, alturaVao, -1, plank);
   }
 
   // ---- 3. Camaras residenciais -------------------------------------------
@@ -116,6 +121,25 @@ export function carveBlockia(world: World, rng: Rng, surfaceRow: number): void {
     if (rng.next() < 0.3) world.setTileRaw(col, row1 - 2, BLOCK_IDS.AIR);
   }
 
+  // ---- 6b. Luz -------------------------------------------------------------
+  // Blockia e a primeira coisa iluminada em 600 metros de mina. A cidade que
+  // "escolheu ficar" nao vive no escuro — ela acende, e o contraste com a
+  // galeria de onde o jogador saiu e metade da chegada.
+  for (let col = col0 + 3; col <= col1 - 3; col += 6) {
+    const t = (col - col0) / (col1 - col0);
+    const topo = Math.round(row0 - Math.sin(t * Math.PI) * 9) + 1;
+    world.setTileRaw(col, topo, BLOCK_IDS.LAMP);
+  }
+  for (let n = 1; n <= niveis; n++) {
+    const row = row0 + Math.round((altura * n) / (niveis + 1));
+    for (let col = col0 + 6; col <= col1 - 6; col += 9) {
+      world.setTileRaw(col, row - 1, BLOCK_IDS.LAMP);
+    }
+  }
+  for (let col = pracaC - 9; col <= pracaC + 9; col += 4) {
+    world.setTileRaw(col, row1 - 1, BLOCK_IDS.LAMP);
+  }
+
   // ---- 7. A porta ---------------------------------------------------------
   // "Nome e cidade." A galeria chega aqui, e a cidade comeca do outro lado.
   const porta = cfg.gateCol;
@@ -130,6 +154,30 @@ export function carveBlockia(world: World, rng: Rng, surfaceRow: number): void {
   world.setTileRaw(porta - 1, portaRow + 1, plank);
   for (let row = portaRow - 3; row <= portaRow; row++) {
     world.setTileRaw(porta - 1, row, BLOCK_IDS.AIR);
+  }
+}
+
+/**
+ * Uma escada diagonal de `altura` degraus a partir de (col, row).
+ *
+ * `dir` 1 sobe para a direita, -1 sobe para a esquerda. Cada degrau e um tile
+ * de tabua com dois de ar em cima: e o vao minimo em que o jogador passa.
+ */
+function escada(
+  world: World,
+  col: number,
+  row: number,
+  altura: number,
+  dir: 1 | -1,
+  plank: number
+): void {
+  for (let n = 0; n < altura; n++) {
+    const c = col + dir * n;
+    const r = row + n;
+    world.setTileRaw(c, r, plank);
+    world.setTileRaw(c, r - 1, BLOCK_IDS.AIR);
+    world.setTileRaw(c, r - 2, BLOCK_IDS.AIR);
+    world.setTileRaw(c, r - 3, BLOCK_IDS.AIR);
   }
 }
 

@@ -86,6 +86,18 @@ class AssetsImpl {
     // um retangulo marrom. Quem desenha do /creatures precisa pedir a arte
     // aqui, e nao depender de continuar sendo monstro.
     for (const art of ART.helperArts) artes.add(art);
+
+    // Folhas de NPC: moradores de Blockia e mineiros presos.
+    for (const npc of manifest.npcArts) {
+      for (const anim of manifest.npcAnims) {
+        jobs.push(
+          this.loadImage(`${manifest.basePath}${manifest.npcDir}${npc}_${anim}.png`).then((img) => {
+            if (img) this.images.set(`npc:${npc}:${anim}`, img);
+          })
+        );
+      }
+    }
+
     for (const art of artes) {
       for (const anim of manifest.creatureAnims) {
         jobs.push(
@@ -290,6 +302,11 @@ class AssetsImpl {
   /** Tira de uma animacao do heroi, ou null quando aquele arquivo nao existe. */
   characterStrip(name: string): HTMLImageElement | null {
     return this.images.get('char:' + name) ?? null;
+  }
+
+  /** Tira de animacao de um NPC, ou null quando a folha nao existe. */
+  npcStrip(id: string, anim: string): HTMLImageElement | null {
+    return this.images.get(`npc:${id}:${anim}`) ?? null;
   }
 
   /** Tira recolorida — e assim que cada copia ganha cor propria. */

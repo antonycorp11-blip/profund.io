@@ -92,6 +92,7 @@ export const BLOCK_IDS = {
   RELIC: 14,
   VOIDSTONE: 15,
   SEAL: 16,
+  LAMP: 17,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -508,6 +509,18 @@ export const BLOCKS: BlockDef[] = [
     oreGlow: '#9a4fe0',
     emissive: 0.35,
     sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.LAMP,
+    key: 'lamp',
+    name: 'Lampiao de Blockia',
+    type: 'especial',
+    hp: 0, drop: null, dropMin: 0, dropMax: 0, dropChance: 0,
+    tags: ['indestructible', 'special'],
+    rarity: 'comum', value: 0, minDepth: 0, maxDepth: Infinity, minTool: 99,
+    solid: false, indestructible: true,
+    color: '#ffdc83', shade: '#c08a2a', speckle: '#fff6c8',
+    oreGlow: '#ffc453', emissive: 1.35, sfxMaterial: 'estrutura',
   },
   {
     id: BLOCK_IDS.BEDROCK,

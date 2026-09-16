@@ -235,6 +235,15 @@ export const CONFIG = {
     corridorDepth: 604,
     /** Coluna da porta de madeira reforcada. */
     gateCol: 130,
+    /**
+     * Quanto da escuridao da camada sobra dentro da cidade.
+     *
+     * Blockia tem lampiao em todo canto; isto e a garantia de que nenhuma
+     * profundidade futura vai deixar a cidade preta por acidente.
+     */
+    darkness: 0.18,
+    /** Margem em tiles ao redor da cidade onde criatura nao nasce nem entra. */
+    safeMargin: 12,
   },
 
   base: {

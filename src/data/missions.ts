@@ -34,9 +34,18 @@ export interface MissionDef {
 
 export const MISSIONS: MissionDef[] = [
   {
+    id: 'm0_primeira_cota',
+    title: 'A Primeira Cota',
+    goal: 'A companhia quer a cota da semana. Minere, entregue no deposito e feche o quadro.',
+    requires: ['quota_paga'],
+    onDone: 'Cota paga. Agora da para descer sem ninguem cobrando as costas.',
+    rewardMoney: 150,
+    rewardPoints: 1,
+  },
+  {
     id: 'm1_a_voz_na_pedra',
     title: 'A Voz na Pedra',
-    goal: 'Alguem esta gritando por socorro la embaixo. Siga a voz e tire essa pessoa de la.',
+    goal: 'Tem uma voz vindo de baixo. Siga o som e tire quem esta gritando de la.',
     requires: ['npc_jonas'],
     onDone: 'Jonas subiu. E avisou: mais fundo tem uma parede que picareta nao arranha.',
     rewardMoney: 250,
