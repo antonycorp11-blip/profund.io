@@ -60,6 +60,7 @@ import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
 import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
+import { BaseDepot } from '../entities/BaseDepot';
 import { Missions } from '../systems/Missions';
 import { Reputation } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
@@ -621,6 +622,16 @@ export class Game {
       ...this.cityNpcs,
       ...BASE_CAMPS.map(
         (b) => new BaseTerminal(b, this.world.surfaceRow, (base) => this.campUI.open(base))
+      ),
+      ...BASE_CAMPS.map(
+        (b) =>
+          new BaseDepot(
+            b,
+            this.world.surfaceRow,
+            () => this.camps.built(b.id, 'deposito'),
+            () => this.despejarNaBase(b.id),
+            () => this.inventory.totalUnits()
+          )
       ),
     ];
   }
@@ -1814,6 +1825,28 @@ export class Game {
     this.particles.burst(x, y, 6, ['#d9a828', '#b9c2cc'], { speed: 90, size: 2.5 });
     this.camera.addShake(1.2);
     Haptics.break_();
+  }
+
+  /**
+   * Passa a mochila inteira para o deposito da base.
+   *
+   * Vai para o estoque BRUTO, e nao para a moeda: a base e uma etapa da
+   * cadeia, nao um caixa. Quem quiser vender sobe e entrega la em cima — que e
+   * a escolha que o painel do refinador tambem oferece.
+   */
+  private despejarNaBase(baseId: string): void {
+    const itens = this.inventory.entries();
+    let total = 0;
+    for (const [res, qtd] of itens) {
+      if (qtd <= 0) continue;
+      this.camps.deposit(baseId, res, qtd);
+      total += qtd;
+    }
+    if (total <= 0) return;
+    this.inventory.clear();
+    this.hud.toast(`${total} itens foram para o deposito da base.`, 'good');
+    Haptics.pickup();
+    this.save();
   }
 
   private refreshObjective(): void {

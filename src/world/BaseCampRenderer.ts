@@ -1,6 +1,7 @@
 import { Assets } from '../core/Assets';
 import { BASE_CAMPS, type BaseCampDef, type StructureSlot } from '../data/basecamp';
 import { CONFIG } from '../data/config';
+import { RESOURCES, type ResourceId } from '../data/resources';
 import type { BaseCamps } from '../systems/BaseCamps';
 import type { World } from './World';
 
@@ -118,6 +119,14 @@ export class BaseCampRenderer {
     ctx.fillText(slot.nome.toUpperCase(), x + largura / 2, chao - altura - 6);
     ctx.fillStyle = 'rgba(255, 220, 131, 0.5)';
     ctx.fillText('minerar para construir', x + largura / 2, chao - altura + 12);
+    // O custo fica no proprio encaixe. Descobrir o preco batendo nele e
+    // lendo o aviso de erro e adivinhacao — a unica do jogo.
+    const custo = Object.entries(slot.cost)
+      .map(([id, n]) => `${n} ${RESOURCES[id as ResourceId].name}`)
+      .join('  ·  ');
+    ctx.font = '600 8px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(255, 233, 163, 0.8)';
+    ctx.fillText(custo, x + largura / 2, chao - altura + 26);
     ctx.restore();
   }
 

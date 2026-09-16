@@ -9,7 +9,7 @@ import {
   type StructureSlot,
 } from '../data/basecamp';
 import { REFINE_RECIPES } from '../data/structures';
-import type { ResourceId } from '../data/resources';
+import { RESOURCES, type ResourceId } from '../data/resources';
 import type { BaseStock } from './BaseStock';
 
 export type BuildState = 'bloqueado' | 'disponivel' | 'erguendo' | 'pronto';
@@ -133,7 +133,19 @@ export class BaseCamps {
     // o jogador martelar cinquenta vezes para descobrir que nao tinha ferro.
     if (st.hits === 0) {
       if (!this.stock.canAfford(slot.cost)) {
-        Events.emit('ui:toast', { text: `${slot.nome}: material insuficiente.`, tone: 'warn' });
+        // Dizer O QUE falta, e quanto. "Material insuficiente" manda o jogador
+        // adivinhar entre dez recursos qual e o que segura a obra.
+        const faltando = Object.entries(slot.cost)
+          .map(([id, qtd]) => {
+            const res = id as ResourceId;
+            const falta = (qtd ?? 0) - this.stock.count(res);
+            return falta > 0 ? `${Math.ceil(falta)} ${RESOURCES[res].name}` : null;
+          })
+          .filter(Boolean);
+        Events.emit('ui:toast', {
+          text: `${slot.nome}: falta ${faltando.join(' e ')}.`,
+          tone: 'warn',
+        });
         return false;
       }
       this.stock.spend(slot.cost);
