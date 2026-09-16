@@ -36,11 +36,21 @@ export interface MissionDef {
   onDone: string;
   rewardMoney: number;
   rewardPoints: number;
+  /**
+   * Profundidade aproximada do objetivo, em metros.
+   *
+   * Serve para escolher qual missao mostrar quando o jogador esta mais fundo
+   * do que a fila. Sem isto, quem ja tinha derrubado a Matriarca ficava preso
+   * olhando "Trilhos Novos, 112 m" para sempre, porque a lista e em ordem e a
+   * primeira em aberto ganhava — mesmo estando 100 m acima dele.
+   */
+  depth: number;
 }
 
 export const MISSIONS: MissionDef[] = [
   {
     id: 'm0_primeira_cota',
+    depth: 0,
     title: 'O Acordo',
     goal: 'A mina so reabriu porque voce prometeu a cota da semana. Minere, entregue no deposito e feche o quadro.',
     requires: ['quota_paga'],
@@ -50,6 +60,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm1_marca_do_pai',
+    depth: 26,
     title: 'Vinte e Seis Metros',
     goal: 'O caderno de Santiago da uma unica profundidade com marca: 26 m. Desca e veja o que tem la.',
     requires: ['clue_marca_do_pai'],
@@ -59,6 +70,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm2_a_voz_na_pedra',
+    depth: 38,
     title: 'A Voz na Pedra',
     goal: 'Tem alguem gritando abaixo da marca. Siga o som e tire essa pessoa de la.',
     requires: ['npc_jonas'],
@@ -68,6 +80,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3_a_primeira_barreira',
+    depth: 44,
     title: 'A Primeira Barreira',
     goal: 'A parede que Jonas descreveu tem guarda. Derrube a Mae dos Esporos.',
     requires: ['boss_golem_escombros', 'gate_stone'],
@@ -77,6 +90,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3b_trilhos_novos',
+    depth: 112,
     title: 'Trilhos Novos',
     goal: 'Ha trilho remendado com solda nova numa mina fechada ha quatorze anos. Ache e veja com os proprios olhos.',
     requires: ['clue_trilhos'],
@@ -86,6 +100,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3c_posto_nove',
+    depth: 150,
     title: 'Posto Nove',
     goal: 'Os trilhos levam a algum lugar. Siga a linha e descubra quem mora no fim dela.',
     requires: ['rui_cabeca'],
@@ -95,6 +110,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm4_o_segundo_selo',
+    depth: 194,
     title: 'O Segundo Selo',
     goal: 'A coisa na parede dos 194 m e o que Rui falou. Derrube a Matriarca de Cristal.',
     requires: ['boss_arauto_quartzo', 'gate_crystal'],
@@ -104,6 +120,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm4b_a_base_do_cristal',
+    depth: 236,
     title: 'A Base do Cristal',
     goal: 'Ha uma camara abandonada a 236 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 236 metros e passam a entregar ali.',
     requires: ['base_cristal:deposito'],
@@ -113,6 +130,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm5_luzes_abaixo',
+    depth: 260,
     title: 'Luzes Abaixo',
     goal: 'Tem outra voz nas Cavernas de Cristal. E a Pagina 01 do caderno, a 230 m.',
     requires: ['npc_vilma', 'clue_pagina_01'],
@@ -122,6 +140,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm6_a_rota_comercial',
+    depth: 494,
     title: 'A Rota Comercial',
     goal: 'A Rainha Escavadora bloqueia a passagem aos 494 m. Abra o caminho.',
     requires: ['boss_automato_enferrujado', 'gate_minerals'],
@@ -131,6 +150,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm7_onze_dias',
+    depth: 600,
     title: 'Onze Dias',
     goal: 'Nas Profundezas Minerais tem mais um preso e a Pagina 02, a 560 m.',
     requires: ['npc_teo', 'clue_pagina_02'],
@@ -140,6 +160,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm8_pedra_que_nao_e_pedra',
+    depth: 894,
     title: 'Pedra Que Nao E Pedra',
     goal: 'O Escaravelho Colossal guarda os 894 m. Passe por ele.',
     requires: ['boss_fundidor_incandescente', 'gate_magma'],
@@ -149,6 +170,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm9_o_som_no_metal',
+    depth: 980,
     title: 'O Som no Metal',
     goal: 'Na Zona de Magma tem alguem chamando, e a Pagina 04 a 940 m.',
     requires: ['npc_ozias', 'clue_pagina_04'],
@@ -158,6 +180,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm10_a_ultima_rota',
+    depth: 1294,
     title: 'A Ultima Rota Humana',
     goal: 'O Colosso Prismatico fecha os 1294 m. Derrube e desca.',
     requires: ['boss_escriba_selado', 'gate_ruins'],
@@ -167,6 +190,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm11_a_trilha_baixa',
+    depth: 1400,
     title: 'A Trilha Baixa',
     goal: 'Nas Ruinas Antigas tem um batedor preso, e a Pagina 07 a 1340 m.',
     requires: ['npc_braga', 'clue_pagina_07'],
@@ -176,6 +200,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm12_a_porta',
+    depth: 1694,
     title: 'A Porta',
     goal: 'O Eco do Portal guarda os 1694 m. O que houver depois dele, Santiago ja viu.',
     requires: ['boss_eco_portal', 'gate_abyss'],
@@ -185,6 +210,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm13_quem_ainda_fala',
+    depth: 1780,
     title: 'Quem Ainda Fala',
     goal: 'No Abismo alguem ainda responde. E a Pagina 10 esta a 1740 m.',
     requires: ['npc_ultima_luz', 'clue_pagina_10'],

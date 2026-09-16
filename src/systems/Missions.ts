@@ -15,15 +15,46 @@ import { MISSIONS, type MissionDef } from '../data/missions';
 export class Missions {
   private announced = new Set<string>();
 
-  constructor(private hasFlag: (id: string) => boolean) {}
+  constructor(
+    private hasFlag: (id: string) => boolean,
+    /** Profundidade maxima ja alcancada, em metros. */
+    private deepest: () => number = () => 0
+  ) {}
 
   private done_(m: MissionDef): boolean {
     return m.requires.every((f) => this.hasFlag(f));
   }
 
-  /** A missao em andamento: a primeira ainda nao concluida. */
+  /**
+   * A missao em andamento.
+   *
+   * NAO e simplesmente a primeira em aberto. Quem ja desceu muito passa por
+   * cima de objetivos rasos sem fechar todos, e a fila travava na primeira
+   * pendencia — o jogador derrubava a Matriarca aos 194 m e continuava lendo
+   * "Trilhos Novos, 112 m" para sempre, com a sensacao de que nada acontecia.
+   *
+   * Entao a escolhida e a mais FUNDA entre as que ele ja alcanca. As rasas nao
+   * somem: viram pendencias, listadas no Guia com a profundidade de cada uma.
+   */
   current(): MissionDef | null {
-    return MISSIONS.find((m) => !this.done_(m)) ?? null;
+    const abertas = MISSIONS.filter((m) => !this.done_(m));
+    if (abertas.length === 0) return null;
+    const fundo = this.deepest() + 40;
+    const alcancaveis = abertas.filter((m) => m.depth <= fundo);
+    if (alcancaveis.length === 0) return abertas[0];
+    return alcancaveis.reduce((a, b) => (b.depth > a.depth ? b : a));
+  }
+
+  /**
+   * Objetivos que o jogador JA ULTRAPASSOU e deixou em aberto.
+   *
+   * So conta o que esta acima dele. Listar o que ainda vem pela frente seria
+   * spoiler, e encheria a lista com dez linhas que ele nao pode fazer.
+   */
+  pending(): MissionDef[] {
+    const atual = this.current();
+    const fundo = this.deepest();
+    return MISSIONS.filter((m) => !this.done_(m) && m.id !== atual?.id && m.depth <= fundo);
   }
 
   /** As ja concluidas, na ordem em que foram fechadas. */

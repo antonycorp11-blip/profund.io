@@ -51,7 +51,7 @@ import { CollectorManager } from '../systems/CollectorManager';
 import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
-import { gateBandRows, gateLayerDef } from '../data/gates';
+import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
@@ -70,7 +70,7 @@ import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
 import { ShockChain } from '../mining/ShockChain';
-import { CREATURE_CONFIG, creatureDef } from '../data/creatures';
+import { CREATURE_CONFIG, bossForLayer, creatureDef } from '../data/creatures';
 import { Vitals } from '../systems/Vitals';
 import { TechScreen } from '../ui/TechScreen';
 import { TechTree } from '../systems/TechTree';
@@ -228,6 +228,7 @@ export class Game {
     this.journalUI = new JournalUI(uiRoot, this.journal, {
       current: () => this.missions.current(),
       done: () => this.missions.done(),
+      pending: () => this.missions.pending(),
     });
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
@@ -324,7 +325,10 @@ export class Game {
     // DEPOIS do save (se houver) restaurar quem ja morreu — senao um chefe
     // ja derrotado em sessao anterior voltaria vivo por um instante.
     this.biomeGate = new BiomeGate(this.world, this.exploration, this.worldInfo.gates);
-    this.missions = new Missions((id) => this.skills.hasStoryFlag(id));
+    this.missions = new Missions(
+      (id) => this.skills.hasStoryFlag(id),
+      () => this.deepestMeters
+    );
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
     // As bases ficam no mapa desde sempre: sao lugares, nao segredos, e o
     // jogador precisa saber que existe um para onde voltar.
@@ -990,6 +994,17 @@ export class Game {
     this.biomeGate.fromJSON(data.gates);
     // So agora, com o estado certo carregado, decide o que reabrir e quem
     // spawnar: selo ja aberto vira ar de novo; chefe ja morto nao volta.
+    // Retroativo: saves feitos antes das flags de chefe e selo existirem
+    // tinham o progresso guardado SO no BiomeGate. Sem isto, quem ja tinha
+    // matado a Matriarca e aberto o selo do Cristal voltava com as missoes
+    // desses feitos em aberto — progresso perdido sem nenhum erro aparecer.
+    for (const layerId of GATE_LAYERS) {
+      if (this.biomeGate.bossDefeated(layerId)) {
+        const boss = bossForLayer(layerId);
+        if (boss) this.skills.setStoryFlag(boss.id);
+      }
+      if (this.biomeGate.isOpen(layerId)) this.skills.setStoryFlag(`gate_${layerId}`);
+    }
     this.biomeGate.reopenSavedGates();
     this.biomeGate.spawnBosses(this.creatures);
     this.settleMissions();

@@ -31,7 +31,11 @@ export class JournalUI {
   constructor(
     parent: HTMLElement,
     private journal: Journal,
-    private missions: { current(): MissionDef | null; done(): MissionDef[] }
+    private missions: {
+      current(): MissionDef | null;
+      done(): MissionDef[];
+      pending(): MissionDef[];
+    }
   ) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap journal';
@@ -132,7 +136,31 @@ export class JournalUI {
           <p>${atual.goal}</p></div>`;
         this.corpo.appendChild(el);
       }
+      // Pendencias: objetivos rasos que o jogador ultrapassou. Ficam listados
+      // com a profundidade, porque o conteudo continua la esperando.
+      const pendentes = this.missions.pending();
+      if (pendentes.length > 0) {
+        const t = document.createElement('h5');
+        t.className = 'journal-sub';
+        t.textContent = 'Ficou para tras';
+        this.corpo.appendChild(t);
+        for (const m of pendentes) {
+          const el = document.createElement('article');
+          el.className = 'journal-entry pendente';
+          el.innerHTML = `<div class="journal-text">
+            <h4>${m.title}<span class="journal-depth">${m.depth} m</span></h4>
+            <p>${m.goal}</p></div>`;
+          this.corpo.appendChild(el);
+        }
+      }
+
       const feitas = this.missions.done();
+      if (feitas.length > 0) {
+        const t = document.createElement('h5');
+        t.className = 'journal-sub';
+        t.textContent = 'Concluido';
+        this.corpo.appendChild(t);
+      }
       for (const m of [...feitas].reverse()) {
         const el = document.createElement('article');
         el.className = 'journal-entry';
