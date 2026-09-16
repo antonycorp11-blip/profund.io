@@ -708,3 +708,98 @@ Na ordem, depois do teste:
 7. **Tela inicial + tutorial de 30 segundos.** Hoje o jogo entra direto na base.
 
 Nao adicionar sistema novo antes do item 1 estar aprovado.
+
+## 7. A biblia narrativa e o que o codigo precisa mudar
+
+`BIBLIA.md` (v1.0, 15/09/2026) e a fonte canonica de historia. O .docx original
+esta em `docs/`. **Quando o codigo discordar dela, o codigo esta errado.**
+
+Esta secao existe porque boa parte da historia foi escrita no codigo ANTES da
+biblia chegar. Ela registra o que bate, o que colide e em que ordem consertar.
+
+### O que bate (e bate bem)
+
+As profundidades das camadas foram escolhidas sem conhecer a biblia e cairam
+quase em cima das cidades dela. Isso e sorte, e vale preservar:
+
+| camada no codigo | prof. | local na biblia | prof. |
+|---|---|---|---|
+| Camada de Pedra | 50 | Solo Antigo / Pedra Fria | 0–360 |
+| Cavernas de Cristal | 200 | Pedra Fria / Posto Nove | ~320 |
+| Profundezas Minerais | 500 | **BLOCKIA** | 600 |
+| Zona de Magma | 900 | **FERRURIA** | 980 |
+| Ruinas Antigas | 1300 | **LUMORA** | 1380 |
+| Abismo | 1700 | **VESPERA** | 1720 |
+| O Portal | 1960 | Camara da Porta | 1960 |
+
+Nao mexer nesses numeros. O selo de bioma ja cai exatamente onde a biblia
+coloca a entrada de cada cidade — o selo vira, literalmente, o portao da
+cidade.
+
+O bestiario tambem bate: morcego, aranha, cogumelo, limo (slime toxico),
+cristalino (caranguejo cristalino), vespa, escaravelho (escorpiao de lava) e
+alma (apariciao espectral) existem nos dois lados. Falta o **verme de tunel**.
+
+### O que colide (em ordem de urgencia)
+
+1. **`npc_helena` tem o nome da mae do protagonista.** Na biblia, Helena
+   Ramires e a mae de Elias e fica na superficie. Ter uma geologa Helena a
+   260 m e um erro que so piora conforme a historia cresce. **Renomear ja.**
+
+2. **O selo exige "resgatar todos os mineiros perdidos". A biblia proibe esse
+   enquadramento.** Pilar 2.2, com todas as letras: os habitantes *"nao devem
+   ser tratados como coitados esperando resgate"* — as geracoes seguintes
+   **escolheram** ficar. A maquina do `BiomeGate` esta certa; a ficcao em cima
+   dela esta errada. A segunda condicao deve virar **confianca da cidade**
+   (secao 7 da biblia define Confianca / Influencia / Legado). Mara Avelar nao
+   quer ser salva: ela quer prova de que Elias nao vai repetir Santiago — e
+   exatamente a missao M9.
+
+3. **O pai nao tem nome no codigo, e tem ficha completa na biblia.** Santiago
+   Ramires, 38 no desaparecimento, brilhante e obsessivo. O jogador e **Elias
+   Ramires**, 22. Hoje o jogo trata os dois como anonimos.
+
+4. **O "Setor 3" foi inventado por mim e nao existe na biblia.** As 6 pistas em
+   `src/data/story.ts` contam uma expedicao de empresa com maquinario antigo.
+   A biblia conta outra coisa, melhor: **John sumiu onze dias antes e Santiago
+   desceu atras dele.** As 12 Paginas do Caderno (secao 14) substituem as
+   pistas inventadas — sao o colecionavel canonico.
+
+5. **Os 6 chefes sao invencao minha.** A biblia nomeia tres: **Rainha
+   Escavadora** (420–500 m), **Colosso Prismatico** (Lumora) e **Guardiao da
+   Porta** (final), mais uma criatura que emerge do Abismo em Vespera. Os meus
+   nao contradizem nada — mas os nomes canonicos tem que existir primeiro.
+
+6. **Escopo.** A biblia descreve 16h40 de campanha com 4 cidades, reputacao em
+   tres eixos, 36 missoes principais e 20 submissoes. O jogo hoje e um loop de
+   mineracao com cota. Isso nao e um problema a resolver — e o mapa de anos de
+   trabalho. Ver a ordem abaixo.
+
+### Ordem de reconciliacao
+
+Barato e faz diferenca imediata:
+
+1. Renomear `npc_helena`. Nomear Elias e Santiago no jogo.
+2. Trocar a segunda condicao do selo de "resgatar N" para "confianca da
+   cidade". Nada da maquina muda; muda o texto e a fonte do contador.
+3. Substituir as 6 pistas inventadas pelas **Paginas do Caderno** canonicas
+   (12 paginas, secao 14 da biblia) e criar a tela de leitura.
+4. Renomear os chefes que tem equivalente canonico.
+
+Medio, e o proximo salto real do jogo:
+
+5. **Blockia a 600 m** como primeiro hub subterraneo de verdade: Mara, Silas,
+   Nina, Breno, Irene, Afonso, Lio. Os prompts de cidade subterranea da leva 3
+   em `ASSETS.md` ja servem para isso — mas devem ser refeitos com o nome
+   Blockia e o lema *"A pedra nos fechou uma porta e nos construimos uma casa."*
+6. Reputacao por cidade (Confianca / Influencia / Legado).
+7. Sistema de missoes em arquivo de dados, como pede a secao 27 da biblia.
+
+Longo, nao comecar agora: Ferruria, Lumora, Vespera, cutscenes, radio, Veyra.
+
+### Regra permanente
+
+Antes de criar NPC, cidade, chefe, item ou missao: **procurar na biblia
+primeiro**. Se existe, usar o nome e a profundidade de la. Se nao existe, e
+invencao — e invencao tem que ser declarada como invencao, nunca apresentada
+como se fosse canone.
