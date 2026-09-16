@@ -175,30 +175,11 @@ export class Player {
         this.mantling = true;
         this.vy = -climbCfg.mantleSpeed;
         this.vx = this.climbingWall * climbCfg.mantlePush;
-        // Confiar so na velocidade fazia o jogador ficar oscilando colado no
-        // topo da parede sem nunca passar por cima — o pior momento possivel,
-        // porque acontece exatamente quando a escalada ia terminar. Quando ha
-        // lugar de pe logo acima da borda, o corpo vai para la.
-        const lado = this.climbingWall;
-        const destino = world.findStandingSpot(
-          Math.floor((this.x + this.w / 2) / CONFIG.tileSize) + lado,
-          Math.floor(this.y / CONFIG.tileSize),
-          2
-        );
-        if (destino) {
-          const dx = destino.col * CONFIG.tileSize + CONFIG.tileSize / 2 - (this.x + this.w / 2);
-          const dy = (destino.row + 1) * CONFIG.tileSize - (this.y + this.h);
-          // So aceita se for um passo curto: teleporte longo seria bug, nao
-          // ajuda.
-          if (Math.abs(dx) <= CONFIG.tileSize * 1.6 && dy <= 0 && dy >= -CONFIG.tileSize * 1.6) {
-            this.x += dx;
-            this.y += dy;
-            this.vy = 0;
-            this.vx = 0;
-            this.climbingWall = 0;
-            this.onGround = true;
-          }
-        }
+        // Nada de reposicionar o corpo aqui. A versao que procurava um lugar
+        // de pe e movia o jogador para la resolvia o topo da parede e criava
+        // algo pior: um salto lateral do nada, no meio da escalada. Quem
+        // termina a escalada agora e o degrau automatico — ele move no maximo
+        // um tile e so com os pes no chao, entao nao tem como virar teleporte.
       }
     } else if (canGrab && this.climbStamina <= 0 && !this.onGround) {
       // Sem forca: desliza em vez de despencar.
@@ -264,7 +245,6 @@ export class Player {
 
     for (let i = 0; i < steps; i++) {
       // X
-      const antesX = this.x;
       this.x += sx;
       if (world.rectCollides(this.x, this.y, this.w, this.h)) {
         // Degrau automatico: se o obstaculo tem UM tile e ha teto livre, o
@@ -275,10 +255,10 @@ export class Player {
         // que a mineracao cria o tempo todo — virava parede, e a unica saida
         // era grudar na parede e escalar. Escalar para vencer 30 cm e
         // horrivel, e era o que o jogo pedia a cada dois passos.
-        if (this.stepUp(world, sx, ts)) {
-          // subiu: segue o passo normalmente
-        } else {
-          this.x = antesX;
+        if (!this.stepUp(world, sx, ts)) {
+          // O encaixe usa a posicao QUE JA PENETROU o tile: e dela que sai a
+          // borda certa. Voltar para a posicao anterior antes de encaixar
+          // jogava o jogador um tile para tras — era o "TP pro lado".
           if (sx > 0) {
             this.x = Math.floor((this.x + this.w) / ts) * ts - this.w - EPS;
           } else if (sx < 0) {

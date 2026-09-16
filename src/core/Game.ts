@@ -50,6 +50,7 @@ import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { gateBandRows, gateLayerDef } from '../data/gates';
+import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
 import { Missions } from '../systems/Missions';
 import { Reputation } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
@@ -558,12 +559,25 @@ export class Game {
       this.save();
     });
     Events.on('npc:rescued', (p) => {
+      // Cada resgatado ensina um sistema. Quem foi tirado de debaixo da pedra
+      // e a melhor pessoa possivel para explicar como o jogo funciona.
+      const aula = RESCUE_NPCS.find((n) => n.id === p.id)?.teaches;
+      if (aula) {
+        this.hud.celebrate(aula.titulo, p.name, aula.texto, 'progress', 3);
+      }
       this.exploration.setMarkerDone(p.id);
       this.skills.setStoryFlag(p.id);
       this.skills.addPoints(2, 'resgate');
       this.refreshObjective();
       this.save();
     });
+    Events.on('quota:failed', () => {
+      Events.emit('dialog:open', {
+        lines: MINE_CLOSED,
+        onClose: () => this.resetSave(),
+      });
+    });
+
     Events.on('mission:done', (p) => {
       this.hud.celebrate('MISSAO CONCLUIDA', p.title, p.text, 'progress', 3);
     });
@@ -736,9 +750,15 @@ export class Game {
     });
 
     // Desbloqueia o audio no primeiro gesto do usuario.
+    //
+    // `once: true` nao serve: o iOS suspende o contexto sozinho ao trocar de
+    // app, ao bloquear a tela e depois de um silencio longo, e uma vez
+    // desbloqueado o jogo ficava mudo para sempre. Agora todo gesto reconfirma
+    // — `unlock` sai barato quando o contexto ja esta rodando.
     const unlock = () => AudioSystem.unlock();
-    window.addEventListener('pointerdown', unlock, { once: true });
-    window.addEventListener('keydown', unlock, { once: true });
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    window.addEventListener('touchstart', unlock, { passive: true });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -746,6 +766,8 @@ export class Game {
         this.input.releaseAll();
       } else {
         this.lastTime = performance.now();
+        // Voltar para o jogo tem que trazer o som de volta junto.
+        AudioSystem.unlock();
       }
     });
     window.addEventListener('pagehide', () => this.save());
@@ -760,6 +782,9 @@ export class Game {
       // Jogo novo: nenhum selo foi aberto, nenhum chefe morreu — spawna os 6.
       this.biomeGate.spawnBosses(this.creatures);
       this.settleMissions();
+      // Prologo: quem e o pai, por que a mina reabriu e o que a cota custa.
+      // Antes disso o jogo comecava sem dizer que alguem tinha desaparecido.
+      Events.emit('dialog:open', { lines: PROLOGUE });
       return;
     }
 

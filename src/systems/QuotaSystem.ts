@@ -137,14 +137,17 @@ export class QuotaSystem {
     if (this.history.length > 20) this.history.shift();
 
     if (!wasCompleted) {
-      const penalty = Math.round(
-        this.totalRequested() * QUOTA_CONFIG.rewardPerUnit * QUOTA_CONFIG.failPenaltyRatio
-      );
-      this.stock.money = Math.max(0, this.stock.money - penalty);
-      Events.emit('ui:toast', {
-        text: `Semana ${this.week} fechou sem a cota. Multa de ${penalty} moedas.`,
-        tone: 'warn',
-      });
+      /*
+       * A mina estava fechada havia anos. Para reabrir, Elias assinou com o
+       * dono: cota entregue toda semana. Semana que fecha sem cota e o dono
+       * fechando a mina de novo — e a run acaba.
+       *
+       * Nao ha multa em moeda porque multa e um tapa no pulso, e isso
+       * transformava o contrato numa taxa. O que da peso a cota e ela poder
+       * terminar o jogo.
+       */
+      Events.emit('quota:failed', { week: this.week });
+      return;
     }
     this.generate(week);
   }

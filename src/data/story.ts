@@ -64,6 +64,17 @@ export interface RescueNpcDef {
   safeLines: DialogLine[];
   /** Camada onde ele foi preso — o BiomeGate exige TODOS os desta camada resgatados. */
   layer: string;
+  /**
+   * O sistema que ele ensina ao ser resgatado.
+   *
+   * O jogo nao explicava nada: toupeira, copia, atributo e habilidade
+   * apareciam como botao numa tela e cabia ao jogador adivinhar. Quem ensina
+   * agora e quem foi tirado de debaixo da pedra — alguem com motivo para
+   * saber, e com motivo para retribuir. O primeiro ensina toupeira porque e o
+   * que resolve o problema que o jogador tem no minuto seguinte: mochila
+   * cheia e minerio no chao.
+   */
+  teaches?: { titulo: string; texto: string };
 }
 
 /**
@@ -213,6 +224,10 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Jonas', text: 'Vi ele uma vez, quatorze anos atras, descendo com pressa.' },
       { speaker: 'Jonas', text: 'Perguntei se ele tinha visto o desabamento la em cima. Nem olhou pra mim.' },
       { speaker: 'Jonas', text: 'Quem desce com pressa nao esta procurando pedra.' },
+      { speaker: 'Jonas', text: 'Olha, eu te devo uma. Fica com as minhas toupeiras.' },
+      { speaker: 'Elias', text: 'Toupeiras?' },
+      { speaker: 'Jonas', text: 'Elas recolhem o que voce larga no chao quando a mochila enche.' },
+      { speaker: 'Jonas', text: 'Atravessam a rocha. Nao pergunta como. Olha no botao COPIAS.' },
       { speaker: 'Elias', text: 'Entao eu sigo por onde ele foi.' },
       { speaker: 'Jonas', text: 'Segue nada. Mais uns metros e tem uma parede que picareta nao arranha.' },
       { speaker: 'Elias', text: 'Uma parede?' },
@@ -220,6 +235,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Jonas', text: 'Derruba o bicho e a parede cede. Nao me pergunta por que. Vou esperar na base.' },
     ],
     walkToOffsetCols: -2,
+    teaches: { titulo: 'TOUPEIRAS', texto: 'Jonas deixou as toupeiras dele com voce. Elas recolhem sozinhas o minerio que voce largou no chao. Abra COPIAS para contratar e melhorar.' },
     layer: 'stone',
   },
   {
@@ -252,6 +268,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Vilma', text: 'Se voce descer o bastante, olha pra baixo antes de acender a sua.' },
     ],
     walkToOffsetCols: -2,
+    teaches: { titulo: 'COPIAS', texto: 'Vilma mostrou como usar a copiadora. Uma copia sua minera sozinha enquanto voce esta noutro lugar. Abra COPIAS.' },
     layer: 'crystal',
   },
   {
@@ -284,6 +301,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Teo', text: 'O Santiago passou depois. Bem depois. Procurando pelo primeiro.' },
     ],
     walkToOffsetCols: -2,
+    teaches: { titulo: 'ATRIBUTOS', texto: 'Teo explicou a ficha. Cada nivel da pontos; gaste em ATRIBUTOS para bater mais forte, carregar mais e aguentar mais.' },
     layer: 'minerals',
   },
   {
@@ -316,6 +334,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Ozias', text: 'John. Perna boa, cabeca ruim. Desceu e nunca pediu carona de volta.' },
     ],
     walkToOffsetCols: -2,
+    teaches: { titulo: 'HABILIDADES', texto: 'Ozias ensinou as manobras. Broca, Choque e Volta Rapida ficam nos botoes do canto; compre e melhore em SKILLS.' },
     layer: 'magma',
   },
   {
@@ -348,6 +367,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Braga', text: 'E tem outra marca por cima da primeira. Essa ai e de gente em pe.' },
     ],
     walkToOffsetCols: -2,
+    teaches: { titulo: 'EQUIPAMENTO', texto: 'Braga mostrou o que vestir. Capacete, traje, mochila e botas mudam luz, defesa e carga. Abra TECNOLOGIA.' },
     layer: 'ruins',
   },
   {

@@ -30,6 +30,8 @@ export interface GameEvents {
   'delivery:done': { total: number; value: number };
   'quota:progress': { completed: boolean };
   'quota:complete': { message: string; reward: number };
+  /** A semana virou sem a cota: a mina fecha e a run termina. */
+  'quota:failed': { week: number };
   'quota:new': { week: number; entries: { resource: string; amount: number }[] };
   'tool:upgraded': { index: number; name: string };
   'clue:found': { id: string; title: string; logEntry: string };

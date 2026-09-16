@@ -109,6 +109,9 @@ class AudioSystemImpl {
 
   play(key: SfxKey, volumeScale = 1): void {
     if (!this.enabled || !this.ctx || !this.master) return;
+    // O contexto pode ter sido suspenso pelo sistema entre um som e outro.
+    // Sem isto o jogo continua rodando e simplesmente para de ter som.
+    if (this.ctx.state === 'suspended') void this.ctx.resume();
     // Evita empilhar o mesmo som no mesmo frame.
     const now = this.ctx.currentTime;
     const last = this.lastPlay.get(key) ?? -1;
