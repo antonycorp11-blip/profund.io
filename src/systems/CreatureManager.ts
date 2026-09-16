@@ -5,6 +5,7 @@ import { Creature } from '../entities/Creature';
 import { Events } from '../core/events';
 import { layerAt } from '../data/layers';
 import { baseCampAt } from '../data/basecamp';
+import type { Camera } from '../core/camera';
 import { insideBlockia } from '../data/gates';
 import { randInt } from '../core/math';
 import type { DropManager } from '../entities/DropManager';
@@ -374,8 +375,13 @@ export class CreatureManager {
     });
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    for (const c of this.creatures) c.render(ctx);
+  render(ctx: CanvasRenderingContext2D, camera?: Camera): void {
+    for (const c of this.creatures) {
+      // Guardiao com folga maior: ele e enorme e o corpo entra na tela muito
+      // antes do centro dele.
+      if (camera && !camera.sees(c.x, c.y, c.isGuardian ? 180 : 48)) continue;
+      c.render(ctx);
+    }
   }
 
   /** Luzes das criaturas emissivas (guardiao brilha no escuro). */

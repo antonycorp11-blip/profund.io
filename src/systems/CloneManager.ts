@@ -1,3 +1,4 @@
+import type { Camera } from '../core/camera';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { Clone, type CloneConfig } from '../entities/Clone';
@@ -149,8 +150,11 @@ export class CloneManager {
     }
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    for (const clone of this.clones) clone.render(ctx, clone.walkFrame());
+  render(ctx: CanvasRenderingContext2D, camera?: Camera): void {
+    for (const clone of this.clones) {
+      if (camera && !camera.sees(clone.x, clone.y)) continue;
+      clone.render(ctx, clone.walkFrame());
+    }
   }
 
   toJSON(): CloneSave {

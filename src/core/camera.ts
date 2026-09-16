@@ -122,6 +122,24 @@ export class Camera {
     }
   }
 
+  /**
+   * Este ponto do mundo esta na tela?
+   *
+   * Existe para os desenhos em massa — toupeiras, copias, criaturas e drops.
+   * Nenhum deles cortava nada: um exercito de toupeiras a 300 m dali era
+   * desenhado quadro a quadro junto com 400 drops espalhados pela mina
+   * inteira. A folga cobre o corpo do bicho e a sombra dele, para nada sumir
+   * meio quadro antes de sair da borda.
+   */
+  sees(x: number, y: number, folga = 48): boolean {
+    return (
+      x >= this.left - folga &&
+      x <= this.left + this.viewW + folga &&
+      y >= this.top - folga &&
+      y <= this.top + this.viewH + folga
+    );
+  }
+
   /** Canto superior esquerdo visivel (ja com shake). */
   get left(): number {
     return this.x - this.viewW / 2 + this.shakeX;

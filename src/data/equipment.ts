@@ -109,17 +109,30 @@ export const EQUIPMENT: EquipDef[] = [
     icon: '🛡',
   },
   {
+    /*
+     * Este traje custava 5.200 moedas e dois tercos dele nao FAZIA NADA.
+     *
+     * Ele modificava `fireResistance` e `environmentalResistance`, e os dois
+     * estao marcados `live: false` em /data/attributes.ts — nao existe dano de
+     * calor nem de ambiente no jogo. A ficha prometia "o calor la embaixo para
+     * de cobrar caro" e nao havia calor cobrando nada. Mesma armadilha da
+     * mochila a jato, que prometia empuxo e entregava planeio.
+     *
+     * Enquanto nao existir o sistema de calor, o traje entrega o que a ficha
+     * diz, com atributos que o jogo le de verdade. `npm run check` agora
+     * impede que qualquer item volte a cobrar moeda por atributo morto.
+     */
     id: 'eq_traje_termico',
     slot: 'corpo',
     name: 'Traje Termico',
-    description: 'Feito para o magma: o calor la embaixo para de cobrar caro.',
+    description: 'Forro pesado para o fundo: aguenta muito mais castigo e se fecha sozinho.',
     cost: 5200,
     requiredDepth: 700,
     modifiers: [
-      { target: 'fireResistance', op: 'flat', value: 0.6 },
-      { target: 'environmentalResistance', op: 'flat', value: 0.3 },
-      { target: 'defense', op: 'flat', value: 0.15 },
-      { target: 'healthRegeneration', op: 'flat', value: 1.5 },
+      { target: 'defense', op: 'flat', value: 0.3 },
+      { target: 'maxHealth', op: 'flat', value: 90 },
+      { target: 'healthRegeneration', op: 'flat', value: 3 },
+      { target: 'moveSpeed', op: 'percentAdd', value: -0.05 },
     ],
     icon: '🔥',
   },

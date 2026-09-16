@@ -193,6 +193,38 @@ const conferirMods = (nome: string, mods: { target: string; op: string }[]) => {
 for (const e of EQUIPMENT) conferirMods('equipamento ' + e.id, e.modifiers);
 for (const k of SKILLS) for (const nivel of k.modifiers) conferirMods('habilidade ' + k.id, nivel);
 
+// --- 8b. ninguem cobra moeda por atributo que nao existe -------------------
+//
+// /data/attributes.ts declara 31 atributos com live:false — sao o roteiro
+// do que ainda vai existir, e ter esse roteiro escrito e bom. O que nao pode e
+// VENDER um deles. O Traje Termico custava 5.200 moedas para dar resistencia a
+// fogo num jogo sem dano de fogo; a ficha prometia e o codigo nao tinha o que
+// cumprir. E o mesmo bug da mochila a jato, que prometia empuxo e dava planeio.
+const mortos = new Set(
+  Object.values(ATTRIBUTES)
+    .filter((a) => (a as { live?: boolean }).live === false)
+    .map((a) => (a as { id: string }).id)
+);
+for (const e of EQUIPMENT) {
+  for (const m of e.modifiers) {
+    if (mortos.has(m.target)) {
+      erros.push(
+        \`equipamento \${e.id} custa \${e.cost} moedas e mexe em "\${m.target}", que e \` +
+          'um atributo sem sistema por tras (live:false). Vender promessa nao vale.'
+      );
+    }
+  }
+}
+for (const k of SKILLS) {
+  for (const nivel of k.modifiers) {
+    for (const m of nivel) {
+      if (mortos.has(m.target)) {
+        erros.push(\`habilidade \${k.id} gasta ponto em "\${m.target}", que e atributo morto.\`);
+      }
+    }
+  }
+}
+
 // --- 8. pergaminho e pista tem texto --------------------------------------
 for (const s of SCROLLS) {
   const corpo = (s.text ?? []).join(' ');

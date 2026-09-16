@@ -1676,15 +1676,10 @@ export class Game {
     this.tileRenderer.render(ctx, this.camera);
     for (const e of this.interactables) e.render(ctx);
     this.structures.render(ctx, this.camera);
-    this.drops.render(ctx);
-    this.creatures.render(ctx);
-    this.cloneManager.render(ctx);
-    this.collectors.render(ctx, {
-      left: this.camera.left,
-      top: this.camera.top,
-      right: this.camera.left + this.camera.viewW,
-      bottom: this.camera.top + this.camera.viewH,
-    });
+    this.drops.render(ctx, this.camera);
+    this.creatures.render(ctx, this.camera);
+    this.cloneManager.render(ctx, this.camera);
+    this.collectors.render(ctx, this.camera);
     // As estruturas da base ficam AQUI, antes do jogador: ele tem que passar
     // na frente delas. Os avisos delas continuam na camada pos-luz.
     this.campsRenderer.render(ctx);

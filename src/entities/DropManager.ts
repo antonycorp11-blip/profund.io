@@ -1,3 +1,4 @@
+import type { Camera } from '../core/camera';
 import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
@@ -235,9 +236,18 @@ export class DropManager {
     d.active = false;
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
+  /**
+   * Os drops na tela.
+   *
+   * Sao ate 400 ativos ao mesmo tempo (ver CONFIG.drops.maxActive) e nao havia
+   * corte nenhum: um exercito de toupeiras espalha minerio pela mina inteira, e
+   * todo ele era desenhado quadro a quadro, incluindo o que estava a duzentos
+   * metros dali.
+   */
+  render(ctx: CanvasRenderingContext2D, camera?: Camera): void {
     for (const d of this.pool) {
       if (!d.active) continue;
+      if (camera && !camera.sees(d.x, d.y, 24)) continue;
       const def = RESOURCES[d.resource];
       const bob = Math.sin(d.bob) * 1.5;
       const x = d.x;
