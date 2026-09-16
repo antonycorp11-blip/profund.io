@@ -3094,3 +3094,31 @@ body {
   border-color: rgba(154, 79, 224, 0.75) !important;
   color: #d3b4ff !important;
 }
+
+/* Retrato de quem fala, no balao de dialogo. */
+.dialog-box {
+  position: relative;
+}
+
+.dialog-face {
+  position: absolute;
+  left: 10px;
+  top: -34px;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border: 2px solid rgba(255, 205, 110, 0.6);
+  background: linear-gradient(160deg, rgba(70, 52, 30, 0.95), rgba(24, 18, 13, 0.95));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.dialog-face[hidden] {
+  display: none;
+}
+
+/* Com retrato, o nome recua para nao ficar embaixo dele. */
+.dialog-face:not([hidden]) ~ .dialog-speaker {
+  padding-left: 52px;
+}

@@ -16,10 +16,17 @@ export interface CityNpcDef {
   name: string;
   /** Funcao, exibida embaixo do nome. */
   role: string;
-  /** Coluna dentro da caverna, 0 = col0 de CONFIG.blockia. */
-  col: number;
-  /** Linhas abaixo do topo da caverna. */
-  depthOffset: number;
+  /**
+   * Em que nivel ele mora: 0 = piso da praca, 1..4 = terracos de baixo para
+   * cima.
+   *
+   * Antes era coluna e profundidade absolutas, escritas a mao. Os sete
+   * nasceram dentro da pedra por causa disso. Nivel + deslocamento e
+   * impossivel de errar: a geometria vem de `blockiaLayout`.
+   */
+  nivel: number;
+  /** Colunas a partir da borda esquerda daquele nivel. */
+  offset: number;
   /** Cor do balao e da silhueta enquanto nao ha arte. */
   color: string;
   /** Primeira conversa. */
@@ -35,8 +42,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'mara_avelar',
     name: 'Mara Avelar',
     role: 'Primeira Lanterna',
-    col: 52,
-    depthOffset: 96,
+    nivel: 0,
+    offset: 30,
     color: '#ffc453',
     trust: 5,
     lines: [
@@ -59,8 +66,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'silas_arcos',
     name: 'Silas Arcos',
     role: 'Ferreiro',
-    col: 16,
-    depthOffset: 100,
+    nivel: 0,
+    offset: 8,
     color: '#c0713a',
     trust: 3,
     lines: [
@@ -78,8 +85,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'nina_candeia',
     name: 'Nina Candeia',
     role: 'Mercado da Ponte',
-    col: 44,
-    depthOffset: 72,
+    nivel: 0,
+    offset: 46,
     color: '#9affd8',
     trust: 3,
     lines: [
@@ -96,8 +103,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'breno_torga',
     name: 'Breno Torga',
     role: 'Mestre dos Elevadores',
-    col: 84,
-    depthOffset: 60,
+    nivel: 3,
+    offset: 4,
     color: '#8cbef0',
     trust: 3,
     lines: [
@@ -114,8 +121,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'irene_salles',
     name: 'Dra. Irene Salles',
     role: 'Medica',
-    col: 24,
-    depthOffset: 52,
+    nivel: 1,
+    offset: 4,
     color: '#ffffff',
     trust: 3,
     lines: [
@@ -132,8 +139,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'afonso_greda',
     name: 'Afonso Greda',
     role: 'Arquivista',
-    col: 68,
-    depthOffset: 40,
+    nivel: 4,
+    offset: 7,
     color: '#d3b47d',
     trust: 4,
     lines: [
@@ -155,8 +162,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'lio',
     name: 'Lio',
     role: '11 anos',
-    col: 58,
-    depthOffset: 104,
+    nivel: 2,
+    offset: 9,
     color: '#8c5ce0',
     trust: 2,
     lines: [

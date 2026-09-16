@@ -20,6 +20,8 @@
  * mineiros daquela camada resgatados, mais o chefe morto, para abrir o selo.
  */
 
+import { BLOCKIA_NPCS } from './blockia';
+
 export interface DialogLine {
   speaker: string;
   text: string;
@@ -407,4 +409,20 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
 /** Nome exibido de um mineiro resgatavel, pelo id. */
 export function rescueName(id: string): string {
   return RESCUE_NPCS.find((n) => n.id === id)?.name ?? id;
+}
+
+
+/**
+ * Id da folha de arte de quem fala, a partir do nome exibido no dialogo.
+ *
+ * O dialogo guarda o NOME (`Jonas`, `Mara`), nao o id (`npc_jonas`). Esta
+ * ponte existe para o retrato aparecer sem obrigar quem escreve dialogo a
+ * lembrar de ids.
+ */
+export function npcIdForSpeaker(speaker: string): string | null {
+  const nome = speaker.toLowerCase().split(' ')[0];
+  const preso = RESCUE_NPCS.find((n) => n.name.toLowerCase().startsWith(nome));
+  if (preso) return preso.id;
+  const morador = BLOCKIA_NPCS.find((n) => n.name.toLowerCase().includes(nome));
+  return morador?.id ?? null;
 }

@@ -55,6 +55,7 @@ import { Missions } from '../systems/Missions';
 import { Reputation } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
 import { BLOCKIA_NPCS } from '../data/blockia';
+import { blockiaLayout } from '../world/Blockia';
 import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
@@ -456,12 +457,18 @@ export class Game {
     // a cidade emparedava alguem — e um NPC dentro da pedra nao da erro
     // nenhum, so some da historia.
     const bl = CONFIG.blockia;
+    const layout = blockiaLayout(this.world.surfaceRow);
     this.cityNpcs = [];
     // Lugares ja tomados: dois moradores encaixados no mesmo degrau ficariam um
     // dentro do outro, e so um receberia o toque.
     const ocupado = new Set<string>();
     for (const d of BLOCKIA_NPCS) {
-      const alvo = { col: bl.col0 + d.col, row: this.world.surfaceRow + bl.depth0 + d.depthOffset };
+      // Nivel 0 e a praca; 1..4 sao os terracos. A linha e sempre a de cima da
+      // tabua, que e onde os pes ficam.
+      const nivel = d.nivel === 0 ? null : layout.decks[d.nivel - 1];
+      const alvo = nivel
+        ? { col: Math.min(nivel.col1 - 1, nivel.col0 + d.offset), row: nivel.row - 1 }
+        : { col: bl.col0 + 6 + d.offset, row: layout.piso };
       let spot = this.world.findStandingSpot(alvo.col, alvo.row, 40) ?? alvo;
       // Se o vizinho chegou primeiro, procura de novo a partir de dois tiles
       // ao lado, ate achar chao livre.
@@ -986,8 +993,11 @@ export class Game {
     this.hud.setLevel(this.progression.level, this.progression.ratio);
     this.hud.setClonerAvailable(this.tech.unlocked('cloner'));
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
+    // O aviso de "falar" some enquanto o dialogo esta aberto. Ele ficava por
+    // cima da conversa e aceitava toque, entao um segundo toque reabria o
+    // mesmo dialogo por cima do que ja estava rolando.
     this.hud.update(
-      target?.prompt() ?? null,
+      this.dialog.isOpen ? null : target?.prompt() ?? null,
       target?.auto ? '' : 'E',
       this.skills.points
     );

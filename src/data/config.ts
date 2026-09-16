@@ -232,7 +232,7 @@ export const CONFIG = {
     depth0: 560,
     depth1: 668,
     /** Profundidade da galeria que liga o poco principal a porta da cidade. */
-    corridorDepth: 604,
+    corridorDepth: 664,
     /** Coluna da porta de madeira reforcada. */
     gateCol: 130,
     /**

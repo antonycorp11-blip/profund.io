@@ -19,12 +19,19 @@ export class CityNpc implements Interactable {
   met = false;
   private t = Math.random() * 6;
   private idleIndex = 0;
+  /** Onde ele mora: nunca sai de perto disso. */
+  private casaX: number;
+  private alvoX: number;
+  private paradoAte = Math.random() * 4;
+  private facing: 1 | -1 = 1;
 
   constructor(readonly def: CityNpcDef, col: number, row: number) {
     this.id = def.id;
     const ts = CONFIG.tileSize;
     this.x = col * ts + ts / 2;
     this.y = row * ts + ts / 2;
+    this.casaX = this.x;
+    this.alvoX = this.x;
   }
 
   prompt(): string | null {
@@ -56,6 +63,30 @@ export class CityNpc implements Interactable {
 
   update(dt: number): void {
     this.t += dt;
+    // Vai e vem curto em volta de casa, com paradas.
+    //
+    // Nao ha pathfinding nem colisao aqui de proposito: o passeio e de poucos
+    // tiles no proprio terraco, que e plano e ja foi provado caminhavel. Um
+    // morador que some atras de uma parede custaria muito mais do que ganha.
+    if (this.paradoAte > 0) {
+      this.paradoAte -= dt;
+      return;
+    }
+    const dx = this.alvoX - this.x;
+    if (Math.abs(dx) < 2) {
+      // Chegou: para um tempo e escolhe outro ponto perto de casa.
+      this.paradoAte = 1.5 + Math.random() * 5;
+      this.alvoX = this.casaX + (Math.random() * 2 - 1) * CONFIG.tileSize * 4;
+      return;
+    }
+    const dir = Math.sign(dx) as 1 | -1;
+    this.facing = dir;
+    this.x += dir * 18 * dt;
+  }
+
+  /** Esta se movendo agora? Decide entre a tira parada e a de andar. */
+  private get andando(): boolean {
+    return this.paradoAte <= 0 && Math.abs(this.alvoX - this.x) >= 2;
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -89,13 +120,15 @@ export class CityNpc implements Interactable {
    * comecar a andar.
    */
   private renderArt(ctx: CanvasRenderingContext2D): boolean {
-    const strip = Assets.npcStrip(this.def.id, 'idle');
+    const strip =
+      Assets.npcStrip(this.def.id, this.andando ? 'walk' : 'idle') ??
+      Assets.npcStrip(this.def.id, 'idle');
     if (!strip || !strip.width) return false;
     const lado = strip.height;
     const quadros = Math.max(1, Math.round(strip.width / lado));
     // Cada um respira no proprio tempo: uma praca inteira em sincronia parece
     // um vitrine de bonecos, nao um lugar com gente.
-    const q = Math.floor(this.t * 5) % quadros;
+    const q = Math.floor(this.t * (this.andando ? 8 : 5)) % quadros;
     const altura = 46;
     const largura = altura;
     ctx.save();
@@ -104,17 +137,9 @@ export class CityNpc implements Interactable {
     ctx.beginPath();
     ctx.ellipse(this.x, this.y + 15, 10, 3.5, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.drawImage(
-      strip,
-      q * lado,
-      0,
-      lado,
-      lado,
-      this.x - largura / 2,
-      this.y + 16 - altura,
-      largura,
-      altura
-    );
+    ctx.translate(this.x, this.y + 16);
+    ctx.scale(this.facing, 1);
+    ctx.drawImage(strip, q * lado, 0, lado, lado, -largura / 2, -altura, largura, altura);
     ctx.restore();
     return true;
   }
