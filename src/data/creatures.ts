@@ -378,7 +378,7 @@ export const CREATURES: CreatureDef[] = [
   },
   {
     id: 'boss_automato_enferrujado',
-    name: 'Automato Enferrujado',
+    name: 'Rainha Escavadora',
     layers: ['minerals'],
     behavior: 'guardiao',
     health: 1150,
@@ -430,7 +430,7 @@ export const CREATURES: CreatureDef[] = [
   },
   {
     id: 'boss_escriba_selado',
-    name: 'Escriba Selado',
+    name: 'Colosso Prismatico',
     layers: ['ruins'],
     behavior: 'guardiao',
     health: 2500,

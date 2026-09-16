@@ -93,10 +93,31 @@ export class HUD {
     this.levelFill = this.levelEl.querySelector('.level-bar > i') as HTMLElement;
     this.moneyEl.appendChild(this.levelEl);
 
+    // Retrato do heroi: o card do topo-esquerdo deixa de ser "saldo" e passa a
+    // ser "voce". Vida, vigor e EXP moram dentro dele — sao os tres numeros que
+    // falam do personagem, e estavam espalhados por tres caixas diferentes.
+    const face = document.createElement('div');
+    face.className = 'hero-face';
+    const faceUrl = Assets.heroPortraitUrl?.();
+    if (faceUrl) {
+      const img = document.createElement('img');
+      img.src = faceUrl;
+      img.alt = 'Elias';
+      face.appendChild(img);
+    } else {
+      face.textContent = '⛏';
+    }
+    this.moneyEl.insertBefore(face, this.moneyEl.firstChild);
+
     left.appendChild(this.moneyEl);
+    // Recursos saem da coluna da esquerda e viram uma fileira no topo-centro:
+    // e a unica zona larga da tela que nao disputa espaco com nada.
+    const center = document.createElement('div');
+    center.className = 'hud-top-center';
     const chips = document.createElement('div');
     chips.className = 'chips';
-    left.appendChild(chips);
+    center.appendChild(chips);
+    this.root.appendChild(center);
 
     // Todos os recursos ganham chip; quem nao esta no bolso fica escondido.
     // Antes a lista era fixa em tres, entao pedra, ouro e cristal entravam na
@@ -168,15 +189,21 @@ export class HUD {
     this.bagEl.hidden = true;
     this.healthEl.hidden = true;
     bars.hidden = true;
-    left.appendChild(bars);
-    left.appendChild(this.climbEl);
+    this.moneyEl.appendChild(bars);
+    this.moneyEl.appendChild(this.climbEl);
 
     // Minimapa fecha a coluna da esquerda. E o unico canto fora das duas zonas
     // de toque: o joystick fica no rodape esquerdo e os botoes no rodape
     // direito, entao aqui ele nunca disputa dedo com o controle.
     this.mapSlotEl = document.createElement('div');
     this.mapSlotEl.className = 'hud-map-slot';
-    left.appendChild(this.mapSlotEl);
+
+    // A cota vira "Objetivo Atual" e fecha a coluna da esquerda, logo abaixo do
+    // retrato: e onde o olho ja esta quando o jogador pergunta "e agora?".
+    this.quotaEl = document.createElement('div');
+    this.quotaEl.className = 'quota objective';
+    this.buildQuota();
+    left.appendChild(this.quotaEl);
 
     this.root.appendChild(left);
 
@@ -200,11 +227,7 @@ export class HUD {
     buttons.appendChild(btnWorkshop);
     buttons.appendChild(btnMenu);
     right.appendChild(buttons);
-
-    this.quotaEl = document.createElement('div');
-    this.quotaEl.className = 'quota';
-    this.buildQuota();
-    right.appendChild(this.quotaEl);
+    right.appendChild(this.mapSlotEl);
     this.root.appendChild(right);
 
     // --- prompt de interacao ---
@@ -286,6 +309,34 @@ export class HUD {
         this.celebrate('GUARDIAO DERROTADO', p.name, 'O deposito atras dele e seu', 'progress', 3);
       }
     });
+  }
+
+  /**
+   * Objetivo narrativo: assume o card quando a cota da semana ja esta cumprida.
+   *
+   * O pedido do dono: "objetivo atual seria a cota e depois de cumprir a cota
+   * volta a ser as missoes". Sao o mesmo card — o jogador nunca fica sem uma
+   * frase dizendo o que fazer agora.
+   */
+  setMissionObjective(text: string | null): void {
+    const line = this.quotaEl.querySelector('.quota-mission') as HTMLElement | null;
+    const quotaBody = this.quotaEl.querySelectorAll('.quota-line, .quota-detail, .quota-days');
+    if (!text) {
+      line?.remove();
+      this.quotaEl.classList.remove('mission');
+      for (const el of quotaBody) (el as HTMLElement).hidden = false;
+      return;
+    }
+    this.quotaEl.classList.add('mission');
+    for (const el of quotaBody) (el as HTMLElement).hidden = true;
+    if (line) {
+      line.textContent = text;
+      return;
+    }
+    const el = document.createElement('div');
+    el.className = 'quota-mission';
+    el.textContent = text;
+    this.quotaEl.appendChild(el);
   }
 
   /** Monta as linhas da cota da semana atual. */

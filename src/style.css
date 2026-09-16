@@ -84,6 +84,45 @@ body {
   max-width: min(35vw, 330px);
 }
 
+/* Recursos no topo-centro: a unica faixa larga que nao disputa espaco com o
+   retrato, os botoes ou o minimapa. */
+.hud-top-center {
+  position: absolute;
+  top: calc(var(--safe-t) + 8px);
+  /* Limites em vez de centro da tela: centralizar no viewport fazia as pilulas
+     entrarem embaixo da fileira de botoes no landscape de celular. Assim a
+     faixa nunca invade nem o retrato nem os botoes, em largura nenhuma. */
+  left: calc(var(--safe-l) + 216px);
+  right: calc(var(--safe-r) + 378px);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Retrato do heroi dentro do card. O card ja e um grid de 2 colunas; o retrato
+   entra como uma terceira, na frente, ocupando as duas linhas. */
+.hero-face {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  width: 40px;
+  height: 40px;
+  align-self: start;
+  border-radius: 10px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  background: linear-gradient(160deg, rgba(90, 66, 38, 0.9), rgba(32, 24, 16, 0.9));
+  border: 1px solid rgba(255, 205, 110, 0.45);
+  margin-right: 7px;
+}
+
+.hero-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
 .hud-top-right {
   top: calc(var(--safe-t) + 8px);
   right: calc(var(--safe-r) + 10px);
@@ -92,11 +131,19 @@ body {
   width: min(30vw, 208px);
 }
 
+/* O minimapa fechava a coluna da esquerda; agora fecha a direita, sob os
+   botoes. A esquerda passou a ser "voce e seu objetivo". */
+.hud-top-right .hud-map-slot {
+  width: 100%;
+}
+
 .money-card {
   position: relative;
-  /* Grade de duas linhas: moeda + saldo em cima, faixa de nivel embaixo. */
+  /* Retrato na primeira coluna, atravessando as linhas; moeda e saldo ao lado;
+     nivel, barras e vigor empilhados embaixo. O card deixou de ser "saldo" e
+     passou a ser "voce". */
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto auto 1fr;
   align-items: center;
   gap: 2px 9px;
   min-width: 170px;
@@ -174,6 +221,28 @@ body {
   100% { opacity: 0; transform: translateY(-20px); }
 }
 
+.hud-top-center .chips {
+  justify-content: center;
+  flex-wrap: nowrap;
+  pointer-events: none;
+}
+
+/* Pilula grande: no topo-centro sobra largura, e o contador de recurso e a
+   informacao que o jogador mais olha de relance. */
+.hud-top-center .chip {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 11px 4px 4px;
+  gap: 6px;
+  border-radius: 999px;
+}
+
+.hud-top-center .chip-icon,
+.hud-top-center .chip .dot {
+  width: 22px;
+  height: 22px;
+}
+
 .chips {
   display: flex;
   gap: 6px;
@@ -230,6 +299,12 @@ body {
   100% {
     transform: scale(1);
   }
+}
+
+.money-card > .hud-bars,
+.money-card > .climb-gauge {
+  grid-column: 2 / -1;
+  width: 100%;
 }
 
 .hud-bars {
@@ -352,7 +427,7 @@ body {
 
 /* --- nivel e XP, dentro do card de saldo --- */
 .level-inline {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -512,6 +587,22 @@ body {
 
 /* A cota como UMA faixa: era um card com uma linha por recurso, ocupando o
    canto inteiro para dizer algo que cabe numa barra. */
+/* "Objetivo Atual": e a mesma cota, com moldura de objetivo. Quando a semana
+   fecha, o mesmo card passa a mostrar a proxima missao — o jogador nunca fica
+   sem uma frase dizendo o que fazer agora. */
+.quota.objective {
+  min-width: 190px;
+}
+
+.quota.objective::before {
+  content: 'OBJETIVO ATUAL';
+  font-size: 7.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  font-weight: 700;
+  margin-bottom: 1px;
+}
+
 .quota {
   display: flex;
   flex-direction: column;
@@ -523,6 +614,24 @@ body {
   border: 1px solid var(--stroke);
   border-radius: 14px;
   font-size: 10px;
+}
+
+.quota.mission::before {
+  content: 'MISSAO';
+  color: #ffc453;
+}
+
+.quota-mission {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.quota-line[hidden],
+.quota-detail[hidden],
+.quota-days[hidden] {
+  display: none;
 }
 
 .quota-line {
@@ -1689,6 +1798,21 @@ body {
 }
 
 /* Telas muito baixas (landscape de celular pequeno). */
+/* Landscape de celular: sobram ~270px entre o retrato e os botoes. As pilulas
+   encolhem para caber tres ou quatro sem esbarrar em nada. */
+@media (max-width: 1000px) {
+  .hud-top-center .chip {
+    font-size: 11px;
+    padding: 3px 8px 3px 3px;
+    gap: 4px;
+  }
+  .hud-top-center .chip-icon,
+  .hud-top-center .chip .dot {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 @media (max-height: 380px) {
   .hud-celebration {
     top: 56%;

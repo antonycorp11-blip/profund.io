@@ -1,20 +1,23 @@
 /**
- * Conteudo narrativo do prototipo: salas feitas a mao, pistas e NPCs resgataveis.
+ * Conteudo narrativo: paginas do caderno de Santiago e mineiros perdidos.
  * Coordenadas em TILES (col, row). row = CONFIG.world.surfaceRow + profundidade_em_metros.
  *
- * O fio da historia (por baixo do mistério, sem resolve-lo):
- * o pai nao "foi para o fundo" a toa — ele fazia parte de uma equipe avancada,
- * chamada internamente de "Setor 3", enviada pela mesma empresa que administra
- * esta mina. As pistas e os mineiros resgatados vao revelando, aos poucos,
- * que ALGUEM sabia que havia algo la embaixo antes de qualquer picareta bater
- * na primeira pedra — e mandou gente mesmo assim. As ruinas nao sao apenas
- * antigas: tem maquinario, tem registros, tem chefes que reagem a intrusos
- * como se estivessem cumprindo ordem. Nada disto resolve o misterio no
- * final desta leva — deve deixar o jogador com MAIS perguntas, nao menos.
+ * CANONE: ver BIBLIA.md. O protagonista e Elias Ramires, 22. O pai e Santiago
+ * Ramires, sumiu ha 14 anos. John Calder, melhor amigo de Santiago, sumiu ONZE
+ * DIAS ANTES — Santiago desceu atras dele, e esse e o segredo que o jogo vai
+ * soltando aos poucos.
  *
- * Cada mineiro resgatavel pertence a uma CAMADA (`layer`). O BiomeGate exige
- * TODOS os mineiros daquela camada resgatados, mais o chefe morto, para abrir
- * o selo e liberar a proxima camada.
+ * Os mineiros presos NAO sao moradores das cidades subterraneas. Sao gente que
+ * se perdeu voltando, ou que entrou procurando as cidades, ou que nem sabe que
+ * elas existem. Por isso eles podem ser resgatados sem contrariar o pilar 2.2
+ * da biblia: quem escolheu ficar mora em Blockia, nao debaixo de um desabamento.
+ *
+ * O LOOP: cada um deles entrega uma peca sobre Santiago, e a peca seguinte
+ * esta mais fundo. Para ir mais fundo o jogador precisa evoluir. O vicio nasce
+ * dai — a curiosidade puxa a economia, e nao o contrario.
+ *
+ * Cada mineiro pertence a uma CAMADA (`layer`). O BiomeGate exige TODOS os
+ * mineiros daquela camada resgatados, mais o chefe morto, para abrir o selo.
  */
 
 export interface DialogLine {
@@ -58,6 +61,13 @@ export interface RescueNpcDef {
   layer: string;
 }
 
+/**
+ * As paginas do caderno de Santiago (BIBLIA.md secao 14).
+ *
+ * Sao 12 no canone; estas 6 sao as que ja tem lugar no mundo gerado. A regra de
+ * escrita da biblia vale para todas: cada pagina entrega uma resposta E uma
+ * pergunta nova. Nenhuma delas diz onde Santiago esta.
+ */
 export const CLUES: ClueDef[] = [
   {
     id: 'clue_marca_do_pai',
@@ -68,99 +78,107 @@ export const CLUES: ClueDef[] = [
     roomH: 5,
     prompt: 'Examinar marca',
     lines: [
-      { speaker: 'Voce', text: 'Esta marca... era do meu pai.' },
-      { speaker: 'Voce', text: 'Entao ele realmente chegou ate aqui.' },
-      { speaker: 'Voce', text: 'Mas por que continuou descendo?' },
+      { speaker: 'Elias', text: 'Duas linhas e um corte no meio... igual ao caderno.' },
+      { speaker: 'Elias', text: 'Ele marcava a volta. Sempre dizia para marcar a volta.' },
+      { speaker: 'Elias', text: 'Entao por que a proxima marca aponta para baixo?' },
     ],
     logEntry: 'Pista registrada: A marca do pai (62 m)',
     layer: 'stone',
   },
   {
-    id: 'clue_diario_setor3',
-    title: 'Diario rasgado',
+    id: 'clue_pagina_01',
+    title: 'Pagina 01 — O padrao',
     col: 50,
     row: 18 + 230,
     roomW: 8,
     roomH: 5,
     prompt: 'Ler pagina',
     lines: [
-      { speaker: 'Voce', text: 'Um diario. Molhado, quase ilegivel.' },
-      { speaker: 'Voce', text: '"Setor 3 autorizado a prosseguir. Manter sigilo com a superficie."' },
-      { speaker: 'Voce', text: 'Setor 3? Isso nunca apareceu em nenhum relatorio que eu vi.' },
-      { speaker: 'Voce', text: 'Meu pai nao estava so explorando. Alguem organizou isso.' },
+      { speaker: 'Caderno', text: '"John ouviu de novo. Tres pulsos longos, dois curtos."' },
+      { speaker: 'Caderno', text: '"Eu disse que era pressao nas galerias. Ele perguntou por que a pressao repetiria o mesmo padrao por quatro noites."' },
+      { speaker: 'Elias', text: 'John? O caderno ja falou dele tres vezes.' },
+      { speaker: 'Elias', text: 'Minha mae disse que os dois sumiram juntos.' },
     ],
-    logEntry: 'Pista registrada: Diario rasgado — "Setor 3" (230 m)',
+    logEntry: 'Pagina 01 do caderno recuperada (230 m)',
     layer: 'crystal',
   },
   {
-    id: 'clue_peca_metalica',
-    title: 'Peca sem origem',
+    id: 'clue_pagina_02',
+    title: 'Pagina 02 — Mapas mentirosos',
     col: 45,
     row: 18 + 560,
     roomW: 8,
     roomH: 5,
-    prompt: 'Examinar peca',
+    prompt: 'Ler pagina',
     lines: [
-      { speaker: 'Voce', text: 'Uma engrenagem. Pesada, sem ferrugem apesar do tempo.' },
-      { speaker: 'Voce', text: 'Nao e de nenhuma maquina que a empresa usa la em cima.' },
-      { speaker: 'Voce', text: 'Isso foi feito por alguem. Ou por alguma coisa.' },
+      { speaker: 'Caderno', text: '"Ha pegadas humanas abaixo do nivel onde a companhia jura que nao existe mais nada."' },
+      { speaker: 'Caderno', text: '"Os mapas acabam. Os tuneis nao."' },
+      { speaker: 'Elias', text: 'Pegadas. Ele escreveu isso ha quatorze anos.' },
+      { speaker: 'Elias', text: 'E tem pegadas frescas no chao onde eu estou parado agora.' },
     ],
-    logEntry: 'Pista registrada: Peca sem origem (560 m)',
+    logEntry: 'Pagina 02 do caderno recuperada (560 m)',
     layer: 'minerals',
   },
   {
-    id: 'clue_registro_expedicao',
-    title: 'Registro da expedicao',
+    id: 'clue_pagina_04',
+    title: 'Pagina 04 — John',
     col: 48,
     row: 18 + 940,
     roomW: 9,
     roomH: 5,
-    prompt: 'Ler registro',
+    prompt: 'Ler pagina',
     lines: [
-      { speaker: 'Voce', text: 'Uma lista de nomes. "Equipe avancada — Setor 3."' },
-      { speaker: 'Voce', text: 'O nome do meu pai esta aqui. E mais sete.' },
-      { speaker: 'Voce', text: 'Uma anotacao por cima, com outra letra: "prosseguir mesmo sem contato."' },
-      { speaker: 'Voce', text: 'Sabiam que o Setor 3 tinha parado de responder. E mandaram continuar.' },
+      { speaker: 'Caderno', text: '"John nao esta fugindo. Esta seguindo alguma coisa."' },
+      { speaker: 'Caderno', text: '"Encontrei os mesmos tres pulsos no metal das ruinas. Nao consigo ouvir, mas o medidor se move antes do som."' },
+      { speaker: 'Elias', text: 'Ele nao desceu com o John.' },
+      { speaker: 'Elias', text: 'Ele desceu ATRAS do John. Isso muda tudo.' },
     ],
-    logEntry: 'Pista registrada: Registro da expedicao (940 m)',
+    logEntry: 'Pagina 04 do caderno recuperada (940 m)',
     layer: 'magma',
   },
   {
-    id: 'clue_inscricao_antiga',
-    title: 'Inscricao antiga',
+    id: 'clue_pagina_07',
+    title: 'Pagina 07 — A estrutura',
     col: 50,
     row: 18 + 1340,
     roomW: 9,
     roomH: 6,
-    prompt: 'Examinar inscricao',
+    prompt: 'Ler pagina',
     lines: [
-      { speaker: 'Voce', text: 'Simbolos na pedra. Nenhuma ferramenta humana fez isso.' },
-      { speaker: 'Voce', text: 'E antigo. Mais antigo do que qualquer coisa que a empresa poderia saber.' },
-      { speaker: 'Voce', text: 'Isto nunca foi so uma mina. Alguem chegou aqui muito antes de nos.' },
+      { speaker: 'Elias', text: 'Simbolos na parede. Nenhuma ferramenta humana fez isso.' },
+      { speaker: 'Caderno', text: '"A estrutura nao esta enterrada na mina. A mina cresceu ao redor dela."' },
+      { speaker: 'Elias', text: 'Ele escreveu isso como quem anota o clima.' },
+      { speaker: 'Elias', text: 'Pai, o que voce achou aqui embaixo?' },
     ],
-    logEntry: 'Pista registrada: Inscricao antiga (1340 m)',
+    logEntry: 'Pagina 07 do caderno recuperada (1340 m)',
     layer: 'ruins',
   },
   {
-    id: 'clue_ultima_mensagem',
-    title: 'Ultima mensagem',
+    id: 'clue_pagina_10',
+    title: 'Pagina 10 — O medo',
     col: 46,
     row: 18 + 1740,
     roomW: 8,
     roomH: 5,
-    prompt: 'Ativar gravador',
+    prompt: 'Ler pagina',
     lines: [
-      { speaker: 'Gravador', text: '(estatica) "...se voce esta ouvindo isso, nao abra a porta."' },
-      { speaker: 'Gravador', text: '"Ela tem que ficar fechada. Eu vou..." (a gravacao corta)' },
-      { speaker: 'Voce', text: 'Essa voz... e do meu pai.' },
-      { speaker: 'Voce', text: 'Que porta? Fechada onde?' },
-      { speaker: 'Voce', text: 'Ele nao estava perdido. Ele estava guardando alguma coisa.' },
+      { speaker: 'Caderno', text: '"Pela primeira vez quero voltar."' },
+      { speaker: 'Caderno', text: '"Pela primeira vez tambem sei que nao vou."' },
+      { speaker: 'Elias', text: '...' },
+      { speaker: 'Elias', text: 'Ele sabia. Ele sabia e continuou assim mesmo.' },
+      { speaker: 'Elias', text: 'Eu preciso saber o que estava do outro lado.' },
     ],
-    logEntry: 'Pista registrada: Ultima mensagem (1740 m)',
+    logEntry: 'Pagina 10 do caderno recuperada (1740 m)',
     layer: 'abyss',
   },
 ];
 
+/**
+ * Mineiros perdidos.
+ *
+ * Nenhum deles e morador de cidade. Cada um entrega UMA peca sobre Santiago e
+ * aponta, sem querer, para a peca seguinte — que esta sempre mais fundo.
+ */
 export const RESCUE_NPCS: RescueNpcDef[] = [
   {
     id: 'npc_jonas',
@@ -179,109 +197,115 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Jonas', text: 'Deixa eu sair desse buraco primeiro.' },
     ],
     safeLines: [
-      { speaker: 'Jonas', text: 'Eu conheci seu pai. Ele passou por aqui.' },
-      { speaker: 'Jonas', text: 'Estava indo mais fundo. Sempre mais fundo.' },
-      { speaker: 'Jonas', text: 'Vou subir e esperar na base. Te devo uma.' },
+      { speaker: 'Jonas', text: 'Ramires. Voce e filho do Santiago, ne? Tem a cara dele.' },
+      { speaker: 'Elias', text: 'Voce conheceu meu pai?' },
+      { speaker: 'Jonas', text: 'Vi ele uma vez, quatorze anos atras, descendo com pressa.' },
+      { speaker: 'Jonas', text: 'Perguntei se ele tinha visto o desabamento la em cima. Nem olhou pra mim.' },
+      { speaker: 'Jonas', text: 'Quem desce com pressa nao esta procurando pedra. Vou esperar na base.' },
     ],
     walkToOffsetCols: -2,
     layer: 'stone',
   },
   {
-    id: 'npc_helena',
-    name: 'Helena',
+    id: 'npc_vilma',
+    name: 'Vilma',
     col: 80,
     row: 18 + 260,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
     trappedLines: [
-      { speaker: 'Helena', text: 'Cuidado! Os cristais aqui cortam fundo.' },
-      { speaker: 'Helena', text: 'Um bloco caiu na minha perna. Nao consigo me mexer.' },
+      { speaker: 'Vilma', text: 'Cuidado! Os cristais aqui cortam fundo.' },
+      { speaker: 'Vilma', text: 'Um bloco caiu na minha perna. Nao consigo me mexer.' },
     ],
     freedLines: [
-      { speaker: 'Helena', text: 'Obrigada. Achei que ninguem mais descia ate aqui.' },
-      { speaker: 'Helena', text: 'Espera eu recuperar o folego.' },
+      { speaker: 'Vilma', text: 'Obrigada. Achei que ninguem mais descia ate aqui.' },
+      { speaker: 'Vilma', text: 'Espera eu recuperar o folego.' },
     ],
     safeLines: [
-      { speaker: 'Helena', text: 'Eu era a geologa do Setor 3. Seu pai liderava a equipe.' },
-      { speaker: 'Helena', text: 'Os cristais daqui "cantam" quando alguem se aproxima. Ele levava isso a serio.' },
-      { speaker: 'Helena', text: 'Um dia ele desceu sozinho e disse que voltava ate a noite.' },
-      { speaker: 'Helena', text: 'Vou subir. Se precisar de mim, estarei na base.' },
+      { speaker: 'Vilma', text: 'Eu nao me perdi. Eu estava procurando.' },
+      { speaker: 'Elias', text: 'Procurando o que?' },
+      { speaker: 'Vilma', text: 'As lanternas azuis. Meu tio jurava que existiam, bem mais fundo.' },
+      { speaker: 'Vilma', text: 'Todo mundo ria. Ai eu vi uma luz la embaixo que nao era minha.' },
+      { speaker: 'Vilma', text: 'Se voce descer o bastante, olha pra baixo antes de acender a sua.' },
     ],
     walkToOffsetCols: -2,
     layer: 'crystal',
   },
   {
-    id: 'npc_baptista',
-    name: 'Baptista',
+    id: 'npc_teo',
+    name: 'Teo',
     col: 82,
     row: 18 + 600,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
     trappedLines: [
-      { speaker: 'Baptista', text: 'Aqui embaixo! O teto cedeu bem em cima de mim.' },
-      { speaker: 'Baptista', text: 'Minhas ferramentas ficaram do outro lado. Preciso de uma mao.' },
+      { speaker: 'Teo', text: 'Aqui embaixo! O teto cedeu bem em cima de mim.' },
+      { speaker: 'Teo', text: 'Minhas ferramentas ficaram do outro lado. Preciso de uma mao.' },
     ],
     freedLines: [
-      { speaker: 'Baptista', text: 'Ainda inteiro. Foi por pouco.' },
-      { speaker: 'Baptista', text: 'Deixa eu recolher o que sobrou daqui.' },
+      { speaker: 'Teo', text: 'Ainda inteiro. Foi por pouco.' },
+      { speaker: 'Teo', text: 'Deixa eu recolher o que sobrou daqui.' },
     ],
     safeLines: [
-      { speaker: 'Baptista', text: 'Sou mecanico. Ou era — nao sei mais o que a empresa pensa que sou.' },
-      { speaker: 'Baptista', text: 'Achei pecas aqui que nao vieram de fabrica nenhuma que eu conheco.' },
-      { speaker: 'Baptista', text: 'Tem maquina funcionando la embaixo. Maquina de verdade, nao ruina.' },
-      { speaker: 'Baptista', text: 'Seu pai fotografou tudo. Anotou tudo. Nunca vi ele com tanto medo.' },
+      { speaker: 'Teo', text: 'Eu vendia ferramenta na superficie. Boa ferramenta.' },
+      { speaker: 'Teo', text: 'Um sujeito desceu por aqui e comprou tudo que eu tinha de corda e polvora.' },
+      { speaker: 'Elias', text: 'Quando?' },
+      { speaker: 'Teo', text: 'Quatorze anos. Nao era o Santiago, antes que pergunte. Era o outro.' },
+      { speaker: 'Teo', text: 'O Santiago passou depois. Bem depois. Procurando pelo primeiro.' },
     ],
     walkToOffsetCols: -2,
     layer: 'minerals',
   },
   {
-    id: 'npc_ferreira',
-    name: 'Ferreira',
+    id: 'npc_ozias',
+    name: 'Ozias',
     col: 85,
     row: 18 + 980,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
     trappedLines: [
-      { speaker: 'Ferreira', text: '(tossindo) Aqui... o calor deste lugar nao e normal.' },
-      { speaker: 'Ferreira', text: 'A rocha em cima de mim ainda esta quente. Rapido, por favor.' },
+      { speaker: 'Ozias', text: '(tossindo) Aqui... o calor deste lugar nao e normal.' },
+      { speaker: 'Ozias', text: 'A rocha em cima de mim ainda esta quente. Rapido, por favor.' },
     ],
     freedLines: [
-      { speaker: 'Ferreira', text: 'Achei que ia assar aqui dentro.' },
-      { speaker: 'Ferreira', text: 'Da um instante. Preciso me refazer.' },
+      { speaker: 'Ozias', text: 'Achei que ia assar aqui dentro.' },
+      { speaker: 'Ozias', text: 'Da um instante. Preciso me refazer.' },
     ],
     safeLines: [
-      { speaker: 'Ferreira', text: 'Estudavamos o calor daqui. De onde ele vem — nao e magma comum.' },
-      { speaker: 'Ferreira', text: 'Quando o Setor 3 parou de mandar noticia, a ordem foi clara: continuar.' },
-      { speaker: 'Ferreira', text: 'Ninguem perguntou o motivo. Isso ainda me assombra.' },
-      { speaker: 'Ferreira', text: 'Seu pai foi o unico que insistiu em ir depois de todo mundo recuar.' },
+      { speaker: 'Ozias', text: 'Eu levava carga. Rota longa, gente que paga bem e nao faz pergunta.' },
+      { speaker: 'Ozias', text: 'Numa das viagens levei um homem que so falava de um som.' },
+      { speaker: 'Ozias', text: 'Tres longos, dois curtos. Batia na parede do vagao pra me mostrar.' },
+      { speaker: 'Elias', text: 'Esse homem tinha nome?' },
+      { speaker: 'Ozias', text: 'John. Perna boa, cabeca ruim. Desceu e nunca pediu carona de volta.' },
     ],
     walkToOffsetCols: -2,
     layer: 'magma',
   },
   {
-    id: 'npc_corvo',
-    name: 'Corvo',
+    id: 'npc_braga',
+    name: 'Braga',
     col: 80,
     row: 18 + 1400,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,
     trappedLines: [
-      { speaker: 'Corvo', text: '(quase sussurrando) Nao faz barulho. Elas ouvem.' },
-      { speaker: 'Corvo', text: 'Estou preso ha dias. Tira essas pedras, mas devagar.' },
+      { speaker: 'Braga', text: '(quase sussurrando) Nao faz barulho. Elas ouvem.' },
+      { speaker: 'Braga', text: 'Estou preso ha dias. Tira essas pedras, mas devagar.' },
     ],
     freedLines: [
-      { speaker: 'Corvo', text: 'Livre. Nao pensei que veria luz de novo.' },
-      { speaker: 'Corvo', text: 'Vamos sair daqui antes que ela note.' },
+      { speaker: 'Braga', text: 'Livre. Nao pensei que veria luz de novo.' },
+      { speaker: 'Braga', text: 'Vamos sair daqui antes que ela note.' },
     ],
     safeLines: [
-      { speaker: 'Corvo', text: 'Era batedor. Ia na frente, marcava o caminho para os outros.' },
-      { speaker: 'Corvo', text: 'As ruinas contam quem entra. Nao sei explicar melhor que isso.' },
-      { speaker: 'Corvo', text: 'Seu pai passou por aqui marcado, no meu mapa, com um circulo.' },
-      { speaker: 'Corvo', text: 'Ele nao estava perdido. Ele sabia exatamente para onde ia.' },
+      { speaker: 'Braga', text: 'Eu era batedor. Ia na frente, marcava o caminho pros outros.' },
+      { speaker: 'Braga', text: 'Tem marca aqui que nao e minha. Cortes pequenos, na altura do joelho.' },
+      { speaker: 'Elias', text: 'Na altura do joelho?' },
+      { speaker: 'Braga', text: 'Quem marca ali esta marcando sentado. Ou arrastando uma perna.' },
+      { speaker: 'Braga', text: 'E tem outra marca por cima da primeira. Essa ai e de gente em pe.' },
     ],
     walkToOffsetCols: -2,
     layer: 'ruins',
@@ -304,11 +328,17 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     ],
     safeLines: [
       { speaker: '???', text: 'Aqui embaixo o nome e a primeira coisa que a gente esquece.' },
-      { speaker: '???', text: 'Tinha um homem. Falava de uma porta que nao podia abrir.' },
-      { speaker: '???', text: 'Ele escolheu ficar. Isso eu lembro com certeza.' },
+      { speaker: '???', text: 'Tinha dois homens. Um ficou ferido, o outro carregou ele pra cima.' },
+      { speaker: 'Elias', text: 'E depois?' },
+      { speaker: '???', text: 'Depois o que carregou voltou. Sozinho. Para baixo.' },
       { speaker: '???', text: 'Nao pergunta se era seu pai. Eu tambem queria saber a resposta.' },
     ],
     walkToOffsetCols: -2,
     layer: 'abyss',
   },
 ];
+
+/** Nome exibido de um mineiro resgatavel, pelo id. */
+export function rescueName(id: string): string {
+  return RESCUE_NPCS.find((n) => n.id === id)?.name ?? id;
+}

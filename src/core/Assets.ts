@@ -34,6 +34,8 @@ class AssetsImpl {
   private skillIcons = new Set<string>();
   /** Cache de imagens recoloridas: chave -> canvas. */
   private tinted = new Map<string, HTMLCanvasElement>();
+  /** Cache do retrato da HUD: `undefined` = nao tentou, `null` = nao da. */
+  private heroPortrait: string | null | undefined = undefined;
   private tintedSets = new Map<string, HTMLCanvasElement[]>();
   loaded = false;
 
@@ -330,6 +332,38 @@ class AssetsImpl {
   /** Versao sem contorno, para incrustar na rocha. Cai no icone se faltar. */
   oreChunk(id: string): HTMLImageElement | null {
     return this.images.get('ore:' + id) ?? this.images.get('icon:' + id) ?? null;
+  }
+
+  /**
+   * Retrato do heroi para a HUD: primeiro quadro da tira `idle`, recortado
+   * num canvas e devolvido como data URL.
+   *
+   * Nao existe arte de retrato — e nem precisa. A tira parada ja tem o rosto
+   * certo, e recortar o primeiro quadro custa um canvas de 64px uma vez.
+   */
+  heroPortraitUrl(): string | null {
+    if (this.heroPortrait !== undefined) return this.heroPortrait;
+    const strip = this.characterStrip('idle');
+    if (!strip || !strip.width) {
+      this.heroPortrait = null;
+      return null;
+    }
+    // A tira e uma fileira de quadros quadrados; o lado e a propria altura.
+    const fw = strip.height;
+    const c = document.createElement('canvas');
+    // So a metade de cima do quadro: o card quer cabeca e ombros, nao o corpo.
+    const side = Math.min(fw, Math.floor(strip.height * 0.62));
+    c.width = side;
+    c.height = side;
+    const ctx = c.getContext('2d');
+    if (!ctx) {
+      this.heroPortrait = null;
+      return null;
+    }
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(strip, Math.floor((fw - side) / 2), 0, side, side, 0, 0, side, side);
+    this.heroPortrait = c.toDataURL();
+    return this.heroPortrait;
   }
 
   /** Caminho do icone para uso em <img> na UI (null se nao existe). */

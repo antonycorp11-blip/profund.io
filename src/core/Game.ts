@@ -2,7 +2,7 @@ import { CONFIG } from '../data/config';
 import { RESOURCES } from '../data/resources';
 import { activeSkillMeta, type ActiveSkillId } from '../data/activeSkills';
 import { blockDef, type BlockDef } from '../data/blocks';
-import { RESCUE_NPCS } from '../data/story';
+import { RESCUE_NPCS, rescueName } from '../data/story';
 import { Camera } from './camera';
 import { CLUES as STORY_CLUES } from '../data/story';
 import { Exploration } from '../systems/Exploration';
@@ -505,13 +505,16 @@ export class Game {
     Events.on('quota:complete', () => {
       this.camera.addShake(3);
       this.floating.push(this.player.cx, this.player.cy - 30, 'COTA CONCLUIDA!', '#9be09b', 14);
+      this.refreshObjective();
     });
+    Events.on('quota:new', () => this.refreshObjective());
 
 
     Events.on('clue:found', (p) => {
       this.exploration.setMarkerDone(p.id);
       this.skills.setStoryFlag(p.id);
       this.skills.addPoints(1, 'pista encontrada');
+      this.refreshObjective();
       this.save();
     });
     Events.on('npc:rescued', (p) => {
@@ -520,6 +523,7 @@ export class Game {
       this.skills.addPoints(2, 'resgate');
       // Pode ser o ultimo mineiro que faltava na camada: reavalia o selo.
       this.biomeGate.onNpcRescued(p.id);
+      this.refreshObjective();
       this.save();
     });
     Events.on('gate:opened', (p) => {
@@ -905,7 +909,7 @@ export class Game {
         kind: 'npc',
         col,
         row: this.worldInfo.baseFloorRow - 1,
-        label: `${npc.id === 'npc_jonas' ? 'Jonas' : npc.id} (base)`,
+        label: `${rescueName(npc.id)} (base)`,
         alwaysVisible: true,
       });
       slot++;
@@ -1267,6 +1271,32 @@ export class Game {
     this.lighting.resize(this.cssW, this.cssH);
     // Arte HD e reduzida na tela: precisa de suavizacao. Placeholder nao.
     this.ctx.imageSmoothingEnabled = Assets.hasBlockArt || Assets.hasCharacterArt;
+  }
+
+  /**
+   * Recalcula a frase do card "Objetivo Atual".
+   *
+   * Regra do dono: enquanto a cota da semana esta aberta, o objetivo E a cota.
+   * Assim que ela fecha, o card passa a apontar a proxima peca da historia — a
+   * pista ou o mineiro mais raso que ainda falta. E o que faz o jogador querer
+   * descer mais, e descer mais exige evoluir.
+   */
+  private refreshObjective(): void {
+    if (!this.quota.completed) {
+      this.hud.setMissionObjective(null);
+      return;
+    }
+    const pending: { row: number; text: string }[] = [];
+    for (const npc of RESCUE_NPCS) {
+      if (this.skills.hasStoryFlag(npc.id)) continue;
+      pending.push({ row: npc.row, text: `Resgatar um mineiro preso a ${npc.row - CONFIG.world.surfaceRow} m` });
+    }
+    for (const clue of STORY_CLUES) {
+      if (this.skills.hasStoryFlag(clue.id)) continue;
+      pending.push({ row: clue.row, text: `Procurar um vestigio de Santiago a ${clue.row - CONFIG.world.surfaceRow} m` });
+    }
+    pending.sort((a, b) => a.row - b.row);
+    this.hud.setMissionObjective(pending[0]?.text ?? 'Descer. A mina ainda nao acabou.');
   }
 
   save(): void {
