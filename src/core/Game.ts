@@ -737,6 +737,20 @@ export class Game {
       if (alvo) this.camps.hit(alvo.base, alvo.slot);
     });
 
+    Events.on('base:deposit', (p) => {
+      // Primeira entrega numa base: anota, e so a primeira. Uma linha por
+      // carrinho de toupeira encheria o guia de ruido.
+      const base = BASE_CAMPS.find((b) => b.id === p.base);
+      if (base) {
+        this.journal.write(
+          'lugares',
+          `base:${p.base}`,
+          base.nome,
+          'As toupeiras passaram a entregar aqui. Nao sobem mais ate a superficie.'
+        );
+      }
+    });
+
     Events.on('base:built', (p) => {
       this.hud.celebrate('CONSTRUIDO', p.nome, 'A base ficou um pouco mais viva', 'progress', 2);
       this.journal.write('lugares', `base:${p.base}:${p.kind}`, p.nome, 'Construi isto com as minhas maos.');

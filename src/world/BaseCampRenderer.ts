@@ -44,8 +44,57 @@ export class BaseCampRenderer {
           continue;
         }
         this.peca(ctx, base, slot, x, chao, largura);
+        // A plataforma do elevador e uma peca solta que o CODIGO move. Animar
+        // a subida em quadros congelaria a velocidade dela na arte; assim ela
+        // acelera quando ha carga e para quando nao ha.
+        if (slot.kind === 'elevador' && this.camps.built(base.id, 'elevador')) {
+          this.plataforma(ctx, base, x, chao, largura);
+        }
       }
     }
+  }
+
+  /**
+   * A plataforma subindo e descendo dentro da torre.
+   *
+   * O ciclo so anda quando ha refinado esperando: elevador vazio fica parado
+   * no chao, e essa quietude e informacao — diz "nao tem nada subindo".
+   */
+  private plataforma(
+    ctx: CanvasRenderingContext2D,
+    base: BaseCampDef,
+    x: number,
+    chao: number,
+    largura: number
+  ): void {
+    const img = Assets.baseArt('elevador_plataforma');
+    const torre = Assets.baseArt('elevador_torre');
+    if (!img || !img.width || !torre || !torre.width) return;
+
+    let carga = 0;
+    for (const n of this.camps.refinadoOf(base.id).values()) carga += n;
+    const alturaTorre = (largura / torre.width) * torre.height;
+    const curso = alturaTorre * 0.72;
+
+    // Parada embaixo quando nao ha o que subir.
+    const t = carga < 1 ? 0 : (Math.sin(this.t * 0.9) * 0.5 + 0.5);
+    const y = chao - 6 - t * curso;
+
+    const escala = (largura * 0.72) / img.width;
+    const w = img.width * escala;
+    const h = img.height * escala;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, x + (largura - w) / 2, y - h, w, h);
+    // Uma pilha simbolica em cima: o jogador precisa ver que ela leva algo.
+    if (carga >= 1) {
+      ctx.fillStyle = '#f0d060';
+      const n = Math.min(4, Math.ceil(carga / 8));
+      for (let i = 0; i < n; i++) {
+        ctx.fillRect(x + largura / 2 - 9 + i * 5, y - h - 4, 4, 4);
+      }
+    }
+    ctx.restore();
   }
 
   /** Encaixe ainda vazio: tracejado + nome. */

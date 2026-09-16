@@ -162,6 +162,34 @@ const SLOTS_PADRAO: StructureSlot[] = [
   },
 ];
 
+/**
+ * Escala o custo de uma base pela profundidade.
+ *
+ * A mesma esteira custa mais fundo. Nao e taxa: e o que impede o jogador de
+ * chegar no abismo com ferro de superficie e montar tudo num dia. Cada base
+ * nova quer material da camada em que ela esta.
+ */
+function escalar(slots: StructureSlot[], mult: number, extra?: Partial<Record<ResourceId, number>>): StructureSlot[] {
+  return slots.map((s) => ({
+    ...s,
+    hits: Math.round(s.hits * (1 + (mult - 1) * 0.4)),
+    buildSec: Math.round(s.buildSec * (1 + (mult - 1) * 0.5)),
+    cost: Object.fromEntries(
+      Object.entries({ ...s.cost, ...extra }).map(([k, v]) => [k, Math.round((v ?? 0) * mult)])
+    ) as Partial<Record<ResourceId, number>>,
+  }));
+}
+
+/*
+ * Uma base por camada, da segunda em diante.
+ *
+ * Todas ficam a ~36 m DEPOIS do selo da camada: o jogador derruba o guardiao,
+ * anda um pouco e encontra o lugar onde vai montar a proxima operacao. E o
+ * respiro entre a luta e a descida seguinte.
+ *
+ * As colunas ficam na metade esquerda do mundo de proposito — Blockia ocupa
+ * 132 a 232 nos Minerais, e uma base em cima dela seria uma briga por espaco.
+ */
 export const BASE_CAMPS: BaseCampDef[] = [
   {
     id: 'base_cristal',
@@ -172,6 +200,48 @@ export const BASE_CAMPS: BaseCampDef[] = [
     largura: 38,
     altura: 9,
     slots: SLOTS_PADRAO,
+  },
+  {
+    id: 'base_minerais',
+    nome: 'Base dos Minerais',
+    layer: 'minerals',
+    depth: 536,
+    col: 26,
+    largura: 38,
+    altura: 9,
+    slots: escalar(SLOTS_PADRAO, 2),
+  },
+  {
+    id: 'base_magma',
+    nome: 'Base do Magma',
+    layer: 'magma',
+    depth: 936,
+    // Afastada das salas de pista: a sala escavada da pista abria um buraco no
+    // piso da base e deixava 11 colunas intransitaveis.
+    col: 74,
+    largura: 38,
+    altura: 9,
+    slots: escalar(SLOTS_PADRAO, 3.2, { ruby: 4 }),
+  },
+  {
+    id: 'base_ruinas',
+    nome: 'Base das Ruinas',
+    layer: 'ruins',
+    depth: 1336,
+    col: 74,
+    largura: 38,
+    altura: 9,
+    slots: escalar(SLOTS_PADRAO, 4.6, { relic: 3 }),
+  },
+  {
+    id: 'base_abismo',
+    nome: 'Base do Abismo',
+    layer: 'abyss',
+    depth: 1736,
+    col: 74,
+    largura: 38,
+    altura: 9,
+    slots: escalar(SLOTS_PADRAO, 6, { voidstone: 4 }),
   },
 ];
 
