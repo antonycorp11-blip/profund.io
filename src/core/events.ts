@@ -72,6 +72,8 @@ export interface GameEvents {
    * so "esta esquentando".
    */
   'npc:shout': { id: string; x: number; y: number; text: string; strength: number };
+  'city:met': { id: string; name: string; city: string; trust: number };
+  'rep:changed': { city: string; axis: string; value: number };
   'mission:done': { id: string; title: string; text: string };
   'boss:summon': { id: string; name: string; count: number };
   'gate:opened': { layerId: string; layerName: string };

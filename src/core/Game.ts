@@ -51,6 +51,9 @@ import { ActiveSkills } from '../systems/ActiveSkills';
 import { Progression } from '../systems/Progression';
 import { gateBandRows, gateLayerDef } from '../data/gates';
 import { Missions } from '../systems/Missions';
+import { Reputation } from '../systems/Reputation';
+import { CityNpc } from '../entities/CityNpc';
+import { BLOCKIA_NPCS } from '../data/blockia';
 import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
@@ -134,6 +137,8 @@ export class Game {
   private clueObjects: ClueObject[] = [];
   private npcs: RescueNpc[] = [];
   private voices = new VoiceEcho();
+  private reputation = new Reputation();
+  private cityNpcs: CityNpc[] = [];
   private decor: SurfaceDecor;
   private worldInfo: GeneratedWorldInfo;
 
@@ -442,7 +447,13 @@ export class Game {
 
     this.clueObjects = STORY_CLUES.map((c) => new ClueObject(c));
     this.npcs = RESCUE_NPCS.map((n) => new RescueNpc(n, this.world));
-    this.interactables = [depot, workshop, ...this.clueObjects, ...this.npcs];
+    // Moradores de Blockia. As coordenadas na ficha sao relativas a caverna,
+    // entao mexer a cidade no config nao obriga a mexer em sete fichas.
+    const bl = CONFIG.blockia;
+    this.cityNpcs = BLOCKIA_NPCS.map(
+      (d) => new CityNpc(d, bl.col0 + d.col, this.world.surfaceRow + bl.depth0 + d.depthOffset)
+    );
+    this.interactables = [depot, workshop, ...this.clueObjects, ...this.npcs, ...this.cityNpcs];
   }
 
   /** Pontos de interesse: base, salas de historia e limites de camada. */
@@ -729,12 +740,29 @@ export class Game {
     }
 
     // Mundo: seed + diferencas gravadas.
+    //
+    // O indice e plano e depende da largura. Quando o mundo alarga, todo save
+    // antigo precisa ser reindexado — senao cada tile quebrado reaparece
+    // deslocado. A largura de origem vem do save; 120 e a de antes do campo
+    // existir.
+    const larguraSalva = data.worldWidth ?? 120;
+    const remapear = larguraSalva !== this.world.width;
     const pairs: [number, number][] = [];
     for (let i = 0; i < data.tiles.length; i += 2) {
-      pairs.push([data.tiles[i], data.tiles[i + 1]]);
+      let idx = data.tiles[i];
+      if (remapear) {
+        const col = idx % larguraSalva;
+        const row = (idx - col) / larguraSalva;
+        if (col >= this.world.width) continue; // coluna que nao existe mais
+        idx = row * this.world.width + col;
+      }
+      pairs.push([idx, data.tiles[i + 1]]);
     }
     this.world.applyOverrides(pairs);
-    this.world.applyRegrow(data.regrow);
+    // A fila de renascimento tambem e indexada por largura. Num save
+    // reindexado ela e simplesmente descartada: o pior que acontece e alguns
+    // minerios quebrados demorarem mais uma rodada para voltar.
+    this.world.applyRegrow(remapear ? undefined : data.regrow);
 
     this.stats.setTool(data.toolIndex ?? 0);
     this.inventory.fromJSON(data.inventory);
@@ -742,6 +770,9 @@ export class Game {
     this.quota.fromJSON(data.quota);
     this.skills.fromJSON(data.skills);
     this.exploration.fromJSON(data.exploration);
+    this.reputation.fromJSON(data.reputation);
+    const conhecidos = new Set(data.cityMet ?? []);
+    for (const n of this.cityNpcs) n.met = conhecidos.has(n.id);
     this.clock.fromJSON(data.clock);
     this.tech.fromJSON(data.tech);
     this.cloneManager.fromJSON(data.clones);
@@ -1354,6 +1385,9 @@ export class Game {
 
     SaveSystem.save({
       player: { x: this.player.cx, y: this.player.cy },
+      worldWidth: this.world.width,
+      reputation: this.reputation.toJSON(),
+      cityMet: this.cityNpcs.filter((n) => n.met).map((n) => n.id),
       tiles: flat,
       regrow: this.world.serializeRegrow(),
       inventory: this.inventory.toJSON(),

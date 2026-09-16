@@ -32,8 +32,16 @@ export class World {
   readonly surfaceRow: number;
 
   readonly tiles: Uint8Array;
-  private damage: Float32Array;
-  private lastHit: Float32Array;
+  /**
+   * Dano por tile, esparso.
+   *
+   * Eram dois Float32Array do tamanho do mundo — 2 MB parados para guardar
+   * zero em 249.999 tiles enquanto o jogador bate em um. Na pratica nunca ha
+   * mais de algumas dezenas com dano ao mesmo tempo, e o `Set` abaixo ja
+   * sabia quais eram. Um Map faz o mesmo trabalho e liberta a largura do
+   * mundo: dobrar o mapa deixou de custar memoria.
+   */
+  private hits = new Map<number, { dmg: number; at: number }>();
   /** Indices com dano > 0 (para atualizacao/render baratos). */
   private damaged = new Set<number>();
   /** Tiles alterados em relacao a geracao: index -> blockId. */
@@ -68,8 +76,6 @@ export class World {
     this.tileSize = CONFIG.tileSize;
     this.surfaceRow = CONFIG.world.surfaceRow;
     this.tiles = new Uint8Array(this.width * this.height);
-    this.damage = new Float32Array(this.width * this.height);
-    this.lastHit = new Float32Array(this.width * this.height);
     this.chunkSize = CONFIG.world.chunkSize;
     this.chunkCols = Math.ceil(this.width / this.chunkSize);
     this.chunkRows = Math.ceil(this.height / this.chunkSize);
@@ -137,7 +143,7 @@ export class World {
     if (this.tiles[i] === id) return;
     this.tiles[i] = id;
     this.overrides.set(i, id);
-    this.damage[i] = 0;
+    this.hits.delete(i);
     this.damaged.delete(i);
     this.markDirtyAround(col, row);
   }
@@ -241,7 +247,7 @@ export class World {
 
   getDamage(col: number, row: number): number {
     if (!this.inBounds(col, row)) return 0;
-    return this.damage[this.idx(col, row)];
+    return this.hits.get(this.idx(col, row))?.dmg ?? 0;
   }
 
   /** Estagio de rachadura 0..crackStages. */
@@ -276,17 +282,16 @@ export class World {
     const hp = this.effectiveHp(col, row);
     const i = this.idx(col, row);
     const rich = this.isRich(col, row);
-    const next = this.damage[i] + amount;
-    this.lastHit[i] = this.time;
+    const next = (this.hits.get(i)?.dmg ?? 0) + amount;
     if (next >= hp) {
-      this.damage[i] = 0;
+      this.hits.delete(i);
       this.damaged.delete(i);
       this.setTile(col, row, BLOCK_IDS.AIR);
       this.clearRich(i);
       this.scheduleRegrow(i, def);
       return { applied: true, broken: true, def, progress: 1, wasRich: rich };
     }
-    this.damage[i] = next;
+    this.hits.set(i, { dmg: next, at: this.time });
     this.damaged.add(i);
     this.markDirtyAround(col, row);
     return { applied: true, broken: false, def, progress: next / hp, wasRich: rich };
@@ -407,14 +412,15 @@ export class World {
     const delay = CONFIG.mining.damageResetDelay;
     const rate = CONFIG.mining.damageResetRate;
     for (const i of this.damaged) {
-      if (this.time - this.lastHit[i] < delay) continue;
-      const next = this.damage[i] - rate * dt;
+      const hit = this.hits.get(i);
+      if (!hit || this.time - hit.at < delay) continue;
+      const next = hit.dmg - rate * dt;
       if (next <= 0) {
-        this.damage[i] = 0;
+        this.hits.delete(i);
         this.damaged.delete(i);
         this.markDirtyAround(i % this.width, Math.floor(i / this.width));
       } else {
-        this.damage[i] = next;
+        hit.dmg = next;
       }
     }
   }
@@ -447,7 +453,6 @@ export class World {
   clearRuntimeState(): void {
     this.overrides.clear();
     this.damaged.clear();
-    this.damage.fill(0);
-    this.lastHit.fill(0);
+    this.hits.clear();
   }
 }

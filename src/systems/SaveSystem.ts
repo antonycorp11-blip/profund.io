@@ -13,6 +13,15 @@ export interface SaveData {
   version: number;
   seed: number;
   player: { x: number; y: number };
+  /**
+   * Largura do mundo na hora em que este save foi gravado.
+   *
+   * Os overrides sao indices planos (`row * width + col`). Sem guardar a
+   * largura, alargar o mundo faria cada tile alterado reaparecer no lugar
+   * errado — um buraco no meio da rocha a 40 colunas de distancia. Save sem
+   * este campo e de antes das 240 colunas e vale 120.
+   */
+  worldWidth?: number;
   /** Overrides do tilemap achatados: [index, blockId, index, blockId, ...]. */
   tiles: number[];
   /** Minerios esperando para voltar: [index, bloco, segundos, ...]. */
@@ -37,6 +46,9 @@ export interface SaveData {
   collectors?: import('./CollectorManager').CollectorSave;
   equipment?: import('./Equipment').EquipmentSave;
   /** Selos entre biomas: chefe morto / selo aberto, por camada. */
+  reputation?: import('./Reputation').ReputationSave;
+  /** Moradores de cidade com quem o jogador ja conversou. */
+  cityMet?: string[];
   gates?: import('./BiomeGate').BiomeGateSave;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;

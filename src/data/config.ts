@@ -133,8 +133,19 @@ export const CONFIG = {
   },
 
   world: {
-    /** Largura do mundo em tiles. */
-    width: 120,
+    /**
+     * Largura do mundo em tiles.
+     *
+     * Eram 120 — 120 metros. Uma cidade de 430 habitantes nao cabe nisso, e a
+     * biblia diz que as cidades "se estendem horizontalmente por grandes
+     * areas". As colunas 0–119 geram exatamente como antes (base na 60, selo
+     * na 70, trilha do Jonas), entao NADA do mapa antigo foi tirado: as 120
+     * colunas novas sao espaco que nao existia.
+     *
+     * Dobrar so ficou barato depois que `damage`/`lastHit` viraram Map: os
+     * dois Float32Array custavam 2 MB para guardar zero em quase tudo.
+     */
+    width: 240,
     /**
      * Altura total do mundo em tiles (inclui ceu).
      * 1 tile = 1 m, entao isto define a profundidade maxima: 2000 m + margem.
@@ -203,6 +214,27 @@ export const CONFIG = {
     minDepth: 10,
     /** Teto de blocos que voltam por segundo. */
     perSecond: 8,
+  },
+
+  /**
+   * BLOCKIA — a primeira cidade subterranea (BIBLIA.md 6.1).
+   *
+   * Vive inteira nas colunas novas: a mina antiga, o poco e o selo continuam
+   * onde sempre estiveram. A cidade fica ATRAS do selo dos Minerais (494 m),
+   * entao chegar nela exige derrubar a Rainha Escavadora — que na biblia e
+   * exatamente a criatura que bloqueia a rota comercial para Blockia.
+   */
+  blockia: {
+    /** Primeira e ultima coluna da caverna da cidade. */
+    col0: 132,
+    col1: 232,
+    /** Primeira e ultima linha (profundidade em metros a partir da superficie). */
+    depth0: 560,
+    depth1: 668,
+    /** Profundidade da galeria que liga o poco principal a porta da cidade. */
+    corridorDepth: 604,
+    /** Coluna da porta de madeira reforcada. */
+    gateCol: 130,
   },
 
   base: {

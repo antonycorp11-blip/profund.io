@@ -3,6 +3,7 @@ import { LAYERS, layerAt } from '../data/layers';
 import { bossForLayer } from '../data/creatures';
 import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
 import { CONFIG } from '../data/config';
+import { carveBlockia, carveCityCorridor } from './Blockia';
 import { CLUES, RESCUE_NPCS } from '../data/story';
 import { fbm2d, hash2d, Rng } from '../core/rng';
 import type { World } from './World';
@@ -174,6 +175,12 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   // entregaria o final; uma que termina perto transforma o ultimo trecho no
   // momento em que ele percebe que esta a um metro de alguem vivo.
   carveTrail(world, rng, surfaceRow);
+
+  // ---- 3b3. Blockia ------------------------------------------------------
+  // Esculpida ANTES dos veios prosperos para que a cidade nao ganhe minerio
+  // brilhando dentro das casas, e depois do selo para nao furar barreira.
+  carveCityCorridor(world, rng, surfaceRow);
+  carveBlockia(world, rng, surfaceRow);
 
   // ---- 3c. Veios prosperos espalhados -------------------------------------
   // Um punhado de minerios ja nasce com aura, permanentes. Sao a recompensa de
