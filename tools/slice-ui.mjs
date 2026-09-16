@@ -77,6 +77,21 @@ const FOLHAS = [
     nomes: ['livro', 'pagina', 'aba', 'fita', 'clipe',
             'durex', 'polaroid', 'cafe', 'carimbo', 'lapis'],
   },
+  {
+    arq: '11-tecnologia.png', destino: 'tech', tamanho: 192,
+    nomes: ['frasco', 'prancheta', 'quadro', 'compasso', 'engrenagens',
+            'bancada', 'ampulheta', 'lampada', 'carimbo', 'planta'],
+  },
+  {
+    arq: '12-automacao.png', destino: 'auto', tamanho: 192,
+    nomes: ['toupeira', 'copia_aco', 'copia_cobre', 'copia_roxa', 'liga',
+            'desliga', 'deslizador', 'vagonete', 'caixote', 'placa'],
+  },
+  {
+    arq: '13-ninho.png', destino: 'tree', tamanho: 192,
+    nomes: ['anel_aprendida', 'anel_disponivel', 'anel_bloqueada', 'anel_maxima', 'anel_selecionada',
+            'galeria_reta', 'galeria_curva', 'galeria_acesa', 'placa', 'parede'],
+  },
 ];
 
 const RAIZ = path.resolve(process.cwd());

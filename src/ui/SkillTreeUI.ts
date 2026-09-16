@@ -274,8 +274,10 @@ export class SkillTreeUI {
       }
       const placa = document.createElement('div');
       placa.className = 'skill-chamber';
-      placa.style.left = `${minX - 10}px`;
-      placa.style.top = `${minY - 52}px`;
+      // A placa ficou maior com a arte: precisa subir mais e centralizar na
+      // primeira camara, senao ela encosta no anel de cima.
+      placa.style.left = `${minX - 44}px`;
+      placa.style.top = `${minY - 66}px`;
       placa.style.setProperty('--cat', cat.color);
       placa.textContent = cat.name;
       this.canvasEl.appendChild(placa);

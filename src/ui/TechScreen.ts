@@ -34,6 +34,16 @@ export interface TechHost {
 
 type Tab = TechCategory | 'copiadora' | 'toupeiras';
 
+/**
+ * Os tres chassis de copia, na ordem em que saem da copiadora.
+ *
+ * A cor da copia ja existia como `tint` e servia para um ponto colorido no
+ * cartao e no minimapa. O retrato veio em tres chassis, entao a copia passa a
+ * TER uma cara — e quem tem cara o jogador reconhece no meio de uma lista de
+ * doze.
+ */
+const CHASSI = ['copia_aco', 'copia_cobre', 'copia_roxa'];
+
 /** Modificador em uma linha curta, do jeito que o jogador pensa. */
 function describeMod(m: Modifier): string {
   const nomes: Record<string, string> = {
@@ -222,7 +232,7 @@ export class TechScreen {
             done
               ? '<div class="tech-status ok">Pesquisada</div>'
               : check.ok
-                ? `<button class="btn primary" data-research="${def.id}">PESQUISAR</button>`
+                ? `<button class="btn primary" data-research="${def.id}"><img class="btn-icon" src="art/tech/frasco.png" alt="">PESQUISAR</button>`
                 : `<div class="tech-status">${check.reason ?? ''}</div>`
           }
         </div>`;
@@ -453,7 +463,7 @@ export class TechScreen {
       html += `
         <div class="clone-card" style="--tint:#d8a35a">
           <div class="clone-card-head">
-            <span class="clone-dot" style="background:#d8a35a"></span>
+            <img class="clone-face" src="art/auto/toupeira.png" alt="">
             <b>Toupeira ${u.index + 1}</b>
             <span class="clone-state" data-live-cstate="${u.id}">${u.statusLabel()}</span>
             <span class="clone-depth" data-live-cdepth="${u.id}"></span>
@@ -586,7 +596,7 @@ export class TechScreen {
     return `
       <div class="clone-card" style="--tint:${c.tint}">
         <div class="clone-card-head">
-          <span class="clone-dot" style="background:${c.tint}"></span>
+          <img class="clone-face" src="art/auto/${CHASSI[c.index % CHASSI.length]}.png" alt="">
           <b>Copia ${c.index + 1}</b>
           <span class="clone-state" data-live-state="${c.id}">${c.statusLabel()}</span>
           <span class="clone-depth" data-live-depth="${c.id}"></span>
