@@ -1,6 +1,6 @@
 import { Events } from '../core/events';
 
-export type JournalTab = 'pistas' | 'pessoas' | 'bichos' | 'lugares';
+export type JournalTab = 'paginas' | 'pistas' | 'pessoas' | 'bichos' | 'lugares';
 
 export interface JournalEntry {
   id: string;
@@ -15,6 +15,8 @@ export interface JournalEntry {
   order: number;
   /** Arte do retrato, quando houver (id da folha de NPC). */
   face?: string;
+  /** Camada de origem, usada para o contador "3 de 5 nesta camada". */
+  layer?: string;
 }
 
 export type JournalSave = {
@@ -44,6 +46,13 @@ export class Journal {
   unread = 0;
 
   constructor(private depthNow: () => number) {
+    // As anotacoes longas de Santiago e John: a aba mais gorda do guia, e a
+    // unica cujo total e conhecido de antemao — e ele mostra quantas faltam
+    // por camada, que e o que faz o jogador cavar de lado.
+    Events.on('scroll:found', (p) => {
+      this.write('paginas', `scroll:${p.id}`, p.title, p.text.join('\n'), undefined, p.layer);
+    });
+
     Events.on('clue:found', (p) => {
       this.write('pistas', `clue:${p.id}`, p.title, p.logEntry);
     });
@@ -93,7 +102,14 @@ export class Journal {
    * Anota. Se a entrada ja existe, acrescenta a linha nova — visitar duas
    * vezes o mesmo lugar deve render duas linhas, nao substituir a primeira.
    */
-  write(tab: JournalTab, id: string, title: string, note: string, face?: string): void {
+  write(
+    tab: JournalTab,
+    id: string,
+    title: string,
+    note: string,
+    face?: string,
+    layer?: string
+  ): void {
     const depth = Math.round(this.depthNow());
     const existente = this.entries.get(id);
     if (existente) {
@@ -111,6 +127,7 @@ export class Journal {
       depth,
       order: this.next++,
       face,
+      layer,
     });
     this.unread++;
     Events.emit('journal:written', { title, novo: true });
@@ -119,6 +136,11 @@ export class Journal {
   /** Anotacoes de uma aba, na ordem em que foram descobertas. */
   byTab(tab: JournalTab): JournalEntry[] {
     return [...this.entries.values()].filter((e) => e.tab === tab).sort((a, b) => a.order - b.order);
+  }
+
+  /** Quantos pergaminhos daquela camada ja foram achados. */
+  scrollsFound(layerId: string): number {
+    return this.byTab('paginas').filter((e) => e.layer === layerId).length;
   }
 
   count(tab: JournalTab): number {

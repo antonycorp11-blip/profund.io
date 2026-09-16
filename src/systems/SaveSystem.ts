@@ -50,6 +50,8 @@ export interface SaveData {
   reputation?: import('./Reputation').ReputationSave;
   /** Moradores de cidade com quem o jogador ja conversou. */
   cityMet?: string[];
+  /** Pergaminhos ja lidos. */
+  scrolls?: string[];
   gates?: import('./BiomeGate').BiomeGateSave;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;

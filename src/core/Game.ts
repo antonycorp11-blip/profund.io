@@ -14,6 +14,8 @@ import { clamp } from './math';
 import { AudioSystem } from '../systems/AudioSystem';
 import { BaseStock } from '../systems/BaseStock';
 import { ClueObject } from '../entities/ClueObject';
+import { ScrollObject } from '../entities/ScrollObject';
+import { SCROLLS } from '../data/scrolls';
 import { Depot, SurfaceDecor, Workshop } from '../entities/Base';
 import { DialogUI } from '../ui/DialogUI';
 import { DropManager } from '../entities/DropManager';
@@ -141,6 +143,7 @@ export class Game {
 
   private interactables: Interactable[] = [];
   private clueObjects: ClueObject[] = [];
+  private scrollObjects: ScrollObject[] = [];
   private npcs: RescueNpc[] = [];
   private voices = new VoiceEcho();
   private reputation = new Reputation();
@@ -209,7 +212,6 @@ export class Game {
       () => this.techScreen.toggle(),
       () => this.skillUI.toggle(),
       () => this.journalUI.toggle(),
-      () => this.techScreen.openCloner(),
       () => this.activeUI.toggle()
     );
     this.journalUI = new JournalUI(uiRoot, this.journal);
@@ -318,13 +320,29 @@ export class Game {
       const quebra = (c: number, r: number, def: BlockDef): void =>
         this.mining.breakFromOutside(c, r, def);
       let hits = 0;
+      const ts = CONFIG.tileSize;
+      const cx = col * ts + ts / 2;
+      const cy = row * ts + ts / 2;
       if (this.activeSkills.isActive('drill')) {
         this.activeSkills.consume('drill');
         hits += this.drill.fire(col, row, dirX, dirY, damage, tier, quebra);
+        // A Broca perfura o que estiver no caminho, e bicho esta no caminho.
+        // Ela atravessava uma galeria inteira e ignorava a criatura parada no
+        // meio dela — o jogador aprendia a habilidade minerando e descobria na
+        // pior hora possivel que ela nao servia numa luta.
+        this.creatures.damageArea(
+          cx + dirX * ts * 2,
+          cy + dirY * ts * 2,
+          ts * 2.4,
+          damage * 1.4,
+          true
+        );
       }
       if (this.activeSkills.isActive('shock')) {
         this.activeSkills.consume('shock');
         hits += this.shock.fire(col, row, damage, tier, quebra);
+        // O Choque e uma corrente: ela pega tudo em volta do ponto de impacto.
+        this.creatures.damageArea(cx, cy, ts * 3.2, damage * 0.9, true);
       }
       return hits;
     };
@@ -488,7 +506,15 @@ export class Game {
       ocupado.add(`${spot.col},${spot.row}`);
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
     }
-    this.interactables = [depot, workshop, ...this.clueObjects, ...this.npcs, ...this.cityNpcs];
+    this.scrollObjects = SCROLLS.map((sc) => new ScrollObject(sc, this.world.surfaceRow));
+    this.interactables = [
+      depot,
+      workshop,
+      ...this.clueObjects,
+      ...this.scrollObjects,
+      ...this.npcs,
+      ...this.cityNpcs,
+    ];
   }
 
   /** Pontos de interesse: base, salas de historia e limites de camada. */
@@ -587,6 +613,19 @@ export class Game {
       this.refreshObjective();
       this.save();
     });
+    // O caderno ensina. O jogador chegava na Vilma com uma pilha de pontos sem
+    // saber que dava para gastar — a aula tem que vir com o primeiro ponto,
+    // nao com o quinto resgate.
+    Events.on('skill:points', (p) => {
+      if (p.gained <= 0) return;
+      this.journal.write(
+        'pistas',
+        'guia_skills',
+        'Pontos de habilidade',
+        'Anotacao de Santiago: "Ponto guardado nao quebra pedra. Gaste em ATRIBUTOS para bater mais forte e carregar mais, e em SKILLS para comprar Broca, Choque e Volta Rapida."'
+      );
+    });
+
     Events.on('quota:failed', () => {
       Events.emit('dialog:open', {
         lines: MINE_CLOSED,
@@ -837,6 +876,8 @@ export class Game {
     this.exploration.fromJSON(data.exploration);
     this.reputation.fromJSON(data.reputation);
     this.journal.fromJSON(data.journal);
+    const lidos = new Set(data.scrolls ?? []);
+    for (const sc of this.scrollObjects) sc.found = lidos.has(sc.id);
     const conhecidos = new Set(data.cityMet ?? []);
     for (const n of this.cityNpcs) n.met = conhecidos.has(n.id);
     this.clock.fromJSON(data.clock);
@@ -1001,7 +1042,6 @@ export class Game {
 
     this.hud.setHealth(this.vitals.health, this.vitals.max);
     this.hud.setLevel(this.progression.level, this.progression.ratio);
-    this.hud.setClonerAvailable(this.tech.unlocked('cloner'));
     this.hud.setJournalUnread(this.journal.unread);
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
     // O aviso de "falar" some enquanto o dialogo esta aberto. Ele ficava por
@@ -1458,15 +1498,13 @@ export class Game {
       if (money > 0) this.stock.money += money;
       if (points > 0) this.skills.addPoints(points, m.title);
     });
+    // A MISSAO e o card, sempre.
+    //
+    // Antes ela so aparecia com a cota ja paga, entao na maior parte do tempo
+    // o jogador nao via objetivo nenhum — depois de resgatar a Vilma parecia
+    // que o jogo tinha acabado. A cota continua visivel logo abaixo, porque
+    // ela tambem e um prazo.
     const m = this.missions.current();
-    // A primeira missao NUNCA perde o card para a cota. O inicio do jogo tem
-    // que dizer "siga a voz", nao "colete 90 carvoes" — senao o jogador
-    // aprende a planilha antes de aprender que ha alguem vivo la embaixo.
-    const abertura = this.missions.completedCount() === 0;
-    if (!abertura && !this.quota.completed) {
-      this.hud.setMissionObjective(null);
-      return;
-    }
     this.hud.setMissionObjective(m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.');
   }
 
@@ -1486,6 +1524,7 @@ export class Game {
       reputation: this.reputation.toJSON(),
       journal: this.journal.toJSON(),
       cityMet: this.cityNpcs.filter((n) => n.met).map((n) => n.id),
+      scrolls: this.scrollObjects.filter((s) => s.found).map((s) => s.id),
       tiles: flat,
       regrow: this.world.serializeRegrow(),
       inventory: this.inventory.toJSON(),

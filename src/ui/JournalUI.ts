@@ -1,8 +1,11 @@
 import { ART } from '../data/art';
+import { LAYERS } from '../data/layers';
+import { scrollsOfLayer } from '../data/scrolls';
 import { Assets } from '../core/Assets';
 import type { Journal, JournalEntry, JournalTab } from '../systems/Journal';
 
 const ABAS: { id: JournalTab; nome: string; vazio: string }[] = [
+  { id: 'paginas', nome: 'Anotacoes', vazio: 'Nenhuma anotacao recolhida. Elas estao espalhadas — cave de lado, nao so para baixo.' },
   { id: 'pistas', nome: 'Pistas', vazio: 'Nenhuma pagina do caderno ainda.' },
   { id: 'pessoas', nome: 'Pessoas', vazio: 'Ninguem anotado. Ainda nao encontrei ninguem la embaixo.' },
   { id: 'bichos', nome: 'Bichos', vazio: 'Nenhum bicho anotado. Melhor assim.' },
@@ -34,6 +37,7 @@ export class JournalUI {
           <button class="icon-btn" data-close>✕</button>
         </header>
         <nav class="journal-tabs"></nav>
+        <div class="journal-score" hidden></div>
         <div class="journal-page"><div class="journal-body"></div></div>
       </div>`;
     parent.appendChild(this.wrap);
@@ -88,9 +92,25 @@ export class JournalUI {
     }
 
     // Cada aba tem um papel proprio, entao virar de aba parece virar pagina.
-    const pagina = ABAS.findIndex((a) => a.id === this.abaAtual) + 1;
+    const pagina = ((ABAS.findIndex((a) => a.id === this.abaAtual)) % 5) + 1;
     const fundo = `${ART.basePath}journal/pagina_${pagina}.png`;
     (this.wrap.querySelector('.journal-page') as HTMLElement).style.backgroundImage = `url(${fundo})`;
+
+    // Placar por camada: e o que diz ao jogador que ainda falta coisa ali e
+    // que vale voltar. Sem um total conhecido, colecionavel vira acaso.
+    const placar = this.wrap.querySelector('.journal-score') as HTMLElement;
+    if (this.abaAtual === 'paginas') {
+      placar.hidden = false;
+      placar.innerHTML = LAYERS.filter((l) => scrollsOfLayer(l.id).length > 0)
+        .map((l) => {
+          const tem = this.journal.scrollsFound(l.id);
+          const total = scrollsOfLayer(l.id).length;
+          return `<span class="${tem >= total ? 'ok' : ''}">${l.name}<b>${tem}/${total}</b></span>`;
+        })
+        .join('');
+    } else {
+      placar.hidden = true;
+    }
 
     const itens = this.journal.byTab(this.abaAtual);
     if (itens.length === 0) {

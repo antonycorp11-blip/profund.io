@@ -44,8 +44,8 @@ export class HUD {
   private lastHealth = -1;
   private lastPoints = -1;
   private skillBadge: HTMLElement | null = null;
-  private clonerBtn!: HTMLButtonElement;
   private journalBtn!: HTMLButtonElement;
+  private mapFold!: HTMLButtonElement;
   private journalBadge!: HTMLElement;
   private lastMoney: number | null = null;
   private shownMoney = 0;
@@ -64,7 +64,6 @@ export class HUD {
     private onWorkshop: () => void,
     private onSkills: () => void,
     private onJournal: () => void,
-    private onCloner: () => void = () => {},
     private onActiveSkills: () => void = () => {}
   ) {
     this.root = document.createElement('div');
@@ -200,6 +199,31 @@ export class HUD {
     // direito, entao aqui ele nunca disputa dedo com o controle.
     this.mapSlotEl = document.createElement('div');
     this.mapSlotEl.className = 'hud-map-slot';
+    // Recolher o minimapa. Numa tela de celular em landscape ele come o canto
+    // inteiro, e ha momentos (luta, escalada longa) em que o jogador quer ver
+    // o mundo e nao o mapa.
+    const dobrar = document.createElement('button');
+    dobrar.className = 'hud-fold';
+    dobrar.title = 'Recolher o mapa';
+    dobrar.textContent = '▾';
+    dobrar.addEventListener('click', () => {
+      const oculto = this.mapSlotEl.classList.toggle('folded');
+      dobrar.textContent = oculto ? '▸' : '▾';
+      try {
+        localStorage.setItem('hud.map.folded', oculto ? '1' : '0');
+      } catch {
+        // Modo privado: a preferencia some, o jogo nao.
+      }
+    });
+    try {
+      if (localStorage.getItem('hud.map.folded') === '1') {
+        this.mapSlotEl.classList.add('folded');
+        dobrar.textContent = '▸';
+      }
+    } catch {
+      // idem
+    }
+    this.mapFold = dobrar;
 
     // A cota vira "Objetivo Atual" e fecha a coluna da esquerda, logo abaixo do
     // retrato: e onde o olho ja esta quando o jogador pergunta "e agora?".
@@ -220,10 +244,8 @@ export class HUD {
     const btnMenu = this.buildIconButton('☰', 'Ajustes', () => this.onMenu());
     // Botao da copiadora: aparece assim que ela e pesquisada e vai direto para
     // o painel das copias.
-    this.clonerBtn = this.buildIconButton('⧉', 'Cópias', () => this.onCloner());
-    this.clonerBtn.hidden = true;
-    buttons.appendChild(this.clonerBtn);
-
+    // CÓPIAS saiu: abria a MESMA tela que TECNOLOGIA. Dois botoes para o mesmo
+    // lugar so gastam largura de HUD, que no celular e o recurso mais escasso.
     buttons.appendChild(this.buildIconButton('⚡', 'Skills', () => this.onActiveSkills()));
     buttons.appendChild(this.buildSkillButton());
     // O Guia de Campo toma o lugar de CONSTRUIR. Construir era um modo que o
@@ -240,6 +262,7 @@ export class HUD {
     buttons.appendChild(btnWorkshop);
     buttons.appendChild(btnMenu);
     right.appendChild(buttons);
+    right.appendChild(this.mapFold);
     right.appendChild(this.mapSlotEl);
     this.root.appendChild(right);
 
@@ -340,8 +363,10 @@ export class HUD {
       for (const el of quotaBody) (el as HTMLElement).hidden = false;
       return;
     }
+    // A cota nao some mais: ela vira a linha fina embaixo da missao. Sao duas
+    // pressoes diferentes (a historia e o prazo) e o jogador precisa das duas.
     this.quotaEl.classList.add('mission');
-    for (const el of quotaBody) (el as HTMLElement).hidden = true;
+    for (const el of quotaBody) (el as HTMLElement).hidden = el.classList.contains('quota-detail');
     if (line) {
       line.textContent = text;
       return;
@@ -521,9 +546,6 @@ export class HUD {
   }
 
   /** Mostra o botao da copiadora depois que ela e pesquisada. */
-  setClonerAvailable(available: boolean): void {
-    if (this.clonerBtn.hidden !== !available) this.clonerBtn.hidden = !available;
-  }
 
   /** Nivel e barra de XP. */
   setLevel(level: number, ratio: number): void {

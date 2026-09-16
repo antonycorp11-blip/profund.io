@@ -5,6 +5,7 @@ import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/g
 import { CONFIG } from '../data/config';
 import { carveBlockia, carveCityCorridor } from './Blockia';
 import { CLUES, RESCUE_NPCS } from '../data/story';
+import { SCROLLS } from '../data/scrolls';
 import { fbm2d, hash2d, Rng } from '../core/rng';
 import type { World } from './World';
 
@@ -181,6 +182,24 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   // brilhando dentro das casas, e depois do selo para nao furar barreira.
   carveCityCorridor(world, rng, surfaceRow);
   carveBlockia(world, rng, surfaceRow);
+
+  // ---- 3b4. Pergaminhos ---------------------------------------------------
+  // Uma cavidade pequena em volta de cada um. Sem isso o papel nasce dentro da
+  // pedra: existe, brilha, e o jogador nunca encosta nele.
+  for (const sc of SCROLLS) {
+    const row = surfaceRow + sc.depth;
+    for (let c = sc.col - 2; c <= sc.col + 2; c++) {
+      for (let r = row - 2; r <= row + 1; r++) {
+        if (c < 1 || c >= width - 1 || r < 1 || r >= height - 1) continue;
+        if (world.getTile(c, r) === BLOCK_IDS.SEAL) continue;
+        world.setTileRaw(c, r, BLOCK_IDS.AIR);
+      }
+    }
+    // Chao, para o papel nao ficar no ar.
+    for (let c = sc.col - 2; c <= sc.col + 2; c++) {
+      if (!world.isSolid(c, row + 2)) world.setTileRaw(c, row + 2, BLOCK_IDS.STONE);
+    }
+  }
 
   // ---- 3c. Veios prosperos espalhados -------------------------------------
   // Um punhado de minerios ja nasce com aura, permanentes. Sao a recompensa de

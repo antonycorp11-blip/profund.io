@@ -269,6 +269,34 @@ export class CreatureManager {
     return true;
   }
 
+  /**
+   * Dano em area, sem direcao: e o que as habilidades usam.
+   *
+   * A Broca e o Choque so mexiam em pedra. Uma habilidade que atravessa uma
+   * galeria inteira e ignora o bicho parado no meio dela nao faz sentido para
+   * ninguem — o jogador aprende a usa-las minerando e depois descobre, na pior
+   * hora, que elas nao servem numa luta.
+   */
+  damageArea(x: number, y: number, raio: number, damage: number, critical = false): number {
+    let acertos = 0;
+    for (const c of this.creatures) {
+      if (!c.alive) continue;
+      const dist = Math.hypot(c.x - x, c.y - y);
+      if (dist > raio + c.def.w / 2) continue;
+      const dealt = Math.max(1, Math.round(damage));
+      Events.emit('creature:hurt', {
+        worldX: c.x,
+        worldY: c.y - c.def.h / 2,
+        damage: dealt,
+        critical,
+        name: c.def.name,
+      });
+      if (c.hurt(dealt, x)) this.onKilled(c);
+      acertos++;
+    }
+    return acertos;
+  }
+
   /** Ataque do jogador: acerta o que estiver no alcance na direcao da mira. */
   attack(
     x: number,

@@ -32,6 +32,7 @@ export class TouchControls {
       <div class="touch-stick" data-stick>
         <div class="touch-stick-knob" data-knob></div>
       </div>
+      <button class="touch-fold" data-fold title="Recolher habilidades">⋯</button>
       <div class="touch-skills"></div>
       <div class="touch-buttons"></div>
     `;
@@ -42,6 +43,26 @@ export class TouchControls {
 
     const buttons = this.root.querySelector('.touch-buttons') as HTMLDivElement;
     const skillCol = this.root.querySelector('.touch-skills') as HTMLDivElement;
+    // A coluna de habilidades recolhe: com tres habilidades ela cresce, e nem
+    // toda descida e uma luta.
+    const fold = this.root.querySelector('[data-fold]') as HTMLButtonElement;
+    fold.addEventListener('click', () => {
+      const oculto = skillCol.classList.toggle('folded');
+      fold.classList.toggle('on', oculto);
+      try {
+        localStorage.setItem('hud.skills.folded', oculto ? '1' : '0');
+      } catch {
+        // sem persistencia em modo privado; o jogo segue igual
+      }
+    });
+    try {
+      if (localStorage.getItem('hud.skills.folded') === '1') {
+        skillCol.classList.add('folded');
+        fold.classList.add('on');
+      }
+    } catch {
+      // idem
+    }
     // Sem botao AGIR: chegar perto ja resolve o que e instantaneo, e o que
     // abre tela vira um toque no proprio aviso na tela.
     // GADGET e DASH sairam: o lugar deles e das habilidades ativas — uma por
