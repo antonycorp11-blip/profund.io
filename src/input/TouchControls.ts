@@ -45,6 +45,7 @@ export class TouchControls {
     const skillCol = this.root.querySelector('.touch-skills') as HTMLDivElement;
     // A coluna de habilidades recolhe: com tres habilidades ela cresce, e nem
     // toda descida e uma luta.
+
     const fold = this.root.querySelector('[data-fold]') as HTMLButtonElement;
     fold.addEventListener('click', () => {
       const oculto = skillCol.classList.toggle('folded');
@@ -117,12 +118,60 @@ export class TouchControls {
    * Habilidade nao aprendida nao ocupa espaco no pad: o polegar do celular nao
    * tem lugar para botao que nao faz nada.
    */
+  /**
+   * Posicoes do arco, por quantidade de habilidade DESBLOQUEADA.
+   *
+   * Sao coordenadas (right, bottom) em px, medidas a partir do canto inferior
+   * direito. Nao foram escolhidas no olho: um solver testou raio, angulo
+   * inicial e passo procurando o arranjo mais PERTO do polegar em que nenhum
+   * botao encosta no MINERAR, no PULAR, em outro botao ou na borda da tela.
+   *
+   * Cinco botoes de 50px simplesmente NAO cabem num anel so em volta de um
+   * MINERAR de 92px num celular — por isso 4 e 5 abrem um segundo anel. Foi o
+   * solver que disse isso, depois de eu tentar tres vezes no olho e o
+   * resultado ficar espalhado pela tela.
+   */
+  private static readonly ARCO: Record<number, [number, number][]> = {
+    1: [[153, 76]],
+    2: [[144, 101], [153, 47]],
+    3: [[123, 153], [165, 98], [168, 29]],
+    4: [[136, 115], [154, 60], [139, 178], [190, 118]],
+    5: [[136, 115], [154, 60], [134, 188], [191, 129], [208, 50]],
+  };
+
+  /**
+   * Espalha as habilidades desbloqueadas no arco.
+   *
+   * A posicao depende de QUANTAS estao visiveis, e nao do indice fixo de cada
+   * uma: com duas habilidades elas ficam coladas no polegar, com cinco o arco
+   * abre. Posicao fixa por habilidade deixaria buracos no arco enquanto o
+   * jogador nao comprou tudo.
+   */
+  private posicionarArco(
+    estados: { unlocked: boolean }[]
+  ): void {
+    const visiveis: HTMLButtonElement[] = [];
+    for (let i = 0; i < this.skillBtns.length; i++) {
+      if (estados[i]?.unlocked) visiveis.push(this.skillBtns[i]);
+    }
+    const chave = Math.min(5, visiveis.length);
+    const pontos = TouchControls.ARCO[chave];
+    if (!pontos) return;
+    visiveis.forEach((el, i) => {
+      const p = pontos[i];
+      if (!p) return;
+      el.style.right = `${p[0] - 25}px`;
+      el.style.bottom = `${p[1] - 25}px`;
+    });
+  }
+
   syncSkills(skills: {
     all(): { id: string; unlocked: boolean; charges: number; cooldown: number; casting: number }[];
     readyRatio(id: never): number;
     castRatio(id: never): number;
   }): void {
     const estados = skills.all();
+    this.posicionarArco(estados);
     for (let i = 0; i < this.skillBtns.length; i++) {
       const el = this.skillBtns[i];
       const st = estados[i];

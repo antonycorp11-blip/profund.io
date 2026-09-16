@@ -146,6 +146,8 @@ export class Game {
   private recallReturn: { x: number; y: number } | null = null;
   /** Ate quando o Faro deixa o minerio visivel atraves da rocha (ms). */
   private senseUntil = 0;
+  /** Ritmo da martelada de obra, em segundos. */
+  private buildTimer = 0;
   /** Ultima camada anunciada, para avisar so na entrada. */
   private lastLayerId = '';
   /** Alvo que ja disparou sozinho neste encontro. */
@@ -807,15 +809,6 @@ export class Game {
     );
     Events.on('time:week', (p) => this.quota.onWeekChanged(p.week));
     // --- fontes de XP: tudo que e "jogar" empurra a barra ---
-    // Martelada em encaixe de base constroi, em vez de quebrar pedra.
-    //
-    // Reaproveita o golpe que o jogador ja da: nao ha modo de construcao, nao
-    // ha botao. Voce chega no encaixe, mina, e a coisa sobe.
-    Events.on('block:hit', () => {
-      const alvo = this.encaixeSobOJogador();
-      if (alvo) this.camps.hit(alvo.base, alvo.slot);
-    });
-
     Events.on('base:deposit', (p) => {
       // Primeira entrega numa base: anota, e so a primeira. Uma linha por
       // carrinho de toupeira encheria o guia de ruido.
@@ -1169,6 +1162,7 @@ export class Game {
       this.vitals.hurtFlash <= 0;
     this.activeSkills.update(dt, podeCanalizar);
     this.camps.update(dt);
+    this.tickConstrucao(dt);
     this.campUI.update(dt);
     this.campsRenderer.update(dt);
     this.shock.update(dt);
@@ -1791,6 +1785,35 @@ export class Game {
       }
     }
     ctx.restore();
+  }
+
+  /**
+   * Martelar num encaixe de base constroi.
+   *
+   * Eu tinha ligado isso no evento `block:hit` — e por isso nao funcionava. O
+   * encaixe fica no AR, em cima do piso da camara: nao ha bloco para atingir,
+   * entao `block:hit` nunca disparava ali e a obra nunca comecava.
+   *
+   * Agora le o BOTAO direto. Enquanto o jogador segura MINERAR em pe no
+   * encaixe, conta uma martelada a cada 0,3 s — o mesmo ritmo da picareta, sem
+   * depender de haver pedra na frente.
+   */
+  private tickConstrucao(dt: number): void {
+    const alvo = this.encaixeSobOJogador();
+    if (!alvo || !this.input.isHeld('mine')) {
+      this.buildTimer = 0;
+      return;
+    }
+    this.buildTimer -= dt;
+    if (this.buildTimer > 0) return;
+    this.buildTimer = 0.3;
+    if (!this.camps.hit(alvo.base, alvo.slot)) return;
+    const ts = CONFIG.tileSize;
+    const x = (alvo.base.col + alvo.slot.col + alvo.slot.tiles / 2) * ts;
+    const y = (this.world.surfaceRow + alvo.base.depth) * ts;
+    this.particles.burst(x, y, 6, ['#d9a828', '#b9c2cc'], { speed: 90, size: 2.5 });
+    this.camera.addShake(1.2);
+    Haptics.break_();
   }
 
   private refreshObjective(): void {
