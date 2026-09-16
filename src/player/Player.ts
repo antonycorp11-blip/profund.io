@@ -142,7 +142,11 @@ export class Player {
      * paredao. Poco de 1 tile (chamine) continua sendo o caso facil: ali so
      * para cima basta, porque ali nao ha mais nada que o jogador possa querer.
      */
-    const canGrab = this.chimney ? holdingUp : pushingIn && holdingUp;
+    // Degrau de um tile nao e parede: o `stepUp` resolve andando. Agarrar
+    // aqui era o que fazia o jogador colar e subir engasgado em cada ressalto
+    // que a propria picareta acabou de criar.
+    const degrau = wallDir !== 0 && this.onGround && this.wallIsStep(world, wallDir as -1 | 1);
+    const canGrab = degrau ? false : this.chimney ? holdingUp : pushingIn && holdingUp;
 
     this.climbingWall = 0;
     this.mantling = false;
@@ -171,6 +175,30 @@ export class Player {
         this.mantling = true;
         this.vy = -climbCfg.mantleSpeed;
         this.vx = this.climbingWall * climbCfg.mantlePush;
+        // Confiar so na velocidade fazia o jogador ficar oscilando colado no
+        // topo da parede sem nunca passar por cima — o pior momento possivel,
+        // porque acontece exatamente quando a escalada ia terminar. Quando ha
+        // lugar de pe logo acima da borda, o corpo vai para la.
+        const lado = this.climbingWall;
+        const destino = world.findStandingSpot(
+          Math.floor((this.x + this.w / 2) / CONFIG.tileSize) + lado,
+          Math.floor(this.y / CONFIG.tileSize),
+          2
+        );
+        if (destino) {
+          const dx = destino.col * CONFIG.tileSize + CONFIG.tileSize / 2 - (this.x + this.w / 2);
+          const dy = (destino.row + 1) * CONFIG.tileSize - (this.y + this.h);
+          // So aceita se for um passo curto: teleporte longo seria bug, nao
+          // ajuda.
+          if (Math.abs(dx) <= CONFIG.tileSize * 1.6 && dy <= 0 && dy >= -CONFIG.tileSize * 1.6) {
+            this.x += dx;
+            this.y += dy;
+            this.vy = 0;
+            this.vx = 0;
+            this.climbingWall = 0;
+            this.onGround = true;
+          }
+        }
       }
     } else if (canGrab && this.climbStamina <= 0 && !this.onGround) {
       // Sem forca: desliza em vez de despencar.
@@ -236,14 +264,28 @@ export class Player {
 
     for (let i = 0; i < steps; i++) {
       // X
+      const antesX = this.x;
       this.x += sx;
       if (world.rectCollides(this.x, this.y, this.w, this.h)) {
-        if (sx > 0) {
-          this.x = Math.floor((this.x + this.w) / ts) * ts - this.w - EPS;
-        } else if (sx < 0) {
-          this.x = (Math.floor(this.x / ts) + 1) * ts + EPS;
+        // Degrau automatico: se o obstaculo tem UM tile e ha teto livre, o
+        // jogador sobe nele andando, sem escalar.
+        //
+        // Isto era o buraco central do controle. As criaturas ja subiam degrau
+        // desde sempre; o jogador nao, entao qualquer ressalto de um tile —
+        // que a mineracao cria o tempo todo — virava parede, e a unica saida
+        // era grudar na parede e escalar. Escalar para vencer 30 cm e
+        // horrivel, e era o que o jogo pedia a cada dois passos.
+        if (this.stepUp(world, sx, ts)) {
+          // subiu: segue o passo normalmente
+        } else {
+          this.x = antesX;
+          if (sx > 0) {
+            this.x = Math.floor((this.x + this.w) / ts) * ts - this.w - EPS;
+          } else if (sx < 0) {
+            this.x = (Math.floor(this.x / ts) + 1) * ts + EPS;
+          }
+          this.vx = 0;
         }
-        this.vx = 0;
       }
 
       // Y
@@ -261,6 +303,28 @@ export class Player {
 
     // Checagem de chao (um pixel abaixo dos pes).
     this.onGround = world.rectCollides(this.x, this.y + 1, this.w, this.h) && this.vy >= 0;
+  }
+
+  /**
+   * Tenta vencer um ressalto de ate um tile sem sair do chao.
+   *
+   * So funciona com os pes no chao (ou quase: `coyote` cobre o frame logo apos
+   * sair de uma borda) e so quando o corpo inteiro cabe na altura de cima.
+   * Sobe no maximo um tile — dois seria escalada, e escalada tem que ser uma
+   * decisao do jogador.
+   */
+  private stepUp(world: World, sx: number, ts: number): boolean {
+    if (!this.onGround && this.airTime > 0.12) return false;
+    if (sx === 0) return false;
+    // Testa alturas crescentes: um ressalto de 6 px nao deve teleportar o
+    // jogador um tile inteiro para cima.
+    for (let sobe = 4; sobe <= ts + 2; sobe += 4) {
+      const ny = this.y - sobe;
+      if (world.rectCollides(this.x, ny, this.w, this.h)) continue;
+      this.y = ny;
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -284,6 +348,20 @@ export class Player {
       world.isSolidAtPixel(x, this.y + this.h * 0.25) ||
       world.isSolidAtPixel(x, this.y + this.h * 0.75)
     );
+  }
+
+  /**
+   * A parede deste lado tem so um tile de altura?
+   *
+   * "Um tile" = ha rocha na altura do corpo e vao livre logo acima. Isso e um
+   * degrau, nao um paredao, e o jogador deve subir andando.
+   */
+  private wallIsStep(world: World, dir: -1 | 1): boolean {
+    const x = dir < 0 ? this.x - this.probeReach : this.x + this.w + this.probeReach;
+    const naAltura = world.isSolidAtPixel(x, this.y + this.h * 0.75);
+    const acimaLivre = !world.isSolidAtPixel(x, this.y + this.h * 0.25 - CONFIG.tileSize * 0.5);
+    const cabeOCorpo = !world.rectCollides(this.x, this.y - CONFIG.tileSize, this.w, this.h);
+    return naAltura && acimaLivre && cabeOCorpo;
   }
 
   private bothWalls(world: World): boolean {
