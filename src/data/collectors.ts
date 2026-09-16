@@ -11,12 +11,27 @@
  */
 
 export const COLLECTOR_CONFIG = {
-  /** Preco da primeira, em moedas. */
-  cost: 50,
+  /**
+   * Preco da primeira, em moedas.
+   *
+   * Cinco vezes o que ja foi. Elas eram baratas demais para o que fazem: uma
+   * toupeira trabalha sozinha para sempre, entao o preco dela nao e o custo de
+   * um objeto — e o custo de nunca mais precisar voltar naquele lugar.
+   */
+  cost: 250,
   /** Cada toupeira seguinte custa isto vezes a anterior. */
   costGrowth: 1.45,
-  /** Quantas cabem no total (o freio de verdade e o preco). */
-  maxUnits: 12,
+  /**
+   * Quantas cabem sem base nenhuma.
+   *
+   * O teto antigo era 12 solto no ar, sem explicacao. Agora ele tem uma:
+   * toupeira precisa de um lugar para entregar. Com so a superficie cabem
+   * poucas; cada DEPOSITO de base construido abre mais vagas, porque passa a
+   * existir mais um lugar onde elas descarregam sem subir a mina inteira.
+   */
+  maxUnits: 6,
+  /** Vagas que cada deposito de base construido acrescenta. */
+  unitsPerDepot: 3,
 
   /** Velocidade horizontal (px/s). */
   moveSpeed: 96,

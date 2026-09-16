@@ -3697,6 +3697,17 @@ body:has(.hud-map-slot.folded) .toasts {
   color: #e0a94b;
 }
 
+.camp-hint {
+  margin: 4px 0 6px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--ink-dim);
+}
+
+.camp-pool .btn.primary {
+  width: 100%;
+}
+
 /* Objetivo aberto: o texto inteiro, sem corte. */
 .quota.objective.aberto {
   width: min(52vw, 340px);

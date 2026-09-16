@@ -4,6 +4,7 @@ import { CREATURE_CONFIG, creatureDef, creaturesOfLayer, type CreatureDef } from
 import { Creature } from '../entities/Creature';
 import { Events } from '../core/events';
 import { layerAt } from '../data/layers';
+import { baseCampAt } from '../data/basecamp';
 import { insideBlockia } from '../data/gates';
 import { randInt } from '../core/math';
 import type { DropManager } from '../entities/DropManager';
@@ -175,10 +176,11 @@ export class CreatureManager {
         if (!c.fading) this.creatures.splice(i, 1);
         continue;
       }
-      // Blockia e zona segura. Nada de bicho na praca: e uma cidade, e o
-      // jogador precisa poder largar o controle e conversar. A margem cobre a
-      // galeria de chegada, entao nem perseguicao entra atras dele.
-      if (insideBlockia(Math.floor(c.x / this.world.tileSize), Math.floor(c.y / this.world.tileSize), this.world.surfaceRow, CONFIG.blockia.safeMargin)) {
+      // Blockia e as BASES sao zona segura. Cidade tem gente para conversar;
+      // base tem obra para tocar, painel para abrir e esteira para olhar — as
+      // duas coisas pedem que o jogador possa largar o controle. A margem
+      // passa da parede, entao nem perseguicao entra atras dele.
+      if (this.zonaSegura(c.x, c.y)) {
         this.creatures.splice(i, 1);
         continue;
       }
@@ -205,6 +207,15 @@ export class CreatureManager {
     }
   }
 
+  /** Praca de cidade e chao de base: bicho nenhum fica, e nenhum nasce. */
+  private zonaSegura(x: number, y: number): boolean {
+    const ts = this.world.tileSize;
+    const col = Math.floor(x / ts);
+    const row = Math.floor(y / ts);
+    if (insideBlockia(col, row, this.world.surfaceRow, CONFIG.blockia.safeMargin)) return true;
+    return baseCampAt(col, row, this.world.surfaceRow, CREATURE_CONFIG.baseSafeMargin) !== null;
+  }
+
   private trySpawnAmbient(player: { x: number; y: number }): void {
     if (this.creatures.length >= CREATURE_CONFIG.maxActive) return;
     const ts = this.world.tileSize;
@@ -226,6 +237,10 @@ export class CreatureManager {
       const row = Math.floor(y / ts);
       if (!this.world.inBounds(col, row)) continue;
       if (this.world.isSolid(col, row) || this.world.isSolid(col, row - 1)) continue;
+      // Nem nascer dentro da zona segura. O laco de despawn pegaria no quadro
+      // seguinte, mas o bicho ja teria PISCADO na tela do jogador, e um vulto
+      // que aparece e some dentro da base e pior do que um bicho de verdade.
+      if (this.zonaSegura(x, y)) continue;
 
       let total = pool.reduce((n, c) => n + c.spawnWeight, 0);
       let roll = Math.random() * total;

@@ -19,7 +19,25 @@ export class BaseCampUI {
   private baseAtual: BaseCampDef = BASE_CAMPS[0];
   private timer = 0;
 
-  constructor(parent: HTMLElement, private camps: BaseCamps) {
+  constructor(
+    parent: HTMLElement,
+    private camps: BaseCamps,
+    /**
+     * A contratacao de toupeira, vista daqui.
+     *
+     * Contratar mora nesta tela porque e AQUI que faz sentido: o deposito e o
+     * balcao delas, e foi o deposito que abriu a vaga. Mandar o jogador subir
+     * ate a superficie para contratar uma toupeira que vai trabalhar nesta
+     * camada seria burocracia.
+     */
+    private equipe?: {
+      total(): number;
+      max(): number;
+      custo(): number;
+      moedas(): number;
+      contratar(base: BaseCampDef): boolean;
+    }
+  ) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap basecamp';
     this.wrap.innerHTML = `
@@ -62,6 +80,47 @@ export class BaseCampUI {
     if (this.timer > 0) return;
     this.timer = 0.4;
     this.render();
+  }
+
+  /**
+   * As toupeiras desta base.
+   *
+   * Sem deposito de pe elas ainda sobem a mina inteira para entregar, e a
+   * secao diz exatamente isso — e o argumento para construir o deposito, e ele
+   * vale mais escrito aqui do que num tutorial.
+   */
+  private secaoToupeiras(base: BaseCampDef): string {
+    if (!this.equipe) return '';
+    const temDeposito = this.camps.built(base.id, 'deposito');
+    if (!temDeposito) {
+      return `
+        <section class="camp-pool">
+          <h4>Toupeiras</h4>
+          <p class="camp-aviso">Sem o deposito, elas continuam subindo ate a superficie
+             para entregar. Construa o deposito: elas passam a descarregar aqui, e
+             ele abre vagas para contratar mais.</p>
+        </section>`;
+    }
+    const total = this.equipe.total();
+    const max = this.equipe.max();
+    const custo = this.equipe.custo();
+    const moedas = this.equipe.moedas();
+    const cheio = total >= max;
+    const pobre = moedas < custo;
+    return `
+      <section class="camp-pool">
+        <h4>Toupeiras</h4>
+        <div class="camp-list"><span><b>${total}</b> de ${max} vagas</span></div>
+        <p class="camp-hint">Elas descarregam neste deposito. Contratada aqui, comeca aqui.</p>
+        <button class="btn primary" data-hire-mole ${cheio || pobre ? 'disabled' : ''}>
+          ${
+            cheio
+              ? 'SEM VAGA — CONSTRUA OUTRA BASE'
+              : `CONTRATAR — ✦ ${custo.toLocaleString('pt-BR')}`
+          }
+        </button>
+        ${pobre && !cheio ? `<p class="camp-hint">Voce tem ✦ ${Math.floor(moedas).toLocaleString('pt-BR')}.</p>` : ''}
+      </section>`;
   }
 
   private render(): void {
@@ -113,11 +172,18 @@ export class BaseCampUI {
         </div>
       </section>
 
+      ${this.secaoToupeiras(base)}
+
       ${
         this.camps.built(base.id, 'elevador')
           ? ''
           : '<p class="camp-aviso">Sem elevador, nada sobe. O refinado fica todo aqui.</p>'
       }`;
+
+    const contratar = this.corpo.querySelector('[data-hire-mole]');
+    contratar?.addEventListener('click', () => {
+      if (this.equipe?.contratar(base)) this.render();
+    });
 
     const slider = this.corpo.querySelector('[data-share]') as HTMLInputElement;
     slider.addEventListener('input', () => {

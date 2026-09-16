@@ -44,7 +44,14 @@ export class Collector {
     private attrs: Attributes,
     private depot: { x: number; y: number },
     x: number,
-    y: number
+    y: number,
+    /**
+     * Deposito de base mais perto da profundidade dada, se houver um de pe.
+     *
+     * Null quer dizer "so existe a superficie". A toupeira nao sabe o que e
+     * uma base: ela so pergunta onde fica o balcao mais proximo.
+     */
+    private balcao?: (depth: number) => { x: number; y: number } | null
   ) {
     this.x = x;
     this.y = y;
@@ -102,8 +109,12 @@ export class Collector {
 
     if (this.isFull || this.state === 'voltando' || this.state === 'entregando') {
       this.state = 'voltando';
-      this.targetX = this.depot.x;
-      this.targetY = this.depot.y;
+      // O balcao mais proximo daqui. Com um deposito de base de pe na camada,
+      // a viagem acaba ali — e nao duzentos metros acima, no mesmo lugar de
+      // sempre. Encurtar a viagem e o ponto inteiro de existir uma base.
+      const destino = this.balcao?.(this.world.depthOfPixel(this.y)) ?? this.depot;
+      this.targetX = destino.x;
+      this.targetY = destino.y;
       this.hasTarget = true;
       if (this.moveToward(dt)) {
         if (this.carried > 0) {

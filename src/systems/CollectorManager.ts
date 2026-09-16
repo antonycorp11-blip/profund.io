@@ -42,9 +42,22 @@ export class CollectorManager {
    */
   baseFor?: (depth: number) => string | null;
   onBaseDeposit?: (baseId: string, resource: ResourceId, amount: number) => void;
+  /**
+   * Onde a toupeira descarrega, vista da profundidade em que ela esta.
+   *
+   * Antes elas SEMPRE subiam ate a superficie e a base so era creditada na
+   * chegada — a viagem inteira continuava acontecendo. Era o contrario do que
+   * a base existe para fazer.
+   */
+  pontoDeEntrega?: (depth: number) => { x: number; y: number } | null;
+  /** Quantos depositos de base estao de pe. Cada um abre vagas. */
+  depositosProntos?: () => number;
 
   get max(): number {
-    return COLLECTOR_CONFIG.maxUnits;
+    return (
+      COLLECTOR_CONFIG.maxUnits +
+      COLLECTOR_CONFIG.unitsPerDepot * (this.depositosProntos?.() ?? 0)
+    );
   }
 
   /** Preco da proxima toupeira. */
@@ -69,7 +82,11 @@ export class CollectorManager {
 
   buy(x: number, y: number): Collector | null {
     if (this.units.length >= this.max) {
-      Events.emit('ui:toast', { text: 'Toupeiras demais na mina.', tone: 'warn' });
+      // Dizer o que DESTRAVA. "Toupeiras demais" e um nao sem porta de saida.
+      Events.emit('ui:toast', {
+        text: `Sem vaga para mais toupeiras (${this.max}). Construa o deposito de uma base: cada um abre mais ${COLLECTOR_CONFIG.unitsPerDepot}.`,
+        tone: 'warn',
+      });
       return null;
     }
     const custo = this.costFor();
@@ -124,7 +141,16 @@ export class CollectorManager {
   }
 
   private spawn(id: string, index: number, x: number, y: number): Collector {
-    const unit = new Collector(id, index, this.world, this.attrs, this.depot, x, y);
+    const unit = new Collector(
+      id,
+      index,
+      this.world,
+      this.attrs,
+      this.depot,
+      x,
+      y,
+      (depth) => this.pontoDeEntrega?.(depth) ?? null
+    );
     this.units.push(unit);
     this.created++;
     return unit;

@@ -424,6 +424,8 @@ export class TechScreen {
           <p>Elas nao mineram: buscam o que ficou no chao e trazem para a base.
              Cavam reto, entao chegam onde voce nao volta mais.
              Ativas: <b>${mgr.units.length}/${mgr.max}</b></p>
+          <p class="dim">Cada <b>deposito de base</b> construido abre mais vagas — e vira
+             um balcao novo: a toupeira descarrega la em vez de subir a mina inteira.</p>
         </div>
         <div class="cloner-new">
           <div class="tech-cost">

@@ -608,6 +608,14 @@ export function bossForLayer(layerId: string): CreatureDef | undefined {
 export const CREATURE_CONFIG = {
   /** Maximo de criaturas vivas perto do jogador. */
   maxActive: 8,
+  /**
+   * Folga em tiles da zona sem bicho em volta de uma base.
+   *
+   * Passa da parede de proposito: se a zona terminasse na porta, o bicho
+   * esperaria na soleira e a base deixaria de ser lugar para largar o
+   * controle — que e a unica coisa que ela precisa ser.
+   */
+  baseSafeMargin: 6,
   /** Intervalo entre tentativas de spawn (s). */
   spawnInterval: 4,
   /** Distancia minima e maxima de spawn em relacao ao jogador (px). */

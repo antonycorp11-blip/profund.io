@@ -308,6 +308,23 @@ export class BaseCamps {
     return melhor;
   }
 
+  /**
+   * Onde fica o BALCAO do deposito de uma base, em pixels de mundo.
+   *
+   * E o meio do encaixe, em cima do piso da camara — o mesmo ponto onde a arte
+   * do deposito esta desenhada. A toupeira anda ate aqui.
+   */
+  depotPos(base: BaseCampDef, surfaceRow: number, tileSize: number): { x: number; y: number } {
+    const slot = base.slots.find((s) => s.kind === 'deposito');
+    const col = base.col + (slot?.col ?? 4) + (slot?.tiles ?? 4) / 2;
+    return { x: col * tileSize, y: (surfaceRow + base.depth) * tileSize };
+  }
+
+  /** Quantos depositos de base ja estao de pe. Cada um abre vaga de toupeira. */
+  depotsBuilt(): number {
+    return BASE_CAMPS.filter((b) => this.built(b.id, 'deposito')).length;
+  }
+
   /** Entrega de minerio bruto direto na base. */
   deposit(baseId: string, resource: ResourceId, amount: number): void {
     const m = this.bruto.get(baseId);

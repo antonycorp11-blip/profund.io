@@ -55,7 +55,7 @@ import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
-import { BASE_CAMPS } from '../data/basecamp';
+import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
 import { BaseCampUI } from '../ui/BaseCampUI';
@@ -238,7 +238,18 @@ export class Game {
       () => this.journalUI.toggle(),
       () => this.activeUI.toggle()
     );
-    this.campUI = new BaseCampUI(uiRoot, this.camps);
+    this.campUI = new BaseCampUI(uiRoot, this.camps, {
+      total: () => this.collectors.units.length,
+      max: () => this.collectors.max,
+      custo: () => this.collectors.costFor(),
+      moedas: () => this.stock.money,
+      // Nasce no proprio balcao: a toupeira contratada na base do magma nao
+      // tem por que aparecer na superficie e descer 900 m a pe.
+      contratar: (base) => {
+        const p = this.camps.depotPos(base, this.world.surfaceRow, CONFIG.tileSize);
+        return !!this.collectors.buy(p.x, p.y - CONFIG.tileSize);
+      },
+    });
     this.journalUI = new JournalUI(uiRoot, this.journal, {
       current: () => this.missions.current(),
       done: () => this.missions.done(),
@@ -524,6 +535,11 @@ export class Game {
     // extracao, so precisa saber se ha um lugar mais perto para entregar.
     this.collectors.baseFor = (depth) => this.camps.depotFor(depth)?.id ?? null;
     this.collectors.onBaseDeposit = (baseId, r, n) => this.camps.deposit(baseId, r, n);
+    this.collectors.pontoDeEntrega = (depth) => {
+      const base = this.camps.depotFor(depth);
+      return base ? this.camps.depotPos(base, this.world.surfaceRow, CONFIG.tileSize) : null;
+    };
+    this.collectors.depositosProntos = () => this.camps.depotsBuilt();
 
     this.buildMode = new BuildMode(uiRoot, {
       automation: this.automation,
@@ -1260,6 +1276,16 @@ export class Game {
     this.hud.setJournalUnread(this.journal.unread);
     this.hud.setClimb(this.player.climbRatio, this.player.climbingWall !== 0 && !this.player.chimney);
     this.hud.setJet(this.player.jetRatio, this.player.jetUnlocked, this.player.jetting);
+    // A camera abre ao entrar numa base. Sao 38 colunas de maquinaria que so
+    // fazem sentido vistas juntas — com o enquadramento de tunel o jogador nao
+    // enxerga a esteira que ele mesmo acabou de construir.
+    const naBase = baseCampAt(
+      Math.floor(this.player.cx / CONFIG.tileSize),
+      Math.floor(this.player.cy / CONFIG.tileSize),
+      this.world.surfaceRow,
+      CONFIG.camera.baseZoomMargin
+    );
+    this.camera.setZoomOut(naBase ? CONFIG.camera.baseZoomOut : 1, dt);
     // Chama do jato: sem ela o empuxo e um numero invisivel. Sai DEBAIXO dos
     // pes e para baixo, que e para onde o gas vai.
     if (this.player.jetting) {

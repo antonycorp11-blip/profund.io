@@ -13,6 +13,30 @@ export class Camera {
   private shakeX = 0;
   private shakeY = 0;
 
+  /**
+   * Afastamento pedido pelo lugar onde o jogador esta.
+   *
+   * 1 e o enquadramento normal da mina, apertado de proposito — la embaixo o
+   * escuro e o aperto sao o assunto. Numa BASE o assunto e outro: sao trinta e
+   * oito colunas de maquinaria que so fazem sentido vistas juntas, e com o
+   * zoom de tunel o jogador nao enxerga a esteira que ele acabou de construir.
+   *
+   * A transicao e suave porque um corte de zoom no meio do passo embrulha o
+   * estomago e faz o jogador perder onde estava.
+   */
+  private afastamento = 1;
+  private afastamentoAlvo = 1;
+  private cssW = 0;
+  private cssH = 0;
+
+  /** Pedido de afastamento: 1 = normal, 1.7 = bem mais campo de visao. */
+  setZoomOut(alvo: number, dt: number): void {
+    this.afastamentoAlvo = alvo;
+    const antes = this.afastamento;
+    this.afastamento = damp(this.afastamento, this.afastamentoAlvo, 3.2, dt);
+    if (Math.abs(this.afastamento - antes) > 0.0005) this.applyScale();
+  }
+
   /** Limites do mundo em pixels. */
   private boundsW = 0;
   private boundsH = 0;
@@ -23,10 +47,22 @@ export class Camera {
   }
 
   resize(cssW: number, cssH: number): void {
-    const desired = cssH / (CONFIG.render.targetTilesY * CONFIG.tileSize);
-    this.scale = clamp(desired, CONFIG.render.minScale, CONFIG.render.maxScale);
-    this.viewW = cssW / this.scale;
-    this.viewH = cssH / this.scale;
+    this.cssW = cssW;
+    this.cssH = cssH;
+    this.applyScale();
+  }
+
+  private applyScale(): void {
+    if (this.cssH <= 0) return;
+    const tiles = CONFIG.render.targetTilesY * this.afastamento;
+    const desired = this.cssH / (tiles * CONFIG.tileSize);
+    // O piso do zoom acompanha o afastamento: sem isso o `minScale` segurava a
+    // camera no enquadramento de tunel e o pedido nao saia do papel.
+    const min = CONFIG.render.minScale / this.afastamento;
+    this.scale = clamp(desired, min, CONFIG.render.maxScale);
+    this.viewW = this.cssW / this.scale;
+    this.viewH = this.cssH / this.scale;
+    this.clampToBounds();
   }
 
   snapTo(x: number, y: number): void {

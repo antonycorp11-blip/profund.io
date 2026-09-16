@@ -30,6 +30,16 @@ export const CONFIG = {
     lookAheadX: 40,
     shakeDecay: 11,
     maxShake: 5.5,
+    /**
+     * Quanto a camera abre dentro de uma base (1 = enquadramento normal).
+     *
+     * 1,55 poe quase toda a camara na tela. Mais do que isso e o personagem
+     * vira uma formiga; menos do que isso nao mostra a cadeia inteira, que e a
+     * unica razao de abrir.
+     */
+    baseZoomOut: 1.55,
+    /** Tiles antes da porta em que a camera ja comeca a abrir. */
+    baseZoomMargin: 4,
   },
 
   physics: {

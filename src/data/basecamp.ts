@@ -315,6 +315,29 @@ export const BASE_CAMPS: BaseCampDef[] = [
   },
 ];
 
+/**
+ * O jogador (ou um bicho) esta dentro de uma camara de base?
+ *
+ * A margem serve para dois usos diferentes com a mesma conta: o afastamento da
+ * camera comeca um pouco ANTES da porta, para o enquadramento ja estar certo
+ * quando o jogador entra; e a zona sem bicho vai um pouco ALEM da parede, para
+ * que uma perseguicao nao entre atras dele.
+ */
+export function baseCampAt(
+  col: number,
+  row: number,
+  surfaceRow: number,
+  margin = 0
+): BaseCampDef | null {
+  for (const b of BASE_CAMPS) {
+    const chao = surfaceRow + b.depth;
+    if (col < b.col - margin || col > b.col + b.largura + margin) continue;
+    if (row < chao - b.altura - margin || row > chao + 1 + margin) continue;
+    return b;
+  }
+  return null;
+}
+
 export function baseCampsOfLayer(layerId: string): BaseCampDef[] {
   return BASE_CAMPS.filter((b) => b.layer === layerId);
 }
