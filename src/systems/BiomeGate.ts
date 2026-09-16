@@ -1,11 +1,9 @@
 import { bossForLayer } from '../data/creatures';
 import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
-import { RESCUE_NPCS } from '../data/story';
 import { Events } from '../core/events';
 import type { CreatureManager } from './CreatureManager';
 import type { Exploration } from './Exploration';
 import type { GeneratedWorldInfo } from '../world/WorldGen';
-import type { SkillTree } from './SkillTree';
 import type { World } from '../world/World';
 
 interface GateState {
@@ -18,8 +16,7 @@ export type BiomeGateSave = Record<string, { bossDefeated: boolean; opened: bool
 /**
  * Torna cada chefe de bioma um limitador de verdade.
  *
- * Regra unica, sem excecao: uma camada so se abre quando o chefe FIXO daquela
- * camada morre E todo mineiro preso naquela mesma camada foi resgatado.
+ * Regra unica: uma camada se abre quando o chefe FIXO daquela camada morre.
  * Antes disso o selo (`BLOCK_IDS.SEAL`, indestrutivel) bloqueia a passagem
  * inteira — nao existe desvio por atalho, escalada ou construcao.
  *
@@ -32,7 +29,6 @@ export class BiomeGate {
 
   constructor(
     private world: World,
-    private skills: SkillTree,
     private exploration: Exploration,
     gates: GeneratedWorldInfo['gates']
   ) {
@@ -106,27 +102,15 @@ export class BiomeGate {
       const st = this.states.get(layerId);
       if (!st) return;
       st.bossDefeated = true;
-      this.tryOpen(layerId);
+      this.open(layerId);
       return;
     }
   }
 
-  /** Chamado pelo Game em todo `npc:rescued`. */
-  onNpcRescued(npcId: string): void {
-    const npc = RESCUE_NPCS.find((n) => n.id === npcId);
-    if (!npc) return;
-    this.tryOpen(npc.layer);
-  }
-
-  private allNpcsRescued(layerId: string): boolean {
-    const npcs = RESCUE_NPCS.filter((n) => n.layer === layerId);
-    return npcs.every((n) => this.skills.hasStoryFlag(n.id));
-  }
-
-  private tryOpen(layerId: string): void {
+  private open(layerId: string): void {
     const st = this.states.get(layerId);
     if (!st || st.opened) return;
-    if (!st.bossDefeated || !this.allNpcsRescued(layerId)) return;
+    if (!st.bossDefeated) return;
 
     st.opened = true;
     const layer = gateLayerDef(layerId);
@@ -150,7 +134,9 @@ export class BiomeGate {
       const st = this.states.get(id);
       if (!st) continue;
       st.bossDefeated = !!saved.bossDefeated;
-      st.opened = !!saved.opened;
+      // Migracao da regra antiga, que ainda esperava resgate de NPC:
+      // chefe ja morto nunca pode deixar um save preso diante do selo.
+      st.opened = !!saved.opened || st.bossDefeated;
     }
   }
 }

@@ -281,12 +281,11 @@ export class Game {
     this.mining.strike = (dirX, dirY) => this.strikeCreatures(dirX, dirY);
 
     // Selos entre biomas: um chefe fixo por camada, arena esculpida pelo
-    // WorldGen. So descem para a proxima camada quem matar o chefe E resgatar
-    // todos os mineiros presos NAQUELA camada — ver /systems/BiomeGate.ts.
+    // WorldGen. Derrotar o chefe rompe a barreira da proxima camada.
     // Spawnar chefes e reabrir selos ja vencidos acontece em loadOrStart(),
     // DEPOIS do save (se houver) restaurar quem ja morreu — senao um chefe
     // ja derrotado em sessao anterior voltaria vivo por um instante.
-    this.biomeGate = new BiomeGate(this.world, this.skills, this.exploration, this.worldInfo.gates);
+    this.biomeGate = new BiomeGate(this.world, this.exploration, this.worldInfo.gates);
 
     // Choque: a corrente sai do bloco atingido e gasta uma martelada.
     this.shock = new ShockChain(this.world, this.attrs);
@@ -521,12 +520,11 @@ export class Game {
       this.exploration.setMarkerDone(p.id);
       this.skills.setStoryFlag(p.id);
       this.skills.addPoints(2, 'resgate');
-      // Pode ser o ultimo mineiro que faltava na camada: reavalia o selo.
-      this.biomeGate.onNpcRescued(p.id);
       this.refreshObjective();
       this.save();
     });
     Events.on('gate:opened', (p) => {
+      const awakened = this.mining.awakenBiome(p.layerId);
       this.camera.addShake(8);
       this.floating.push(
         this.player.cx,
@@ -538,7 +536,10 @@ export class Game {
       this.particles.burst(this.player.cx, this.player.cy, 30, ['#9a4fe0', '#ffd166'], {
         speed: 180,
       });
-      this.hud.toast(`O selo de ${p.layerName} se abriu. O caminho continua.`, 'story');
+      this.hud.toast(
+        `A barreira de ${p.layerName} se rompeu! ${awakened} blocos despertaram por 3 minutos.`,
+        'story'
+      );
       this.save();
     });
     // Toda entrega (jogador, copia ou linha) conta para a cota da semana.
@@ -654,8 +655,7 @@ export class Game {
           '#ffd166',
           16
         );
-        this.hud.toast(`${p.name} caiu. Falta resgatar quem ainda estiver preso aqui.`, 'story');
-        // Boss morto pode ser a ultima condicao que faltava para o selo abrir.
+        this.hud.toast(`${p.name} caiu. A barreira está se rompendo!`, 'story');
         this.biomeGate.onBossKilled(p.id);
         this.save();
       } else if (p.guardian) {

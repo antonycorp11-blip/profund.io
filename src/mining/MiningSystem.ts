@@ -14,6 +14,7 @@ import type { Procs } from '../systems/Procs';
 import type { World } from '../world/World';
 import { Haptics } from '../fx/Haptics';
 import { RESOURCES } from '../data/resources';
+import { LAYERS } from '../data/layers';
 
 interface HitFx {
   col: number;
@@ -40,6 +41,8 @@ export class MiningSystem {
   private aimY = 0;
   private hitFx: HitFx[] = [];
   private toolWarnCooldown = 0;
+  /** Blocos temporariamente enriquecidos ao derrotar um chefe de bioma. */
+  private awakened = new Map<number, { until: number; color: string }>();
   /** Contador de blocos quebrados (estatistica / save). */
   blocksMined = 0;
   /**
@@ -73,6 +76,35 @@ export class MiningSystem {
     private attrs: Attributes,
     private procs: Procs
   ) {}
+
+  /** Espalha veios despertos pelo bioma recém-libertado. */
+  awakenBiome(layerId: string): number {
+    const index = LAYERS.findIndex((l) => l.id === layerId);
+    if (index < 0) return 0;
+    const layer = LAYERS[index];
+    const nextDepth = LAYERS[index + 1]?.minDepth ?? this.world.height;
+    const row0 = this.world.surfaceRow + layer.minDepth;
+    const row1 = Math.min(this.world.height - 2, this.world.surfaceRow + nextDepth - 1);
+    const until = performance.now() + 180_000;
+    const wanted = 42;
+    let made = 0;
+    for (let tries = 0; tries < wanted * 30 && made < wanted; tries++) {
+      const col = 2 + Math.floor(Math.random() * (this.world.width - 4));
+      // Metade nasce perto da entrada; o restante fica espalhado pelo bioma.
+      const near = Math.random() < 0.5;
+      const maxNear = Math.min(row1, row0 + 85);
+      const row = near
+        ? row0 + Math.floor(Math.random() * Math.max(1, maxNear - row0 + 1))
+        : row0 + Math.floor(Math.random() * Math.max(1, row1 - row0 + 1));
+      const def = this.world.getDef(col, row);
+      if (!def.drop || def.indestructible || def.type === 'ar') continue;
+      const key = row * this.world.width + col;
+      if (this.awakened.has(key)) continue;
+      this.awakened.set(key, { until, color: layer.color });
+      made++;
+    }
+    return made;
+  }
 
   update(dt: number, input: InputManager, usingTouch: boolean): void {
     this.toolWarnCooldown = Math.max(0, this.toolWarnCooldown - dt);
@@ -294,6 +326,10 @@ export class MiningSystem {
     def: ReturnType<typeof blockDef>,
     wasCritical = false
   ): void {
+    const awakenedKey = row * this.world.width + col;
+    const awakened = this.awakened.get(awakenedKey);
+    const awakenedNow = !!awakened && awakened.until > performance.now();
+    this.awakened.delete(awakenedKey);
     this.blocksMined++;
     const colors = this.debrisColors(def);
     this.particles.burst(cx, cy, CONFIG.particles.breakCount, colors, {
@@ -308,8 +344,12 @@ export class MiningSystem {
     Haptics.break_();
 
     // Drops fisicos, ja com rendimento e sorte das habilidades.
-    if (def.drop && Math.random() < def.dropChance) {
-      this.spawnLoot(cx, cy, def, wasCritical);
+    if (def.drop && (awakenedNow || Math.random() < def.dropChance)) {
+      this.spawnLoot(cx, cy, def, wasCritical, awakenedNow ? 4 : 1);
+      if (awakenedNow) {
+        this.floating.push(cx, cy - 18, 'VEIO DESPERTO ×4', awakened?.color ?? '#ffd166', 14);
+        this.particles.sparks(cx, cy, 26, awakened?.color ?? '#ffd166');
+      }
     }
 
     // Fratura: racha os quatro vizinhos ortogonais.
@@ -337,7 +377,8 @@ export class MiningSystem {
     cx: number,
     cy: number,
     def: ReturnType<typeof blockDef>,
-    wasCritical: boolean
+    wasCritical: boolean,
+    bonus = 1
   ): void {
     const resource = def.drop!;
     const rdef = RESOURCES[resource];
@@ -355,6 +396,7 @@ export class MiningSystem {
     if (this.procs.roll('doubleDrop', ctx)) total *= 2;
     if (this.procs.roll('tripleDrop', ctx)) total *= 3;
     if (this.procs.roll('veinRich', ctx)) total *= 1.5;
+    total *= bonus;
 
     const jackpot = this.procs.roll('jackpot', ctx);
     if (jackpot) total *= CONFIG.mining.jackpotMultiplier;
@@ -419,6 +461,34 @@ export class MiningSystem {
   render(ctx: CanvasRenderingContext2D): void {
     const ts = this.world.tileSize;
 
+    // Aura dos veios despertos. Poucos tiles, então não precisa de outro renderer.
+    const now = performance.now();
+    const pulse = 0.5 + Math.sin(now * 0.006) * 0.25;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [key, awake] of this.awakened) {
+      if (awake.until <= now) {
+        this.awakened.delete(key);
+        continue;
+      }
+      const col = key % this.world.width;
+      const row = Math.floor(key / this.world.width);
+      if (this.world.getDef(col, row).type === 'ar') {
+        this.awakened.delete(key);
+        continue;
+      }
+      const x = col * ts;
+      const y = row * ts;
+      ctx.globalAlpha = pulse;
+      ctx.strokeStyle = awake.color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x + 2, y + 2, ts - 4, ts - 4);
+      ctx.globalAlpha = pulse * 0.22;
+      ctx.fillStyle = awake.color;
+      ctx.fillRect(x + 2, y + 2, ts - 4, ts - 4);
+    }
+    ctx.restore();
+
     // Flash de impacto.
     for (const fx of this.hitFx) {
       const t = fx.t / 0.14;
@@ -435,10 +505,10 @@ export class MiningSystem {
 
     const x = this.targetCol * ts;
     const y = this.targetRow * ts;
-    const pulse = 0.5 + Math.sin(performance.now() * 0.008) * 0.12;
+    const targetPulse = 0.5 + Math.sin(performance.now() * 0.008) * 0.12;
 
     ctx.save();
-    ctx.globalAlpha = pulse;
+    ctx.globalAlpha = targetPulse;
     ctx.strokeStyle = this.blockedReason ? '#ff7a4d' : '#ffffff';
     ctx.lineWidth = 1.5;
     // Cantos em L: mais legivel que um retangulo cheio.
