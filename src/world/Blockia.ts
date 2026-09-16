@@ -123,8 +123,13 @@ export function carveBlockia(world: World, rng: Rng, surfaceRow: number): void {
   for (let row = portaRow - 3; row <= portaRow; row++) {
     for (let col = porta; col < col0; col++) world.setTileRaw(col, row, BLOCK_IDS.AIR);
   }
-  for (let row = portaRow - 4; row <= portaRow + 1; row++) {
-    world.setTileRaw(porta - 1, row, plank);
+  // Moldura, nao tapume: a passagem fica ABERTA e a madeira so a emoldura em
+  // cima e embaixo. Uma coluna inteira de tabua aqui fechava o corredor e
+  // transformava a chegada na cidade num muro sem aviso.
+  world.setTileRaw(porta - 1, portaRow - 4, plank);
+  world.setTileRaw(porta - 1, portaRow + 1, plank);
+  for (let row = portaRow - 3; row <= portaRow; row++) {
+    world.setTileRaw(porta - 1, row, BLOCK_IDS.AIR);
   }
 }
 

@@ -236,6 +236,39 @@ export class World {
     return lit;
   }
 
+  /**
+   * Um lugar onde da para ficar de pe, perto de (col, row).
+   *
+   * "De pe" = dois tiles de ar empilhados com chao solido embaixo. Retorna a
+   * linha DOS PES (o tile de ar de baixo), ou null se nao houver nada assim
+   * dentro do raio.
+   *
+   * Existe porque quem posiciona morador de cidade escreve coordenada a mao,
+   * olhando um desenho que so existe na cabeca. Errar por dois tiles emparedava
+   * o NPC e a conversa dele sumia do jogo sem nenhum erro no console. Com isto,
+   * a coordenada vira uma sugestao: a busca acha o chao mais proximo.
+   */
+  findStandingSpot(col: number, row: number, maxRadius = 30): { col: number; row: number } | null {
+    const cabe = (c: number, r: number): boolean =>
+      this.inBounds(c, r) &&
+      !this.isSolid(c, r) &&
+      !this.isSolid(c, r - 1) &&
+      this.isSolid(c, r + 1);
+
+    if (cabe(col, row)) return { col, row };
+    // Anéis crescentes: o primeiro acerto e sempre o mais proximo possivel.
+    for (let raio = 1; raio <= maxRadius; raio++) {
+      for (let dr = -raio; dr <= raio; dr++) {
+        for (let dc = -raio; dc <= raio; dc++) {
+          // So a casca do anel; o miolo ja foi visto na volta anterior.
+          if (Math.max(Math.abs(dr), Math.abs(dc)) !== raio) continue;
+          if (cabe(col + dc, row + dr)) return { col: col + dc, row: row + dr };
+        }
+      }
+    }
+    return null;
+  }
+
   /** Profundidade em metros de uma linha de tiles. */
   depthOfRow(row: number): number {
     return Math.max(0, (row - this.surfaceRow) * CONFIG.metersPerTile);

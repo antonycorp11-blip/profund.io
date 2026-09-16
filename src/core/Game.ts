@@ -449,10 +449,27 @@ export class Game {
     this.npcs = RESCUE_NPCS.map((n) => new RescueNpc(n, this.world));
     // Moradores de Blockia. As coordenadas na ficha sao relativas a caverna,
     // entao mexer a cidade no config nao obriga a mexer em sete fichas.
+    // As coordenadas da ficha sao uma SUGESTAO: `findStandingSpot` encaixa
+    // cada morador no chao mais proximo. Sem isso, errar dois tiles ao desenhar
+    // a cidade emparedava alguem — e um NPC dentro da pedra nao da erro
+    // nenhum, so some da historia.
     const bl = CONFIG.blockia;
-    this.cityNpcs = BLOCKIA_NPCS.map(
-      (d) => new CityNpc(d, bl.col0 + d.col, this.world.surfaceRow + bl.depth0 + d.depthOffset)
-    );
+    this.cityNpcs = [];
+    // Lugares ja tomados: dois moradores encaixados no mesmo degrau ficariam um
+    // dentro do outro, e so um receberia o toque.
+    const ocupado = new Set<string>();
+    for (const d of BLOCKIA_NPCS) {
+      const alvo = { col: bl.col0 + d.col, row: this.world.surfaceRow + bl.depth0 + d.depthOffset };
+      let spot = this.world.findStandingSpot(alvo.col, alvo.row, 40) ?? alvo;
+      // Se o vizinho chegou primeiro, procura de novo a partir de dois tiles
+      // ao lado, ate achar chao livre.
+      for (let n = 0; n < 6 && ocupado.has(`${spot.col},${spot.row}`); n++) {
+        const desvio = (n % 2 === 0 ? 1 : -1) * (2 + n);
+        spot = this.world.findStandingSpot(spot.col + desvio, spot.row, 40) ?? spot;
+      }
+      ocupado.add(`${spot.col},${spot.row}`);
+      this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
+    }
     this.interactables = [depot, workshop, ...this.clueObjects, ...this.npcs, ...this.cityNpcs];
   }
 
