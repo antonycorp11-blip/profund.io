@@ -194,9 +194,25 @@ export class TouchControls {
     for (let i = 0; i < this.skillBtns.length; i++) {
       const st = estados[i];
       const el = this.skillBtns[i];
-      const icone = st ? skills.iconOf(st.id) : '';
-      const atual = el.querySelector('.pad-icon');
-      if (atual && atual.textContent !== icone) atual.textContent = icone;
+      const atual = el.querySelector('.pad-icon') as HTMLElement | null;
+      if (!atual) continue;
+      const id = st?.id ?? '';
+      // Troca so quando a habilidade do lugar muda. Sem esta guarda o botao
+      // remontaria a imagem sessenta vezes por segundo e a arte piscaria.
+      if (atual.dataset.skill === id) continue;
+      atual.dataset.skill = id;
+      atual.textContent = st ? skills.iconOf(st.id) : '';
+      if (!st) continue;
+      // Arte quando existir; o emoji fica como reserva ate ela carregar.
+      const img = new Image();
+      img.className = 'pad-img';
+      img.alt = '';
+      img.onload = () => {
+        if (atual.dataset.skill !== id) return;
+        atual.textContent = '';
+        atual.appendChild(img);
+      };
+      img.src = `art/skills/${id}.png`;
     }
     this.posicionarArco(estados);
     for (let i = 0; i < this.skillBtns.length; i++) {

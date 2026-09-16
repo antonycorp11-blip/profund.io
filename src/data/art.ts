@@ -125,7 +125,21 @@ export const ART = {
 
   /** Icones de recurso (mundo + HUD + oficina). */
   iconsDir: 'ui/',
-  iconKeys: ['coal', 'copper', 'iron', 'gold', 'crystal', 'stone'],
+  iconKeys: [
+    'coal',
+    'copper',
+    'iron',
+    'gold',
+    'crystal',
+    'stone',
+    // A folha de minerio veio completa: os quatro de baixo existiam so como
+    // bolinha colorida, inclusive o Coque, que e o material que a base inteira
+    // gira em volta e aparecia no painel como um ponto marrom.
+    'ruby',
+    'relic',
+    'voidstone',
+    'coal_coke',
+  ],
   /** Mesmos icones com o contorno removido, usados para carimbar na rocha. */
   oreDir: 'ore/',
 

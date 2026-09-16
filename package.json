@@ -16,7 +16,8 @@
     "slice-base": "node tools/slice-base.mjs",
     "check": "node tools/check-progress.mjs",
     "climb": "esbuild tools/climb-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/climb-probe.cjs --log-level=warning && node node_modules/.cache/climb-probe.cjs",
-    "verify": "tsc --noEmit && npm run check && npm run climb && vite build"
+    "verify": "tsc --noEmit && npm run check && npm run climb && vite build",
+    "slice-ui": "node tools/slice-ui.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

@@ -3283,6 +3283,15 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 /* --- Guia de Campo de Santiago --- */
+/* Arte da habilidade dentro do botao do pad. Ocupa quase o botao inteiro: o
+   emoji que ela substitui era pequeno porque emoji nao cresce bem. */
+.pad-img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: block;
+}
+
 .ib-img {
   width: 19px;
   height: 19px;

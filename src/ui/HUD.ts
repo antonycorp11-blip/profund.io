@@ -268,20 +268,19 @@ export class HUD {
 
     const buttons = document.createElement('div');
     buttons.className = 'hud-buttons';
-    const btnWorkshop = this.buildIconButton('⚗', 'Tecnologia', () => this.onWorkshop());
-    const btnMenu = this.buildIconButton('☰', 'Ajustes', () => this.onMenu());
+    const btnWorkshop = this.buildIconButton('⚗', 'Tecnologia', () => this.onWorkshop(), 'nav_tecnologia');
+    const btnMenu = this.buildIconButton('☰', 'Ajustes', () => this.onMenu(), 'nav_ajustes');
     // Botao da copiadora: aparece assim que ela e pesquisada e vai direto para
     // o painel das copias.
     // CÓPIAS saiu: abria a MESMA tela que TECNOLOGIA. Dois botoes para o mesmo
     // lugar so gastam largura de HUD, que no celular e o recurso mais escasso.
-    buttons.appendChild(this.buildIconButton('⚡', 'Skills', () => this.onActiveSkills()));
+    buttons.appendChild(
+      this.buildIconButton('⚡', 'Skills', () => this.onActiveSkills(), 'nav_skills')
+    );
     buttons.appendChild(this.buildSkillButton());
     // O Guia de Campo toma o lugar de CONSTRUIR. Construir era um modo que o
     // jogador quase nunca abria; o caderno e o que ele vai querer reler.
-    this.journalBtn = this.buildIconButton('📕', 'Guia', () => this.onJournal());
-    const capa = `${ART.basePath}journal/capa.png`;
-    const icone = this.journalBtn.querySelector('.ib-icon') as HTMLElement;
-    icone.innerHTML = `<img class="ib-img" src="${capa}" alt="">`;
+    this.journalBtn = this.buildIconButton('📕', 'Guia', () => this.onJournal(), 'nav_guia');
     this.journalBadge = document.createElement('span');
     this.journalBadge.className = 'ib-badge';
     this.journalBadge.hidden = true;
@@ -482,18 +481,41 @@ export class HUD {
    * So o icone nao bastava: no celular ninguem adivinha que "✦" e a arvore de
    * habilidades nem que "⧉" e a copiadora — e as duas telas ficaram perdidas.
    */
-  private buildIconButton(icon: string, label: string, onClick: () => void): HTMLButtonElement {
+  private buildIconButton(
+    icon: string,
+    label: string,
+    onClick: () => void,
+    /**
+     * Arte em `public/art/hud/<arte>.png`, quando existir.
+     *
+     * O emoji continua ali como reserva e nao e decoracao: se a arte nao
+     * carregar — arquivo faltando, rede ruim na primeira visita — o botao
+     * continua legivel em vez de virar um quadrado vazio.
+     */
+    arte?: string
+  ): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.className = 'icon-btn labeled';
     btn.title = label;
     btn.innerHTML = `<span class="ib-icon">${icon}</span><span class="ib-label">${label}</span>`;
+    if (arte) {
+      const alvo = btn.querySelector('.ib-icon') as HTMLElement;
+      const img = new Image();
+      img.className = 'ib-img';
+      img.alt = '';
+      img.onload = () => {
+        alvo.textContent = '';
+        alvo.appendChild(img);
+      };
+      img.src = `${ART.basePath}hud/${arte}.png`;
+    }
     btn.addEventListener('click', onClick);
     return btn;
   }
 
   /** Botao da arvore de habilidades, com selo de pontos disponiveis. */
   private buildSkillButton(): HTMLElement {
-    const btn = this.buildIconButton('✦', 'Atributos', () => this.onSkills());
+    const btn = this.buildIconButton('✦', 'Atributos', () => this.onSkills(), 'nav_atributos');
     btn.insertAdjacentHTML('beforeend', '<span class="badge" data-skill-badge hidden></span>');
     this.skillBadge = btn.querySelector('[data-skill-badge]') as HTMLElement;
     return btn;
