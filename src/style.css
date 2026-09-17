@@ -2904,7 +2904,15 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Tela estreita (celular deitado): vira coluna unica e o detalhe vai para
    cima, porque ali ele e a resposta e a lista e a pergunta. */
-@media (max-width: 880px) {
+/*
+ * O corte e 980, e nao 880.
+ *
+ * O alvo de celular deitado deste jogo e 900 x 420. Com o corte em 880 ele
+ * caia do lado LARGO por vinte pixels: duas colunas mais o painel lateral em
+ * 900 px deixavam o cartao da toupeira sem largura para o nome e o botao de
+ * contratar cortado. A regra tem que pegar o aparelho, nao passar raspando.
+ */
+@media (max-width: 980px) {
   .tech-body,
   .tech-body.aside-esquerda {
     grid-template-columns: minmax(0, 1fr);
@@ -3040,7 +3048,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Numa tela estreita as duas colunas viram uma pilha: dois cartoes lado a
    lado em 400 px de largura nao cabem sem cortar o nome da unidade. */
-@media (max-width: 880px) {
+@media (max-width: 980px) {
   .auto-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3256,7 +3264,11 @@ body:has(.hud-map-slot.folded) .toasts {
   gap: 8px;
   align-items: center;
   justify-items: center;
-  margin-bottom: 4px;
+  /* Em tela estreita o painel vira largura cheia, e sem teto o palco se
+     esparramava de borda a borda com o heroi perdido no meio. Palco e palco:
+     tem tamanho. */
+  max-width: 340px;
+  margin: 0 auto 4px;
 }
 
 .boneco-palco {
@@ -3571,7 +3583,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Estreito: o cinto vira uma faixa horizontal em cima, que e onde ele importa
    mesmo no celular — saber o que esta equipado sem abrir mais nada. */
-@media (max-width: 880px) {
+@media (max-width: 980px) {
   .tech-body.skl-tres {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr);
@@ -3657,7 +3669,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Estreito: o indice some e so a anotacao aberta fica. Duas paginas em 400 px
    nao sao duas paginas, sao duas colunas de uma palavra. */
-@media (max-width: 880px) {
+@media (max-width: 980px) {
   .journal-page {
     grid-template-columns: minmax(0, 1fr);
   }
