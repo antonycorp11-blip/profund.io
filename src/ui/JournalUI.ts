@@ -124,10 +124,18 @@ export class JournalUI {
       b.textContent = n > 0 ? `${ABAS.find((a) => a.id === aba)!.nome} ${n}` : ABAS.find((a) => a.id === aba)!.nome;
     }
 
-    // Cada aba tem um papel proprio, entao virar de aba parece virar pagina.
-    const pagina = ((ABAS.findIndex((a) => a.id === this.abaAtual)) % 5) + 1;
-    const fundo = `${ART.basePath}journal/pagina_${pagina}.png`;
-    (this.wrap.querySelector('.journal-page') as HTMLElement).style.backgroundImage = `url(${fundo})`;
+    /*
+     * As paginas do caderno NAO sao papel de parede desta tela.
+     *
+     * `journal/pagina_N.png` sao as anotacoes longas do Santiago e do John —
+     * ITENS que se acha no mapa e recolhe. Eu tinha sorteado uma delas como
+     * fundo de cada aba, e isso fazia duas coisas erradas ao mesmo tempo: dava
+     * um mapa do tesouro de cenario para a aba de Bichos, e gastava a unica
+     * coisa que o jogador devia sentir que CONQUISTOU.
+     *
+     * O fundo aqui e papel, e so. A pagina de verdade aparece quando o
+     * jogador abre a anotacao que ele achou (ver `renderAberta`).
+     */
 
     // Placar por camada: e o que diz ao jogador que ainda falta coisa ali e
     // que vale voltar. Sem um total conhecido, colecionavel vira acaso.
@@ -244,6 +252,10 @@ export class JournalUI {
     this.abertaEl.innerHTML = '';
     const art = document.createElement('article');
     art.className = 'journal-entry';
+    // Pergaminho achado: a folha que ele recolheu aparece aqui, inteira. E o
+    // unico lugar onde essa arte faz sentido — ela E a anotacao.
+    const folha = this.folhaDaPagina(e);
+    if (folha) art.appendChild(folha);
     const retrato = this.retrato(e);
     if (retrato) art.appendChild(retrato);
     const texto = document.createElement('div');
@@ -262,6 +274,24 @@ export class JournalUI {
     }
     art.appendChild(texto);
     this.abertaEl.appendChild(art);
+  }
+
+  /**
+   * A folha de papel de um pergaminho recolhido.
+   *
+   * So para a aba de paginas: sao cinco artes e a escolha e pelo id, entao a
+   * mesma anotacao mostra sempre a mesma folha — papel que muda de cara a cada
+   * abertura nao parece um objeto que voce guardou.
+   */
+  private folhaDaPagina(e: JournalEntry): HTMLElement | null {
+    if (!e.id.startsWith('scroll:')) return null;
+    let h = 0;
+    for (let i = 0; i < e.id.length; i++) h = (h * 31 + e.id.charCodeAt(i)) >>> 0;
+    const img = document.createElement('img');
+    img.className = 'journal-folha';
+    img.src = `${ART.basePath}journal/pagina_${(h % 5) + 1}.png`;
+    img.alt = e.title;
+    return img;
   }
 
   /** Retrato recortado da mesma folha que anda pela cidade, quando houver. */

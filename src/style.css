@@ -41,6 +41,25 @@
    * com rede nao e titulo.
    */
   --font-display: 'Oswald', 'Arial Narrow', var(--font);
+
+  /*
+   * ESPESSURA DO ENFEITE.
+   *
+   * Tudo aqui foi medido olhando 1280 px de largura, e no celular deitado
+   * (852 x 393 num iPhone) a mesma moldura de 22 px ocupa proporcionalmente
+   * o triplo — vira uma cerca de ouro em volta de um buraquinho de conteudo.
+   *
+   * A saida NAO e encolher tudo junto: o texto ja esta em 9-12 px e reduzir
+   * deixaria ilegivel. O que encolhe e o ENFEITE — moldura, sombra, respiro —
+   * e o texto fica. Telefone quer menos cromo com a mesma leitura.
+   */
+  --moldura: 22px;
+  --moldura-cartao: 16px;
+  --moldura-botao: 14px;
+  --moldura-aba: 12px;
+  --respiro: 12px;
+  --cartao-min: 128px;
+  --icone-grande: 42px;
 }
 
 * {
@@ -2869,8 +2888,8 @@ body:has(.hud-map-slot.folded) .toasts {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 328px;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--respiro);
+  padding: var(--respiro);
 }
 
 .tech-main,
@@ -3497,7 +3516,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .skl-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--cartao-min), 1fr));
   gap: 9px;
   margin-top: 10px;
 }
@@ -3527,8 +3546,8 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .skl-icone img {
-  width: 46px;
-  height: 46px;
+  width: var(--icone-grande);
+  height: var(--icone-grande);
   object-fit: contain;
   display: block;
 }
@@ -3690,7 +3709,7 @@ body:has(.hud-map-slot.folded) .toasts {
   display: grid;
   /* Cartoes bem menores: eles so identificam. Cabem cinco por linha onde antes
      cabiam tres, e a lista inteira passa a ser vista de uma vez. */
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--cartao-min), 1fr));
   gap: 9px;
 }
 
@@ -3765,8 +3784,8 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .tech-icon {
-  width: 42px;
-  height: 42px;
+  width: var(--icone-grande);
+  height: var(--icone-grande);
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -4363,9 +4382,13 @@ body:has(.hud-map-slot.folded) .toasts {
   grid-template-columns: 300px minmax(0, 1fr);
   margin: 0 12px 12px;
   border-radius: 10px;
-  background-color: #c9b189;
-  background-size: cover;
-  background-position: center;
+  /* Papel, e so papel. O que estava aqui era uma das paginas do Santiago
+     usada de papel de parede — e ela e um ITEM que se acha no mapa, nao
+     cenario de menu. */
+  background-color: #e0cda6;
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 252, 240, 0.5), transparent 62%),
+    radial-gradient(ellipse at 75% 80%, rgba(150, 118, 70, 0.22), transparent 58%);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -4910,7 +4933,7 @@ body:has(.hud-map-slot.folded) .toasts {
 .techscreen .tech-screen,
 .skillscreen .tech-screen,
 .skilltree .skill-screen {
-  border: 22px solid transparent;
+  border: var(--moldura) solid transparent;
   border-image: url('/art/hud/chassi/painel.png') 24 fill round;
   border-radius: 0;
   background: none;
@@ -4928,7 +4951,7 @@ body:has(.hud-map-slot.folded) .toasts {
 .skl-card,
 .eq-card,
 .up-card {
-  border: 16px solid transparent;
+  border: var(--moldura-cartao) solid transparent;
   border-image: url('/art/hud/chassi/cartao.png') 38 fill round;
   border-radius: 0;
   background: none;
@@ -4950,7 +4973,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* --- botoes --- */
 .btn {
-  border: 14px solid transparent;
+  border: var(--moldura-botao) solid transparent;
   border-image: url('/art/hud/chassi/botao_secundario.png') 62 fill round;
   border-radius: 0;
   background: none;
@@ -4975,7 +4998,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* --- abas --- */
 .skill-tab {
-  border: 12px solid transparent;
+  border: var(--moldura-aba) solid transparent;
   border-image: url('/art/hud/chassi/aba_off.png') 58 fill round;
   border-radius: 0;
   background: none;
@@ -5117,4 +5140,243 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .det-prancheta .det-sub {
   color: #8fb4d8;
+}
+
+/* ==========================================================================
+   CELULAR DEITADO
+   --------------------------------------------------------------------------
+   O enfeite encolhe; o texto NAO. Num iPhone deitado sao 852 x 393 px de CSS,
+   e la a moldura de 22 px vira uma cerca de ouro em volta de um buraquinho de
+   conteudo. Mas o texto ja esta em 9-12 px: reduzir junto deixaria ilegivel.
+
+   Entao aqui so muda cromo — moldura, respiro, tamanho de icone, alvo minimo
+   de cartao — e a leitura fica igual a do computador.
+   ========================================================================== */
+@media (max-width: 980px) {
+  :root {
+    --moldura: 11px;
+    --moldura-cartao: 8px;
+    --moldura-botao: 9px;
+    --moldura-aba: 7px;
+    --respiro: 8px;
+    --cartao-min: 100px;
+    --icone-grande: 30px;
+  }
+
+  /* Cabecalho mais baixo: em 393 px de altura, cada linha de topo custa uma
+     linha de conteudo. */
+  .tech-header,
+  .skill-header {
+    padding: 5px 7px;
+    gap: 6px;
+  }
+
+  .skill-tab,
+  .seg-btn {
+    font-size: 9px;
+    padding: 5px 8px;
+  }
+
+  .tech-stock {
+    font-size: 9px;
+  }
+
+  /* O palco do boneco encolhe junto: ele e a maior peca da tela de
+     equipamento e a que mais sufoca em tela baixa. */
+  .boneco {
+    max-width: 252px;
+    grid-template-columns: 1fr 74px 1fr;
+    gap: 5px;
+  }
+
+  .boneco-palco {
+    width: 74px;
+    height: 88px;
+  }
+
+  .boneco-heroi {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 9px;
+  }
+
+  .boneco-arte {
+    width: 46px;
+    height: 46px;
+  }
+
+  .boneco-arte .eq-icon img {
+    width: 26px;
+    height: 26px;
+  }
+
+  .boneco-slot::after {
+    width: 16px;
+  }
+
+  /* Faixa de estado: numero menor e rotulo em uma linha so. */
+  .auto-stat {
+    padding: 5px 7px;
+    gap: 5px;
+  }
+
+  .auto-stat img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .auto-stat b {
+    font-size: 14px;
+  }
+
+  .auto-stat span {
+    font-size: 8px;
+  }
+
+  .stat-linha {
+    padding: 5px 7px;
+  }
+
+  .stat-linha img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stat-linha b {
+    font-size: 13px;
+  }
+
+  .eq-icon img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .eq-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .cinto-anel {
+    width: 46px;
+    height: 46px;
+  }
+
+  .cinto-lugar {
+    grid-template-columns: 46px minmax(0, 1fr);
+    padding: 5px;
+  }
+
+  .cinto-anel img {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* O livro: capa e abas menores, texto igual. */
+  .journal-book {
+    height: min(92vh, 420px);
+  }
+
+  .journal-tab {
+    min-width: 74px;
+    font-size: 9px;
+    padding: 6px 10px 6px 8px;
+  }
+
+  .journal-page {
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0 7px 7px;
+  }
+
+  .journal-indice,
+  .journal-aberta {
+    padding: 9px 11px;
+  }
+
+  /* A arvore de atributos tambem tem cromo: o anel e a placa. */
+  .skill-node {
+    width: 48px;
+    height: 48px;
+  }
+
+  .skill-chamber {
+    min-width: 108px;
+    min-height: 28px;
+    font-size: 10px;
+    padding: 0 18px;
+  }
+}
+
+/*
+ * Telas MUITO baixas (celular deitado de verdade: 393 px de altura).
+ *
+ * Aqui nao ha ajuste fino que resolva, ha ESCOLHA. O palco do boneco custa uns
+ * 130 px de altura — um terco da tela — para dizer uma coisa que os proprios
+ * encaixes ja dizem. Entao em tela baixa o heroi sai e os quatro encaixes
+ * viram uma fileira. Nao e a referencia; e o que cabe. Fingir que cabe seria
+ * entregar a tela cortada, que e o que estava acontecendo.
+ */
+@media (max-height: 480px) {
+  .boneco {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: auto;
+    max-width: none;
+    gap: 4px;
+  }
+
+  .boneco-palco {
+    display: none;
+  }
+
+  .boneco-slot::after {
+    display: none;
+  }
+
+  .boneco-arte {
+    width: 42px;
+    height: 42px;
+  }
+
+  .boneco-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stat-linha {
+    flex-direction: column;
+    gap: 1px;
+    text-align: center;
+    padding: 4px;
+  }
+}
+
+@media (max-height: 420px) {
+  :root {
+    --moldura: 9px;
+    --respiro: 6px;
+  }
+
+  .tech-header,
+  .skill-header {
+    padding: 4px 6px;
+  }
+
+  .det-head {
+    padding-bottom: 6px;
+  }
+
+  .det-sub,
+  .auto-sub {
+    margin: 7px 0 4px;
+  }
+}
+
+
+/* A folha recolhida, aberta dentro do caderno. E a arte da anotacao, e ela
+   entra inclinada e presa com fita: o jogador COLOU aquilo ali. */
+.journal-folha {
+  width: 100%;
+  max-width: 260px;
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 3px;
+  transform: rotate(-1.2deg);
+  box-shadow: 0 5px 14px rgba(60, 40, 18, 0.45);
 }

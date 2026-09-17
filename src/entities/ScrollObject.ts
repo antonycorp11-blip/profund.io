@@ -1,3 +1,4 @@
+import { Assets } from '../core/Assets';
 import { Events } from '../core/events';
 import { CONFIG } from '../data/config';
 import type { ScrollDef } from '../data/scrolls';
@@ -54,23 +55,40 @@ export class ScrollObject implements Interactable {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    // Papel enrolado, de perfil. Vetor de proposito: sao dezenas espalhados e
-    // um sprite por pergaminho seria peso sem retorno — o que importa e a
-    // leitura, nao o icone.
+    /*
+     * A folha de papel de verdade, caida na mina.
+     *
+     * Era um retangulo vetorial de catorze pixels, com a justificativa de que
+     * "o que importa e a leitura, nao o icone". Estava errado: e justamente o
+     * icone que faz o jogador atravessar a caverna para ver o que e aquilo. A
+     * arte existe — e a mesma folha rasgada da papelaria do caderno.
+     */
     const bob = Math.sin(this.t * 2) * 1.5;
     const y = this.y + bob;
     ctx.save();
     ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.beginPath();
-    ctx.ellipse(this.x, this.y + 9, 7, 2.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(this.x, this.y + 10, 8, 2.5, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    const papel = Assets.journalPaper();
+    if (papel && papel.width) {
+      const alt = 24;
+      const larg = (papel.width / papel.height) * alt;
+      ctx.imageSmoothingEnabled = true;
+      // Ja lida fica apagada: continua relegivel, mas para de chamar.
+      ctx.globalAlpha = this.found ? 0.42 : 1;
+      ctx.drawImage(papel, this.x - larg / 2, y - alt / 2, larg, alt);
+      ctx.restore();
+      return;
+    }
+
+    // Sem arte: a silhueta de sempre, para nada sumir do mapa.
     ctx.fillStyle = this.found ? '#8d7f63' : '#e9d8b8';
     ctx.fillRect(this.x - 7, y - 4, 14, 9);
     ctx.fillStyle = this.found ? '#6b604a' : '#c9b189';
     ctx.fillRect(this.x - 7, y - 4, 14, 2);
     ctx.fillRect(this.x - 7, y + 3, 14, 2);
-    ctx.fillStyle = '#8a3b2a';
-    ctx.fillRect(this.x - 1.5, y - 5, 3, 11);
     ctx.restore();
   }
 

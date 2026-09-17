@@ -299,6 +299,27 @@ class AssetsImpl {
   }
 
   /** Folha do personagem, ou null se ainda nao existe. */
+  /**
+   * A folha de papel rasgada, usada pelo pergaminho caido na mina.
+   *
+   * Carregada sob demanda: sao dezenas de pergaminhos espalhados e todos usam
+   * a MESMA folha, entao uma imagem basta para o mapa inteiro.
+   */
+  private paperImg: HTMLImageElement | null = null;
+  private paperTentou = false;
+
+  journalPaper(): HTMLImageElement | null {
+    if (!this.paperTentou) {
+      this.paperTentou = true;
+      const img = new Image();
+      img.onload = () => {
+        this.paperImg = img;
+      };
+      img.src = `${ART.basePath}journal/papel/pagina.png`;
+    }
+    return this.paperImg;
+  }
+
   character(): HTMLImageElement | null {
     return this.images.get('character') ?? null;
   }
