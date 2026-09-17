@@ -36,6 +36,7 @@ import { OUTPOST_NPCS } from '../src/data/outpost';
 import { CREATURES } from '../src/data/creatures';
 import { EQUIPMENT } from '../src/data/equipment';
 import { SKILLS } from '../src/data/skills';
+const ACTIVE_IDS = new Set(SKILLS.filter((k) => k.category === 'active').map((k) => k.id));
 import { ATTRIBUTES, FLAG_IDS } from '../src/data/attributes';
 import { GATE_LAYERS, gateLayerDef } from '../src/data/gates';
 import { CONFIG } from '../src/data/config';
@@ -275,6 +276,42 @@ if (tijolo) {
         \`pista \${c.id} esta a \${prof}m atras de "\${tijolo.name}", que pede a picareta \` +
           \`de tier \${tijolo.minTool} — e essa so e possivel a partir de \${precisa}m.\`
       );
+    }
+  }
+}
+
+// --- 7c. a arvore de atributos e UM grafo, sem ilha e sem ciclo -----------
+//
+// Cada categoria tinha as proprias raizes soltas, e na tela isso virava cinco
+// ilhas boiando num mapa — o contrario de um ninho. Agora ha uma entrada so e
+// toda camara se alcanca a partir dela. Esta regra existe para nao voltar:
+// habilidade que ninguem alcanca e ponto de habilidade jogado fora.
+const naArvore = SKILLS.filter((k) => k.category !== 'active');
+const porId = new Map(naArvore.map((k) => [k.id, k]));
+const raizes = naArvore.filter((k) => k.requiredSkills.length === 0);
+if (raizes.length !== 1) {
+  erros.push(
+    \`a arvore tem \${raizes.length} entradas (\${raizes.map((r) => r.id).join(', ')}). \` +
+      'Tem que ser UMA: o resto vira ilha solta no mapa.'
+  );
+}
+const alcancado = new Set<string>(raizes.map((r) => r.id));
+let mudou = true;
+while (mudou) {
+  mudou = false;
+  for (const k of naArvore) {
+    if (alcancado.has(k.id)) continue;
+    if (k.requiredSkills.some((r) => alcancado.has(r))) {
+      alcancado.add(k.id);
+      mudou = true;
+    }
+  }
+}
+for (const k of naArvore) {
+  if (!alcancado.has(k.id)) erros.push(\`habilidade \${k.id} nao se alcanca a partir da raiz.\`);
+  for (const r of k.requiredSkills) {
+    if (!porId.has(r) && !ACTIVE_IDS.has(r)) {
+      erros.push(\`habilidade \${k.id} exige "\${r}", que nao existe.\`);
     }
   }
 }

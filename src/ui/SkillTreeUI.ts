@@ -14,8 +14,8 @@ import { Haptics } from '../fx/Haptics';
 import type { Attributes } from '../systems/Attributes';
 import type { SkillTree } from '../systems/SkillTree';
 
-const CELL_X = 132;
-const CELL_Y = 108;
+const CELL_X = 118;
+const CELL_Y = 96;
 const NODE = 60;
 
 /**
@@ -34,12 +34,20 @@ const NODE = 60;
  * saindo de um poco central.
  */
 const CAMARA: Record<string, { x: number; y: number }> = {
+  /*
+   * Uma FAIXA larga e baixa, e nao uma coluna.
+   *
+   * As camaras estavam espalhadas por um mapa de 1160 x 1210 px, que nao cabe
+   * em tela nenhuma — o jogador via quatro ilhas e tinha que arrastar para
+   * achar as outras. Agora elas ficam lado a lado na ordem em que se abrem,
+   * com a galeria entre uma e outra curta o bastante para se VER ligando.
+   */
   mining: { x: 0, y: 0 },
-  collect: { x: 6.2, y: 1.6 },
-  movement: { x: 0.6, y: 5.2 },
-  survival: { x: 6.8, y: 6.4 },
-  engineering: { x: 0, y: 9.4 },
-  legacy: { x: 3.2, y: 9.2 },
+  collect: { x: 4.6, y: 0.4 },
+  movement: { x: 0.4, y: 4.4 },
+  survival: { x: 4.6, y: 4.6 },
+  engineering: { x: 8.4, y: 0.6 },
+  legacy: { x: 8.4, y: 4.6 },
 };
 
 /**
@@ -179,8 +187,10 @@ export class SkillTreeUI {
     // mineracao: e a unica que todo mundo tem no minuto zero.
     if (!this.montado) {
       this.montado = true;
-      this.irParaCamara('mining', false);
     }
+    // Sempre enquadra o ninho INTEIRO. A pergunta que a tela responde e "que
+    // caminhos existem", e ela nao se responde com um pedaco do mapa.
+    this.enquadrarTudo();
     this.refresh();
   }
 
@@ -218,6 +228,44 @@ export class SkillTreeUI {
       });
       this.tabsEl.appendChild(btn);
     }
+  }
+
+  /**
+   * Poe o ninho inteiro na tela.
+   *
+   * Calcula a caixa de todos os nos visiveis e escolhe o zoom que faz ela
+   * caber, com uma folga para os nomes que ficam embaixo de cada camara. E o
+   * que garante "todas as camaras conectadas e visiveis" mesmo depois de a
+   * arvore crescer — nao depende de eu ter acertado as coordenadas a mao.
+   */
+  private enquadrarTudo(): void {
+    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
+      (sk) => this.host.tree.visibility(sk.id) !== 'escondido'
+    );
+    if (lista.length === 0) return;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const def of lista) {
+      const q = nodePos(def);
+      minX = Math.min(minX, q.x);
+      minY = Math.min(minY, q.y - 54); // placa da camara fica acima do no
+      maxX = Math.max(maxX, q.x + NODE);
+      maxY = Math.max(maxY, q.y + NODE + 26); // nome fica abaixo
+    }
+    const r = this.viewport.getBoundingClientRect();
+    if (r.width < 10 || r.height < 10) return;
+    const margem = 28;
+    const z = Math.min(
+      (r.width - margem * 2) / Math.max(1, maxX - minX),
+      (r.height - margem * 2) / Math.max(1, maxY - minY)
+    );
+    this.zoom = Math.max(0.3, Math.min(1.1, z));
+    this.panX = r.width / 2 - ((minX + maxX) / 2) * this.zoom - 40;
+    this.panY = r.height / 2 - ((minY + maxY) / 2) * this.zoom - 20;
+    this.canvasEl.classList.remove('gliding');
+    this.applyTransform();
   }
 
   /** Centraliza a vista numa camara, sem esconder o resto do ninho. */

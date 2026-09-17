@@ -196,6 +196,9 @@ export class TechScreen {
     this.renderTabs();
     this.renderStock();
     this.bodyEl.classList.toggle('aside-esquerda', this.tab === 'equipamento');
+    // A Automacao e a unica tela sem painel lateral; as outras dependem dele.
+    this.asideEl.hidden = false;
+    this.bodyEl.classList.toggle('sem-lateral', this.tab === 'copiadora' || this.tab === 'toupeiras');
     if (this.tab === 'copiadora' || this.tab === 'toupeiras') this.renderAutomacao();
     else if (this.tab === 'equipamento') this.renderEquipment();
     else this.renderTechs(this.tab);
@@ -271,11 +274,26 @@ export class TechScreen {
             const sel = def.id === this.selecionado ? ' sel' : '';
             return `
               <button class="tech-card ${cls}${sel}" style="--cat:${meta.color}" data-pick="${def.id}">
-                <span class="tech-icon">${def.icon}</span>
-                <b>${def.name}</b>
-                <span class="tech-flag">${
-                  done ? 'PESQUISADA' : check.ok ? 'DISPONIVEL' : 'BLOQUEADA'
-                }</span>
+                <span class="tech-card-head">
+                  <span class="tech-icon">${def.icon}</span>
+                  <span class="tech-card-nome">
+                    <b>${def.name}</b>
+                    <small>${done ? 'PESQUISADA' : check.ok ? 'DISPONIVEL' : 'BLOQUEADA'}</small>
+                  </span>
+                </span>
+                <span class="tech-card-desc">${def.description}</span>
+                <span class="tech-cost">${this.costHtml(def)}</span>
+                <span class="btn ${done ? '' : check.ok ? 'primary' : ''} tech-card-acao"
+                      ${done || !check.ok ? 'data-inerte' : ''}>
+                  ${
+                    done
+                      ? '✓ PESQUISADA'
+                      : check.ok
+                        ? '<img class="btn-icon" src="art/tech/frasco.png" alt="">PESQUISAR'
+                        : (check.reason ?? 'BLOQUEADA')
+                  }
+                </span>
+
               </button>`;
           })
           .join('')}
@@ -284,9 +302,21 @@ export class TechScreen {
     this.renderTechDetalhe(cat);
 
     for (const btn of Array.from(this.mainEl.querySelectorAll('[data-pick]'))) {
-      btn.addEventListener('click', () => {
-        this.selecionado = (btn as HTMLElement).dataset.pick!;
-        this.ultimaEscolha.set(cat, this.selecionado);
+      btn.addEventListener('click', (ev) => {
+        const id = (btn as HTMLElement).dataset.pick!;
+        // Tocar no BOTAO do cartao pesquisa na hora; tocar no resto escolhe e
+        // manda o detalhe para o lado. Sem isso o cartao teria um botao que so
+        // serve de enfeite, que e pior do que nao ter botao.
+        const alvo = ev.target as HTMLElement;
+        const acao = alvo.closest('.tech-card-acao');
+        if (acao && !acao.hasAttribute('data-inerte')) {
+          if (this.host.tech.research(id, this.host.deepest())) {
+            Haptics.ui();
+            this.host.onToolUnlocked(this.host.tech.maxToolIndex());
+          }
+        }
+        this.selecionado = id;
+        this.ultimaEscolha.set(cat, id);
         Haptics.ui();
         this.render();
       });
@@ -317,7 +347,20 @@ export class TechScreen {
           </div>
         </div>
         <p class="det-desc">${def.description}</p>
-        ${efeitos ? `<h5 class="det-sub">O que muda</h5><ul class="det-efeitos">${efeitos}</ul>` : ''}
+        ${
+          efeitos
+            ? `<div class="det-duplo">
+                 <div class="det-caixa">
+                   <h5 class="det-sub">Efeito atual</h5>
+                   <span class="det-agora">${done ? 'instalada' : 'nao pesquisada'}</span>
+                 </div>
+                 <div class="det-caixa">
+                   <h5 class="det-sub">Proximo nivel</h5>
+                   <ul class="det-efeitos">${efeitos}</ul>
+                 </div>
+               </div>`
+            : ''
+        }
         <h5 class="det-sub">Custo da pesquisa</h5>
         <div class="tech-cost det-custo">${this.costHtml(def)}</div>
         ${
@@ -434,22 +477,35 @@ export class TechScreen {
       </div>
       <div class="auto-cols">${colunaCopias}${colunaMoles}</div>`;
 
-    this.asideEl.innerHTML = `
-      <div class="auto-aside-head">
-        <img src="art/auto/placa.png" alt="">
-        <span>Melhorias</span>
-      </div>
-      <p class="dim">Valem para TODAS as unidades, agora e as que vierem depois.</p>
-      <h5 class="auto-sub">Toupeiras</h5>
-      <div class="up-col">${this.cloneUpgrades('mole')}</div>
-      <h5 class="auto-sub">Copias</h5>
-      <div class="up-col">${this.cloneUpgrades('clone')}</div>
-      <div class="auto-aside-foot">
-        <button class="btn" data-dumpall ${carregando > 0 ? '' : 'disabled'}>
-          MANDAR ENTREGAR (${carregando})
-        </button>
-        <span class="dim">✦ ${money.toLocaleString('pt-BR')} em caixa</span>
-      </div>`;
+    /*
+     * Sem painel lateral aqui.
+     *
+     * No conceito as duas colunas ocupam a LARGURA TODA, e faz sentido: esta
+     * tela nao tem um item selecionado para detalhar — ela tem duas equipes
+     * trabalhando. O lateral roubava um terco da largura para mostrar as
+     * melhorias, que sao uma decisao ocasional, e espremia as unidades, que
+     * sao o assunto.
+     */
+    this.asideEl.innerHTML = '';
+    this.asideEl.hidden = true;
+
+    this.mainEl.insertAdjacentHTML(
+      'beforeend',
+      `<section class="auto-melhorias">
+         <header>
+           <img src="art/auto/placa.png" alt="">
+           <div>
+             <h4>Melhorias</h4>
+             <p>Valem para TODAS as unidades, agora e as que vierem depois.</p>
+           </div>
+           <button class="btn" data-dumpall ${carregando > 0 ? '' : 'disabled'}>
+             MANDAR ENTREGAR (${carregando})
+           </button>
+         </header>
+         <div class="up-grid">${this.cloneUpgrades('mole')}${this.cloneUpgrades('clone')}</div>
+         <p class="dim">✦ ${money.toLocaleString('pt-BR')} em caixa.</p>
+       </section>`
+    );
 
     this.bindCloner();
     this.bindCollectors();
@@ -749,23 +805,43 @@ export class TechScreen {
   private moleCard(u: {
     id: string;
     index: number;
+    x: number;
+    y: number;
     carried: number;
     capacity: number;
+    delivered: number;
     statusLabel(): string;
+    entries(): [ResourceId, number][];
   }): string {
+    /*
+     * Quatro leituras em linha, barra e uma frase de estado.
+     *
+     * O cartao tinha nome e estado, e so. O conceito mostra CARGA, RECURSO,
+     * DISTANCIA e ENTREGAS lado a lado porque sao as quatro perguntas que o
+     * jogador faz olhando uma toupeira: ela cabe mais? esta trazendo o que eu
+     * quero? esta longe? esta rendendo?
+     */
+    const carga = Math.round((u.carried / Math.max(1, u.capacity)) * 100);
+    const [rec] = u.entries();
+    const recurso = rec
+      ? `<img src="art/ui/${rec[0]}.png" alt="">${RESOURCES[rec[0]].name}`
+      : '<span class="dim">vazia</span>';
+    const prof = Math.round(this.host.depthOf(u.y));
     return `
       <div class="clone-card" style="--tint:#d8a35a">
         <div class="clone-card-head">
           <img class="clone-face" src="art/auto/toupeira.png" alt="">
           <b>Toupeira ${u.index + 1}</b>
           <span class="clone-state" data-live-cstate="${u.id}">${u.statusLabel()}</span>
-          <span class="clone-depth" data-live-cdepth="${u.id}"></span>
-          <span class="clone-load" data-live-cload="${u.id}">${u.carried}/${u.capacity}</span>
         </div>
-        <div class="clone-live">
-          <span data-live-ccarry="${u.id}"></span>
-          <b data-live-ctotal="${u.id}"></b>
+        <div class="unidade-grade">
+          <span><i>Carga max.</i><b data-live-cload="${u.id}">${u.carried}/${u.capacity}</b></span>
+          <span><i>Recurso</i><b class="com-icone">${recurso}</b></span>
+          <span><i>Profundidade</i><b data-live-cdepth="${u.id}">${prof} m</b></span>
+          <span><i>Entregas</i><b data-live-ctotal="${u.id}">${u.delivered}</b></span>
         </div>
+        <span class="unidade-barra"><i style="width:${carga}%"></i></span>
+        <small class="unidade-linha" data-live-ccarry="${u.id}"></small>
       </div>`;
   }
 

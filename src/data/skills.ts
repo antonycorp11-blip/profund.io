@@ -126,6 +126,19 @@ export interface SkillDef {
  * Primeira leva implementada (spec, item 55).
  * O resto da arvore entra depois, sem mudanca de codigo: so dado.
  */
+/*
+ * O NINHO E UM SO.
+ *
+ * Cada categoria tinha as proprias raizes soltas, e o resultado na tela eram
+ * cinco ilhas boiando num mapa grande sem nada ligando uma na outra — o
+ * contrario de um ninho, que e justamente um lugar onde toda camara se alcanca
+ * por uma galeria.
+ *
+ * Agora ha UMA entrada em todo o mapa (Braco Forte I) e cada camara se abre a
+ * partir da anterior: mineracao -> coleta -> movimento -> sobrevivencia ->
+ * legado. Isso tambem e o que faz a revelacao progressiva ter sentido — cavar
+ * um no acende o trecho seguinte em vez de mostrar tudo desde o comeco.
+ */
 export const SKILLS: SkillDef[] = [
   // ---------------------------------------------------------------- MINERACAO
   {
@@ -184,7 +197,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Menos tempo entre um golpe e o proximo.',
     maxLevel: 1,
     cost: [1],
-    requiredSkills: [],
+    requiredSkills: ['mining_power_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [[{ target: 'miningSpeed', op: 'percentAdd', value: 0.1 }]],
@@ -452,7 +465,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Os recursos voam mais rapido ate voce.',
     maxLevel: 2,
     cost: [1, 1],
-    requiredSkills: [],
+    requiredSkills: ['mining_power_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -512,7 +525,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Voce perde menos material em cada bloco.',
     maxLevel: 2,
     cost: [1, 2],
-    requiredSkills: [],
+    requiredSkills: ['collect_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -571,7 +584,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Mais espaco antes de precisar subir.',
     maxLevel: 3,
     cost: [1, 2, 2],
-    requiredSkills: [],
+    requiredSkills: ['collect_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -612,7 +625,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Anda mais rapido. Cada nivel encurta a volta para a base.',
     maxLevel: 4,
     cost: [1, 1, 2, 3],
-    requiredSkills: [],
+    requiredSkills: ['collect_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -652,7 +665,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Salto mais alto — e menos poco sem saida.',
     maxLevel: 2,
     cost: [1, 2],
-    requiredSkills: [],
+    requiredSkills: ['move_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -687,7 +700,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Sobe paredes mais rapido e aguenta mais tempo agarrado.',
     maxLevel: 3,
     cost: [1, 1, 2],
-    requiredSkills: [],
+    requiredSkills: ['move_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -724,7 +737,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Enxergar mais fundo e o primeiro passo para descer mais fundo.',
     maxLevel: 3,
     cost: [1, 1, 2],
-    requiredSkills: [],
+    requiredSkills: ['move_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -795,7 +808,7 @@ export const SKILLS: SkillDef[] = [
     description: 'Anos de mina endurecem o corpo. Mais vida para aguentar o fundo.',
     maxLevel: 3,
     cost: [1, 1, 2],
-    requiredSkills: [],
+    requiredSkills: ['move_speed_1'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -873,7 +886,7 @@ export const SKILLS: SkillDef[] = [
     description: 'A mesma picareta, usada com outra intencao.',
     maxLevel: 3,
     cost: [1, 2, 2],
-    requiredSkills: [],
+    requiredSkills: ['survival_vitality'],
     requiredDepth: 0,
     requiredStoryFlag: null,
     modifiers: [
@@ -956,7 +969,7 @@ export const SKILLS: SkillDef[] = [
     description: 'A primeira prova de que ele esteve aqui. Revela o caminho do Legado.',
     maxLevel: 1,
     cost: [0],
-    requiredSkills: [],
+    requiredSkills: ['survival_vitality'],
     requiredDepth: 0,
     requiredStoryFlag: 'clue_marca_do_pai',
     modifiers: [[{ target: 'legacyTreeVisible', op: 'unlock', value: 1 }]],

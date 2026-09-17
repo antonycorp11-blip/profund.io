@@ -3020,9 +3020,24 @@ body:has(.hud-map-slot.folded) .toasts {
   border-bottom: 1px solid var(--stroke);
 }
 
+/*
+ * O botao fica NA LINHA do titulo, a direita, como no conceito.
+ *
+ * Ele tinha virado uma barra de largura inteira, e isso foi conserto de tela
+ * estreita vazando para a larga: com a coluna valendo 300 px nao cabia em
+ * linha, entao eu empilhei. Agora que as colunas ocupam a largura toda, cabe —
+ * e uma barra dourada de 500 px so para escrever CONTRATAR grita mais que a
+ * lista inteira de unidades, que e o assunto da tela.
+ */
 .auto-col > header .btn {
-  grid-column: 1 / -1;
-  width: 100%;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.auto-col > header {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
 }
 
 .auto-col > header img {
@@ -3707,9 +3722,9 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .tech-grid {
   display: grid;
-  /* Cartoes bem menores: eles so identificam. Cabem cinco por linha onde antes
-     cabiam tres, e a lista inteira passa a ser vista de uma vez. */
-  grid-template-columns: repeat(auto-fill, minmax(var(--cartao-min), 1fr));
+  /* Tres por linha, como no conceito: o cartao voltou a carregar descricao e
+     botao, e com cinco por linha nada disso caberia. */
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
   gap: 9px;
 }
 
@@ -3722,10 +3737,19 @@ body:has(.hud-map-slot.folded) .toasts {
  * antigo empilhava as tres em cima umas das outras. Agora e uma pilha vertical
  * centrada, que e o que cabe num alvo de toque de 130 px.
  */
+/*
+ * O cartao volta COMPLETO.
+ *
+ * Eu tinha esvaziado ele — so icone, nome e estado — porque o detalhe ganhou
+ * painel proprio. Foi mao pesada: o conceito tem as duas coisas, e por um
+ * motivo. O cartao completo deixa comparar tres pesquisas de relance, e o
+ * painel serve para estudar UMA. Tirar o cartao obrigava a clicar em cada
+ * uma para saber o que era.
+ */
 .tech-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-start;
   gap: 7px;
   min-height: 112px;
@@ -3735,7 +3759,7 @@ body:has(.hud-map-slot.folded) .toasts {
   background: rgba(255, 255, 255, 0.03);
   color: var(--ink-dim);
   font-family: var(--font);
-  text-align: center;
+  text-align: left;
   cursor: pointer;
 }
 
@@ -5369,4 +5393,219 @@ body:has(.hud-map-slot.folded) .toasts {
   max-width: none;
   height: calc(100vh / var(--ui-zoom));
   max-height: none;
+}
+
+
+/* --- cartao de pesquisa completo --- */
+.tech-card-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.tech-card-nome {
+  min-width: 0;
+}
+
+.tech-card-nome b {
+  display: block;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.tech-card-nome small {
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.tech-card.ready .tech-card-nome small {
+  color: var(--cat);
+}
+
+.tech-card.done .tech-card-nome small {
+  color: #7ee7a8;
+}
+
+.tech-card-desc {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--ink-dim);
+  /* Tres linhas: o resto do texto vive na prancheta ao lado. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* O botao dentro do cartao e um SPAN: o cartao inteiro ja e um button, e
+   button dentro de button e HTML invalido — o navegador desmonta a arvore e o
+   clique passa a cair em lugar nenhum. */
+.tech-card-acao {
+  margin-top: auto;
+  text-align: center;
+  font-size: 10px;
+  padding: 0 6px;
+}
+
+.tech-card-acao[data-inerte] {
+  opacity: 0.75;
+}
+
+/* Efeito atual e proximo nivel LADO A LADO, como no conceito: sao duas
+   colunas para comparar, e empilhadas viravam duas listas sem relacao. */
+.det-duplo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.det-caixa {
+  border: 1px solid rgba(120, 170, 230, 0.22);
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.det-caixa .det-sub {
+  margin: 0 0 4px;
+}
+
+.det-agora {
+  font-size: 10.5px;
+  color: #dce8f6;
+}
+
+.det-caixa .det-efeitos {
+  padding-left: 14px;
+}
+
+/* --- AUTOMACAO: largura toda, e o cartao de unidade do conceito --- */
+.tech-body.sem-lateral {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.unidade-grade {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 7px 0 6px;
+}
+
+.unidade-grade span {
+  min-width: 0;
+}
+
+.unidade-grade i {
+  display: block;
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: 8px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.unidade-grade b {
+  font-size: 11px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.unidade-grade .com-icone {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.unidade-grade .com-icone img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.unidade-barra {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.unidade-barra > i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #d8a35a, #ffc453);
+  transition: width 0.25s linear;
+}
+
+.unidade-linha {
+  display: block;
+  margin-top: 5px;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+}
+
+.auto-melhorias {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(232, 180, 74, 0.22);
+}
+
+.auto-melhorias > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.auto-melhorias > header img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.auto-melhorias > header > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.auto-melhorias h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.auto-melhorias header p {
+  margin: 1px 0 0;
+  font-size: 9.5px;
+  color: var(--ink-dim);
+}
+
+.up-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 9px;
+}
+
+
+/* Coluna estreita: o botao volta a empilhar, porque ai ele nao cabe mesmo. */
+@media (max-width: 620px) {
+  .auto-col > header {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .auto-col > header .btn {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-self: stretch;
+  }
 }
