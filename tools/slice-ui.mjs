@@ -31,7 +31,11 @@ const FOLHAS = [
             'pin', 'vida', 'moeda', 'ponto', 'lampiao'],
   },
   {
-    arq: '02-molduras.png', destino: 'hud/moldura', tamanho: 256,
+    // Moldura tem PROPORCAO propria: uma faixa e larga e baixa, um botao e uma
+    // pilula. Enquadrar em quadrado enchia tudo de margem transparente e
+    // arruinava o `border-image` — o navegador fatia a imagem inteira, margem
+    // incluida, e a borda saia oca.
+    arq: '02-molduras.png', destino: 'hud/moldura', tamanho: 256, quadrado: false,
     nomes: ['retrato', 'placa', 'barra_recursos', 'cartao_missao', 'minimapa',
             'botao_grande', 'botao_medio', 'botao_pequeno', 'tarja', 'calha'],
   },
@@ -58,7 +62,7 @@ const FOLHAS = [
             'guardiao', 'toupeira', 'copia', 'selo', 'cidade'],
   },
   {
-    arq: '07-chassi.png', destino: 'hud/chassi', tamanho: 320,
+    arq: '07-chassi.png', destino: 'hud/chassi', tamanho: 320, quadrado: false,
     nomes: ['painel', 'painel_lateral', 'aba_off', 'aba_on', 'cartao',
             'cartao_sel', 'cartao_bloq', 'botao_primario', 'botao_secundario', 'botao_inativo'],
   },
@@ -266,25 +270,35 @@ for (const folha of FOLHAS) {
     }
     const w = ax1 - ax0 + 1;
     const h = ay1 - ay0 + 1;
-    // Quadrado com folga: o mesmo enquadramento em todos deixa os icones
-    // alinhados quando ficam lado a lado numa barra.
-    const lado = Math.round(Math.max(w, h) * 1.1);
-    const quad = Buffer.alloc(lado * lado * 4, 0);
-    const ox = Math.floor((lado - w) / 2);
-    const oy = Math.floor((lado - h) / 2);
+    /*
+     * Icone sai em QUADRADO com folga — o mesmo enquadramento em todos deixa
+     * eles alinhados quando ficam lado a lado numa barra.
+     *
+     * Moldura sai NO PROPRIO CONTORNO. Ela vai virar `border-image`, e o
+     * navegador fatia a imagem inteira: margem transparente vira borda oca.
+     */
+    const quadrado = folha.quadrado !== false;
+    const lw = quadrado ? Math.round(Math.max(w, h) * 1.1) : w;
+    const lh = quadrado ? lw : h;
+    const quad = Buffer.alloc(lw * lh * 4, 0);
+    const ox = Math.floor((lw - w) / 2);
+    const oy = Math.floor((lh - h) / 2);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const s = ((ay0 + y) * W + (ax0 + x)) * 4;
-        const d = ((oy + y) * lado + (ox + x)) * 4;
+        const d = ((oy + y) * lw + (ox + x)) * 4;
         quad[d] = data[s];
         quad[d + 1] = data[s + 1];
         quad[d + 2] = data[s + 2];
         quad[d + 3] = data[s + 3];
       }
     }
-    const alvo = folha.tamanho;
-    const saida = new PNG({ width: alvo, height: alvo });
-    reduzir(quad, lado, lado, saida.data, alvo, alvo);
+    // Reduz mantendo a proporcao: o lado maior vai para `tamanho`.
+    const escala = folha.tamanho / Math.max(lw, lh);
+    const aw = Math.max(8, Math.round(lw * escala));
+    const ah = Math.max(8, Math.round(lh * escala));
+    const saida = new PNG({ width: aw, height: ah });
+    reduzir(quad, lw, lh, saida.data, aw, ah);
     fs.writeFileSync(path.join(dir, `${nome}.png`), PNG.sync.write(saida));
     total++;
   });

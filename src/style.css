@@ -4794,3 +4794,154 @@ body:has(.hud-map-slot.folded) .toasts {
 .pad-icon {
   line-height: 1;
 }
+
+/* ==========================================================================
+   CHASSI PINTADO
+   --------------------------------------------------------------------------
+   Eu tinha fatiado quarenta pecas de estrutura — molduras, paineis, abas,
+   cartoes, botoes — e deixado TRINTA sem uso, estilizando tudo com borda de
+   CSS de um pixel do mesmo jeito que estava antes. Era por isso que nenhuma
+   tela ficava parecida com o conceito: o esqueleto estava certo e a roupa era
+   a velha.
+
+   Isto aqui e a roupa. Como `border-image`, uma regra sobe TODAS as telas de
+   uma vez: os cantos ornamentados ficam intactos e so as bordas repetem, que e
+   exatamente o que uma moldura pintada precisa.
+   ========================================================================== */
+
+/* O fundo atras de qualquer tela cheia: terra escavada, e nao preto liso. */
+.panel-wrap.open::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(12, 8, 4, 0.88), rgba(8, 5, 2, 0.94)),
+    url('/art/tree/parede.png') center / cover no-repeat,
+    #0b0705;
+  z-index: -1;
+}
+
+/* --- o painel da tela --- */
+.techscreen .tech-screen,
+.skillscreen .tech-screen,
+.skilltree .skill-screen {
+  border: 22px solid transparent;
+  border-image: url('/art/hud/chassi/painel.png') 24 fill round;
+  border-radius: 0;
+  background: none;
+}
+
+/* O cabecalho perde a linha de CSS: a moldura ja separa. */
+.tech-header,
+.skill-header {
+  border-bottom: 1px solid rgba(232, 180, 74, 0.22);
+  background: none;
+}
+
+/* --- cartoes --- */
+.tech-card,
+.skl-card,
+.eq-card,
+.up-card {
+  border: 16px solid transparent;
+  border-image: url('/art/hud/chassi/cartao.png') 38 fill round;
+  border-radius: 0;
+  background: none;
+}
+
+.tech-card.sel,
+.skl-card.sel,
+.eq-card.on,
+.up-card.done {
+  border-image-source: url('/art/hud/chassi/cartao_sel.png');
+  box-shadow: none;
+}
+
+.tech-card.locked,
+.skl-card:not(.owned),
+.eq-card.locked {
+  border-image-source: url('/art/hud/chassi/cartao_bloq.png');
+}
+
+/* --- botoes --- */
+.btn {
+  border: 14px solid transparent;
+  border-image: url('/art/hud/chassi/botao_secundario.png') 62 fill round;
+  border-radius: 0;
+  background: none;
+  color: #f3e4c0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.btn.primary,
+.btn.on {
+  border-image-source: url('/art/hud/chassi/botao_primario.png');
+  /* Sobre latao claro o texto tem que escurecer, senao some. */
+  color: #2a1d0c;
+  text-shadow: 0 1px 0 rgba(255, 236, 190, 0.5);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  border-image-source: url('/art/hud/chassi/botao_inativo.png');
+  color: rgba(240, 235, 225, 0.55);
+  text-shadow: none;
+}
+
+/* --- abas --- */
+.skill-tab {
+  border: 12px solid transparent;
+  border-image: url('/art/hud/chassi/aba_off.png') 58 fill round;
+  border-radius: 0;
+  background: none;
+  color: #cbb896;
+}
+
+.skill-tab.active {
+  border-image-source: url('/art/hud/chassi/aba_on.png');
+  color: #2a1d0c;
+  text-shadow: 0 1px 0 rgba(255, 236, 190, 0.45);
+}
+
+/*
+ * O painel lateral NAO ganha moldura.
+ *
+ * Com moldura nele, a tela virava moldura dentro de moldura dentro de moldura
+ * — o cartao emoldurado dentro do painel emoldurado dentro da tela emoldurada.
+ * Na referencia o ouro EMOLDURA: ele marca a borda da tela e o que esta
+ * escolhido, e o resto e escuro. Tres niveis de dourado empilhados nao sao
+ * mais fieis, sao menos: viram parede de ouro e a hierarquia some.
+ */
+.tech-aside,
+.skl-cinto {
+  border: 0;
+  border-left: 1px solid rgba(232, 180, 74, 0.28);
+  padding-left: 14px;
+}
+
+.tech-body.aside-esquerda .tech-aside,
+.skl-cinto {
+  border-left: 0;
+  border-right: 1px solid rgba(232, 180, 74, 0.28);
+  padding-left: 0;
+  padding-right: 14px;
+}
+
+/*
+ * O INTERIOR e escuro.
+ *
+ * O preenchimento da moldura e couro claro, e esticado na tela inteira ele
+ * deixava o fundo mais claro que os cartoes — o oposto do conceito, onde o
+ * conteudo brilha sobre um fundo quase preto.
+ */
+.techscreen .tech-screen,
+.skillscreen .tech-screen,
+.skilltree .skill-screen {
+  position: relative;
+}
+
+.tech-body,
+.skill-body {
+  position: relative;
+  background: rgba(10, 7, 4, 0.82);
+}
