@@ -19,7 +19,8 @@
     "verify": "tsc --noEmit && npm run check && npm run climb && vite build",
     "slice-ui": "node tools/slice-ui.mjs",
     "slice-armas": "node tools/slice-armas.mjs",
-    "slice-mira": "node tools/slice-mira.mjs"
+    "slice-mira": "node tools/slice-mira.mjs",
+    "slice-armas-lateral": "node tools/slice-armas-lateral.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

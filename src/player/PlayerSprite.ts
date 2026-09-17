@@ -1,4 +1,5 @@
 import { ART } from '../data/art';
+import { WEAPON_GRIPS } from '../data/weaponGrips';
 import { Assets } from '../core/Assets';
 import type { Player } from './Player';
 
@@ -308,8 +309,9 @@ export class PlayerSprite {
    * um tiro na horizontal com o braco torto.
    */
   private desenharArma(ctx: CanvasRenderingContext2D, alturaDoCorpo: number, flipped: boolean): void {
-    const arte = this.weaponArt ? Assets.weapon(this.weaponArt) : null;
-    if (!arte || !arte.width) return;
+    const id = this.weaponArt;
+    const arte = id ? Assets.weapon(id) : null;
+    if (!id || !arte || !arte.width) return;
 
     const p = PlayerSprite.PUNHO[this.quadroDeMira] ?? PlayerSprite.PUNHO[0];
 
@@ -319,9 +321,11 @@ export class PlayerSprite {
     // refletido a mao, senao a arma aponta para tras do personagem.
     const ang = Math.atan2(this.aimY, flipped ? -this.aimX : this.aimX);
 
-    const alturaArma = alturaDoCorpo * 0.2;
+    const alturaArma = alturaDoCorpo * 0.22;
     const escala = alturaArma / arte.height;
     const larguraArma = arte.width * escala;
+    // Onde a mao fecha NESTA arma, medido no proprio sprite pelo cortador.
+    const cabo = WEAPON_GRIPS[id] ?? { x: 0.2, y: 0.5 };
 
     /*
      * As fracoes do punho ja sao do QUADRO, e o quadro e desenhado com altura
@@ -335,10 +339,16 @@ export class PlayerSprite {
     ctx.save();
     ctx.translate(p.x * alturaDoCorpo, linhaDosPes + p.y * alturaDoCorpo);
     ctx.rotate(ang);
-    // O CABO fica no punho e o cano aponta para fora. A arte de inventario vem
-    // com a arma inteira centrada, entao recuo pouco mais de um terco: o
-    // suficiente para o cabo cair na mao e o cano sair dela.
-    ctx.drawImage(arte, -larguraArma * 0.34, -alturaArma / 2, larguraArma, alturaArma);
+    /*
+     * O CABO cai exatamente na origem — que e o punho — e o resto da arma se
+     * organiza em volta dele. Por isso o giro acontece NA MAO: o revolver
+     * pivota no cabo curto, o fuzil pivota atras, perto da coronha, e cada um
+     * assenta como assentaria de verdade.
+     *
+     * Antes era um recuo fixo de 34% para todas, e com isso o fuzil ficava
+     * enfiado no peito enquanto o revolver sobrava para fora da mao.
+     */
+    ctx.drawImage(arte, -larguraArma * cabo.x, -alturaArma * cabo.y, larguraArma, alturaArma);
     ctx.restore();
   }
 }
