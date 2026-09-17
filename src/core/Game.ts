@@ -1486,11 +1486,20 @@ export class Game {
      * escolhe se o que sai dali e o bico ou a bala.
      */
     if (!uiBlocking && this.input.wasPressed('swap')) this.trocarMao();
+    /*
+     * A ARMA atira nas TRES direcoes que o braco sabe apontar.
+     *
+     * A picareta continua com mira solta — ela encosta no bloco, e meio grau
+     * importa. A arma nao: a folha tem tres poses e nada entre elas, entao
+     * mirando a 20 graus o braco ficava reto e a bala saia torta. Agora a
+     * pose, o desenho da arma e a bala saem todos do MESMO numero.
+     */
+    const miraDaArma = PlayerSprite.direcaoDaPose(this.mining.aimDirX, this.mining.aimDirY);
     this.weapons.update(
       dt,
       this.mao === 'arma' && !uiBlocking && !this.vitals.dead && this.input.isHeld('mine'),
-      this.mining.aimDirX,
-      this.mining.aimDirY
+      miraDaArma.x,
+      miraDaArma.y
     );
 
     this.hud.setAmmo(this.municao);
@@ -1523,6 +1532,7 @@ export class Game {
     this.playerSprite.aimX = this.mining.aimDirX;
     this.playerSprite.aimY = this.mining.aimDirY;
     this.playerSprite.weaponArt = this.mao === 'arma' ? this.weapons.def.id : null;
+    this.weapons.boca = () => this.playerSprite.bocaDoCano(this.player);
     this.playerSprite.update(dt, this.player);
 
     this.world.setWatchPoint(this.player.cx, this.player.cy);

@@ -141,6 +141,15 @@ export class WeaponSystem {
    * Segurar dispara em cadencia; o primeiro tiro sai na hora, porque esperar
    * um intervalo depois de apertar faz a arma parecer quebrada.
    */
+  /**
+   * De onde a bala sai, quando ha arma desenhada na mao.
+   *
+   * Ligado pelo Game ao `PlayerSprite`: quem sabe onde esta a boca do cano e
+   * quem desenha o cano. Sem isso o tiro saia de um ponto fixo no meio do
+   * corpo — da barriga — enquanto a arma estava na mao, mais alta e a frente.
+   */
+  boca: (() => { x: number; y: number } | null) | null = null;
+
   update(dt: number, segurandoGatilho: boolean, mirarX: number, mirarY: number): void {
     this.recarga = Math.max(0, this.recarga - dt);
     this.flash = Math.max(0, this.flash - dt * 6);
@@ -165,9 +174,11 @@ export class WeaponSystem {
     this.flash = 1;
     const ef = this.efeitos();
 
-    // A boca do cano fica na altura do peito, adiantada na direcao da mira.
-    const bocaX = this.player.cx + mirarX * 12;
-    const bocaY = this.player.cy - 2 + mirarY * 12;
+    // A boca de verdade quando ha arma desenhada; o ponto do peito so como
+    // reserva, para o caso de a arte ainda nao ter carregado.
+    const naMao = this.boca?.() ?? null;
+    const bocaX = naMao ? naMao.x : this.player.cx + mirarX * 12;
+    const bocaY = naMao ? naMao.y : this.player.cy - 2 + mirarY * 12;
 
     for (let i = 0; i < d.pellets * ef.balas; i++) {
       const b = this.pool.find((x) => !x.ativo);

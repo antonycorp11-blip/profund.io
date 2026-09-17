@@ -61,6 +61,29 @@ export class PlayerSprite {
   /** Qual quadro da tira de mira foi desenhado agora. */
   private quadroDeMira = 0;
 
+  /**
+   * As TRES direcoes que o braco sabe apontar, em radianos.
+   *
+   * A folha tem tres poses e nada entre elas. A arma girava em angulo
+   * continuo, entao mirando a 20 graus o braco ficava reto e a arma torta —
+   * ela se mexia em angulo que a mao nao se mexe. Quem manda e o desenho: o
+   * tiro passa a sair numa destas tres, e a arma acompanha o braco.
+   */
+  static readonly ANGULOS = [0, -Math.PI / 4, Math.PI / 4] as const;
+
+  /**
+   * Para onde a arma REALMENTE aponta, dada a mira do jogador.
+   *
+   * Devolve o vetor ja preso a uma das tres poses. O Game usa isto tanto para
+   * girar o desenho quanto para lancar a bala — as duas coisas TEM que sair do
+   * mesmo numero, senao a bala nao sai do cano.
+   */
+  static direcaoDaPose(aimX: number, aimY: number): { x: number; y: number } {
+    const lado = aimX < 0 ? -1 : 1;
+    const ang = aimY < -0.45 ? -Math.PI / 4 : aimY > 0.45 ? Math.PI / 4 : 0;
+    return { x: Math.cos(ang) * lado, y: Math.sin(ang) };
+  }
+
   update(dt: number, player: Player): void {
     const next = this.pickAnim(player);
     if (next !== this.anim) {
@@ -298,6 +321,39 @@ export class PlayerSprite {
   }
 
   /**
+   * Onde esta a BOCA DO CANO, em coordenadas de mundo.
+   *
+   * A bala saia de um ponto fixo a 12 px do centro do corpo — quer dizer, da
+   * barriga — enquanto a arma estava na mao, mais alta e mais a frente. Agora
+   * o ponto e calculado do mesmo jeito que o desenho: punho do quadro atual,
+   * mais o comprimento da arma daquele cabo ate a ponta, girado pelo angulo
+   * da pose.
+   *
+   * Devolve null sem arma na mao — ai o Game usa o ponto antigo.
+   */
+  bocaDoCano(player: Player): { x: number; y: number } | null {
+    const id = this.weaponArt;
+    const arte = id ? Assets.weapon(id) : null;
+    if (!this.aiming || !id || !arte || !arte.width) return null;
+
+    const h = ART.character.stripDrawHeight;
+    const punho = PlayerSprite.PUNHO[this.quadroDeMira] ?? PlayerSprite.PUNHO[0];
+    const cabo = WEAPON_GRIPS[id] ?? { x: 0.2, y: 0.5 };
+    const lado = player.facing < 0 ? -1 : 1;
+
+    // O punho no mundo: em X espelha com o lado, em Y sai da linha dos pes.
+    const punhoX = player.cx + lado * punho.x * h;
+    const punhoY = player.feetY + punho.y * h;
+
+    const alturaArma = h * 0.22;
+    const larguraArma = arte.width * (alturaArma / arte.height);
+    const ateAPonta = larguraArma * (1 - cabo.x);
+
+    const d = PlayerSprite.direcaoDaPose(lado, this.aimY);
+    return { x: punhoX + d.x * ateAPonta, y: punhoY + d.y * ateAPonta };
+  }
+
+  /**
    * A arma, presa no punho e girada pela mira.
    *
    * Desenhada DEPOIS do corpo e dentro da mesma transformacao dele: assim ela
@@ -319,7 +375,10 @@ export class PlayerSprite {
     // DIREITA. Espelhado, o `ctx.scale(-1,1)` ja inverte o desenho — mas o
     // angulo da mira continua em coordenadas do mundo, entao ele precisa ser
     // refletido a mao, senao a arma aponta para tras do personagem.
-    const ang = Math.atan2(this.aimY, flipped ? -this.aimX : this.aimX);
+    // O MESMO angulo que a pose do braco tem — nao o angulo cru da mira. Era
+    // isso que fazia a arma se mexer em angulos que a mao nao se mexe.
+    const d = PlayerSprite.direcaoDaPose(flipped ? -this.aimX : this.aimX, this.aimY);
+    const ang = Math.atan2(d.y, d.x);
 
     const alturaArma = alturaDoCorpo * 0.22;
     const escala = alturaArma / arte.height;
