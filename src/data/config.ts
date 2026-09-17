@@ -349,6 +349,19 @@ export const CONFIG = {
     entranceWidth: 3,
   },
 
+  /**
+   * A BANCADA de municao.
+   *
+   * Leva grande de proposito: fabricar de dez em dez faria o jogador voltar a
+   * base toda hora, e a viagem de volta ja e o custo de verdade do jogo. A
+   * conta que interessa e "gasto esse ferro em bala ou em obra?", e ela so
+   * aparece se a leva for grande o bastante para doer.
+   */
+  ammo: {
+    ferroPorLeva: 12,
+    balasPorLeva: 40,
+  },
+
   light: {
     /**
      * Brilho minimo para um bloco valer um halo de luz.

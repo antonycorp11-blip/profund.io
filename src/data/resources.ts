@@ -12,7 +12,8 @@ export type ResourceId =
   | 'voidstone'
   | 'coal_coke'
   | 'gold_bar'
-  | 'crystal_prism';
+  | 'crystal_prism'
+  | 'ammo_round';
 
 export type Rarity = 'comum' | 'incomum' | 'raro' | 'epico';
 
@@ -166,6 +167,28 @@ export const RESOURCES: Record<ResourceId, ResourceDef> = {
     tint: '#fff2a0',
     tintStrength: 0.55,
   },
+  /*
+   * MUNICAO.
+   *
+   * Nao sai de bloco nenhum: e fabricada na bancada da base, com ferro. Fica
+   * entre os refinados de proposito — ela e a prova de que a base serve para
+   * alguma coisa alem de vender pedra. Peso zero: bala pesando na mochila
+   * faria o jogador escolher entre levar minerio e sobreviver, e essa nao e
+   * uma escolha interessante, e so uma punicao.
+   */
+  ammo_round: {
+    id: 'ammo_round',
+    name: 'Municao',
+    value: 3,
+    rarity: 'incomum',
+    color: '#c8a24a',
+    accent: '#ffe9a8',
+    weight: 0,
+    showInHud: false,
+    tintFrom: 'iron',
+    tint: '#ffd98a',
+    tintStrength: 0.6,
+  },
   crystal_prism: {
     id: 'crystal_prism',
     name: 'Prisma de Cristal',
@@ -193,6 +216,7 @@ export const RESOURCE_ORDER: ResourceId[] = [
   'coal_coke',
   'gold_bar',
   'crystal_prism',
+  'ammo_round',
   'stone',
 ];
 

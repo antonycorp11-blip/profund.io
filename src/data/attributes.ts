@@ -71,6 +71,8 @@ export type AttrId =
   | 'combatCriticalChance'
   | 'combatCriticalMultiplier'
   | 'bossDamage'
+  | 'weaponDamage'
+  | 'ammoCraftYield'
   | 'shockCharges'
   | 'shockJumps'
   | 'shockPower'
@@ -255,6 +257,10 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   combatCriticalChance: { id: 'combatCriticalChance', name: 'Critico em criaturas', base: 0.05, format: 'percent', max: 0.6, live: true },
   combatCriticalMultiplier: { id: 'combatCriticalMultiplier', name: 'Multiplicador critico', base: 1.5, format: 'multiplier', live: true },
   bossDamage: { id: 'bossDamage', name: 'Dano em chefes', base: 0, format: 'percent', live: true },
+  // A arma tem o proprio multiplicador: forca de picareta nao pode empurrar
+  // dano de bala. Sao duas maos, e duas progressoes.
+  weaponDamage: { id: 'weaponDamage', name: 'Dano de arma', base: 1, format: 'multiplier', live: true },
+  ammoCraftYield: { id: 'ammoCraftYield', name: 'Municao por fabricacao', base: 1, format: 'multiplier', live: true },
 
   // --- Choque: corrente eletrica que salta entre blocos ---
   shockCharges: { id: 'shockCharges', name: 'Marteladas com choque', base: 3, format: 'flat', live: true },

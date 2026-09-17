@@ -335,6 +335,32 @@ export class BaseCamps {
     if (Object.keys(deCima).length > 0) this.stock.spend(deCima);
   }
 
+  /**
+   * Conferir e cobrar de fora, pelas MESMAS regras da obra.
+   *
+   * A bancada de municao precisa exatamente do que a obra ja faz — olhar as
+   * duas pilhas da base mais o estoque de cima, e tirar da base primeiro.
+   * Reescrever isso na tela daria duas regras de bolso diferentes para a mesma
+   * pergunta, e uma delas ficaria para tras no primeiro ajuste.
+   */
+  podePagar(baseId: string, cost: Partial<Record<ResourceId, number>>): boolean {
+    for (const [id, qtd] of Object.entries(cost)) {
+      if (this.disponivel(baseId, id as ResourceId) < (qtd ?? 0)) return false;
+    }
+    return true;
+  }
+
+  cobrar(baseId: string, cost: Partial<Record<ResourceId, number>>): boolean {
+    if (!this.podePagar(baseId, cost)) return false;
+    this.pagar(baseId, cost);
+    return true;
+  }
+
+  /** Quanto deste material a base alcanca, somando as pilhas e o estoque. */
+  alcance(baseId: string, res: ResourceId): number {
+    return this.disponivel(baseId, res);
+  }
+
   /** Progresso visivel do encaixe, 0..1. */
   progress(base: BaseCampDef, slot: StructureSlot): number {
     const st = this.stateOf(base.id, slot.kind);

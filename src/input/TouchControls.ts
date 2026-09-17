@@ -75,6 +75,9 @@ export class TouchControls {
       { id: 'btn-skill3', label: '', button: 'skill3', cls: 'skill', locked: false },
       { id: 'btn-skill4', label: '', button: 'skill4', cls: 'skill', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
+      // TROCAR a mao. O botao grande faz o que a mao atual faz — ele so muda
+      // de rotulo — entao o que precisa de tecla propria e a troca.
+      { id: 'btn-swap', label: 'TROCAR', button: 'swap', cls: 'medium fogo' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];
     for (const spec of specs) {
@@ -188,6 +191,21 @@ export class TouchControls {
       el.style.right = `${p[0] - 25}px`;
       el.style.bottom = `${p[1] - 25}px`;
     });
+  }
+
+  /**
+   * O botao grande diz o que a MAO ATUAL faz.
+   *
+   * E o mesmo botao: nao ha "atirar" separado de "minerar", ha a acao. Trocar
+   * o rotulo e o que impede o jogador de apertar esperando cavar e levar um
+   * tiro no chao.
+   */
+  setRotuloAcao(texto: string): void {
+    const el = document.getElementById('btn-mine');
+    if (!el) return;
+    if (el.textContent === texto) return;
+    el.textContent = texto;
+    el.setAttribute('aria-label', texto);
   }
 
   syncSkills(skills: {

@@ -1432,6 +1432,105 @@ body:has(.hud-map-slot.folded) .toasts {
   bottom: 14px;
 }
 
+/*
+ * ATIRAR, a esquerda do PULAR.
+ *
+ * `medium` posiciona em right:116 — que e o lugar do PULAR — entao o botao
+ * novo precisa do proprio ponto, senao os dois nascem empilhados no mesmo
+ * pixel. Aqui, e nao acima: em cima ele bateria no leque de habilidades, que
+ * ocupa de 76 a 140 px de altura.
+ */
+/*
+ * O BOTAO DA MAO.
+ *
+ * Mostra o que voce segura E troca ao ser tocado. As duas coisas no mesmo
+ * objeto: um indicador que nao se aperta manda procurar o botao noutro canto,
+ * e um botao que nao mostra o estado manda apertar para descobrir.
+ */
+.hud-mao {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 224, 170, 0.35);
+  border-radius: 999px;
+  background: rgba(24, 18, 13, 0.85);
+  color: var(--ink);
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.hud-mao.arma {
+  border-color: rgba(255, 150, 110, 0.6);
+  background: rgba(64, 26, 20, 0.85);
+}
+
+.hud-mao-icone {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.hud-mao-txt {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* A palavra "trocar" some no celular: la o gesto e o proprio botao do pad, e
+   a etiqueta so gastaria a largura que a barra nao tem. */
+.hud-mao-troca {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+@media (pointer: coarse) {
+  .hud-mao-troca {
+    display: none;
+  }
+}
+
+/* A cartucheira da HUD: numero, nao barra — bala se conta. */
+.slim.ammo {
+  gap: 5px;
+}
+
+.slim.ammo .slim-num {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink);
+  min-width: 2ch;
+}
+
+.slim.ammo.pouco .slim-num {
+  color: var(--warn);
+}
+
+.slim.ammo.vazio .slim-num {
+  color: #ff6a5c;
+  animation: ammo-seco 0.9s ease-in-out infinite;
+}
+
+@keyframes ammo-seco {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.touch-btn.fogo {
+  right: 190px;
+  background: rgba(96, 40, 32, 0.8);
+  border-color: rgba(255, 150, 110, 0.5);
+}
+
+.touch-btn.fogo.pressed,
+.touch-btn.fogo:active {
+  background: rgba(150, 60, 44, 0.9);
+}
+
 .touch-btn.small {
   width: 50px;
   height: 50px;
@@ -1943,7 +2042,106 @@ body:has(.hud-map-slot.folded) .toasts {
     width: 58px;
     height: 58px;
   }
-  .touch-btn.small {
+  /*
+ * ATIRAR, a esquerda do PULAR.
+ *
+ * `medium` posiciona em right:116 — que e o lugar do PULAR — entao o botao
+ * novo precisa do proprio ponto, senao os dois nascem empilhados no mesmo
+ * pixel. Aqui, e nao acima: em cima ele bateria no leque de habilidades, que
+ * ocupa de 76 a 140 px de altura.
+ */
+/*
+ * O BOTAO DA MAO.
+ *
+ * Mostra o que voce segura E troca ao ser tocado. As duas coisas no mesmo
+ * objeto: um indicador que nao se aperta manda procurar o botao noutro canto,
+ * e um botao que nao mostra o estado manda apertar para descobrir.
+ */
+.hud-mao {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 224, 170, 0.35);
+  border-radius: 999px;
+  background: rgba(24, 18, 13, 0.85);
+  color: var(--ink);
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.hud-mao.arma {
+  border-color: rgba(255, 150, 110, 0.6);
+  background: rgba(64, 26, 20, 0.85);
+}
+
+.hud-mao-icone {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.hud-mao-txt {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* A palavra "trocar" some no celular: la o gesto e o proprio botao do pad, e
+   a etiqueta so gastaria a largura que a barra nao tem. */
+.hud-mao-troca {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+@media (pointer: coarse) {
+  .hud-mao-troca {
+    display: none;
+  }
+}
+
+/* A cartucheira da HUD: numero, nao barra — bala se conta. */
+.slim.ammo {
+  gap: 5px;
+}
+
+.slim.ammo .slim-num {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink);
+  min-width: 2ch;
+}
+
+.slim.ammo.pouco .slim-num {
+  color: var(--warn);
+}
+
+.slim.ammo.vazio .slim-num {
+  color: #ff6a5c;
+  animation: ammo-seco 0.9s ease-in-out infinite;
+}
+
+@keyframes ammo-seco {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.touch-btn.fogo {
+  right: 190px;
+  background: rgba(96, 40, 32, 0.8);
+  border-color: rgba(255, 150, 110, 0.5);
+}
+
+.touch-btn.fogo.pressed,
+.touch-btn.fogo:active {
+  background: rgba(150, 60, 44, 0.9);
+}
+
+.touch-btn.small {
     width: 44px;
     height: 44px;
   }

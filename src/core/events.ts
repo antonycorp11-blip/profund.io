@@ -99,6 +99,10 @@ export interface GameEvents {
     critical: boolean;
     name: string;
   };
+  /** Um tiro saiu: a HUD pisca o contador e o audio toca o estampido. */
+  'weapon:fired': { id: string; x: number; y: number };
+  /** Municao fabricada na base. */
+  'ammo:crafted': { amount: number };
   'xp:gained': { amount: number; level: number; ratio: number };
   'level:up': { level: number; points: number };
   'skill:activated': { id: string; charges: number };

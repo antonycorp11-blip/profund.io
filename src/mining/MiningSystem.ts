@@ -75,9 +75,27 @@ export class MiningSystem {
     private procs: Procs
   ) {}
 
+  /**
+   * A mira, para quem mais precisa dela.
+   *
+   * A arma atira na MESMA direcao: duas miras independentes seriam duas coisas
+   * para o polegar controlar ao mesmo tempo, e no celular isso nao existe.
+   */
+  get aimDirX(): number {
+    return this.aimX;
+  }
+
+  get aimDirY(): number {
+    return this.aimY;
+  }
+
   /** Espalha veios despertos pelo bioma recém-libertado. */
 
-  update(dt: number, input: InputManager, usingTouch: boolean): void {
+  /**
+   * @param podeGolpear Falso com a ARMA na mao: a mira continua sendo
+   * calculada (ela e uma so para as duas maos), mas o golpe nao sai.
+   */
+  update(dt: number, input: InputManager, usingTouch: boolean, podeGolpear = true): void {
     this.toolWarnCooldown = Math.max(0, this.toolWarnCooldown - dt);
     for (let i = this.hitFx.length - 1; i >= 0; i--) {
       this.hitFx[i].t -= dt;
@@ -87,7 +105,7 @@ export class MiningSystem {
     this.updateAim(input, usingTouch);
     this.pickTarget();
 
-    if (!input.isHeld('mine')) {
+    if (!podeGolpear || !input.isHeld('mine')) {
       this.timer = 0;
       this.blockedReason = null;
       return;
@@ -103,6 +121,12 @@ export class MiningSystem {
       this.timer -= interval;
       if (!this.swingAt()) break;
     }
+  }
+
+  /** Corta o golpe em andamento — usado na troca de mao. */
+  cancelar(): void {
+    this.timer = 0;
+    this.blockedReason = null;
   }
 
   /**

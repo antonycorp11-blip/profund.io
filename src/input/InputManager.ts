@@ -11,7 +11,9 @@ export type Button =
   | 'skill2'
   | 'skill3'
   | 'skill4'
-  | 'skill5';
+  | 'skill5'
+  | 'fire'
+  | 'swap';
 
 export class InputManager {
   /** -1..1 */
@@ -180,4 +182,14 @@ const KEY_BUTTONS: Record<string, Button> = {
   Digit4: 'skill4',
   KeyG: 'skill5',
   Digit5: 'skill5',
+  /*
+   * TROCAR DE MAO.
+   *
+   * Nao existe botao de "atirar" separado: existe a MAO ATUAL, e o botao de
+   * acao faz o que ela faz. A troca e de proposito um gesto seu — com as duas
+   * ativas ao mesmo tempo o jogador nunca escolhe nada, ele so alterna sem
+   * pensar, e a escolha de com que mao encarar uma galeria deixa de existir.
+   */
+  KeyB: 'swap',
+  Tab: 'swap',
 };

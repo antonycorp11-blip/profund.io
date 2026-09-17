@@ -14,6 +14,13 @@ export class HUD {
   private bagFill: HTMLElement;
   private bagLabel: HTMLElement;
   private healthEl: HTMLDivElement;
+  private ammoEl!: HTMLDivElement;
+  private ammoLabel!: HTMLElement;
+  private maoEl!: HTMLButtonElement;
+  private maoLabel!: HTMLElement;
+  /** Quem troca a mao quando o botao e tocado. Ligado pelo Game. */
+  onTrocarMao: (() => void) | null = null;
+  private maoAtual: 'picareta' | 'arma' | null = null;
   private healthFill: HTMLElement;
   private healthLabel: HTMLElement;
   private levelEl: HTMLDivElement;
@@ -209,14 +216,56 @@ export class HUD {
       <span class="slim-bar"><i></i></span>`;
     this.jetFill = this.jetEl.querySelector('.slim-bar > i') as HTMLElement;
 
+    /*
+     * A CARTUCHEIRA.
+     *
+     * Municao finita sem contador na tela e uma armadilha: o jogador so
+     * descobre que acabou quando aperta o gatilho e nao sai nada, que e
+     * exatamente o pior momento possivel. Fica ao lado da vida porque as duas
+     * respondem a mesma pergunta — quanto ainda da para aguentar aqui embaixo.
+     *
+     * Numero, e nao barra: bala se conta, e "faltam 7" e uma informacao
+     * diferente de "esta pela metade".
+     */
+    this.ammoEl = document.createElement('div');
+    this.ammoEl.className = 'slim ammo';
+    this.ammoEl.innerHTML = `
+      <span class="slim-icon">🔫</span>
+      <span class="slim-num" data-ammo-count>0</span>`;
+    this.ammoLabel = this.ammoEl.querySelector('[data-ammo-count]') as HTMLElement;
+
+    /*
+     * O BOTAO DA MAO.
+     *
+     * Ele mostra o que voce esta segurando E troca ao ser tocado — as duas
+     * coisas no mesmo objeto de proposito: um indicador que nao se pode
+     * apertar obriga a procurar o botao em outro canto, e um botao que nao
+     * mostra o estado obriga a apertar para descobrir.
+     *
+     * Fica junto das barras porque e a mesma pergunta de sobrevivencia que a
+     * vida e a municao respondem: com o que eu vou encarar o que vem ali.
+     */
+    this.maoEl = document.createElement('button');
+    this.maoEl.className = 'hud-mao';
+    this.maoEl.innerHTML = `
+      <span class="hud-mao-icone" data-mao-icone>⛏</span>
+      <span class="hud-mao-txt" data-mao-nome>Picareta</span>
+      <span class="hud-mao-troca">trocar</span>`;
+    this.maoLabel = this.maoEl.querySelector('[data-mao-nome]') as HTMLElement;
+    this.maoEl.addEventListener('click', () => this.onTrocarMao?.());
+
     const bars = document.createElement('div');
     bars.className = 'hud-bars';
     bars.appendChild(this.bagEl);
     bars.appendChild(this.healthEl);
+    bars.appendChild(this.ammoEl);
+    bars.appendChild(this.maoEl);
     this.barsRow = bars;
     const escondeAoInicio = !this.sempreVisiveis;
     this.bagEl.hidden = escondeAoInicio;
     this.healthEl.hidden = escondeAoInicio;
+    this.ammoEl.hidden = escondeAoInicio;
+    this.maoEl.hidden = escondeAoInicio;
     bars.hidden = escondeAoInicio;
     this.moneyEl.appendChild(bars);
     this.moneyEl.appendChild(this.climbEl);
@@ -670,6 +719,32 @@ export class HUD {
   }
 
   /** Barra de vida; escreve so quando muda. */
+  /**
+   * Quantas balas restam.
+   *
+   * Pisca em vermelho no fim do pente — o aviso tem que chegar ANTES do clique
+   * seco, nao depois dele.
+   */
+  setAmmo(n: number): void {
+    const txt = String(Math.max(0, Math.floor(n)));
+    if (this.ammoLabel.textContent !== txt) this.ammoLabel.textContent = txt;
+    this.ammoEl.classList.toggle('vazio', n <= 0);
+    this.ammoEl.classList.toggle('pouco', n > 0 && n <= 5);
+  }
+
+  /** Qual mao esta sacada. A municao so aparece com a arma na mao. */
+  setMao(mao: 'picareta' | 'arma', nomeDaArma: string): void {
+    if (this.maoAtual === mao) return;
+    this.maoAtual = mao;
+    const icone = this.maoEl.querySelector('[data-mao-icone]') as HTMLElement;
+    icone.textContent = mao === 'arma' ? '🔫' : '⛏';
+    this.maoLabel.textContent = mao === 'arma' ? nomeDaArma : 'Picareta';
+    this.maoEl.classList.toggle('arma', mao === 'arma');
+    // Contador de bala com a picareta na mao e ruido: ele nao responde nada
+    // enquanto voce esta cavando.
+    this.ammoEl.hidden = mao !== 'arma';
+  }
+
   setHealth(current: number, max: number): void {
     const cur = Math.max(0, Math.ceil(current));
     if (cur === this.lastHealth) return;

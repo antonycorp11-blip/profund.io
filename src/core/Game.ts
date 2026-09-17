@@ -50,6 +50,7 @@ import { CloneManager } from '../systems/CloneManager';
 import { CollectorManager } from '../systems/CollectorManager';
 import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
+import { WeaponSystem } from '../systems/WeaponSystem';
 import { Progression } from '../systems/Progression';
 import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
 import { StoryGates } from '../systems/StoryGates';
@@ -117,6 +118,25 @@ export class Game {
   private hud: HUD;
   private dialog: DialogUI;
   private panels: PanelUI;
+  private weapons!: WeaponSystem;
+  /**
+   * Municao na cartucheira.
+   *
+   * Contador proprio, e nao item de mochila: bala tem peso zero e nunca deve
+   * concorrer com minerio por espaco — essa escolha nao seria interessante,
+   * seria so punicao. E ficando fora do inventario ela tambem nao entra por
+   * engano na entrega da base e vira moeda.
+   */
+  private municao = 24;
+  /**
+   * A MAO ATUAL.
+   *
+   * Picareta e arma nao trabalham juntas. Com as duas ativas ao mesmo tempo o
+   * jogador nunca escolhe nada — ele alterna sem pensar, atira, minera, atira,
+   * e a pergunta "com que mao eu encaro esta galeria?" deixa de existir. Aqui
+   * ela existe: trocar e um gesto seu, e leva um instante.
+   */
+  private mao: 'picareta' | 'arma' = 'picareta';
   /** Ja pintamos o quadro que fica de foto atras da tela cheia? */
   private mundoCongelado = false;
   private skillUI: SkillTreeUI;
@@ -279,6 +299,26 @@ export class Game {
         const p = this.camps.depotPos(base, this.world.surfaceRow, CONFIG.tileSize);
         return !!this.collectors.buy(p.x, p.y - CONFIG.tileSize);
       },
+    }, {
+      /*
+       * A BANCADA. Ferro vira bala.
+       *
+       * Uma leva grande de propositio: fabricar de dez em dez faria o jogador
+       * voltar a base toda hora, e a viagem de volta ja e o custo de verdade
+       * do jogo. A conta interessante e "compensa gastar esse ferro em bala ou
+       * em obra?", e ela so aparece se a leva for grande o bastante para doer.
+       */
+      custo: () => ({ ferro: CONFIG.ammo.ferroPorLeva, leva: Math.round(CONFIG.ammo.balasPorLeva * this.attrs.get('ammoCraftYield')) }),
+      ferroNaBase: (base) => this.camps.alcance(base.id, 'iron'),
+      municaoAtual: () => this.municao,
+      fabricar: (base) => {
+        if (!this.camps.cobrar(base.id, { iron: CONFIG.ammo.ferroPorLeva })) return false;
+        const leva = Math.round(CONFIG.ammo.balasPorLeva * this.attrs.get('ammoCraftYield'));
+        this.municao += leva;
+        Events.emit('ammo:crafted', { amount: leva });
+        Events.emit('ui:toast', { text: `+${leva} de municao.`, tone: 'good' });
+        return true;
+      },
     });
     this.journalUI = new JournalUI(uiRoot, this.journal, {
       current: () => this.missions.current(),
@@ -382,7 +422,32 @@ export class Game {
     // depois de o mundo existir (e antes de o save restaurar quem ja morreu).
     this.creatures = new CreatureManager(this.world, this.drops, this.exploration);
     this.creatures.buildGuardPosts();
-    this.mining.strike = (dirX, dirY) => this.strikeCreatures(dirX, dirY);
+    this.hud.onTrocarMao = () => this.trocarMao();
+    /*
+     * A PICARETA NAO FERE MAIS BICHO.
+     *
+     * Era o mesmo golpe para as duas coisas, e isso achatava o jogo: chegar
+     * perto era sempre a resposta, e a parede era so entulho no caminho. Com a
+     * arma separada, a picareta volta a ser ferramenta de TERRENO e a rocha
+     * passa a ser cobertura — o `strike` fica desligado de proposito, nao por
+     * esquecimento.
+     */
+    this.weapons = new WeaponSystem(
+      this.world,
+      this.player,
+      this.particles,
+      this.attrs,
+      (x, y, raio, dano) =>
+        this.creatures.damageArea(x, y, raio, dano * (1 + this.attrs.get('bossDamage') * 0)),
+      {
+        tem: () => this.municao,
+        gastar: (n) => {
+          if (this.municao < n) return false;
+          this.municao -= n;
+          return true;
+        },
+      }
+    );
 
     // Selos entre biomas: um chefe fixo por camada, arena esculpida pelo
     // WorldGen. Derrotar o chefe rompe a barreira da proxima camada.
@@ -1335,7 +1400,12 @@ export class Game {
       this.input.setPadAxis(0, 0);
     } else {
       this.player.update(dt, this.input, this.world);
-      if (!building) this.mining.update(dt, this.input, this.touch.isVisible());
+      // A picareta so trabalha com a picareta NA MAO. Com a arma sacada o
+      // mesmo botao atira (ver `weapons.update` mais acima), e a mira continua
+      // sendo calculada pelo sistema de mineracao porque ela e uma so.
+      if (!building) {
+        this.mining.update(dt, this.input, this.touch.isVisible(), this.mao === 'picareta');
+      }
     }
     // Canalizar exige estar parado no chao e inteiro.
     const podeCanalizar =
@@ -1349,6 +1419,25 @@ export class Game {
     this.campUI.update(dt);
     this.campsRenderer.update(dt);
     this.shock.update(dt);
+    /*
+     * O gatilho usa a MESMA mira da picareta.
+     *
+     * Duas miras independentes seriam duas coisas para o polegar controlar ao
+     * mesmo tempo, e no celular isso nao existe. Voce aponta para onde olha, e
+     * escolhe se o que sai dali e o bico ou a bala.
+     */
+    if (!uiBlocking && this.input.wasPressed('swap')) this.trocarMao();
+    this.weapons.update(
+      dt,
+      this.mao === 'arma' && !uiBlocking && !this.vitals.dead && this.input.isHeld('mine'),
+      this.mining.aimDirX,
+      this.mining.aimDirY
+    );
+
+    this.hud.setAmmo(this.municao);
+    this.hud.setMao(this.mao, this.weapons.def.name);
+    this.touch.setRotuloAcao(this.mao === 'arma' ? 'ATIRAR' : 'MINERAR');
+
     if (!uiBlocking) this.pollSkillButtons();
     this.touch.syncSkills(this.activeSkills);
 
@@ -1558,20 +1647,23 @@ export class Game {
    * O golpe da picareta tambem e a arma. Nao existe botao de ataque:
    * mirar na criatura e atacar, mirar no bloco e minerar.
    */
-  private strikeCreatures(dirX: number, dirY: number): boolean {
-    const critical = this.procs.roll('combatCritical');
-    const damage =
-      this.attrs.get('combatDamage') *
-      (critical ? this.attrs.get('combatCriticalMultiplier') : 1);
-    return this.creatures.attack(
-      this.player.cx,
-      this.player.cy,
-      dirX,
-      dirY,
-      CONFIG.combat.attackRange + this.attrs.get('miningRange') * 0.25,
-      damage,
-      { critical, guardianBonus: this.attrs.get('bossDamage') }
-    );
+  /**
+   * Troca a mao.
+   *
+   * O troco NAO e instantaneo de graca: guardar uma coisa e sacar outra leva um
+   * tempinho, e e esse tempinho que faz a escolha pesar. Sem ele, trocar vira
+   * um tique e a decisao some.
+   */
+  private trocarMao(): void {
+    this.mao = this.mao === 'picareta' ? 'arma' : 'picareta';
+    // O golpe em andamento morre na troca: continuar minerando de arma na mao
+    // seria a mesma confusao que a troca existe para evitar.
+    this.mining.cancelar();
+    Haptics.ui();
+    Events.emit('ui:toast', {
+      text: this.mao === 'arma' ? `${this.weapons.def.name} na mao.` : 'Picareta na mao.',
+      tone: 'info',
+    });
   }
 
   /** Dano recebido: empurra, pisca e conta os iframes. */
@@ -1756,6 +1848,7 @@ export class Game {
     this.structures.render(ctx, this.camera);
     this.drops.render(ctx, this.camera);
     this.creatures.render(ctx, this.camera);
+    this.weapons.render(ctx, this.camera);
     this.cloneManager.render(ctx, this.camera);
     this.collectors.render(ctx, this.camera);
     // As estruturas da base ficam AQUI, antes do jogador: ele tem que passar
