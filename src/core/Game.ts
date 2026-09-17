@@ -1866,6 +1866,28 @@ export class Game {
 
   // --------------------------------------------------------------- misc ----
 
+  /**
+   * A escala das telas cheias.
+   *
+   * O layout inteiro foi medido num espaco de 700 px de altura. Numa tela mais
+   * baixa que isso — celular deitado tem 393 — a tela nao ADAPTA peca por peca:
+   * ela encolhe junto, na mesma proporcao, moldura e letra. Adaptar cada peca
+   * por conta propria dava seis telas diferentes em vez de uma, e era por isso
+   * que nenhuma ficava parecida com a referencia.
+   *
+   * Tem que ser aqui e nao no CSS: `zoom` so aceita numero puro, e
+   * `calc(100vh / 700)` devolve um COMPRIMENTO. A regra caia inteira, em
+   * silencio, e a tela vazava para fora da viewport.
+   */
+  private ajustarEscalaDaUI(): void {
+    const { uiRefHeight, uiMinZoom } = CONFIG.render;
+    const z = Math.min(1, Math.max(uiMinZoom, this.cssH / uiRefHeight));
+    document.documentElement.style.setProperty('--ui-zoom', z.toFixed(3));
+    // A classe liga as regras de escala. Sem ela o computador nao paga nada:
+    // nenhuma conta de `zoom`, nenhum `vw` no lugar de porcentagem.
+    document.documentElement.classList.toggle('ui-escala', z < 0.999);
+  }
+
   private resize(): void {
     const rect = this.canvas.getBoundingClientRect();
     this.cssW = Math.max(1, rect.width);
@@ -1873,6 +1895,7 @@ export class Game {
     this.dpr = Math.min(window.devicePixelRatio || 1, CONFIG.render.maxDpr) * this.renderScale;
     this.canvas.width = Math.floor(this.cssW * this.dpr);
     this.canvas.height = Math.floor(this.cssH * this.dpr);
+    this.ajustarEscalaDaUI();
     this.camera.resize(this.cssW, this.cssH);
     this.lighting.resize(this.cssW, this.cssH);
     // Arte HD e reduzida na tela: precisa de suavizacao. Placeholder nao.

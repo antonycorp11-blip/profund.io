@@ -18,6 +18,21 @@ export const CONFIG = {
     maxScale: 3.5,
     /** Cap de devicePixelRatio (performance mobile). */
     maxDpr: 2,
+    /**
+     * Altura em que as telas cheias foram desenhadas.
+     *
+     * Tudo nelas — moldura, respiro, corpo de letra — foi medido com este
+     * espaco. Numa tela mais baixa a interface inteira encolhe na mesma
+     * proporcao, para o celular ver o MESMO desenho do computador.
+     */
+    uiRefHeight: 700,
+    /**
+     * Piso da escala.
+     *
+     * Abaixo disto a letra de 9 px passa de 3,8 px e deixa de ser letra. Dali
+     * em diante a tela rola em vez de encolher mais.
+     */
+    uiMinZoom: 0.42,
     /** Piso da resolucao adaptativa. Abaixo disto a arte comeca a papar. */
     adaptiveMinScale: 0.6,
     /** Acima deste tempo de quadro (ms) a resolucao desce. ~45 fps. */

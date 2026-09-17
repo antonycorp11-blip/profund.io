@@ -2931,7 +2931,7 @@ body:has(.hud-map-slot.folded) .toasts {
  * 900 px deixavam o cartao da toupeira sem largura para o nome e o botao de
  * contratar cortado. A regra tem que pegar o aparelho, nao passar raspando.
  */
-@media (max-width: 980px) {
+@media (max-width: 620px) {
   .tech-body,
   .tech-body.aside-esquerda {
     grid-template-columns: minmax(0, 1fr);
@@ -3067,7 +3067,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Numa tela estreita as duas colunas viram uma pilha: dois cartoes lado a
    lado em 400 px de largura nao cabem sem cortar o nome da unidade. */
-@media (max-width: 980px) {
+@media (max-width: 620px) {
   .auto-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3602,7 +3602,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Estreito: o cinto vira uma faixa horizontal em cima, que e onde ele importa
    mesmo no celular — saber o que esta equipado sem abrir mais nada. */
-@media (max-width: 980px) {
+@media (max-width: 620px) {
   .tech-body.skl-tres {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr);
@@ -3688,7 +3688,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Estreito: o indice some e so a anotacao aberta fica. Duas paginas em 400 px
    nao sao duas paginas, sao duas colunas de uma palavra. */
-@media (max-width: 980px) {
+@media (max-width: 620px) {
   .journal-page {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -5152,17 +5152,7 @@ body:has(.hud-map-slot.folded) .toasts {
    Entao aqui so muda cromo — moldura, respiro, tamanho de icone, alvo minimo
    de cartao — e a leitura fica igual a do computador.
    ========================================================================== */
-@media (max-width: 980px) {
-  :root {
-    --moldura: 11px;
-    --moldura-cartao: 8px;
-    --moldura-botao: 9px;
-    --moldura-aba: 7px;
-    --respiro: 8px;
-    --cartao-min: 100px;
-    --icone-grande: 30px;
-  }
-
+@media (max-width: 620px) {
   /* Cabecalho mais baixo: em 393 px de altura, cada linha de topo custa uma
      linha de conteudo. */
   .tech-header,
@@ -5305,68 +5295,9 @@ body:has(.hud-map-slot.folded) .toasts {
   }
 }
 
-/*
- * Telas MUITO baixas (celular deitado de verdade: 393 px de altura).
- *
- * Aqui nao ha ajuste fino que resolva, ha ESCOLHA. O palco do boneco custa uns
- * 130 px de altura — um terco da tela — para dizer uma coisa que os proprios
- * encaixes ja dizem. Entao em tela baixa o heroi sai e os quatro encaixes
- * viram uma fileira. Nao e a referencia; e o que cabe. Fingir que cabe seria
- * entregar a tela cortada, que e o que estava acontecendo.
- */
-@media (max-height: 480px) {
-  .boneco {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: auto;
-    max-width: none;
-    gap: 4px;
-  }
 
-  .boneco-palco {
-    display: none;
-  }
 
-  .boneco-slot::after {
-    display: none;
-  }
 
-  .boneco-arte {
-    width: 42px;
-    height: 42px;
-  }
-
-  .boneco-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .stat-linha {
-    flex-direction: column;
-    gap: 1px;
-    text-align: center;
-    padding: 4px;
-  }
-}
-
-@media (max-height: 420px) {
-  :root {
-    --moldura: 9px;
-    --respiro: 6px;
-  }
-
-  .tech-header,
-  .skill-header {
-    padding: 4px 6px;
-  }
-
-  .det-head {
-    padding-bottom: 6px;
-  }
-
-  .det-sub,
-  .auto-sub {
-    margin: 7px 0 4px;
-  }
-}
 
 
 /* A folha recolhida, aberta dentro do caderno. E a arte da anotacao, e ela
@@ -5379,4 +5310,63 @@ body:has(.hud-map-slot.folded) .toasts {
   border-radius: 3px;
   transform: rotate(-1.2deg);
   box-shadow: 0 5px 14px rgba(60, 40, 18, 0.45);
+}
+
+/* ==========================================================================
+   ESCALA DA INTERFACE
+   --------------------------------------------------------------------------
+   No celular a tela nao ADAPTA: ela ENCOLHE. Mesma proporcao do computador,
+   tudo junto — moldura, respiro, icone e letra.
+
+   Eu tinha feito o contrario: encolhi so o enfeite e mantive a letra, com o
+   argumento de que texto pequeno nao se le. O argumento e bom e a decisao era
+   errada — quem olha a tela e o dono do jogo, e adaptar cada peca por conta
+   propria da seis telas diferentes em vez de uma, que e exatamente por que
+   nenhuma ficava parecida com a referencia.
+
+   Como funciona: a tela e desenhada num espaco VIRTUAL de altura fixa (700 px,
+   que e onde o layout foi medido) e o `zoom` reduz tudo de uma vez para caber
+   na altura real. A largura acompanha, entao nao ha tarja preta: em 852 x 393
+   o layout roda como se tivesse 1518 x 700.
+
+   `zoom` e nao `transform: scale` de proposito: ele entra no calculo de
+   layout, entao o toque acerta onde o dedo ve. Com `transform` o botao fica
+   desenhado num lugar e clicavel em outro.
+   ========================================================================== */
+/*
+ * Quem calcula `--ui-zoom` e o JS (ver `Game.ajustarEscalaDaUI`), e nao o CSS.
+ *
+ * Tentei `clamp(0.42, calc(100vh / 700), 1)` e nao funciona: `100vh / 700` e um
+ * COMPRIMENTO, nao um numero puro, e `zoom` so aceita numero. CSS nao divide
+ * unidade por unidade para virar razao. O sintoma foi feio e silencioso — a
+ * declaracao inteira caiu, `height: calc(100% / var(--ui-zoom))` caiu junto, e
+ * a tela vazou para fora da viewport parecendo que tinha ampliado.
+ */
+:root {
+  --ui-zoom: 1;
+}
+
+/*
+ * O tamanho vem da VIEWPORT, nao de porcentagem do pai.
+ *
+ * Com `height: calc(100% / zoom)` a conta nao fecha: a porcentagem resolve
+ * contra o pai, o `zoom` reescala depois, e o resultado vazou para 665 px de
+ * altura numa tela de 393. Com `vh` e `vw` a conta e direta — a viewport nao e
+ * afetada pelo zoom, entao dividir por ele devolve exatamente o espaco virtual
+ * que, reescalado, preenche a tela inteira.
+ */
+.ui-escala .panel-wrap {
+  padding: 0;
+}
+
+.ui-escala .techscreen .tech-screen,
+.ui-escala .skillscreen .tech-screen,
+.ui-escala .skilltree .skill-screen,
+.ui-escala .basecamp .camp-panel,
+.ui-escala .journal .journal-book {
+  zoom: var(--ui-zoom);
+  width: calc(100vw / var(--ui-zoom));
+  max-width: none;
+  height: calc(100vh / var(--ui-zoom));
+  max-height: none;
 }
