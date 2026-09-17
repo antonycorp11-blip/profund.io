@@ -2283,8 +2283,11 @@ body:has(.hud-map-slot.folded) .toasts {
   border-color: #fff;
 }
 
+/* A ficha do no tem a largura das OUTRAS fichas do jogo (320 px, como em
+   Skills e Tecnologia). Com 236 a tabela de efeitos quebrava o nome em cima do
+   numero e as duas leituras viravam uma so coluna baguncada. */
 .skill-detail {
-  width: 236px;
+  width: 320px;
   flex: none;
   border-left: 1px solid var(--stroke);
   padding: 12px;
@@ -6391,6 +6394,119 @@ body:has(.hud-map-slot.folded) .toasts {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--cat);
+}
+
+/* --- ficha do no de atributo: duas caixas e o rodape de custo --- */
+.detail-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.detail-icon {
+  flex: 0 0 auto;
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--cat);
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--cat) 30%, transparent), rgba(8, 6, 4, 0.95) 72%);
+  font-size: 22px;
+}
+
+.detail-icon img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.det-vazio {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--ink-dim);
+}
+
+/* Sem icone a primeira coluna nao existe. Ela continuava reservando os 20 px
+   da arte que nao esta ali, e o nome se espremia numa faixa estreita: "Velocidade
+   de mineracao" quebrava em tres linhas ao lado de um numero sozinho. */
+.det-tabela.sem-icone li {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+/* Na caixa do PROXIMO NIVEL cabem tres colunas: o nome, onde o numero vai
+   PARAR, e quanto ele sobe. O valor de destino e o que responde "vale a
+   pena"; o delta sozinho obriga a fazer a conta de cabeca. */
+.det-tabela.sem-icone.ganhos li {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.det-tabela.sem-icone img {
+  display: none;
+}
+
+.det-tabela em {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.det-tabela .up,
+.det-tabela i.up {
+  font-style: normal;
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: #8fe3a4;
+}
+
+.det-custo-pilula {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 196, 83, 0.45);
+  background: rgba(40, 30, 12, 0.6);
+  line-height: 1.1;
+}
+
+.det-custo-pilula small {
+  font-family: var(--font-display);
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.det-custo-pilula b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--accent);
+}
+
+.det-custo-pilula.miss {
+  border-color: rgba(255, 154, 92, 0.5);
+}
+
+.det-custo-pilula.miss b {
+  color: var(--warn);
+}
+
+/* A frase da camara, no pe da ficha. E a voz do lugar — fica em italico e
+   apagada de proposito, porque ela nao e informacao de jogo. */
+.det-citacao {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--stroke);
+  font-size: 10.5px;
+  line-height: 1.4;
+  font-style: italic;
+  text-align: right;
+  color: rgba(185, 171, 152, 0.8);
 }
 
 .det-prof {

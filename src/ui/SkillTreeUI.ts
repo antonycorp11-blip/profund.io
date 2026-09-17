@@ -543,8 +543,7 @@ export class SkillTreeUI {
     const maxed = level >= def.maxLevel;
     const check = this.host.tree.canLearn(def.id, this.host.currentDepth());
     const cost = skillCost(def, Math.min(level, def.cost.length - 1));
-
-    const effects = this.describeEffects(def, level);
+    const pontos = this.host.tree.points;
     // A cor e o nome vem da camara DO NO, nao da que esta em foco: num ninho
     // unico o jogador seleciona atravessando camaras o tempo todo.
     const cat = CATEGORIES[def.category];
@@ -552,24 +551,50 @@ export class SkillTreeUI {
     this.detailEl.innerHTML = `
       <div class="detail-head" style="--cat:${cat.color}">
         <span class="detail-icon">${iconMarkup(def.art, def.icon)}</span>
-        <div>
-          <div class="detail-name">${def.name}</div>
-          <div class="detail-branch">${cat.name} · ${def.branch}</div>
+        <div class="det-nome">
+          <b>${def.name}</b>
+          <small>${
+            def.maxLevel > 1
+              ? `Nivel ${level}/${def.maxLevel}`
+              : level > 0
+                ? 'Aprendida'
+                : 'Nao aprendida'
+          }</small>
         </div>
+        <span class="det-selo-cat" style="--cat:${cat.color}">${cat.name}</span>
       </div>
       <p class="detail-desc">${def.description}</p>
       ${def.unlockEffect ? `<p class="detail-unlock">✦ ${def.unlockEffect}</p>` : ''}
-      <div class="detail-level">${
-        def.maxLevel > 1 ? `Nivel ${level} de ${def.maxLevel}` : level > 0 ? 'Aprendida' : 'Nao aprendida'
-      }</div>
-      <ul class="detail-effects">${effects}</ul>
+
+      <h5 class="det-sub">Efeitos atuais</h5>
+      ${
+        level > 0
+          ? `<ul class="det-tabela sem-icone">${this.linhasAtuais(def, level)}</ul>`
+          : '<p class="det-vazio">Nada ainda: esta camara nao foi cavada.</p>'
+      }
+
       ${
         maxed
-          ? '<div class="detail-status ok">No maximo</div>'
+          ? ''
+          : `<h5 class="det-sub">Proximo nivel (${level + 1}/${def.maxLevel})</h5>
+             <ul class="det-tabela sem-icone ganhos">${this.linhasProximas(def, level)}</ul>`
+      }
+
+      ${
+        maxed
+          ? '<footer class="det-rodape"><span class="det-faltam">No maximo.</span></footer>'
           : check.ok
-            ? `<button class="btn primary" data-learn>APRENDER — ${cost} ponto${cost > 1 ? 's' : ''}</button>`
-            : `<div class="detail-status">${check.reason ?? ''}</div>`
-      }`;
+            ? `<footer class="det-rodape">
+                 <span class="det-custo-pilula ${pontos >= cost ? '' : 'miss'}">
+                   <small>Custo</small><b>${cost}</b>
+                 </span>
+                 <button class="btn primary det-comprar" data-learn ${
+                   pontos >= cost ? '' : 'disabled'
+                 }>${level > 0 ? 'MELHORAR' : 'APRENDER'}</button>
+               </footer>`
+            : `<footer class="det-rodape"><span class="det-faltam">${check.reason ?? ''}</span></footer>`
+      }
+      <p class="det-citacao">${cat.fantasy}</p>`;
 
     const learn = this.detailEl.querySelector('[data-learn]');
     learn?.addEventListener('click', () => {
@@ -580,27 +605,58 @@ export class SkillTreeUI {
     });
   }
 
-  /** Mostra efeito atual e proximo nivel, em vez de so o texto da skill. */
-  private describeEffects(def: SkillDef, level: number): string {
-    const next = def.modifiers[Math.min(level, def.modifiers.length - 1)] ?? [];
-    const rows: string[] = [];
-    for (const m of next) {
-      const meta = (ATTRIBUTES as Record<string, { name: string; format: string; live: boolean }>)[
-        m.target
-      ];
-      if (!meta) {
-        rows.push(`<li><span>${m.target}</span><b class="up">novo efeito</b></li>`);
-        continue;
+  /**
+   * O que a habilidade JA da, com o numero que o jogador tem agora.
+   *
+   * Reune os modificadores de todos os niveis ja pagos e mostra o valor VIVO
+   * de cada atributo que eles tocam — nao a soma dos deltas. E o valor vivo
+   * que responde "quanto eu tenho", que e a pergunta desta caixa; a soma dos
+   * deltas responderia "quanto esta habilidade deu", que ninguem pergunta.
+   */
+  private linhasAtuais(def: SkillDef, level: number): string {
+    const alvos: string[] = [];
+    for (let i = 0; i < level; i++) {
+      for (const m of def.modifiers[i] ?? []) {
+        if (!alvos.includes(m.target)) alvos.push(m.target);
       }
-      const atual = this.host.attrs.get(m.target as AttrId);
-      const delta = this.formatDelta(m.op, m.value, meta.format);
-      const inert = meta.live ? '' : ' <em>(sistema ainda nao implementado)</em>';
-      rows.push(
-        `<li><span>${meta.name}${inert}</span><b class="up">${delta}</b>
-         <small>agora: ${this.formatValue(atual, meta.format)}</small></li>`
-      );
     }
-    return rows.join('') || '<li><span>Efeito narrativo</span></li>';
+    const linhas = alvos
+      .map((t) => {
+        const meta = ATTRIBUTES[t as AttrId];
+        if (!meta) return `<li><span>${t}</span><b>ativo</b></li>`;
+        const v = this.host.attrs.get(t as AttrId);
+        const morto = meta.live ? '' : ' <em>(sem sistema ainda)</em>';
+        return `<li><span>${meta.name}${morto}</span><b>${this.formatValue(v, meta.format)}</b></li>`;
+      })
+      .join('');
+    return linhas || '<li><span>Efeito narrativo</span><b>ativo</b></li>';
+  }
+
+  /**
+   * O que o proximo nivel deixa o numero, e quanto ele sobe.
+   *
+   * O valor de destino sai do `preview()` do proprio sistema de atributos, com
+   * os modificadores do nivel seguinte ligados de mentira — nao de uma conta
+   * repetida aqui. Somar o delta a mao acertaria no `flat` e erraria em toda
+   * porcentagem, porque ela se aplica sobre a BASE e nao sobre o valor atual.
+   */
+  private linhasProximas(def: SkillDef, level: number): string {
+    const mods = def.modifiers[Math.min(level, def.modifiers.length - 1)] ?? [];
+    const linhas = mods
+      .map((m) => {
+        const meta = ATTRIBUTES[m.target as AttrId];
+        const delta = this.formatDelta(m.op, m.value, meta?.format ?? 'flat');
+        if (!meta) return `<li><span>${m.target}</span><b class="up">${delta}</b></li>`;
+        const alvo = this.host.attrs.preview(m.target as AttrId, [m]);
+        const morto = meta.live ? '' : ' <em>(sem sistema ainda)</em>';
+        return `<li>
+          <span>${meta.name}${morto}</span>
+          <b>${this.formatValue(alvo, meta.format)}</b>
+          <i class="up">${delta}</i>
+        </li>`;
+      })
+      .join('');
+    return linhas || '<li><span>Efeito narrativo</span><b class="up">novo</b></li>';
   }
 
   private formatDelta(op: string, value: number, format: string): string {
