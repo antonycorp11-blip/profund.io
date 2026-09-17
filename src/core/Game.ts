@@ -1,6 +1,6 @@
 import { CONFIG } from '../data/config';
 import { RESOURCES } from '../data/resources';
-import { activeSkillMeta, type ActiveSkillId } from '../data/activeSkills';
+import { activeSkillMeta } from '../data/activeSkills';
 import { blockDef, type BlockDef } from '../data/blocks';
 import { RESCUE_NPCS, rescueName } from '../data/story';
 import { Camera } from './camera';
@@ -139,6 +139,8 @@ export class Game {
   private mao: 'picareta' | 'arma' = 'picareta';
   /** Ja pintamos o quadro que fica de foto atras da tela cheia? */
   private mundoCongelado = false;
+  /** O erro de quadro so e impresso uma vez: sessenta por segundo cega. */
+  private jaAvisouDoErro = false;
   private skillUI: SkillTreeUI;
   private activeUI: ActiveSkillsUI;
   private exploration: Exploration;
@@ -446,6 +448,27 @@ export class Game {
           this.municao -= n;
           return true;
         },
+      },
+      /*
+       * O que as habilidades de ARMA acrescentam a ESTE disparo.
+       *
+       * O sistema de tiro nao conhece habilidade nenhuma: ele pergunta, e quem
+       * responde e o cinto. Gastar a carga aqui, no momento do disparo, e o que
+       * faz a Rajada valer "por tiro" e nao "por segundo" — a habilidade e uma
+       * preparacao que se gasta, igual as marteladas do Choque.
+       */
+      () => {
+        const um = (id: 'rajada' | 'perfurante' | 'ricochete'): boolean => {
+          const st = this.activeSkills.state(id);
+          if (!st.unlocked || st.charges <= 0) return false;
+          // `consume` ja poe em recarga quando a ultima carga vai embora.
+          return this.activeSkills.consume(id);
+        };
+        return {
+          balas: um('rajada') ? Math.max(1, Math.round(this.attrs.get('burstShots'))) : 1,
+          furos: um('perfurante') ? Math.max(1, Math.round(this.attrs.get('pierceCount'))) : 0,
+          quiques: um('ricochete') ? Math.max(1, Math.round(this.attrs.get('ricochetBounces'))) : 0,
+        };
       }
     );
 
@@ -1255,7 +1278,7 @@ export class Game {
     this.reputation.fromJSON(data.reputation);
     this.journal.fromJSON(data.journal);
     this.camps.fromJSON(data.camps);
-    this.activeSkills.equippedFromJSON(data.equipped as (ActiveSkillId | null)[] | undefined);
+    this.activeSkills.equippedFromJSON(data.equipped as never);
     // Quem ja foi resgatado num save antigo volta direto para o posto: sem
     // isso a base perdia a equipe a cada recarregamento.
     for (const ficha of RESCUE_NPCS) {
@@ -1340,7 +1363,20 @@ export class Game {
     const dt = clamp((now - this.lastTime) / 1000, 0, 1 / 20);
     this.lastTime = now;
 
-    this.update(dt);
+    /*
+     * UMA EXCECAO NAO PODE MATAR O JOGO.
+     *
+     * `requestAnimationFrame` so e reagendado no fim deste quadro. Sem o
+     * try/catch, qualquer erro em `update` ou `render` estoura para fora e o
+     * proximo quadro NUNCA e agendado: o jogo congela de vez, com o contador
+     * de FPS parado no ultimo valor lido — parece que esta rodando a 60, e nao
+     * esta rodando. Perdi uma sessao inteira caçando um bug que era isso.
+     *
+     * Aqui o quadro ruim e descartado, o erro vai para o console uma vez, e o
+     * loop continua. Um quadro perdido e um soluco; o loop morto e o fim.
+     */
+    try {
+      this.update(dt);
     /*
      * Tela cheia aberta CONGELA o mundo.
      *
@@ -1354,10 +1390,16 @@ export class Game {
      * de sempre. A caixa de dialogo nao entra nisso: ela e uma tira embaixo, o
      * mundo continua a vista atras dela e tem que continuar se mexendo.
      */
-    const cheia = this.telaCheiaAberta();
-    if (!cheia || !this.mundoCongelado) this.render();
-    this.mundoCongelado = cheia;
-    this.input.endFrame();
+      const cheia = this.telaCheiaAberta();
+      if (!cheia || !this.mundoCongelado) this.render();
+      this.mundoCongelado = cheia;
+      this.input.endFrame();
+    } catch (e) {
+      if (!this.jaAvisouDoErro) {
+        this.jaAvisouDoErro = true;
+        console.error('[profundezas] quadro descartado:', e);
+      }
+    }
 
     this.fpsAccum += dt;
     this.fpsFrames++;
@@ -1656,6 +1698,8 @@ export class Game {
    */
   private trocarMao(): void {
     this.mao = this.mao === 'picareta' ? 'arma' : 'picareta';
+    // O cinto vai junto: os tres botoes do pad passam a ser os da outra mao.
+    this.activeSkills.mao = this.mao;
     // O golpe em andamento morre na troca: continuar minerando de arma na mao
     // seria a mesma confusao que a troca existe para evitar.
     this.mining.cancelar();

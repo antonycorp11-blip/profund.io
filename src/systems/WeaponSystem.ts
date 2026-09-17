@@ -20,6 +20,8 @@ interface Bala {
   /** Quantas criaturas ainda pode atravessar. */
   furos: number;
   gravidade: number;
+  /** Quantas vezes ainda quica na pedra antes de morrer nela. */
+  quiques: number;
   raio: number;
   cor: string;
   /** Rastro: onde ela estava no quadro anterior, para desenhar a risca. */
@@ -59,7 +61,16 @@ export class WeaponSystem {
     /** Quem leva o dano: devolve quantas criaturas a bala acertou aqui. */
     private acertar: (x: number, y: number, raio: number, dano: number) => number,
     /** Quanta municao ha, e como gastar. */
-    private municao: { tem(): number; gastar(n: number): boolean }
+    private municao: { tem(): number; gastar(n: number): boolean },
+    /**
+     * As habilidades de ARMA.
+     *
+     * O sistema de tiro nao conhece habilidade nenhuma: ele PERGUNTA, antes de
+     * cada disparo, quantas balas saem, quantos bichos elas atravessam e
+     * quantas vezes quicam. Quem responde e o cinto. Assim uma habilidade nova
+     * nao mexe numa linha daqui.
+     */
+    private efeitos: () => { balas: number; furos: number; quiques: number }
   ) {
     for (let i = 0; i < MAX_BALAS; i++) {
       this.pool.push({
@@ -72,6 +83,7 @@ export class WeaponSystem {
         dano: 0,
         furos: 0,
         gravidade: 0,
+        quiques: 0,
         raio: 3,
         cor: '#fff',
         px: 0,
@@ -107,12 +119,13 @@ export class WeaponSystem {
     }
     this.recarga = 1 / d.fireRate;
     this.flash = 1;
+    const ef = this.efeitos();
 
     // A boca do cano fica na altura do peito, adiantada na direcao da mira.
     const bocaX = this.player.cx + mirarX * 12;
     const bocaY = this.player.cy - 2 + mirarY * 12;
 
-    for (let i = 0; i < d.pellets; i++) {
+    for (let i = 0; i < d.pellets * ef.balas; i++) {
       const b = this.pool.find((x) => !x.ativo);
       if (!b) break;
       // O espalhamento e sorteado por PROJETIL: numa escopeta os chumbos
@@ -127,8 +140,9 @@ export class WeaponSystem {
       b.vy = Math.sin(ang) * d.speed;
       b.alcance = d.range;
       b.dano = d.damage * this.attrs.get('weaponDamage');
-      b.furos = d.pierce;
+      b.furos = d.pierce + ef.furos;
       b.gravidade = d.gravity;
+      b.quiques = ef.quiques;
       b.raio = d.bulletSize;
       b.cor = d.color;
     }
@@ -172,8 +186,12 @@ export class WeaponSystem {
         b.alcance -= dist / passos;
 
         if (this.world.isSolidAtPixel(b.x, b.y)) {
-          // Bate na pedra e morre. NAO escava: a picareta e que escava.
+          // Bate na pedra. NAO escava: a picareta e que escava.
           this.particles.burst(b.x, b.y, 4, ['#d8c9a8', '#9c8a6a'], { speed: 70, life: 0.22 });
+          if (b.quiques > 0 && this.quicar(b)) {
+            b.quiques--;
+            break;
+          }
           b.ativo = false;
           break;
         }
@@ -191,6 +209,31 @@ export class WeaponSystem {
         }
       }
     }
+  }
+
+  /**
+   * Quica a bala na parede que ela acabou de encostar.
+   *
+   * Descobre de que LADO foi a batida testando o tile um passo atras em cada
+   * eixo: se o caminho horizontal estava livre e o vertical nao, a parede era
+   * o chao ou o teto, e quem inverte e o `vy`. Sem essa distincao a bala
+   * voltaria pelo caminho de onde veio em toda batida, o que parece defeito e
+   * nao ricochete.
+   */
+  private quicar(b: Bala): boolean {
+    const bateuNaHorizontal = this.world.isSolidAtPixel(b.x, b.y - b.vy * 0.016);
+    const bateuNaVertical = this.world.isSolidAtPixel(b.x - b.vx * 0.016, b.y);
+    if (bateuNaHorizontal) b.vx = -b.vx;
+    if (bateuNaVertical) b.vy = -b.vy;
+    if (!bateuNaHorizontal && !bateuNaVertical) {
+      // Quina exata: inverte os dois e deixa a bala voltar por onde veio.
+      b.vx = -b.vx;
+      b.vy = -b.vy;
+    }
+    // Afasta um passo da parede, senao ela quica preso dentro do mesmo tile.
+    b.x += Math.sign(b.vx) * 2;
+    b.y += Math.sign(b.vy) * 2;
+    return !this.world.isSolidAtPixel(b.x, b.y);
   }
 
   render(ctx: CanvasRenderingContext2D, camera: Camera): void {

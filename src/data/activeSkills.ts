@@ -12,11 +12,30 @@
 
 import type { AttrId, FlagId } from './attributes';
 
-export type ActiveSkillId = 'shock' | 'drill' | 'blast' | 'sense' | 'recall';
+export type ActiveSkillId =
+  | 'shock'
+  | 'drill'
+  | 'blast'
+  | 'sense'
+  | 'recall'
+  | 'rajada'
+  | 'perfurante'
+  | 'ricochete';
+
+/**
+ * De qual MAO a habilidade e.
+ *
+ * Cada mao tem o proprio cinto de tres, e trocar de mao troca o cinto inteiro.
+ * Uma habilidade de arma nunca entra no cinto da picareta: nao ha decisao ali,
+ * so chance de errar.
+ */
+export type SkillHand = 'picareta' | 'arma';
 export type ActiveSkillKind = 'charges' | 'cast';
 
 export interface ActiveSkillMeta {
   id: ActiveSkillId;
+  /** Em que mao ela funciona. */
+  hand: SkillHand;
   /**
    * Preco em MOEDAS de cada nivel (o primeiro compra a habilidade).
    *
@@ -55,6 +74,7 @@ export interface ActiveSkillMeta {
 export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   {
     id: 'shock',
+    hand: 'picareta',
     skill: 'mining_shock',
     prices: [900, 2200, 4800, 9500],
     name: 'Choque',
@@ -73,6 +93,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   },
   {
     id: 'drill',
+    hand: 'picareta',
     skill: 'mining_drill',
     prices: [1200, 2800, 6000, 12000],
     name: 'Broca',
@@ -91,6 +112,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   },
   {
     id: 'blast',
+    hand: 'picareta',
     skill: 'mining_blast',
     prices: [2600, 5200, 11000, 22000],
     name: 'Detonação',
@@ -109,6 +131,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   },
   {
     id: 'sense',
+    hand: 'picareta',
     skill: 'explore_sense',
     prices: [1800, 3600, 7200],
     name: 'Faro',
@@ -126,6 +149,7 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
   },
   {
     id: 'recall',
+    hand: 'picareta',
     skill: 'move_recall',
     prices: [1500, 4000, 9000],
     name: 'Volta Rápida',
@@ -138,6 +162,72 @@ export const ACTIVE_SKILLS: ActiveSkillMeta[] = [
     stats: [
       { attr: 'recallCastTime', label: 's parado', noun: 'Tempo parado', unit: 'segundos', art: 'mobilidade' },
       { attr: 'recallCooldown', label: 's de recarga', noun: 'Recarga', unit: 'segundos', art: 'recarga' },
+    ],
+  },
+
+  /*
+   * ------------------------------------------------------------- ARMA -----
+   *
+   * Nao sao as de picareta com outro nome. Cada uma responde a um problema que
+   * SO existe quando a bala viaja e a pedra e cobertura:
+   *
+   * RAJADA resolve "o bicho chegou perto e eu preciso de dano AGORA".
+   * PERFURANTE resolve "eles vem em fila pelo tunel".
+   * RICOCHETE resolve "ele esta atras da quina e eu nao tenho linha" — e e a
+   * unica que transforma a parede de obstaculo em ferramenta.
+   */
+  {
+    id: 'rajada',
+    hand: 'arma',
+    skill: 'weapon_burst',
+    prices: [1400, 3000, 6400, 12800],
+    name: 'Rajada',
+    flavor: 'Quando ele já está perto demais para mirar.',
+    icon: '💨',
+    kind: 'charges',
+    flag: 'burstUnlocked',
+    cooldownAttr: 'burstCooldown',
+    chargesAttr: 'burstCharges',
+    stats: [
+      { attr: 'burstCharges', label: 'tiros com o efeito', noun: 'Tiros preparados', art: 'carga' },
+      { attr: 'burstShots', label: 'balas por tiro', noun: 'Balas por disparo', art: 'forca' },
+      { attr: 'burstCooldown', label: 's de recarga', noun: 'Recarga', unit: 'segundos', art: 'recarga' },
+    ],
+  },
+  {
+    id: 'perfurante',
+    hand: 'arma',
+    skill: 'weapon_pierce',
+    prices: [1800, 3800, 7600, 15000],
+    name: 'Perfurante',
+    flavor: 'Um tiro, a fila inteira.',
+    icon: '➶',
+    kind: 'charges',
+    flag: 'pierceUnlocked',
+    cooldownAttr: 'pierceCooldown',
+    chargesAttr: 'pierceCharges',
+    stats: [
+      { attr: 'pierceCharges', label: 'tiros com o efeito', noun: 'Tiros preparados', art: 'carga' },
+      { attr: 'pierceCount', label: 'bichos atravessados', noun: 'Atravessa', art: 'no' },
+      { attr: 'pierceCooldown', label: 's de recarga', noun: 'Recarga', unit: 'segundos', art: 'recarga' },
+    ],
+  },
+  {
+    id: 'ricochete',
+    hand: 'arma',
+    skill: 'weapon_ricochet',
+    prices: [2200, 4600, 9200],
+    name: 'Ricochete',
+    flavor: 'A pedra devolve o que você manda, se souber mandar.',
+    icon: '⤾',
+    kind: 'charges',
+    flag: 'ricochetUnlocked',
+    cooldownAttr: 'ricochetCooldown',
+    chargesAttr: 'ricochetCharges',
+    stats: [
+      { attr: 'ricochetCharges', label: 'tiros com o efeito', noun: 'Tiros preparados', art: 'carga' },
+      { attr: 'ricochetBounces', label: 'quiques', noun: 'Quiques na pedra', art: 'plataforma' },
+      { attr: 'ricochetCooldown', label: 's de recarga', noun: 'Recarga', unit: 'segundos', art: 'recarga' },
     ],
   },
 ];

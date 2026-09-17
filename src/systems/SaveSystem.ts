@@ -47,7 +47,14 @@ export interface SaveData {
   equipment?: import('./Equipment').EquipmentSave;
   /** Selos entre biomas: chefe morto / selo aberto, por camada. */
   /** As tres habilidades no cinto, por lugar. */
-  equipped?: (string | null)[];
+  /**
+   * Os cintos de habilidade ativa.
+   *
+   * A lista simples e o formato ANTIGO, de quando so existia a picareta; ela
+   * continua aceita e vira o cinto dela. Quebrar o save de quem ja jogava por
+   * causa de uma mao nova seria cobrar do jogador o preco da minha mudanca.
+   */
+  equipped?: (string | null)[] | Record<string, (string | null)[]>;
   camps?: import('./BaseCamps').BaseCampSave;
   journal?: import('./Journal').JournalSave;
   reputation?: import('./Reputation').ReputationSave;

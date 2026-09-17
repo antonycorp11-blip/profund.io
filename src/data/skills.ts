@@ -365,6 +365,92 @@ export const SKILLS: SkillDef[] = [
     art: 'power',
     position: { x: 0, y: 2 },
   },
+  /*
+   * ---------------------------------------------------- ARMA (ativas) -----
+   *
+   * Nascem de `move_recall` porque a arma chegou depois da picareta na vida do
+   * Elias: ele so passa a atirar quando ja aprendeu a se mexer la embaixo.
+   */
+  {
+    id: 'weapon_burst',
+    category: 'active',
+    branch: 'rajada',
+    name: 'Rajada',
+    description:
+      'Prepara o gatilho: por alguns tiros, cada disparo cospe três balas de uma vez. ' +
+      'Gasta uma munição só — quem paga a conta é a arma, não a cartucheira.',
+    maxLevel: 4,
+    cost: [2, 2, 3, 3],
+    requiredSkills: ['move_recall'],
+    requiredDepth: 40,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'burstUnlocked', op: 'unlock', value: 1 }],
+      [{ target: 'burstCharges', op: 'flat', value: 2 }],
+      [
+        { target: 'burstShots', op: 'flat', value: 1 },
+        { target: 'burstCooldown', op: 'flat', value: -4 },
+      ],
+      [
+        { target: 'burstCharges', op: 'flat', value: 3 },
+        { target: 'burstCooldown', op: 'flat', value: -4 },
+      ],
+    ],
+    unlockEffect: 'Três balas por disparo, pelo preço de uma.',
+    icon: '💨',
+    position: { x: 0, y: 6 },
+  },
+  {
+    id: 'weapon_pierce',
+    category: 'active',
+    branch: 'perfurante',
+    name: 'Perfurante',
+    description:
+      'A bala não para no primeiro bicho: ela atravessa e segue. Serve para o ' +
+      'corredor estreito, onde eles têm que vir em fila.',
+    maxLevel: 4,
+    cost: [2, 3, 3, 4],
+    requiredSkills: ['weapon_burst'],
+    requiredDepth: 120,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'pierceUnlocked', op: 'unlock', value: 1 }],
+      [{ target: 'pierceCount', op: 'flat', value: 1 }],
+      [
+        { target: 'pierceCharges', op: 'flat', value: 3 },
+        { target: 'pierceCooldown', op: 'flat', value: -5 },
+      ],
+      [{ target: 'pierceCount', op: 'flat', value: 2 }],
+    ],
+    unlockEffect: 'A bala atravessa e continua.',
+    icon: '➶',
+    position: { x: 1, y: 6 },
+  },
+  {
+    id: 'weapon_ricochet',
+    category: 'active',
+    branch: 'ricochete',
+    name: 'Ricochete',
+    description:
+      'A bala quica na pedra em vez de morrer nela. É a única forma de acertar ' +
+      'quem está atrás da quina — a parede deixa de ser problema e vira mira.',
+    maxLevel: 3,
+    cost: [3, 3, 4],
+    requiredSkills: ['weapon_pierce'],
+    requiredDepth: 260,
+    requiredStoryFlag: null,
+    modifiers: [
+      [{ target: 'ricochetUnlocked', op: 'unlock', value: 1 }],
+      [
+        { target: 'ricochetBounces', op: 'flat', value: 1 },
+        { target: 'ricochetCooldown', op: 'flat', value: -5 },
+      ],
+      [{ target: 'ricochetCharges', op: 'flat', value: 3 }],
+    ],
+    unlockEffect: 'A bala quica na rocha.',
+    icon: '⤾',
+    position: { x: 2, y: 6 },
+  },
   {
     id: 'mining_blast',
     category: 'active',

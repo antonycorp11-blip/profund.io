@@ -79,6 +79,16 @@ export type AttrId =
   | 'shockCooldown'
   | 'shockRange'
   | 'blastCharges'
+  // --- habilidades de ARMA ---
+  | 'burstCharges'
+  | 'burstShots'
+  | 'burstCooldown'
+  | 'pierceCharges'
+  | 'pierceCount'
+  | 'pierceCooldown'
+  | 'ricochetCharges'
+  | 'ricochetBounces'
+  | 'ricochetCooldown'
   | 'blastRadius'
   | 'blastPower'
   | 'blastCooldown'
@@ -138,6 +148,9 @@ export type FlagId =
   | 'drillUnlocked'
   | 'recallUnlocked'
   | 'blastUnlocked'
+  | 'burstUnlocked'
+  | 'pierceUnlocked'
+  | 'ricochetUnlocked'
   | 'senseUnlocked'
   | 'recallDive'
   | 'legacyTreeVisible';
@@ -164,6 +177,9 @@ export const FLAG_IDS = [
   'drillUnlocked',
   'recallUnlocked',
   'blastUnlocked',
+  'burstUnlocked',
+  'pierceUnlocked',
+  'ricochetUnlocked',
   'senseUnlocked',
   'recallDive',
   'legacyTreeVisible',
@@ -271,6 +287,16 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
 
   // --- Broca: abre tunel a frente ---
   blastCharges: { id: 'blastCharges', name: 'Cargas de detonacao', base: 1, format: 'flat', live: true },
+  // --- habilidades de ARMA ---
+  burstCharges: { id: 'burstCharges', name: 'Tiros com rajada', base: 3, format: 'flat', live: true },
+  burstShots: { id: 'burstShots', name: 'Balas por disparo', base: 3, format: 'flat', live: true },
+  burstCooldown: { id: 'burstCooldown', name: 'Recarga da rajada', base: 16, format: 'flat', live: true },
+  pierceCharges: { id: 'pierceCharges', name: 'Tiros perfurantes', base: 4, format: 'flat', live: true },
+  pierceCount: { id: 'pierceCount', name: 'Bichos atravessados', base: 2, format: 'flat', live: true },
+  pierceCooldown: { id: 'pierceCooldown', name: 'Recarga do perfurante', base: 18, format: 'flat', live: true },
+  ricochetCharges: { id: 'ricochetCharges', name: 'Tiros com ricochete', base: 4, format: 'flat', live: true },
+  ricochetBounces: { id: 'ricochetBounces', name: 'Quiques na pedra', base: 2, format: 'flat', live: true },
+  ricochetCooldown: { id: 'ricochetCooldown', name: 'Recarga do ricochete', base: 20, format: 'flat', live: true },
   blastRadius: { id: 'blastRadius', name: 'Raio da detonacao', base: 3, format: 'flat', live: true },
   blastPower: { id: 'blastPower', name: 'Forca da detonacao', base: 2.4, format: 'multiplier', live: true },
   blastCooldown: { id: 'blastCooldown', name: 'Recarga da detonacao', base: 55, format: 'flat', live: true },

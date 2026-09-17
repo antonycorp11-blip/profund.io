@@ -1,4 +1,9 @@
-import { ACTIVE_SKILLS, activeSkillMeta, type ActiveSkillId } from '../data/activeSkills';
+import {
+  ACTIVE_SKILLS,
+  activeSkillMeta,
+  type ActiveSkillId,
+  type SkillHand,
+} from '../data/activeSkills';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import type { Attributes } from './Attributes';
@@ -41,19 +46,37 @@ export class ActiveSkills {
     }
   }
 
-  /** Todas, na ordem em que aparecem no pad. */
   /**
-   * As equipadas, na ordem dos botoes do pad.
+   * DOIS CINTOS, um por mao, de tres lugares cada.
    *
-   * QUATRO e nao cinco: cinco botoes viram um teclado que ninguem le no meio
-   * de uma luta, e escolher o que levar continua sendo parte da preparacao.
-   * Quatro e o que o conceito mostra, e e o que fecha o cinto em dois por
-   * dois — que e a forma de um cinto, nao de uma lista.
+   * Nao e um cinto de seis: o pad tem tres botoes de habilidade porque o
+   * quarto lugar do polegar e o PULAR, e pular nao e negociavel. Entao cada
+   * mao leva tres, e trocar de mao troca o cinto inteiro — o que voce montou
+   * para cavar nao atrapalha o que voce montou para atirar.
+   *
+   * Tinha aberto um quarto lugar seguindo o conceito desenhado. Estava errado:
+   * a imagem nao sabia que o quarto botao ja tem dono.
    */
-  equipped: (ActiveSkillId | null)[] = ['shock', 'drill', 'recall', null];
+  private cintos: Record<SkillHand, (ActiveSkillId | null)[]> = {
+    picareta: ['shock', 'drill', 'recall'],
+    arma: [null, null, null],
+  };
 
-  /** Maximo de habilidades levadas ao mesmo tempo. */
-  static readonly SLOTS = 4;
+  /** Qual cinto esta valendo agora. O Game troca junto com a mao. */
+  mao: SkillHand = 'picareta';
+
+  /** Maximo de habilidades por mao. */
+  static readonly SLOTS = 3;
+
+  /** O cinto da mao atual — e o que o pad mostra. */
+  get equipped(): (ActiveSkillId | null)[] {
+    return this.cintos[this.mao];
+  }
+
+  /** O cinto de uma mao especifica, para a tela de habilidades. */
+  cintoDe(mao: SkillHand): (ActiveSkillId | null)[] {
+    return this.cintos[mao];
+  }
 
   /** Icone da habilidade, para o botao do pad. */
   iconOf(id: string): string {
@@ -61,27 +84,26 @@ export class ActiveSkills {
   }
 
   isEquipped(id: ActiveSkillId): boolean {
-    return this.equipped.includes(id);
+    return this.cintos[activeSkillMeta(id).hand].includes(id);
   }
 
   /**
-   * Poe ou tira do cinto.
+   * Poe ou tira do cinto DA PROPRIA MAO da habilidade.
    *
-   * Sem slot livre, a nova entra no lugar da PRIMEIRA equipada — e mais util
-   * trocar direto do que receber um "cinto cheio" e ter que desequipar antes.
+   * Uma skill de arma nunca entra no cinto da picareta: nao ha decisao ali, so
+   * chance de errar. Sem lugar livre, a nova entra no lugar da PRIMEIRA — e
+   * mais util trocar direto do que receber um "cinto cheio" e ter que
+   * desequipar antes.
    */
   toggleEquip(id: ActiveSkillId): void {
-    const i = this.equipped.indexOf(id);
+    const cinto = this.cintos[activeSkillMeta(id).hand];
+    const i = cinto.indexOf(id);
     if (i >= 0) {
-      this.equipped[i] = null;
+      cinto[i] = null;
       return;
     }
-    const vaga = this.equipped.indexOf(null);
-    if (vaga >= 0) {
-      this.equipped[vaga] = id;
-      return;
-    }
-    this.equipped[0] = id;
+    const vaga = cinto.indexOf(null);
+    cinto[vaga >= 0 ? vaga : 0] = id;
   }
 
   all(): ActiveSkillState[] {
@@ -201,15 +223,29 @@ export class ActiveSkills {
     return total <= 0 ? 1 : 1 - st.cooldown / total;
   }
 
-  equippedToJSON(): (ActiveSkillId | null)[] {
-    return [...this.equipped];
+  equippedToJSON(): Record<SkillHand, (ActiveSkillId | null)[]> {
+    return { picareta: [...this.cintos.picareta], arma: [...this.cintos.arma] };
   }
 
-  equippedFromJSON(data: (ActiveSkillId | null)[] | undefined): void {
-    if (!data || data.length === 0) return;
-    // Lido pelo tamanho ATUAL do cinto: um save antigo tem tres lugares, e
-    // sem isso o quarto voltaria como undefined em vez de vazio.
-    this.equipped = Array.from({ length: ActiveSkills.SLOTS }, (_, i) => data[i] ?? null);
+  /**
+   * Le os dois cintos, e ACEITA o save antigo de um cinto so.
+   *
+   * O formato anterior era uma lista simples; ela era o cinto da picareta,
+   * porque arma nao existia. Sem esta ponte, quem ja jogava perderia o que
+   * tinha montado.
+   */
+  equippedFromJSON(
+    data: (ActiveSkillId | null)[] | Record<SkillHand, (ActiveSkillId | null)[]> | undefined
+  ): void {
+    if (!data) return;
+    const ler = (lista: (ActiveSkillId | null)[] | undefined): (ActiveSkillId | null)[] =>
+      Array.from({ length: ActiveSkills.SLOTS }, (_, i) => lista?.[i] ?? null);
+    if (Array.isArray(data)) {
+      this.cintos.picareta = ler(data);
+      return;
+    }
+    this.cintos.picareta = ler(data.picareta);
+    this.cintos.arma = ler(data.arma);
   }
 
   toJSON(): Record<string, { charges: number; cooldown: number }> {
