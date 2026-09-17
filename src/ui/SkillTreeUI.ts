@@ -140,6 +140,7 @@ export class SkillTreeUI {
       <div class="skill-screen">
         <header class="skill-header">
           <div class="skill-tabs"></div>
+          <button class="btn ver-tudo" data-tudo>VER O NINHO</button>
           <div class="skill-points"><b data-points>0</b> pontos</div>
           <button class="icon-btn" data-close>✕</button>
         </header>
@@ -160,6 +161,19 @@ export class SkillTreeUI {
     this.detailEl = this.wrap.querySelector('.skill-detail') as HTMLDivElement;
     this.pointsEl = this.wrap.querySelector('[data-points]') as HTMLElement;
     this.svg = this.wrap.querySelector('.skill-links') as unknown as SVGSVGElement;
+
+    /*
+     * O mapa inteiro continua a UM toque.
+     *
+     * A tela abre numa camara para o anel ser grande e o nome legivel, mas a
+     * pergunta "que caminhos existem" precisa da vista de cima — e ela era a
+     * unica leitura que a tela dava antes. Agora sao duas, e o jogador escolhe
+     * qual quer.
+     */
+    (this.wrap.querySelector('[data-tudo]') as HTMLElement).addEventListener('click', () => {
+      this.enquadrarTudo();
+      Haptics.ui();
+    });
 
     (this.wrap.querySelector('[data-close]') as HTMLElement).addEventListener('click', () =>
       this.close()
@@ -188,9 +202,14 @@ export class SkillTreeUI {
     if (!this.montado) {
       this.montado = true;
     }
-    // Sempre enquadra o ninho INTEIRO. A pergunta que a tela responde e "que
-    // caminhos existem", e ela nao se responde com um pedaco do mapa.
-    this.enquadrarTudo();
+    // Abre na CAMARA EM FOCO, e nao no ninho inteiro. Ver tudo de uma vez
+    // parecia a resposta certa — "que caminhos existem" — mas com trinta e
+    // tres nos o zoom caia para 0,59 e cada anel virava uma moeda com o nome
+    // ilegivel embaixo. O conceito mostra uma camara por vez, com o anel
+    // grande e o nome legivel, e os tuneis saindo pelas bordas para dizer que
+    // ha mais. A leitura do mapa inteiro continua a um gesto de distancia (a
+    // pinca, a roda, e o botao de ver tudo).
+    this.enquadrarCamara(this.category, false);
     this.refresh();
   }
 
@@ -238,6 +257,24 @@ export class SkillTreeUI {
    * que garante "todas as camaras conectadas e visiveis" mesmo depois de a
    * arvore crescer — nao depende de eu ter acertado as coordenadas a mao.
    */
+  /**
+   * Quanto a UI inteira ja esta encolhida (`--ui-zoom`).
+   *
+   * ISTO era o bug do enquadramento. `getBoundingClientRect()` devolve pixels
+   * DE TELA, ja multiplicados pelo zoom da interface; as coordenadas dos nos
+   * sao unidades do canvas, que ainda vao passar por esse mesmo zoom. Dividir
+   * um pelo outro sem descontar a escala dava um numero 0,56 vezes menor do
+   * que o certo — e era por isso que o ninho abria ocupando pouco mais da
+   * metade da area, com o anel do tamanho de uma moeda, por mais que eu
+   * mexesse nos limites.
+   */
+  private escalaDaUI(): number {
+    const v = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--ui-zoom')
+    );
+    return Number.isFinite(v) && v > 0.05 ? v : 1;
+  }
+
   private enquadrarTudo(): void {
     const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
       (sk) => this.host.tree.visibility(sk.id) !== 'escondido'
@@ -257,19 +294,35 @@ export class SkillTreeUI {
     const r = this.viewport.getBoundingClientRect();
     if (r.width < 10 || r.height < 10) return;
     const margem = 28;
+    const ui = this.escalaDaUI();
     const z = Math.min(
-      (r.width - margem * 2) / Math.max(1, maxX - minX),
-      (r.height - margem * 2) / Math.max(1, maxY - minY)
+      (r.width - margem * 2) / Math.max(1, (maxX - minX) * ui),
+      (r.height - margem * 2) / Math.max(1, (maxY - minY) * ui)
     );
-    this.zoom = Math.max(0.3, Math.min(1.1, z));
-    this.panX = r.width / 2 - ((minX + maxX) / 2) * this.zoom - 40;
-    this.panY = r.height / 2 - ((minY + maxY) / 2) * this.zoom - 20;
+    this.zoom = Math.max(0.3, Math.min(1.6, z));
+    this.panX = r.width / (2 * ui) - ((minX + maxX) / 2) * this.zoom - 40;
+    this.panY = r.height / (2 * ui) - ((minY + maxY) / 2) * this.zoom - 20;
     this.canvasEl.classList.remove('gliding');
     this.applyTransform();
   }
 
-  /** Centraliza a vista numa camara, sem esconder o resto do ninho. */
+  /** Leva a vista ate uma camara, sem esconder o resto do ninho. */
   private irParaCamara(cat: SkillCategory, animar: boolean): void {
+    this.enquadrarCamara(cat, animar);
+    this.buildTabs();
+    this.refresh();
+  }
+
+  /**
+   * Enquadra UMA camara: zoom e posicao, nao so posicao.
+   *
+   * Antes isto so centralizava, e herdava o zoom minusculo com que a tela
+   * tinha aberto — trocar de aba mudava o pedaco do mapa mas os aneis
+   * continuavam do tamanho de moeda. O zoom e calculado pela caixa da camara e
+   * tem PISO: nenhuma camara aparece menor do que da para ler, mesmo que para
+   * isso ela passe um pouco das bordas.
+   */
+  private enquadrarCamara(cat: SkillCategory, animar: boolean): void {
     this.category = cat;
     const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
       (sk) => sk.category === cat && this.host.tree.visibility(sk.id) !== 'escondido'
@@ -282,21 +335,29 @@ export class SkillTreeUI {
     for (const def of lista) {
       const q = nodePos(def);
       minX = Math.min(minX, q.x);
-      minY = Math.min(minY, q.y);
+      minY = Math.min(minY, q.y - 54); // placa da camara fica acima do no
       maxX = Math.max(maxX, q.x + NODE);
-      maxY = Math.max(maxY, q.y + NODE);
+      maxY = Math.max(maxY, q.y + NODE + 26); // nome fica abaixo
     }
+    const r = this.viewport.getBoundingClientRect();
+    if (r.width < 10 || r.height < 10) return;
+    const margem = 34;
+    const ui = this.escalaDaUI();
+    const z = Math.min(
+      (r.width - margem * 2) / Math.max(1, (maxX - minX) * ui),
+      (r.height - margem * 2) / Math.max(1, (maxY - minY) * ui)
+    );
+    // Piso de 0,9: abaixo disso o nome embaixo do anel para de ser legivel, e
+    // um mapa que nao se le nao serve de mapa.
+    this.zoom = Math.max(0.9, Math.min(1.9, z));
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
-    const r = this.viewport.getBoundingClientRect();
     // O canvas ja nasce deslocado pelo CSS (left/top); descontar isso e o que
     // faz a camara parar no meio da tela, e nao um pouco fora dela.
-    this.panX = r.width / 2 - cx * this.zoom - 40;
-    this.panY = r.height / 2 - cy * this.zoom - 20;
+    this.panX = r.width / (2 * ui) - cx * this.zoom - 40;
+    this.panY = r.height / (2 * ui) - cy * this.zoom - 20;
     this.canvasEl.classList.toggle('gliding', animar);
     this.applyTransform();
-    this.buildTabs();
-    this.refresh();
   }
 
   private buildNodes(): void {

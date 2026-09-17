@@ -264,6 +264,7 @@ export class TechScreen {
     }
 
     this.mainEl.innerHTML = `
+      ${this.tituloDaTela(meta.icon, 'Tecnologia', 'Pesquise, melhore, cave mais fundo.')}
       <p class="tech-fantasy" style="color:${meta.color}">${meta.description}</p>
       <div class="tech-grid">
         ${list
@@ -275,7 +276,7 @@ export class TechScreen {
             return `
               <button class="tech-card ${cls}${sel}" style="--cat:${meta.color}" data-pick="${def.id}">
                 <span class="tech-card-head">
-                  <span class="tech-icon">${def.icon}</span>
+                  <span class="tech-icon">${this.techArte(def)}</span>
                   <span class="tech-card-nome">
                     <b>${def.name}</b>
                     <small>${done ? 'PESQUISADA' : check.ok ? 'DISPONIVEL' : 'BLOQUEADA'}</small>
@@ -283,17 +284,16 @@ export class TechScreen {
                 </span>
                 <span class="tech-card-desc">${def.description}</span>
                 <span class="tech-cost">${this.costHtml(def)}</span>
-                <span class="btn ${done ? '' : check.ok ? 'primary' : ''} tech-card-acao"
+                <span class="btn ${check.ok && !done ? 'primary' : ''} tech-card-acao"
                       ${done || !check.ok ? 'data-inerte' : ''}>
                   ${
                     done
-                      ? '✓ PESQUISADA'
+                      ? '<img class="btn-icon" src="art/hud/confere.png" alt="">PESQUISADA'
                       : check.ok
                         ? '<img class="btn-icon" src="art/tech/frasco.png" alt="">PESQUISAR'
                         : (check.reason ?? 'BLOQUEADA')
                   }
                 </span>
-
               </button>`;
           })
           .join('')}
@@ -323,6 +323,25 @@ export class TechScreen {
     }
   }
 
+  /**
+   * O bloco de titulo da tela.
+   *
+   * As cinco referencias abrem do mesmo jeito: icone grande, o NOME da tela em
+   * caixa alta e uma linha de subtitulo embaixo. Sem ele o conteudo comecava
+   * colado nas abas e nenhuma tela dizia onde o jogador estava — a unica pista
+   * era qual aba estava acesa la em cima.
+   */
+  private tituloDaTela(icone: string, nome: string, linha: string): string {
+    return `
+      <header class="tela-cab">
+        <span class="tela-cab-icone">${icone}</span>
+        <span class="tela-cab-txt">
+          <b>${nome}</b>
+          <small>${linha}</small>
+        </span>
+      </header>`;
+  }
+
   /** A prancheta: o que a pesquisa escolhida faz, cobra e muda. */
   private renderTechDetalhe(cat: TechCategory): void {
     const meta = TECH_CATEGORIES[cat];
@@ -340,12 +359,17 @@ export class TechScreen {
     this.asideEl.innerHTML = `
       <div class="det-prancheta">
         <div class="det-head" style="--cat:${meta.color}">
-          <span class="det-icone">${def.icon}</span>
-          <div>
+          <span class="det-icone tech-icon">${this.techArte(def)}</span>
+          <div class="det-nome">
             <b>${def.name}</b>
             <small>${meta.name}</small>
           </div>
+          <span class="det-selo-cat" style="--cat:${meta.color}">${meta.icon} ${meta.name}</span>
         </div>
+        <figure class="det-planta">
+          <img src="art/tech/${done ? 'carimbo' : 'planta'}.png" alt="">
+          <figcaption>${done ? 'Instalada na oficina' : 'Ideias viram progresso'}</figcaption>
+        </figure>
         <p class="det-desc">${def.description}</p>
         ${
           efeitos
@@ -364,6 +388,11 @@ export class TechScreen {
         <h5 class="det-sub">Custo da pesquisa</h5>
         <div class="tech-cost det-custo">${this.costHtml(def)}</div>
         ${
+          def.requiredDepth > 0
+            ? `<p class="det-prof">Precisa ter chegado a ${def.requiredDepth} m.</p>`
+            : ''
+        }
+        ${
           done
             ? '<div class="tech-status ok">Pesquisada</div>'
             : check.ok
@@ -381,15 +410,31 @@ export class TechScreen {
     });
   }
 
-  private costHtml(def: TechDef): string {
+  /**
+   * O custo em CHIPS, com a arte do minerio — nao em texto corrido.
+   *
+   * "Carvao 1672/30 Pedra 1567/20" e uma frase; o jogador quer bater o olho e
+   * ver se da. Com o icone do proprio minerio ele reconhece o recurso antes de
+   * ler a palavra, que e como a barra de recursos la em cima ja funciona.
+   */
+  private costHtml(def: TechDef, curto = false): string {
     return Object.entries(def.cost)
       .map(([id, qty]) => {
         const rid = id as ResourceId;
         const have = this.host.stock.count(rid);
-        const ok = have >= (qty ?? 0);
-        return `<span class="${ok ? 'ok' : 'miss'}">${RESOURCES[rid].name} ${have}/${qty}</span>`;
+        const falta = qty ?? 0;
+        const ok = have >= falta;
+        return `<span class="custo-chip ${ok ? 'ok' : 'miss'}" title="${RESOURCES[rid].name}">
+          ${this.recursoArte(rid)}
+          <b>${curto ? falta : `${have}/${falta}`}</b>
+        </span>`;
       })
       .join('');
+  }
+
+  /** Arte do minerio quando existe; a bolinha da cor dele quando nao. */
+  private recursoArte(rid: ResourceId): string {
+    return `<img src="art/ore/${rid}.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('i'),{className:'custo-bola',style:'background:${RESOURCES[rid].color}'}))">`;
   }
 
   // ------------------------------------------------------------ copiadora --
@@ -468,6 +513,7 @@ export class TechScreen {
       </section>`;
 
     this.mainEl.innerHTML = `
+      ${this.tituloDaTela('⚙', 'Automação', 'Seus ajudantes não param.')}
       <div class="auto-strip">
         ${numero(`${clones.clones.length}/${clones.slots}`, 'copias', 'copia_aco', clones.clones.length > 0)}
         ${numero(`${moles.units.length}/${moles.max}`, 'toupeiras', 'toupeira', moles.units.length > 0)}
@@ -581,6 +627,7 @@ export class TechScreen {
       .join('');
 
     this.mainEl.innerHTML = `
+      ${this.tituloDaTela('🛡', 'Equipamento', 'Prepare-se para cavar mais fundo.')}
       <div class="eq-filtros">
         ${slots
           .map(
@@ -670,6 +717,27 @@ export class TechScreen {
     ctx.drawImage(tira, 0, 0, lado, lado, 0, 0, lado, lado);
     this.heroiCache = c.toDataURL();
     return this.heroiCache;
+  }
+
+  /**
+   * A arte da pesquisa.
+   *
+   * Nao existe um PNG por tecnologia — sao dez folhas de oficina. Cada
+   * pesquisa recebe SEMPRE a mesma, escolhida pelo id: arte que muda de cara a
+   * cada abertura nao parece o desenho daquela coisa. O emoji da ficha fica de
+   * reserva enquanto a folha nao carrega.
+   */
+  private static readonly FOLHAS = [
+    'bancada', 'engrenagens', 'lampada', 'compasso', 'planta',
+    'prancheta', 'quadro', 'ampulheta', 'carimbo', 'frasco',
+  ];
+
+  private techArte(def: TechDef): string {
+    let h = 0;
+    for (let i = 0; i < def.id.length; i++) h = (h * 31 + def.id.charCodeAt(i)) >>> 0;
+    const folha = TechScreen.FOLHAS[h % TechScreen.FOLHAS.length];
+    return `<img src="art/tech/${folha}.png" alt=""
+      onerror="this.replaceWith(document.createTextNode('${def.icon}'))">`;
   }
 
   /** Arte da peca quando existe; o emoji da ficha enquanto nao existe. */

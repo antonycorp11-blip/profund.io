@@ -3219,9 +3219,10 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .eq-grid {
   display: grid;
-  /* Cartao deitado pede mais largura que o cartao em pe. */
-  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
-  gap: 9px;
+  /* TRES por linha, como no conceito — e nao "quantos couberem". */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 10px;
 }
 
 /*
@@ -3236,10 +3237,10 @@ body:has(.hud-map-slot.folded) .toasts {
   grid-template-columns: 76px minmax(0, 1fr);
   align-items: start;
   gap: 11px;
-  border: 1px solid var(--stroke);
-  border-radius: 11px;
+  border: 1px solid rgba(120, 160, 220, 0.22);
+  border-radius: 14px;
   padding: 11px;
-  background: rgba(255, 255, 255, 0.03);
+  background: linear-gradient(170deg, rgba(22, 32, 52, 0.95), rgba(12, 18, 32, 0.95));
 }
 
 .eq-texto {
@@ -3268,11 +3269,12 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .eq-card.on {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(255, 196, 83, 0.22);
 }
 
 .eq-card.locked {
-  opacity: 0.6;
+  opacity: 0.55;
+  background: linear-gradient(170deg, rgba(20, 22, 28, 0.95), rgba(12, 13, 17, 0.95));
 }
 
 .eq-head {
@@ -3288,6 +3290,9 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* Cartao deitado nao cabe em meia coluna de celular: volta a empilhar. */
 @media (max-width: 620px) {
+  .eq-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .eq-card {
     grid-template-columns: 58px minmax(0, 1fr);
     gap: 9px;
@@ -4246,6 +4251,67 @@ body:has(.hud-map-slot.folded) .toasts {
   }
 }
 
+/*
+ * O BLOCO DE TITULO, comum a todas as telas cheias.
+ *
+ * As cinco referencias abrem igual: icone grande, nome da tela em caixa alta e
+ * uma linha de subtitulo. Sem ele o conteudo comecava colado nas abas e
+ * nenhuma tela dizia onde o jogador estava.
+ */
+.tela-cab {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.tela-cab-icone {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 196, 83, 0.4);
+  background: rgba(40, 30, 12, 0.55);
+  font-size: 21px;
+}
+
+.tela-cab-txt {
+  min-width: 0;
+}
+
+.tela-cab-txt b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 21px;
+  line-height: 1.05;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.tela-cab-txt small {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* `width: auto` explicito: o `.btn` base e `width: 100%`, e num cabecalho em
+   linha isso vira a largura inteira do cabecalho — o botao comia as abas. */
+.ver-tudo {
+  flex: 0 0 auto;
+  width: auto;
+  font-size: 9.5px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .tech-fantasy {
   font-size: 12px;
   margin: 0 0 10px;
@@ -4253,10 +4319,15 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .tech-grid {
   display: grid;
-  /* Tres por linha, como no conceito: o cartao voltou a carregar descricao e
-     botao, e com cinco por linha nada disso caberia. */
-  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
-  gap: 9px;
+  /*
+   * TRES por linha, FIXO. Com `auto-fill` a tela larga enfiava CINCO, e cinco
+   * colunas deixam o cartao com a largura de uma etiqueta: o icone encolhe, a
+   * descricao vira trinta linhas de uma palavra e o custo nao cabe. Foi o
+   * mesmo erro da tela de Skills.
+   */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 10px;
 }
 
 /*
@@ -4277,17 +4348,19 @@ body:has(.hud-map-slot.folded) .toasts {
  * painel serve para estudar UMA. Tirar o cartao obrigava a clicar em cada
  * uma para saber o que era.
  */
+/* Azul-noite, igual ao cartao de habilidade: as duas vitrines do jogo falam a
+   mesma lingua, e o ouro fica para o escolhido e para o botao. */
 .tech-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  gap: 7px;
-  min-height: 112px;
-  border: 1px solid var(--stroke);
-  border-radius: 11px;
-  padding: 12px 10px 10px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 6px;
+  min-height: 150px;
+  border: 1px solid rgba(120, 160, 220, 0.22);
+  border-radius: 14px;
+  padding: 12px 12px 11px;
+  background: linear-gradient(170deg, rgba(22, 32, 52, 0.95), rgba(12, 18, 32, 0.95));
   color: var(--ink-dim);
   font-family: var(--font);
   text-align: left;
@@ -4339,14 +4412,23 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .tech-icon {
-  width: var(--icone-grande);
-  height: var(--icone-grande);
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--cat) 22%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--cat) 18%, rgba(8, 12, 22, 0.9));
   border: 1px solid var(--cat);
   font-size: 22px;
+  overflow: hidden;
+}
+
+.tech-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .tech-card p {
@@ -4358,17 +4440,48 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .tech-cost {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   font-size: 11px;
-  margin-bottom: 7px;
+  margin-top: auto;
+  padding-top: 6px;
 }
 
-.tech-cost .ok {
+/* Chip de custo: a arte do minerio e o numero. O icone reconhece antes de a
+   palavra ser lida, que e como a barra de recursos ja funciona. */
+.custo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 3px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 10px;
+}
+
+.custo-chip img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.custo-bola {
+  width: 11px;
+  height: 11px;
+  margin: 0 2px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.custo-chip.ok {
+  border-color: rgba(125, 220, 125, 0.4);
   color: var(--good);
 }
 
-.tech-cost .miss {
+.custo-chip.miss {
+  border-color: rgba(255, 154, 92, 0.4);
   color: var(--warn);
 }
 
@@ -5750,11 +5863,18 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 /* --- cartoes --- */
-/* `.skl-card` NAO entra aqui: no conceito o cartao de habilidade e
-   azul-noite, e a moldura de couro em todos eles virava um muro marrom onde o
-   cartao escolhido nao se destacava de nada. Ele tem o proprio bloco. */
-.tech-card,
-.eq-card,
+/*
+ * NENHUM cartao de vitrine entra no chassi de couro.
+ *
+ * Eu tinha vestido todos com a moldura pintada, e o resultado era um muro
+ * marrom: com couro em cima de couro o cartao ESCOLHIDO nao se destacava de
+ * nada, e nas cinco referencias que voce mandou o cartao e azul-noite em
+ * TODAS elas — habilidade, pesquisa e equipamento. O ouro marca duas coisas
+ * so: o que esta escolhido e o botao de gastar.
+ *
+ * Fica valendo para painel, botao e aba, que e onde o couro pintado de fato
+ * aparece no conceito.
+ */
 .up-card {
   border: var(--moldura-cartao) solid transparent;
   border-image: url('/art/hud/chassi/cartao.png') 38 fill round;
@@ -5762,16 +5882,9 @@ body:has(.hud-map-slot.folded) .toasts {
   background: none;
 }
 
-.tech-card.sel,
-.eq-card.on,
 .up-card.done {
   border-image-source: url('/art/hud/chassi/cartao_sel.png');
   box-shadow: none;
-}
-
-.tech-card.locked,
-.eq-card.locked {
-  border-image-source: url('/art/hud/chassi/cartao_bloq.png');
 }
 
 /* --- botoes --- */
@@ -6232,6 +6345,58 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .tech-card-acao[data-inerte] {
   opacity: 0.75;
+}
+
+/* A PLANTA da prancheta: a ilustracao grande do conceito. Ela nao e enfeite —
+   e o que faz o painel parecer a mesa de projeto de uma oficina em vez de uma
+   ficha de cadastro. */
+.det-planta {
+  position: relative;
+  margin: 10px 0 0;
+  padding: 10px;
+  border: 1px solid rgba(120, 170, 230, 0.3);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(0deg, rgba(120, 170, 230, 0.07) 0 1px, transparent 1px 14px),
+    repeating-linear-gradient(90deg, rgba(120, 170, 230, 0.07) 0 1px, transparent 1px 14px),
+    linear-gradient(160deg, rgba(16, 32, 56, 0.9), rgba(10, 18, 34, 0.9));
+}
+
+.det-planta img {
+  display: block;
+  width: 100%;
+  max-height: 104px;
+  object-fit: contain;
+}
+
+.det-planta figcaption {
+  margin-top: 5px;
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #8fb2d8;
+}
+
+/* A etiqueta da categoria, no canto da cabeca da prancheta. */
+.det-selo-cat {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--cat);
+  background: color-mix(in srgb, var(--cat) 18%, transparent);
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cat);
+}
+
+.det-prof {
+  margin: 6px 0 0;
+  font-size: 10px;
+  color: var(--warn);
 }
 
 /* Efeito atual e proximo nivel LADO A LADO, como no conceito: sao duas
