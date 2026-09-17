@@ -126,8 +126,12 @@ export class Game {
    * concorrer com minerio por espaco — essa escolha nao seria interessante,
    * seria so punicao. E ficando fora do inventario ela tambem nao entra por
    * engano na entrega da base e vira moeda.
+   *
+   * CENTO E VINTE de inicio enquanto o tiro esta sendo provado. O numero de
+   * equilibrio vem depois que o feel estiver certo — comecar apertado agora so
+   * faria o teste virar uma ida a base em vez de um teste de tiro.
    */
-  private municao = 24;
+  private municao = 120;
   /**
    * A MAO ATUAL.
    *
@@ -351,6 +355,10 @@ export class Game {
           this.creatures.spawnAt(id, this.player.cx + 90 * this.player.facing, this.player.cy);
         },
         hurtPlayer: (n) => this.hurtPlayer(n, this.player.cx - 20),
+        darMunicao: (n) => {
+          this.municao += n;
+          Events.emit('ui:toast', { text: `+${n} de municao.`, tone: 'good' });
+        },
       },
       onResetSave: () => this.resetSave(),
       onToggleTouch: () => {
@@ -1283,6 +1291,12 @@ export class Game {
     this.journal.fromJSON(data.journal);
     this.camps.fromJSON(data.camps);
     this.activeSkills.equippedFromJSON(data.equipped as never);
+    // Municao e mao voltam do save: sem isto, fabricar quarenta balas na base e
+    // recarregar a pagina apagava as quarenta, e o jogo voltava sempre com as
+    // vinte e quatro do comeco. Trabalho do jogador nao pode evaporar.
+    this.municao = data.municao ?? this.municao;
+    this.mao = data.mao === 'arma' ? 'arma' : 'picareta';
+    this.activeSkills.mao = this.mao;
     // Quem ja foi resgatado num save antigo volta direto para o posto: sem
     // isso a base perdia a equipe a cada recarregamento.
     for (const ficha of RESCUE_NPCS) {
@@ -2353,6 +2367,8 @@ export class Game {
       journal: this.journal.toJSON(),
       camps: this.camps.toJSON(),
       equipped: this.activeSkills.equippedToJSON(),
+      municao: this.municao,
+      mao: this.mao,
       cityMet: this.cityNpcs.filter((n) => n.met).map((n) => n.id),
       scrolls: this.scrollObjects.filter((s) => s.found).map((s) => s.id),
       tiles: flat,

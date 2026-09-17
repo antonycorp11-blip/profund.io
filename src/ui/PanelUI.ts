@@ -20,6 +20,8 @@ export interface PanelHost {
     /** Chama uma criatura ao lado do jogador (teste de combate). */
     spawnCreature?(id: string): void;
     hurtPlayer?(amount: number): void;
+    /** Enche a cartucheira: serve para testar o tiro sem ir a base. */
+    darMunicao?(n: number): void;
   };
   /** Dados do registro/estatisticas para a aba de ajustes. */
   progressInfo(): {

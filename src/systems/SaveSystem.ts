@@ -55,6 +55,9 @@ export interface SaveData {
    * causa de uma mao nova seria cobrar do jogador o preco da minha mudanca.
    */
   equipped?: (string | null)[] | Record<string, (string | null)[]>;
+  /** Balas na cartucheira e qual mao estava sacada. */
+  municao?: number;
+  mao?: string;
   camps?: import('./BaseCamps').BaseCampSave;
   journal?: import('./Journal').JournalSave;
   reputation?: import('./Reputation').ReputationSave;
