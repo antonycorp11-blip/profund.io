@@ -117,6 +117,8 @@ export class Game {
   private hud: HUD;
   private dialog: DialogUI;
   private panels: PanelUI;
+  /** Ja pintamos o quadro que fica de foto atras da tela cheia? */
+  private mundoCongelado = false;
   private skillUI: SkillTreeUI;
   private activeUI: ActiveSkillsUI;
   private exploration: Exploration;
@@ -1274,7 +1276,22 @@ export class Game {
     this.lastTime = now;
 
     this.update(dt);
-    this.render();
+    /*
+     * Tela cheia aberta CONGELA o mundo.
+     *
+     * Com Skills, Atributos, Tecnologia, Guia ou Mapa abertos o jogo inteiro
+     * fica atras de um veu opaco — e continuava sendo redesenhado sessenta
+     * vezes por segundo para ninguem ver. Com o fundo agora desfocado, pior
+     * ainda: o `backdrop-filter` teria que refazer o borrao a cada quadro.
+     *
+     * O canvas GUARDA o que foi pintado, entao um quadro so depois de abrir ja
+     * deixa a foto certa no fundo — e o desfoque passa a custar uma vez em vez
+     * de sempre. A caixa de dialogo nao entra nisso: ela e uma tira embaixo, o
+     * mundo continua a vista atras dela e tem que continuar se mexendo.
+     */
+    const cheia = this.telaCheiaAberta();
+    if (!cheia || !this.mundoCongelado) this.render();
+    this.mundoCongelado = cheia;
     this.input.endFrame();
 
     this.fpsAccum += dt;
@@ -1287,6 +1304,18 @@ export class Game {
 
     requestAnimationFrame(this.frame);
   };
+
+  /** Alguma tela que cobre o jogo inteiro esta aberta? */
+  private telaCheiaAberta(): boolean {
+    return (
+      this.panels.isOpen ||
+      this.skillUI.isOpen ||
+      this.mapScreen.isOpen ||
+      this.activeUI.isOpen ||
+      this.techScreen.isOpen ||
+      this.journalUI.isOpen
+    );
+  }
 
   private update(dt: number): void {
     this.playTime += dt;
@@ -1889,6 +1918,9 @@ export class Game {
   }
 
   private resize(): void {
+    // Mudou o tamanho: o canvas foi limpo, entao a foto congelada morreu junto
+    // e o proximo quadro tem que pintar o mundo de novo.
+    this.mundoCongelado = false;
     const rect = this.canvas.getBoundingClientRect();
     this.cssW = Math.max(1, rect.width);
     this.cssH = Math.max(1, rect.height);

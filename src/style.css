@@ -1132,7 +1132,9 @@ body:has(.hud-map-slot.folded) .toasts {
   justify-content: center;
   padding: calc(var(--safe-t) + 10px) calc(var(--safe-r) + 10px) calc(var(--safe-b) + 10px)
     calc(var(--safe-l) + 10px);
-  background: rgba(0, 0, 0, 0.55);
+  /* O escurecimento mora no `::before`, junto com o desfoque: aqui ele so
+     somaria por cima e o jogo atras sumiria de novo. */
+  background: none;
   pointer-events: auto;
 }
 
@@ -3755,9 +3757,15 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .skl-cards {
   display: grid;
-  /* TRES por linha como no conceito. Com 208 px de minimo cabiam duas, e a
-     tela virava uma pilha de cartoes largos em vez de uma vitrine. */
-  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  /*
+   * TRES por linha, FIXO — nao "quantos couberem".
+   *
+   * Com `auto-fill` a tela larga enfiava quatro, e quatro colunas deixam cada
+   * cartao estreito: a descricao quebra em mais linhas, o cartao cresce, as
+   * duas fileiras nao cabem na altura e o painel passa a rolar. Tres e a
+   * grade do conceito e e a que fecha a conta da altura.
+   */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
   gap: 10px;
 }
@@ -5691,15 +5699,37 @@ body:has(.hud-map-slot.folded) .toasts {
    ========================================================================== */
 
 /* O fundo atras de qualquer tela cheia: terra escavada, e nao preto liso. */
-.panel-wrap.open::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(rgba(12, 8, 4, 0.88), rgba(8, 5, 2, 0.94)),
-    url('/art/tree/parede.png') center / cover no-repeat,
-    #0b0705;
-  z-index: -1;
+/*
+ * O fundo de tela cheia e A MINA, desfocada — e nao uma parede inventada.
+ *
+ * Eu tinha posto uma textura de rocha por tras de todo painel. Era cenario
+ * novo competindo com o cenario que ja estava ali, e dizia a coisa errada: a
+ * tela de skills nao acontece noutro lugar, acontece onde o jogador parou. O
+ * desfoque do proprio jogo mantem o chao debaixo dos pes e ainda deixa o
+ * painel legivel, que e o que o veu escuro resolve.
+ */
+/*
+ * O desfoque vai no PROPRIO `.panel-wrap`, e nao num `::before`.
+ *
+ * Tentei primeiro no pseudo-elemento com `z-index: -1`, e o jogo aparecia
+ * atras NITIDO: um elemento empurrado para tras do proprio pai nao tem o
+ * canvas no seu fundo para desfocar. No wrap, o fundo e a tela inteira do
+ * jogo, e o painel continua nitido porque e filho e pinta por cima.
+ */
+.panel-wrap.open {
+  /* Escuro o bastante para o painel ler, claro o bastante para ainda DAR
+     para ver onde o jogador parou. */
+  background: rgba(8, 6, 4, 0.5);
+  backdrop-filter: blur(16px) saturate(0.9) brightness(0.8);
+  -webkit-backdrop-filter: blur(16px) saturate(0.9) brightness(0.8);
+}
+
+/* Sem `backdrop-filter` (navegador antigo) o veu sozinho ja segura a
+   legibilidade: fica o jogo nitido atras, escurecido, em vez de nada. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .panel-wrap.open {
+    background: rgba(8, 6, 4, 0.9);
+  }
 }
 
 /* --- o painel da tela --- */
