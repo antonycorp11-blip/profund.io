@@ -16,6 +16,32 @@ export class PlayerSprite {
 
   /** Estado externo que influencia a pose. */
   heavy = false;
+  /**
+   * A arma esta sacada? Quem responde e o Game, junto com a mira.
+   *
+   * Vem de fora porque a pose nao e decisao do desenho: o mesmo corpo anda,
+   * pula e cai igual — o que muda e o braco, e o braco segue a mao atual.
+   */
+  aiming = false;
+  aimX = 1;
+  aimY = 0;
+  /** Sobe para 1 a cada tiro e desce sozinho: e o que escolhe o par do recuo. */
+  recoil = 0;
+  /** Arquivo da arma na mao (`art/weapons/<id>.png`), ou nulo sem arma. */
+  weaponArt: string | null = null;
+
+  /**
+   * Onde fica o PUNHO em cada direcao, em fracao do quadro de 128 px.
+   *
+   * Medido na propria folha, procurando o pixel opaco mais a direita de cada
+   * quadro — nao chutado no olho. O x mal muda (o braco estica sempre para a
+   * frente); quem muda e a altura, e por isso ha um valor por direcao.
+   */
+  private static readonly PUNHO = {
+    frente: { x: 0.313, y: -0.534 },
+    cima: { x: 0.344, y: -0.659 },
+    baixo: { x: 0.297, y: -0.37 },
+  };
 
   update(dt: number, player: Player): void {
     const next = this.pickAnim(player);
@@ -24,6 +50,7 @@ export class PlayerSprite {
       this.animTime = 0;
     }
     this.animTime += dt;
+    this.recoil = Math.max(0, this.recoil - dt * 6);
     this.walkDist += Math.abs(player.vx) * dt;
     if (player.climbingWall !== 0 && player.vy < 0) this.climbDist += Math.abs(player.vy) * dt;
   }
@@ -138,6 +165,22 @@ export class PlayerSprite {
       return pick('climb', 0);
     }
 
+    /*
+     * MIRA: o quadro vem da DIRECAO, nao de um cronometro.
+     *
+     * A pose e uma leitura do que o jogador esta fazendo agora — apontando
+     * para cima, para a frente ou para baixo — e um timer a faria trocar
+     * sozinha, contando uma coisa que nao aconteceu. Fica depois da escalada e
+     * do pulo de proposito: no ar, o corpo precisa dizer que esta no ar.
+     */
+    if (this.aiming && player.onGround && has('aim')) {
+      if (this.recoil > 0.02) return pick('aim', 6 + (this.recoil > 0.5 ? 0 : 1));
+      if (Math.abs(player.vx) > 12) return pick('aim', 8 + (Math.floor(this.walkDist / 13) % 2));
+      if (this.aimY < -0.45) return pick('aim', 2);
+      if (this.aimY > 0.45) return pick('aim', 4);
+      return pick('aim', 0);
+    }
+
     if (player.swing > 0.02 && has('mine')) {
       // swing vai de 1 (impacto comecando) a 0: o quadro segue esse arco.
       return pick('mine', (1 - player.swing) * last('mine'));
@@ -228,7 +271,58 @@ export class PlayerSprite {
       ctx.scale(1 + player.landSquash * 0.12, sq);
     }
     ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
+    if (this.aiming && strip?.name === 'aim') this.desenharArma(ctx, h, flipped);
     ctx.restore();
     return true;
+  }
+
+  /**
+   * A arma, presa no punho e girada pela mira.
+   *
+   * Desenhada DEPOIS do corpo e dentro da mesma transformacao dele: assim ela
+   * herda o espelhamento e o squash do pouso de graca, e nunca descola da mao.
+   *
+   * O giro e pelo angulo REAL da mira, e nao pela direcao do quadro. Sao
+   * coisas diferentes: o corpo tem tres poses, a mira tem infinitas. Girar a
+   * arma junto e o que faz um tiro a 30 graus parecer um tiro a 30 graus e nao
+   * um tiro na horizontal com o braco torto.
+   */
+  private desenharArma(ctx: CanvasRenderingContext2D, alturaDoCorpo: number, flipped: boolean): void {
+    const arte = this.weaponArt ? Assets.weapon(this.weaponArt) : null;
+    if (!arte || !arte.width) return;
+
+    const p =
+      this.aimY < -0.45
+        ? PlayerSprite.PUNHO.cima
+        : this.aimY > 0.45
+          ? PlayerSprite.PUNHO.baixo
+          : PlayerSprite.PUNHO.frente;
+
+    // As fracoes do punho foram medidas na folha com o heroi olhando para a
+    // DIREITA. Espelhado, o `ctx.scale(-1,1)` ja inverte o desenho — mas o
+    // angulo da mira continua em coordenadas do mundo, entao ele precisa ser
+    // refletido a mao, senao a arma aponta para tras do personagem.
+    const ang = Math.atan2(this.aimY, flipped ? -this.aimX : this.aimX);
+
+    const alturaArma = alturaDoCorpo * 0.2;
+    const escala = alturaArma / arte.height;
+    const larguraArma = arte.width * escala;
+
+    /*
+     * As fracoes do punho ja sao do QUADRO, e o quadro e desenhado com altura
+     * `alturaDoCorpo` — entao basta multiplicar por ela. Eu tinha multiplicado
+     * tambem por 128/66 (o tamanho da celula sobre o tamanho desenhado), e a
+     * pistola saia flutuando acima da cabeca, ao dobro da distancia.
+     *
+     * O y parte da LINHA DOS PES, que e onde as medidas foram tiradas.
+     */
+    const linhaDosPes = alturaDoCorpo * ART.character.feetAnchor;
+    ctx.save();
+    ctx.translate(p.x * alturaDoCorpo, linhaDosPes + p.y * alturaDoCorpo);
+    ctx.rotate(ang);
+    // O cabo fica no punho e o cano aponta para fora: a arte vem com o cabo a
+    // esquerda, entao ela comeca no zero e cresce para a frente.
+    ctx.drawImage(arte, -larguraArma * 0.28, -alturaArma / 2, larguraArma, alturaArma);
+    ctx.restore();
   }
 }

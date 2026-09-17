@@ -96,6 +96,16 @@ class AssetsImpl {
       );
     }
 
+    // Armas: cada uma e um sprite solto, preso na mao do heroi e girado pela
+    // mira. Nunca desenhadas dentro do corpo — ver `PlayerSprite.desenharArma`.
+    for (const arma of manifest.weaponArts) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}weapons/${arma}.png`).then((img) => {
+          if (img) this.images.set(`weapon:${arma}`, img);
+        })
+      );
+    }
+
     // Folhas de NPC: moradores de Blockia e mineiros presos.
     for (const npc of manifest.npcArts) {
       for (const anim of manifest.npcAnims) {
@@ -337,6 +347,11 @@ class AssetsImpl {
   /** Folha de uma estrutura de base, ou null se ainda nao existe. */
   baseArt(id: string): HTMLImageElement | null {
     return this.images.get('base:' + id) ?? null;
+  }
+
+  /** Sprite de uma arma, ou null enquanto a arte nao carregou. */
+  weapon(id: string): HTMLImageElement | null {
+    return this.images.get('weapon:' + id) ?? null;
   }
 
   /** Tira de animacao de um NPC, ou null quando a folha nao existe. */

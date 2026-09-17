@@ -425,6 +425,10 @@ export class Game {
     this.creatures = new CreatureManager(this.world, this.drops, this.exploration);
     this.creatures.buildGuardPosts();
     this.hud.onTrocarMao = () => this.trocarMao();
+    // O coice da pose vem do TIRO que aconteceu, nao de um palpite do desenho.
+    Events.on('weapon:fired', () => {
+      this.playerSprite.recoil = 1;
+    });
     /*
      * A PICARETA NAO FERE MAIS BICHO.
      *
@@ -1501,6 +1505,11 @@ export class Game {
     this.player.glideUnlocked = this.attrs.has('glide');
     this.player.jetUnlocked = this.attrs.has('jetpack');
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
+    // A pose do braco e a arma na mao seguem a MAO ATUAL e a mira.
+    this.playerSprite.aiming = this.mao === 'arma';
+    this.playerSprite.aimX = this.mining.aimDirX;
+    this.playerSprite.aimY = this.mining.aimDirY;
+    this.playerSprite.weaponArt = this.mao === 'arma' ? this.weapons.def.id : null;
     this.playerSprite.update(dt, this.player);
 
     this.world.setWatchPoint(this.player.cx, this.player.cy);

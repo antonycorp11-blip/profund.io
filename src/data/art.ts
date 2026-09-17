@@ -193,6 +193,11 @@ export const ART = {
   npcDir: 'npc/',
   /** Estruturas das bases de extracao (ver tools/slice-base.mjs). */
   baseDir: 'base/',
+  /** Armas soltas, presas na mao do heroi (ver PlayerSprite.desenharArma). */
+  weaponArts: [
+    'pistola', 'pistola_2', 'escopeta', 'escopeta_2', 'fuzil', 'fuzil_2',
+  ],
+
   baseArts: [
     'refinador',
     'deposito',
@@ -237,6 +242,19 @@ export const ART = {
       jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
       mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
       climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
+      /*
+       * POSE DE MIRA, dez quadros e MAO VAZIA.
+       *
+       * O punho fechado esta vazio de proposito: a arma e um sprite separado,
+       * preso ali e girado pelo angulo da mira. Com a arma desenhada dentro do
+       * corpo, cada arma nova exigiria a folha inteira do personagem outra vez
+       * — tres armas virariam trinta quadros, e trocar de arma no jogo seria
+       * trocar de personagem.
+       *
+       * Os quadros vao em pares por direcao: 0-1 frente, 2-3 cima, 4-5 baixo,
+       * 6-7 recuo, 8-9 andando de arma em punho.
+       */
+      aim: { file: 'aim.png', frames: 10, fps: 6, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,
