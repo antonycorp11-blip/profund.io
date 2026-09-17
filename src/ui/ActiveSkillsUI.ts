@@ -26,9 +26,13 @@ export interface ActiveSkillsHost {
  */
 export class ActiveSkillsUI {
   private wrap: HTMLDivElement;
-  private listEl: HTMLElement;
+  private cintoEl!: HTMLElement;
+  private gradeEl!: HTMLElement;
+  private detalheEl!: HTMLElement;
   private pointsEl: HTMLElement;
   private liveTimer = 0;
+  /** Qual habilidade o painel da direita esta explicando. */
+  private selecionada: string | null = null;
 
   constructor(parent: HTMLElement, private host: ActiveSkillsHost) {
     this.wrap = document.createElement('div');
@@ -40,10 +44,16 @@ export class ActiveSkillsUI {
           <div class="tech-stock">✦ <b data-points>0</b></div>
           <button class="icon-btn" data-close>✕</button>
         </header>
-        <div class="tech-body active-list"></div>
+        <div class="tech-body skl-tres">
+          <aside class="skl-cinto"></aside>
+          <div class="tech-main skl-grade"></div>
+          <aside class="tech-aside skl-detalhe"></aside>
+        </div>
       </div>`;
     parent.appendChild(this.wrap);
-    this.listEl = this.wrap.querySelector('.active-list') as HTMLElement;
+    this.cintoEl = this.wrap.querySelector('.skl-cinto') as HTMLElement;
+    this.gradeEl = this.wrap.querySelector('.skl-grade') as HTMLElement;
+    this.detalheEl = this.wrap.querySelector('.skl-detalhe') as HTMLElement;
     this.pointsEl = this.wrap.querySelector('[data-points]') as HTMLElement;
 
     (this.wrap.querySelector('[data-close]') as HTMLElement).addEventListener('click', () =>
@@ -77,22 +87,118 @@ export class ActiveSkillsUI {
     else this.open();
   }
 
+  /**
+   * TRES ZONAS: o cinto, a vitrine e a ficha.
+   *
+   * Era uma lista de cartoes gordos, um embaixo do outro, cada um carregando
+   * tudo: icone, descricao, numeros ao vivo, proximo nivel e dois botoes. Duas
+   * coisas quebravam nisso. O CINTO — que e a decisao central da tela, quais
+   * tres voce leva — nao existia em lugar nenhum: era uma etiqueta "NO CINTO"
+   * espalhada por cartoes distantes, e para saber o que estava equipado o
+   * jogador rolava a lista inteira. E comparar duas habilidades era impossivel,
+   * porque nunca cabiam as duas na tela.
+   *
+   * Agora o cinto e um objeto, na esquerda, com os tres lugares sempre a
+   * vista; a vitrine no meio so identifica; e a ficha da direita fica parada
+   * enquanto a vitrine rola.
+   */
   private render(): void {
     this.pointsEl.textContent = Math.floor(this.host.stock.money).toLocaleString('pt-BR');
-    this.listEl.innerHTML = '';
-    let n = 0;
-    for (const meta of ACTIVE_SKILLS) {
-      const def = skillDef(meta.skill);
-      if (!def) continue;
-      this.listEl.appendChild(this.card(def, meta));
-      n++;
+    const metas = ACTIVE_SKILLS.filter((m) => skillDef(m.skill));
+    if (!metas.some((m) => m.id === this.selecionada)) {
+      // Abre na primeira que esta no cinto; sem cinto, na primeira aprendida.
+      const noCinto = metas.find((m) => this.host.active.isEquipped(m.id));
+      const aprendida = metas.find((m) => this.host.tree.levelOf(m.skill) > 0);
+      this.selecionada = (noCinto ?? aprendida ?? metas[0])?.id ?? null;
     }
-    if (n === 0) {
-      this.listEl.innerHTML = '<p class="map-empty">Nenhuma habilidade ativa ainda.</p>';
+    this.renderCinto(metas);
+    this.renderGrade(metas);
+    this.renderDetalhe(metas);
+    this.refreshLive();
+  }
+
+  /** O cinto: tres lugares, sempre a vista. */
+  private renderCinto(metas: ActiveSkillMeta[]): void {
+    const cinto = this.host.active.equipped;
+    const lugares = [0, 1, 2]
+      .map((i) => {
+        const id = cinto[i];
+        const meta = id ? metas.find((m) => m.id === id) : null;
+        const def = meta ? skillDef(meta.skill) : null;
+        const nivel = def ? this.host.tree.levelOf(def.id) : 0;
+        return `
+          <button class="cinto-lugar ${def ? 'on' : ''}" data-cinto="${meta?.id ?? ''}">
+            <span class="cinto-anel">${def ? this.arte(def, meta!) : '<i>+</i>'}</span>
+            <b>${def ? def.name : 'vazio'}</b>
+            <small>${def ? `NV ${nivel}` : 'escolha ao lado'}</small>
+          </button>`;
+      })
+      .join('');
+
+    this.cintoEl.innerHTML = `
+      <h4 class="cinto-titulo">Cinto</h4>
+      <p class="dim">Tres lugares. O que esta aqui aparece nos botoes do jogo.</p>
+      <div class="cinto-lugares">${lugares}</div>
+      <p class="cinto-dica">Com o cinto cheio, a nova entra no lugar da primeira.</p>`;
+
+    for (const b of Array.from(this.cintoEl.querySelectorAll('[data-cinto]'))) {
+      const id = (b as HTMLElement).dataset.cinto;
+      if (!id) continue;
+      b.addEventListener('click', () => {
+        this.selecionada = id;
+        this.render();
+      });
     }
   }
 
-  private card(def: SkillDef, meta: ActiveSkillMeta): HTMLElement {
+  /** A vitrine: cartao que so identifica. */
+  private renderGrade(metas: ActiveSkillMeta[]): void {
+    if (metas.length === 0) {
+      this.gradeEl.innerHTML = '<p class="map-empty">Nenhuma habilidade ativa ainda.</p>';
+      return;
+    }
+    this.gradeEl.innerHTML = `
+      <h4 class="cinto-titulo">Todas as habilidades</h4>
+      <div class="skl-cards">
+        ${metas
+          .map((meta) => {
+            const def = skillDef(meta.skill)!;
+            const nivel = this.host.tree.levelOf(def.id);
+            const equipada = this.host.active.isEquipped(meta.id);
+            const sel = meta.id === this.selecionada ? ' sel' : '';
+            const estado =
+              nivel === 0
+                ? '<span class="skl-flag"><img src="art/hud/cadeado.png" alt="">nao aprendida</span>'
+                : equipada
+                  ? '<span class="skl-flag on">no cinto</span>'
+                  : '<span class="skl-flag">pronta</span>';
+            return `
+              <button class="skl-card ${nivel > 0 ? 'owned' : ''}${sel}" data-pick="${meta.id}">
+                <span class="skl-icone">${this.arte(def, meta)}</span>
+                <b>${def.name}</b>
+                <small>${nivel > 0 ? `NIVEL ${nivel}/${def.maxLevel}` : '—'}</small>
+                ${estado}
+              </button>`;
+          })
+          .join('')}
+      </div>`;
+
+    for (const b of Array.from(this.gradeEl.querySelectorAll('[data-pick]'))) {
+      b.addEventListener('click', () => {
+        this.selecionada = (b as HTMLElement).dataset.pick!;
+        this.render();
+      });
+    }
+  }
+
+  /** A ficha: o que ela faz, o que ela custa, e os dois botoes. */
+  private renderDetalhe(metas: ActiveSkillMeta[]): void {
+    const meta = metas.find((m) => m.id === this.selecionada);
+    const def = meta ? skillDef(meta.skill) : null;
+    if (!meta || !def) {
+      this.detalheEl.innerHTML = '<p class="dim">Escolha uma habilidade.</p>';
+      return;
+    }
     const tree = this.host.tree;
     const level = tree.levelOf(def.id);
     const maxed = level >= def.maxLevel;
@@ -100,40 +206,38 @@ export class ActiveSkillsUI {
     const preco = meta.prices[Math.min(level, meta.prices.length - 1)] ?? 0;
     const money = Math.floor(this.host.stock.money);
     const podePagar = money >= preco;
+    const equipada = this.host.active.isEquipped(meta.id);
+    const cheio = this.host.active.equipped.filter(Boolean).length >= 3;
 
-    const skills = this.host.active;
-    const equipada = skills.isEquipped(meta.id);
-    const cheio = skills.equipped.filter(Boolean).length >= 3;
-
-    const el = document.createElement('div');
-    el.className = `active-card ${level > 0 ? 'owned' : ''} ${equipada ? 'equipada' : ''}`;
-    const art = def.art ? Assets.skillIcon(def.art) : null;
-    const icone = art ? `<img src="${art}" alt="">` : meta.icon;
-
-    // Motivo curto de nao poder comprar: o cartao tem uma linha para isso.
     let motivo = '';
     if (maxed) motivo = 'No maximo';
     else if (!check.ok) motivo = check.reason ?? '';
     else if (!podePagar) motivo = `Faltam ✦${(preco - money).toLocaleString('pt-BR')}`;
 
-    el.innerHTML = `
-      <div class="active-head">
-        <span class="active-icon">${icone}</span>
-        <div class="active-title">
+    this.detalheEl.innerHTML = `
+      <div class="det-head" style="--cat:#7fb6ff">
+        <span class="det-icone skl-icone">${this.arte(def, meta)}</span>
+        <div>
           <b>${def.name}</b>
-          <span class="active-level">${level > 0 ? `nivel ${level}/${def.maxLevel}` : 'nao aprendida'}</span>
+          <small>${level > 0 ? `Nivel ${level} de ${def.maxLevel}` : 'Nao aprendida'}</small>
         </div>
         <span class="active-status" data-live-status="${meta.id}"></span>
       </div>
-      <p class="active-desc">${def.description}</p>
+      <p class="det-desc">${def.description}</p>
+      <h5 class="det-sub">Agora</h5>
       <div class="active-stats" data-live-stats="${meta.id}"></div>
-      <div class="active-next">${this.nextText(def, level)}</div>
-      <div class="active-foot">
-        <span class="active-req">${motivo}</span>
+      ${
+        maxed
+          ? ''
+          : `<h5 class="det-sub">Proximo nivel</h5>
+             <div class="active-next">${this.nextText(def, level)}</div>`
+      }
+      ${motivo ? `<p class="active-req">${motivo}</p>` : ''}
+      <div class="det-botoes">
         ${
           level > 0
             ? `<button class="btn ${equipada ? 'on' : ''}" data-equip>${
-                equipada ? 'NO CINTO' : 'LEVAR'
+                equipada ? 'TIRAR DO CINTO' : 'LEVAR NO CINTO'
               }</button>`
             : ''
         }
@@ -142,28 +246,29 @@ export class ActiveSkillsUI {
         </button>
       </div>`;
 
-    const eq = el.querySelector('[data-equip]') as HTMLButtonElement | null;
-    if (eq) {
-      eq.addEventListener('click', () => {
-        // Cinto cheio: a nova entra no lugar da primeira. Trocar direto e mais
-        // util do que receber um "cinto cheio" e ter que desequipar antes.
-        const trocou = !equipada && cheio;
-        skills.toggleEquip(meta.id);
-        if (trocou) {
-          Events.emit('ui:toast', { text: `${def.name} entrou no cinto.`, tone: 'info' });
-        }
-        this.render();
-      });
-    }
+    const eq = this.detalheEl.querySelector('[data-equip]');
+    eq?.addEventListener('click', () => {
+      const trocou = !equipada && cheio;
+      this.host.active.toggleEquip(meta.id);
+      if (trocou) {
+        Events.emit('ui:toast', { text: `${def.name} entrou no cinto.`, tone: 'info' });
+      }
+      this.render();
+    });
 
-    const btn = el.querySelector('[data-learn]') as HTMLButtonElement;
-    btn.addEventListener('click', () => {
+    const btn = this.detalheEl.querySelector('[data-learn]');
+    btn?.addEventListener('click', () => {
       if (this.host.stock.money < preco) return;
       if (!tree.learn(def.id, this.host.currentDepth())) return;
       this.host.stock.money -= preco;
       this.render();
     });
-    return el;
+  }
+
+  /** A arte da habilidade; o emoji da ficha enquanto ela nao existir. */
+  private arte(def: SkillDef, meta: ActiveSkillMeta): string {
+    const art = def.art ? Assets.skillIcon(def.art) : null;
+    return art ? `<img src="${art}" alt="">` : meta.icon;
   }
 
   /** O que o proximo nivel acrescenta, em palavras do jogo. */
@@ -195,7 +300,9 @@ export class ActiveSkillsUI {
       const txt = m.op === 'percentAdd' ? `${v > 0 ? '+' : ''}${Math.round(v * 100)}%` : `${v > 0 ? '+' : ''}${v}`;
       return `${txt} ${nome}`;
     });
-    return partes.length ? `<b>Proximo nivel:</b> ${partes.join(' · ')}` : '';
+    // Sem o rotulo "Proximo nivel:" na frente: agora ele e o titulo da secao
+    // na ficha, e repetir a mesma palavra duas linhas seguidas so gasta espaco.
+    return partes.join(' · ');
   }
 
   /** Valores que mudam enquanto se joga: cargas, canalizacao e recarga. */

@@ -2763,6 +2763,11 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* ---------------- Tecnologia e Copiadora ---------------- */
 
+/* A tela de Skills reusa o chassi da de Tecnologia, entao precisa entrar nesta
+   regra tambem: sem ela o painel ficava TRANSPARENTE e o jogo aparecia por
+   tras do texto. Passou despercebido enquanto a lista de cartoes era densa o
+   bastante para tapar o buraco sozinha. */
+.skillscreen .tech-screen,
 .techscreen .tech-screen {
   width: 100%;
   height: 100%;
@@ -3305,6 +3310,290 @@ body:has(.hud-map-slot.folded) .toasts {
 .stat-linha span {
   font-size: 9px;
   color: var(--ink-dim);
+}
+
+/* --- SKILLS: cinto | vitrine | ficha --- */
+.tech-body.skl-tres {
+  grid-template-columns: 236px minmax(0, 1fr) 300px;
+}
+
+.skl-cinto {
+  min-height: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--stroke);
+  padding-right: 12px;
+}
+
+.cinto-titulo {
+  margin: 0 0 3px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.cinto-lugares {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+/* Um lugar do cinto. O anel vem da folha do ninho: e o mesmo vocabulario da
+   arvore de atributos, e as duas telas falam de escolher um caminho. */
+.cinto-lugar {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 10px;
+  padding: 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 13px;
+  background: rgba(0, 0, 0, 0.32);
+  font-family: var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.cinto-lugar.on {
+  border-color: #7fb6ff;
+  background: rgba(127, 182, 255, 0.07);
+}
+
+.cinto-anel {
+  grid-row: 1 / 3;
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  background: center / contain no-repeat url('/art/tree/anel_bloqueada.png');
+  font-size: 22px;
+}
+
+.cinto-lugar.on .cinto-anel {
+  background-image: url('/art/tree/anel_aprendida.png');
+}
+
+.cinto-anel img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.cinto-anel i {
+  font-style: normal;
+  font-size: 22px;
+  color: var(--ink-dim);
+}
+
+.cinto-lugar b {
+  font-size: 11.5px;
+  color: var(--ink-dim);
+  align-self: end;
+}
+
+.cinto-lugar.on b {
+  color: var(--ink);
+}
+
+.cinto-lugar small {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  align-self: start;
+}
+
+.cinto-dica {
+  margin-top: 12px;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--ink-dim);
+}
+
+.skl-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.skl-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 8px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--font);
+  text-align: center;
+  cursor: pointer;
+  opacity: 0.62;
+}
+
+.skl-card.owned {
+  opacity: 1;
+}
+
+.skl-card.sel {
+  border-color: #7fb6ff;
+  box-shadow: 0 0 0 1px #7fb6ff, 0 0 16px rgba(127, 182, 255, 0.22);
+}
+
+.skl-icone img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  display: block;
+}
+
+.skl-card b {
+  font-size: 11.5px;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.skl-card small {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  color: var(--ink-dim);
+}
+
+.skl-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8.5px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.skl-flag.on {
+  color: #7fb6ff;
+}
+
+.skl-flag img {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+}
+
+.det-botoes {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.det-botoes .btn {
+  width: 100%;
+}
+
+.det-head .skl-icone img {
+  width: 44px;
+  height: 44px;
+}
+
+/* Estreito: o cinto vira uma faixa horizontal em cima, que e onde ele importa
+   mesmo no celular — saber o que esta equipado sem abrir mais nada. */
+@media (max-width: 880px) {
+  .tech-body.skl-tres {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  .skl-cinto {
+    order: -2;
+    border-right: 0;
+    border-bottom: 1px solid var(--stroke);
+    padding: 0 0 10px;
+  }
+  .skl-cinto .cinto-lugares {
+    flex-direction: row;
+  }
+  .skl-cinto .cinto-lugar {
+    flex: 1;
+  }
+  .skl-cinto .cinto-dica {
+    display: none;
+  }
+}
+
+/* --- GUIA: as duas paginas --- */
+.journal-indice,
+.journal-aberta {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 16px;
+}
+
+/* O vinco: sombra de dobra, nao uma linha. Linha reta no meio de papel parece
+   divisoria de tabela; o degrade parece papel que dobra. */
+.journal-indice {
+  border-right: 1px solid rgba(90, 62, 30, 0.35);
+  box-shadow: inset -16px 0 22px -18px rgba(60, 40, 18, 0.9);
+}
+
+.journal-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(90, 62, 30, 0.22);
+  background: transparent;
+  font-family: var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.journal-item.aberta {
+  background: rgba(255, 206, 100, 0.22);
+  border-radius: 7px;
+}
+
+.journal-item-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.journal-item-txt b {
+  display: block;
+  font-size: 12px;
+  color: #3a2a14;
+}
+
+.journal-item-txt small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #6b5433;
+  /* Uma linha de chamada, e so: o texto inteiro vive na outra pagina. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-item .journal-depth {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: #6b5433;
+}
+
+/* Estreito: o indice some e so a anotacao aberta fica. Duas paginas em 400 px
+   nao sao duas paginas, sao duas colunas de uma palavra. */
+@media (max-width: 880px) {
+  .journal-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .journal-indice {
+    max-height: 34vh;
+    border-right: 0;
+    border-bottom: 1px solid rgba(90, 62, 30, 0.35);
+    box-shadow: none;
+  }
 }
 
 .tech-fantasy {
@@ -3887,16 +4176,34 @@ body:has(.hud-map-slot.folded) .toasts {
   position: relative;
 }
 
+/* O livro + as abas de couro saindo pela lateral esquerda. Abas em cima eram
+   menu; abas na lateral sao caderno, e e o caderno que a tela representa. */
 .journal-book {
   display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: min(94vw, 1020px);
+  /*
+   * ALTURA FIXA, e nao "o que o conteudo pedir".
+   *
+   * Com uma anotacao so o livro encolhia para uma tira de cem pixels e parecia
+   * um aviso, nao um caderno. Um livro tem o tamanho de um livro esteja ele
+   * cheio ou quase vazio — e a pagina vazia com espaco sobrando ate diz algo:
+   * que ainda ha o que achar.
+   */
+  height: min(86vh, 620px);
+  pointer-events: auto;
+}
+
+.journal-livro {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
-  width: min(92vw, 760px);
-  max-height: 88vh;
   background: linear-gradient(150deg, rgba(52, 34, 18, 0.97), rgba(24, 16, 10, 0.97));
   border: 1px solid rgba(255, 206, 100, 0.4);
   border-radius: 16px;
   overflow: hidden;
-  pointer-events: auto;
 }
 
 .journal-header {
@@ -3919,24 +4226,40 @@ body:has(.hud-map-slot.folded) .toasts {
   flex: 1;
 }
 
+/* As abas saem para FORA do livro, empilhadas: e assim que se marca pagina
+   num caderno de campo, e e o que faz a aba atual parecer puxada. */
 .journal-tabs {
   display: flex;
-  gap: 4px;
-  padding: 8px 12px 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 26px 0 0;
+  margin-right: -2px;
+  z-index: 1;
 }
 
 .journal-tab {
   pointer-events: auto;
-  border: 1px solid var(--stroke);
-  border-bottom: none;
-  border-radius: 9px 9px 0 0;
-  background: rgba(30, 22, 14, 0.8);
-  color: var(--ink-dim);
+  border: 0;
+  border-radius: 10px 0 0 10px;
+  background: center / 100% 100% no-repeat url('/art/journal/papel/aba.png');
+  color: #e8d9b8;
   font-family: var(--font);
   font-size: 10px;
-  letter-spacing: 0.05em;
-  padding: 5px 10px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  min-width: 96px;
+  padding: 9px 14px 9px 12px;
+  margin-left: 14px;
   cursor: pointer;
+  filter: brightness(0.72);
+  transition: margin-left 0.1s, filter 0.1s;
+}
+
+/* A aba atual e a que esta PUXADA para fora. */
+.journal-tab.active {
+  margin-left: 0;
+  filter: brightness(1.1);
+  color: #fff3d8;
 }
 
 .journal-tab.active {
@@ -3946,11 +4269,15 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 /* A pagina e papel de verdade: a arte vai de fundo e o texto por cima. */
+/* Duas paginas: indice na esquerda, anotacao aberta na direita, com o vinco
+   do livro no meio. */
 .journal-page {
   flex: 1;
   min-height: 0;
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
   margin: 0 12px 12px;
-  border-radius: 0 10px 10px 10px;
+  border-radius: 10px;
   background-color: #c9b189;
   background-size: cover;
   background-position: center;
