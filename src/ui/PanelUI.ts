@@ -242,6 +242,44 @@ export class PanelUI {
     this.panel.appendChild(money);
   }
 
+  /**
+   * Larga o cache do PWA e recarrega.
+   *
+   * Tira o registro do service worker E apaga os caches: so um dos dois nao
+   * resolve, porque o registro sozinho volta a servir o que ja esta guardado.
+   * Salva antes, porque recarregar no meio de uma sessao sem salvar seria
+   * trocar um problema por outro pior.
+   */
+  private async forcarAtualizacao(botao: HTMLButtonElement): Promise<void> {
+    botao.disabled = true;
+    botao.textContent = 'Buscando...';
+    try {
+      // Mesmo caminho que o `main.ts` usa para salvar antes de uma troca de
+      // versao: o painel nao recebe o Game, e abrir um furo no contrato dele
+      // so para isto seria pior do que a leitura pontual aqui.
+      (window as unknown as { game?: { save(): void } }).game?.save();
+    } catch {
+      /* salvar e melhor-esforco: a atualizacao nao pode travar aqui */
+    }
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ('caches' in window) {
+        const nomes = await caches.keys();
+        await Promise.all(nomes.map((n) => caches.delete(n)));
+      }
+    } catch {
+      /* sem cache para limpar: recarregar ja e o bastante */
+    }
+    // `reload()` sozinho pode ser servido do cache do navegador; a busca com
+    // carimbo de tempo garante documento novo.
+    const u = new URL(window.location.href);
+    u.searchParams.set('v', String(Date.now()));
+    window.location.replace(u.toString());
+  }
+
   private renderSettings(): void {
     const info = this.host.progressInfo();
 
@@ -295,6 +333,26 @@ export class PanelUI {
     // nao um numero fixo escondido no codigo.
     this.panel.appendChild(this.qualidadeRow());
     this.panel.appendChild(this.shakeRow());
+
+    /*
+     * QUAL VERSAO ESTA RODANDO — e o botao de forcar a troca.
+     *
+     * "Nao vi mudanca nenhuma" e uma frase impossivel de investigar sem isto:
+     * nao da para saber se o deploy nao chegou, se o PWA ficou preso numa
+     * versao velha ou se a mudanca e que nao presta. Com o carimbo na tela, a
+     * pergunta vira conferir um numero.
+     */
+    this.panel.appendChild(sectionTitle('Versao'));
+    const carimbo = typeof __VERSAO__ === 'string' ? __VERSAO__ : 'dev';
+    this.panel.appendChild(row('Build', carimbo));
+    const forcar = document.createElement('button');
+    forcar.className = 'btn';
+    forcar.textContent = 'Buscar atualizacao agora';
+    forcar.addEventListener('click', () => {
+      Haptics.ui();
+      void this.forcarAtualizacao(forcar);
+    });
+    this.panel.appendChild(forcar);
 
     this.panel.appendChild(sectionTitle('Desenvolvimento — habilidades'));
     const devGrid = document.createElement('div');

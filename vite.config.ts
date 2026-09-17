@@ -8,8 +8,17 @@ import { resolve } from 'node:path';
  * Sem isso o cache do PWA mantem o nome entre deploys e o celular pode ficar
  * preso numa versao antiga — o pior tipo de bug para testar no telefone.
  */
+/**
+ * O carimbo do build, um so para o service worker e para a tela de Ajustes.
+ *
+ * Dentro do modulo antes era local do plugin: agora o mesmo numero vai para o
+ * `sw.js` e para dentro do jogo, entao da para OLHAR no aparelho qual versao
+ * esta rodando em vez de discutir se o deploy chegou.
+ */
+const BUILD_ID = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+
 function stampServiceWorker(): Plugin {
-  const buildId = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
+  const buildId = BUILD_ID;
   return {
     name: 'profundezas:stamp-sw',
     apply: 'build',
@@ -27,6 +36,8 @@ function stampServiceWorker(): Plugin {
 }
 
 export default defineConfig({
+  // O carimbo entra no bundle como texto: a tela de Ajustes mostra ele.
+  define: { __VERSAO__: JSON.stringify(BUILD_ID) },
   // Caminho relativo: funciona na raiz do dominio, em subpasta e no file://.
   base: './',
   server: { host: true, port: 5173 },
