@@ -236,28 +236,44 @@ export class WeaponSystem {
     return !this.world.isSolidAtPixel(b.x, b.y);
   }
 
+  /**
+   * Desenha em coordenadas de MUNDO.
+   *
+   * Nesta altura do quadro a tela ja esta transformada pela camera — e assim
+   * que a criatura e o jogador desenham, com `ctx.translate(this.x, ...)`.
+   * Eu tinha convertido para coordenadas de tela antes de desenhar, e a
+   * conversao era aplicada DUAS vezes: a bala saia pintada a centenas de
+   * pixels do mapa, acertava o alvo e nunca aparecia. E o mesmo erro que ja me
+   * pegou no eco de voz.
+   */
   render(ctx: CanvasRenderingContext2D, camera: Camera): void {
     ctx.save();
     ctx.lineCap = 'round';
     for (const b of this.pool) {
       if (!b.ativo) continue;
       if (!camera.sees(b.x, b.y)) continue;
-      const a = camera.worldToScreen(b.x, b.y);
-      const p = camera.worldToScreen(b.px, b.py);
       // A risca do rastro conta a DIRECAO. Um ponto sozinho a essa velocidade
       // vira um piscar sem sentido de leitura.
       ctx.strokeStyle = b.cor;
-      ctx.globalAlpha = 0.55;
-      ctx.lineWidth = b.raio * 1.2;
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = b.raio * 1.1;
       ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(a.x, a.y);
+      ctx.moveTo(b.px, b.py);
+      ctx.lineTo(b.x, b.y);
       ctx.stroke();
 
-      ctx.globalAlpha = 1;
+      // Miolo claro com halo: a bala precisa se ler contra rocha escura E
+      // contra o brilho de um veio de cristal.
+      ctx.globalAlpha = 0.35;
       ctx.fillStyle = b.cor;
       ctx.beginPath();
-      ctx.arc(a.x, a.y, b.raio, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, b.raio * 2.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#fff6d8';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.raio, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();

@@ -22,14 +22,39 @@ import { PNG } from 'pngjs';
 const LIMIAR = 24;
 /** Mesmo formato das outras tiras do heroi (ver ART.character.stripFrame). */
 const QUADRO = 128;
-/** Onde a linha dos pes cai dentro do quadro (ART.character.feetAnchor). */
-const ANCORA_PES = 0.94;
 const QUADROS = 10;
+/** A tira que serve de REGUA: a nova tem que sair do mesmo tamanho que ela. */
+const REGUA = 'public/art/character/idle.png';
 
 const entrada = path.resolve(process.argv[2] ?? 'arte-bruta/armas/heroi-mira.png');
 const saida = path.resolve('public/art/character/aim.png');
 
 const src = PNG.sync.read(fs.readFileSync(entrada));
+
+/**
+ * Mede o heroi numa tira que ja existe, para a nova sair do MESMO tamanho.
+ *
+ * Eu tinha escolhido "90% do quadro" no olho. O `idle` usa 70%, entao o heroi
+ * ficava 28% maior so de sacar a arma — crescia na mao do jogador. Copiar a
+ * regua em vez de arbitrar um numero faz a tira nova nascer certa mesmo que a
+ * arte base mude depois.
+ */
+function medirRegua() {
+  const png = PNG.sync.read(fs.readFileSync(path.resolve(REGUA)));
+  let topo = png.height;
+  let base = -1;
+  for (let y = 0; y < Math.min(QUADRO, png.height); y++) {
+    for (let x = 0; x < QUADRO; x++) {
+      if (png.data[(y * png.width + x) * 4 + 3] < LIMIAR) continue;
+      if (y < topo) topo = y;
+      if (y > base) base = y;
+      break;
+    }
+  }
+  return { altura: base - topo + 1, pes: base };
+}
+
+const regua = medirRegua();
 
 function opaco(x, y) {
   if (x < 0 || y < 0 || x >= src.width || y >= src.height) return false;
@@ -106,13 +131,13 @@ for (let i = 0; i < QUADROS; i++) {
   celulas.push({ cx0, cx1, box, pes: centroDosPes(cx0, cx1, box) });
   if (box.h > alturaMaxima) alturaMaxima = box.h;
 }
-// Deixa uma folga de 6% para o quadro nao encostar no topo.
-const escala = (QUADRO * 0.9) / alturaMaxima;
+// A escala vem da REGUA, nao de um numero escolhido no olho.
+const escala = regua.altura / alturaMaxima;
 
 for (let i = 0; i < QUADROS; i++) {
   const { box, pes } = celulas[i];
   const destX = i * QUADRO;
-  const linhaPes = Math.round(QUADRO * ANCORA_PES);
+  const linhaPes = regua.pes;
   for (let y = 0; y < QUADRO; y++) {
     for (let x = 0; x < QUADRO; x++) {
       // Volta do quadro de saida para o pixel da folha: os pes do desenho
@@ -132,4 +157,7 @@ for (let i = 0; i < QUADROS; i++) {
 
 fs.mkdirSync(path.dirname(saida), { recursive: true });
 fs.writeFileSync(saida, PNG.sync.write(out));
-console.log(`  character/aim.png  ${out.width}x${out.height}  (${QUADROS} quadros)`);
+console.log(
+  `  character/aim.png  ${out.width}x${out.height}  (${QUADROS} quadros, ` +
+    `corpo de ${regua.altura}px e pes em y=${regua.pes}, iguais ao idle)`
+);

@@ -31,17 +31,32 @@ export class PlayerSprite {
   weaponArt: string | null = null;
 
   /**
-   * Onde fica o PUNHO em cada direcao, em fracao do quadro de 128 px.
+   * Onde fica o PUNHO em CADA QUADRO, em fracao do quadro de 128 px.
    *
-   * Medido na propria folha, procurando o pixel opaco mais a direita de cada
-   * quadro — nao chutado no olho. O x mal muda (o braco estica sempre para a
-   * frente); quem muda e a altura, e por isso ha um valor por direcao.
+   * Um valor por quadro, e nao um por direcao — e essa era a falha. Andando de
+   * arma em punho o corpo usa os quadros 8-9, que tem o braco na FRENTE; se a
+   * mira estivesse para cima, eu escolhia a ancora de cima e a arma saltava
+   * para fora da mao. A ancora tem que seguir o desenho que esta na tela, e
+   * nao a intencao do jogador.
+   *
+   * Medidos no proprio arquivo, procurando o pixel opaco mais a direita de
+   * cada quadro e tirando a altura media da coluna dele.
    */
-  private static readonly PUNHO = {
-    frente: { x: 0.313, y: -0.534 },
-    cima: { x: 0.344, y: -0.659 },
-    baixo: { x: 0.297, y: -0.37 },
-  };
+  private static readonly PUNHO: { x: number; y: number }[] = [
+    { x: 0.242, y: -0.402 }, // 0-1 frente
+    { x: 0.242, y: -0.402 },
+    { x: 0.266, y: -0.508 }, // 2-3 cima
+    { x: 0.258, y: -0.508 },
+    { x: 0.227, y: -0.273 }, // 4-5 baixo
+    { x: 0.227, y: -0.273 },
+    { x: 0.188, y: -0.414 }, // 6-7 coice
+    { x: 0.25, y: -0.406 },
+    { x: 0.242, y: -0.406 }, // 8-9 andando
+    { x: 0.242, y: -0.402 },
+  ];
+
+  /** Qual quadro da tira de mira foi desenhado agora. */
+  private quadroDeMira = 0;
 
   update(dt: number, player: Player): void {
     const next = this.pickAnim(player);
@@ -271,7 +286,10 @@ export class PlayerSprite {
       ctx.scale(1 + player.landSquash * 0.12, sq);
     }
     ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
-    if (this.aiming && strip?.name === 'aim') this.desenharArma(ctx, h, flipped);
+    if (this.aiming && strip?.name === 'aim') {
+      this.quadroDeMira = strip.index;
+      this.desenharArma(ctx, h, flipped);
+    }
     ctx.restore();
     return true;
   }
@@ -291,12 +309,7 @@ export class PlayerSprite {
     const arte = this.weaponArt ? Assets.weapon(this.weaponArt) : null;
     if (!arte || !arte.width) return;
 
-    const p =
-      this.aimY < -0.45
-        ? PlayerSprite.PUNHO.cima
-        : this.aimY > 0.45
-          ? PlayerSprite.PUNHO.baixo
-          : PlayerSprite.PUNHO.frente;
+    const p = PlayerSprite.PUNHO[this.quadroDeMira] ?? PlayerSprite.PUNHO[0];
 
     // As fracoes do punho foram medidas na folha com o heroi olhando para a
     // DIREITA. Espelhado, o `ctx.scale(-1,1)` ja inverte o desenho — mas o
