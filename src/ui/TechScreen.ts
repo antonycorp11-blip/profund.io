@@ -1,3 +1,4 @@
+import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
 import { COLLECTOR_UPGRADES } from '../data/collectors';
 import { Events } from '../core/events';
@@ -523,25 +524,37 @@ export class TechScreen {
       </div>
       <div class="eq-grid">${itens}</div>`;
 
+    /*
+     * O BONECO, como no conceito: o mineiro no meio e os encaixes em volta,
+     * ligados a ele por cabos.
+     *
+     * Era uma lista de quatro linhas com o nome do item em letra pequena. O
+     * conceito poe a pessoa no centro porque a pergunta da tela e "como EU
+     * estou equipado" — e uma lista nao responde isso, um boneco responde.
+     * Em 320 px de coluna nao cabe o palco inteiro do conceito, entao os
+     * quatro encaixes ficam nos quatro cantos e o heroi no meio.
+     */
+    const encaixe = (sl: { id: EquipSlot; name: string; icon: string }, pos: string) => {
+      const atual = eq.equippedIn(sl.id);
+      const def = atual ? equipDef(atual) : null;
+      return `
+        <button class="boneco-slot ${pos} ${def ? 'on' : ''} ${sl.id === aberto ? 'foco' : ''}"
+                data-slot="${sl.id}" title="${sl.name}">
+          <span class="boneco-arte">${def ? this.equipArte(def.id, def.icon) : ''}</span>
+          <span class="boneco-rotulo"><i>${sl.name}</i></span>
+        </button>`;
+    };
+    const [c0, c1, c2, c3] = slots;
+
     this.asideEl.innerHTML = `
       <div class="boneco">
-        ${slots
-          .map((sl) => {
-            const atual = eq.equippedIn(sl.id);
-            const def = atual ? equipDef(atual) : null;
-            return `
-              <button class="boneco-slot ${def ? 'on' : ''} ${sl.id === aberto ? 'foco' : ''}"
-                      data-slot="${sl.id}">
-                <span class="boneco-arte">
-                  ${def ? this.equipArte(def.id, def.icon) : ''}
-                </span>
-                <span class="boneco-rotulo">
-                  <i>${sl.name}</i>
-                  <b>${def ? def.name : 'vazio'}</b>
-                </span>
-              </button>`;
-          })
-          .join('')}
+        ${encaixe(c0, 'ne')}
+        <div class="boneco-palco">
+          <img class="boneco-heroi" src="${this.heroiUrl()}" alt="">
+        </div>
+        ${encaixe(c1, 'nd')}
+        ${encaixe(c2, 'se')}
+        ${encaixe(c3, 'sd')}
       </div>
       <h5 class="det-sub">Seus atributos com equipamento</h5>
       <div class="boneco-stats">
@@ -559,6 +572,30 @@ export class TechScreen {
       });
     }
     this.bindEquipment();
+  }
+
+  /**
+   * O primeiro quadro da folha do heroi, recortado, para o boneco.
+   *
+   * A mesma arte que anda pela mina — nao pede desenho novo, e garante que o
+   * bonequinho da tela de equipamento seja a MESMA pessoa que esta la embaixo.
+   */
+  private heroiCache: string | null = null;
+
+  private heroiUrl(): string {
+    if (this.heroiCache) return this.heroiCache;
+    const tira = Assets.characterStrip('idle') ?? Assets.character();
+    if (!tira || !tira.width) return '';
+    const lado = tira.height;
+    const c = document.createElement('canvas');
+    c.width = lado;
+    c.height = lado;
+    const ctx = c.getContext('2d');
+    if (!ctx) return '';
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tira, 0, 0, lado, lado, 0, 0, lado, lado);
+    this.heroiCache = c.toDataURL();
+    return this.heroiCache;
   }
 
   /** Arte da peca quando existe; o emoji da ficha enquanto nao existe. */

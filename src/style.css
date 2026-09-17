@@ -1,3 +1,12 @@
+@font-face {
+  font-family: 'Oswald';
+  /* Variavel: um arquivo so cobre de 200 a 700. */
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/oswald.woff2') format('woff2');
+}
+
 /* ---------------------------------------------------------------
    Legado das Profundezas — estilos da UI (DOM por cima do canvas).
    Alvo: mobile landscape. Tudo respeita safe-area dos aparelhos.
@@ -20,6 +29,18 @@
   --story: #cdb0ff;
   --radius: 12px;
   --font: 'Trebuchet MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /*
+   * A fonte de DISPLAY: titulos, abas, botoes, numeros grandes.
+   *
+   * O conceito usa uma condensada forte em caixa alta, e era metade da
+   * personalidade dele. Com a fonte de sistema, mesmo com a moldura pintada
+   * certa, a tela continuava parecendo um painel de aplicativo.
+   *
+   * Oswald, variavel, subconjunto latino, 21 KB, servida do proprio projeto —
+   * nao de CDN. O jogo e PWA e tem que abrir offline; titulo que so aparece
+   * com rede nao e titulo.
+   */
+  --font-display: 'Oswald', 'Arial Narrow', var(--font);
 }
 
 * {
@@ -2868,7 +2889,9 @@ body:has(.hud-map-slot.folded) .toasts {
    tela em que o objeto escolhido tem um LUGAR no corpo, e lugar se ve antes
    da lista. */
 .tech-body.aside-esquerda {
-  grid-template-columns: 300px minmax(0, 1fr);
+  /* Mais larga que os outros painéis: ela carrega o palco do boneco, que tem
+     heroi no meio e um encaixe de cada lado. */
+  grid-template-columns: 330px minmax(0, 1fr);
 }
 
 .tech-body.aside-esquerda .tech-aside {
@@ -3219,32 +3242,87 @@ body:has(.hud-map-slot.folded) .toasts {
 /* O boneco: os quatro encaixes em coluna, com a peca vestida dentro. Era uma
    lista de titulos com o nome do item em letra pequena; agora se VE o que
    esta vestido, que e a pergunta que a tela responde. */
+/*
+ * O palco do boneco: heroi no meio, os quatro encaixes nos cantos.
+ *
+ * O conceito poe a pessoa no centro porque a pergunta da tela e "como EU estou
+ * equipado", e lista nao responde isso. Em 320 px de coluna o palco largo do
+ * conceito nao cabe, entao os encaixes viram cantos e o heroi ocupa o miolo.
+ */
 .boneco {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: 1fr 104px 1fr;
+  grid-template-rows: auto auto;
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+  margin-bottom: 4px;
+}
+
+.boneco-palco {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  width: 104px;
+  height: 128px;
+  display: grid;
+  place-items: end center;
+  /* A plataforma de pedra da folha de encaixes, ancorada no pe. */
+  background: bottom center / 100% auto no-repeat url('/art/hud/encaixe/plataforma.png');
+}
+
+.boneco-heroi {
+  width: 82px;
+  height: 82px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  margin-bottom: 14px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+/* O cabo que liga cada encaixe ao heroi. E a peca da folha, espelhada pelo
+   canto: e o mesmo desenho servindo aos quatro. */
+.boneco-slot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 26px;
+  height: 12px;
+  background: center / contain no-repeat url('/art/hud/encaixe/cabo.png');
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.boneco-slot.ne::after,
+.boneco-slot.se::after {
+  left: 100%;
+}
+
+.boneco-slot.nd::after,
+.boneco-slot.sd::after {
+  right: 100%;
+  transform: scaleX(-1);
 }
 
 .boneco-slot {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px 6px 6px;
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.3);
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
   font-family: var(--font);
-  text-align: left;
   cursor: pointer;
 }
 
-.boneco-slot.foco {
-  border-color: var(--accent);
+.boneco-slot.foco .boneco-arte {
+  filter: drop-shadow(0 0 9px rgba(255, 196, 83, 0.75));
 }
 
 .boneco-arte {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -3264,20 +3342,15 @@ body:has(.hud-map-slot.folded) .toasts {
 .boneco-rotulo i {
   display: block;
   font-style: normal;
-  font-size: 9px;
+  font-size: 8.5px;
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--ink-dim);
+  text-align: center;
 }
 
-.boneco-rotulo b {
-  font-size: 11.5px;
-  color: var(--ink);
-}
-
-.boneco-slot:not(.on) .boneco-rotulo b {
-  color: var(--ink-dim);
-  font-weight: normal;
+.boneco-slot.on .boneco-rotulo i {
+  color: var(--accent);
 }
 
 .boneco-stats {
@@ -4944,4 +5017,92 @@ body:has(.hud-map-slot.folded) .toasts {
 .skill-body {
   position: relative;
   background: rgba(10, 7, 4, 0.82);
+}
+
+/* ==========================================================================
+   TIPOGRAFIA DE DISPLAY
+   --------------------------------------------------------------------------
+   Titulo, aba, botao e numero grande passam para a condensada. O texto corrido
+   NAO: condensada em paragrafo cansa, e o caderno do Santiago em especial tem
+   que continuar parecendo escrito a mao, nao impresso em cartaz.
+   ========================================================================== */
+.tech-header h3,
+.screen-title,
+.skill-header h3,
+.cinto-titulo,
+.auto-col h4,
+.camp-panel h3,
+.journal-header h3,
+.det-head b,
+.eq-head b,
+.tech-card b,
+.skl-card b,
+.auto-aside-head span {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+.btn,
+.skill-tab,
+.seg-btn,
+.journal-tab,
+.tech-flag,
+.skl-flag,
+.det-sub,
+.auto-sub,
+.boneco-rotulo i,
+.skl-card small,
+.auto-stat span {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Numero grande: e o que o olho procura primeiro numa faixa de estado. */
+.auto-stat b,
+.stat-linha b,
+.camp-rate-card b,
+.skill-points b,
+.tech-stock b {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* A prancheta de pesquisa sobre papel de projeto, como no conceito: grade azul
+   fraca e a planta desenrolada marcando o canto. Nao e textura nova — e o
+   proprio asset da folha de tecnologia servindo de marca d'agua. */
+.det-prancheta {
+  position: relative;
+  padding: 12px 12px 14px;
+  background:
+    linear-gradient(rgba(18, 34, 58, 0.5), rgba(10, 18, 32, 0.62)),
+    repeating-linear-gradient(0deg, rgba(120, 170, 230, 0.07) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(90deg, rgba(120, 170, 230, 0.07) 0 1px, transparent 1px 16px),
+    rgba(10, 16, 28, 0.9);
+  border: 1px solid rgba(120, 170, 230, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.det-prancheta::after {
+  content: '';
+  position: absolute;
+  right: -18px;
+  bottom: -14px;
+  width: 116px;
+  height: 116px;
+  background: center / contain no-repeat url('/art/tech/planta.png');
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+/* Sobre o azul do projeto o texto precisa esfriar junto, senao o painel parece
+   dois materiais colados. */
+.det-prancheta .det-desc {
+  color: #dce8f6;
+}
+
+.det-prancheta .det-sub {
+  color: #8fb4d8;
 }
