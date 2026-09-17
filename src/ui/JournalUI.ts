@@ -5,13 +5,32 @@ import type { MissionDef } from '../data/missions';
 import { Assets } from '../core/Assets';
 import type { Journal, JournalEntry, JournalTab } from '../systems/Journal';
 
-const ABAS: { id: JournalTab; nome: string; vazio: string }[] = [
-  { id: 'missoes', nome: 'Objetivo', vazio: 'Nenhum objetivo.' },
-  { id: 'paginas', nome: 'Anotacoes', vazio: 'Nenhuma anotacao recolhida. Elas estao espalhadas — cave de lado, nao so para baixo.' },
-  { id: 'pistas', nome: 'Pistas', vazio: 'Nenhuma pagina do caderno ainda.' },
-  { id: 'pessoas', nome: 'Pessoas', vazio: 'Ninguem anotado. Ainda nao encontrei ninguem la embaixo.' },
-  { id: 'bichos', nome: 'Bichos', vazio: 'Nenhum bicho anotado. Melhor assim.' },
-  { id: 'lugares', nome: 'Lugares', vazio: 'Nenhum lugar registrado.' },
+const ABAS: { id: JournalTab; nome: string; icone: string; vazio: string }[] = [
+  { id: 'missoes', nome: 'Objetivo', icone: '◎', vazio: 'Nenhum objetivo.' },
+  { id: 'paginas', nome: 'Anotacoes', icone: '✎', vazio: 'Nenhuma anotacao recolhida. Elas estao espalhadas — cave de lado, nao so para baixo.' },
+  { id: 'pistas', nome: 'Pistas', icone: '👣', vazio: 'Nenhuma pagina do caderno ainda.' },
+  { id: 'pessoas', nome: 'Pessoas', icone: '👥', vazio: 'Ninguem anotado. Ainda nao encontrei ninguem la embaixo.' },
+  { id: 'bichos', nome: 'Bichos', icone: '🐾', vazio: 'Nenhum bicho anotado. Melhor assim.' },
+  { id: 'lugares', nome: 'Lugares', icone: '📍', vazio: 'Nenhum lugar registrado.' },
+];
+
+/**
+ * O simbolo de cada TIPO de anotacao, lido do prefixo do id.
+ *
+ * O conceito poe um desenho na frente de cada linha do indice, e ele nao e
+ * enfeite: e o que deixa achar "aquela pista da voz" correndo o olho pela
+ * coluna, sem ler titulo por titulo. O prefixo do id ja diz o tipo, entao a
+ * informacao estava ali — so nao aparecia.
+ */
+const SIMBOLO: { prefixo: string; icone: string }[] = [
+  { prefixo: 'scroll:', icone: '📜' },
+  { prefixo: 'clue:', icone: '👣' },
+  { prefixo: 'voz:', icone: '🪨' },
+  { prefixo: 'npc:', icone: '👤' },
+  { prefixo: 'bicho:', icone: '🐾' },
+  { prefixo: 'camada:', icone: '⛰' },
+  { prefixo: 'selo:', icone: '🔒' },
+  { prefixo: 'local:', icone: '📍' },
 ];
 
 /**
@@ -83,7 +102,7 @@ export class JournalUI {
       const b = document.createElement('button');
       b.className = 'journal-tab';
       b.dataset.tab = aba.id;
-      b.textContent = aba.nome;
+      b.innerHTML = `<i>${aba.icone}</i><span data-nome>${aba.nome}</span>`;
       b.addEventListener('click', () => {
         this.abaAtual = aba.id;
         this.aberta = null;
@@ -124,7 +143,9 @@ export class JournalUI {
       const aba = b.dataset.tab as JournalTab;
       b.classList.toggle('active', aba === this.abaAtual);
       const n = aba === 'missoes' ? 0 : this.journal.count(aba);
-      b.textContent = n > 0 ? `${ABAS.find((a) => a.id === aba)!.nome} ${n}` : ABAS.find((a) => a.id === aba)!.nome;
+      const nome = b.querySelector('[data-nome]');
+      // So o NOME, e nao o botao inteiro: reescrever o botao apagaria o icone.
+      if (nome) nome.textContent = n > 0 ? `${ABAS.find((a) => a.id === aba)!.nome} ${n}` : ABAS.find((a) => a.id === aba)!.nome;
     }
 
     /*
@@ -235,6 +256,11 @@ export class JournalUI {
     for (const v of Array.from(this.paginaEl.querySelectorAll('.journal-virar'))) v.remove();
   }
 
+  /** O desenho do tipo da anotacao, pelo prefixo do id. */
+  private simbolo(e: JournalEntry): string {
+    return SIMBOLO.find((x) => e.id.startsWith(x.prefixo))?.icone ?? '•';
+  }
+
   /** Uma anotacao nao tem id proprio; titulo + profundidade bastam. */
   private chave(e: JournalEntry): string {
     return `${e.title}@${e.depth}`;
@@ -245,6 +271,7 @@ export class JournalUI {
     const el = document.createElement('button');
     el.className = `journal-item ${this.chave(e) === this.aberta ? 'aberta' : ''}`;
     el.innerHTML = `
+      <span class="journal-item-icone">${this.simbolo(e)}</span>
       <span class="journal-item-txt">
         <b>${e.title}</b>
         <small>${e.notes[0] ?? ''}</small>

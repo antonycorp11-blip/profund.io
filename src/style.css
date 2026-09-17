@@ -4188,6 +4188,15 @@ body:has(.hud-map-slot.folded) .toasts {
   box-shadow: inset -16px 0 22px -18px rgba(60, 40, 18, 0.9);
 }
 
+.journal-item-icone {
+  flex: 0 0 auto;
+  width: 24px;
+  font-size: 15px;
+  line-height: 1;
+  text-align: center;
+  opacity: 0.85;
+}
+
 .journal-item {
   display: flex;
   align-items: baseline;
@@ -4212,6 +4221,9 @@ body:has(.hud-map-slot.folded) .toasts {
   min-width: 0;
 }
 
+/* O caderno e um LIVRO. A letra dele nao precisa obedecer a escala do resto
+   da interface — no conceito o texto do livro e visivelmente maior que o
+   cromo em volta, porque a tela existe para SER LIDA. */
 .journal-item-txt b {
   display: block;
   font-size: 12px;
@@ -4904,12 +4916,16 @@ body:has(.hud-map-slot.folded) .toasts {
   margin-right: 6px;
 }
 
+/* O RETRATO do ajudante, do tamanho do conceito.
+   Com 34 px ele era um icone de lista; a unidade nao tinha cara, e um exercito
+   de doze toupeiras sem cara e uma planilha. A arte ja existia em `art/auto/`
+   e estava sendo servida em miniatura. */
 .clone-face {
-  width: 34px;
-  height: 34px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   flex: 0 0 auto;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
 }
 
 .pad-img {
@@ -4957,7 +4973,7 @@ body:has(.hud-map-slot.folded) .toasts {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  width: min(94vw, 1020px);
+  width: min(94vw, 1180px);
   /*
    * ALTURA FIXA, e nao "o que o conteudo pedir".
    *
@@ -5014,6 +5030,9 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .journal-tab {
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   border: 0;
   border-radius: 10px 0 0 10px;
   background: center / 100% 100% no-repeat url('/art/journal/papel/aba.png');
@@ -5028,6 +5047,12 @@ body:has(.hud-map-slot.folded) .toasts {
   cursor: pointer;
   filter: brightness(0.72);
   transition: margin-left 0.1s, filter 0.1s;
+}
+
+.journal-tab i {
+  font-style: normal;
+  font-size: 13px;
+  line-height: 1;
 }
 
 /* A aba atual e a que esta PUXADA para fora. */
@@ -5051,7 +5076,10 @@ body:has(.hud-map-slot.folded) .toasts {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  /* As duas paginas do livro tem tamanhos PARECIDOS, como no conceito. Com o
+     indice preso em 300 px, numa tela larga a pagina da direita ficava com o
+     triplo da largura e o texto nadava nela. */
+  grid-template-columns: minmax(250px, 42%) minmax(0, 1fr);
   margin: 0 12px 12px;
   border-radius: 10px;
   /* Papel, e so papel. O que estava aqui era uma das paginas do Santiago
@@ -5204,7 +5232,7 @@ body:has(.hud-map-slot.folded) .toasts {
   align-items: baseline;
   gap: 8px;
   width: 100%;
-  padding: 4px 2px;
+  padding: 6px 2px;
   border: 0;
   border-bottom: 1px dotted rgba(90, 64, 30, 0.3);
   background: none;
@@ -5221,6 +5249,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .journal-ligada b {
   flex: 1;
+  font-size: 12px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5328,8 +5357,8 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .journal-text h4 {
-  margin: 0 0 3px;
-  font-size: 12.5px;
+  margin: 0 0 5px;
+  font-size: 16px;
   display: flex;
   align-items: baseline;
   gap: 7px;
@@ -5343,9 +5372,9 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .journal-text p {
-  margin: 0 0 2px;
-  font-size: 11.5px;
-  line-height: 1.45;
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 /* --- HUD recolhivel --- */
