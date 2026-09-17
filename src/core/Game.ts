@@ -449,7 +449,6 @@ export class Game {
     this.weapons = new WeaponSystem(
       this.world,
       this.player,
-      this.particles,
       this.attrs,
       (x, y, raio, dano) =>
         this.creatures.damageArea(x, y, raio, dano * (1 + this.attrs.get('bossDamage') * 0)),

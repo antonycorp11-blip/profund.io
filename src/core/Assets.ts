@@ -96,6 +96,15 @@ class AssetsImpl {
       );
     }
 
+    // Efeitos do tiro: fogo de boca, rastro, bala, poeira e faisca.
+    for (const fx of manifest.shotArts) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}fx/tiro/${fx}.png`).then((img) => {
+          if (img) this.images.set(`tiro:${fx}`, img);
+        })
+      );
+    }
+
     // Armas: cada uma e um sprite solto, preso na mao do heroi e girado pela
     // mira. Nunca desenhadas dentro do corpo — ver `PlayerSprite.desenharArma`.
     for (const arma of manifest.weaponArts) {
@@ -347,6 +356,11 @@ class AssetsImpl {
   /** Folha de uma estrutura de base, ou null se ainda nao existe. */
   baseArt(id: string): HTMLImageElement | null {
     return this.images.get('base:' + id) ?? null;
+  }
+
+  /** Efeito de tiro (fogo de boca, rastro, poeira...), ou null sem arte. */
+  shotFx(nome: string): HTMLImageElement | null {
+    return this.images.get('tiro:' + nome) ?? null;
   }
 
   /** Sprite de uma arma, ou null enquanto a arte nao carregou. */

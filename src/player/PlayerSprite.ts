@@ -39,20 +39,22 @@ export class PlayerSprite {
    * para fora da mao. A ancora tem que seguir o desenho que esta na tela, e
    * nao a intencao do jogador.
    *
-   * Medidos no proprio arquivo, procurando o pixel opaco mais a direita de
-   * cada quadro e tirando a altura media da coluna dele.
+   * Medidos no proprio arquivo pelo CENTRO da mao — o miolo do desenho nas
+   * ultimas nove colunas de cada quadro — e nao pela ponta do braco. A borda
+   * e o lado de fora do punho: prender a arma ali a deixa sempre um pouco
+   * adiantada, pendurada na beirada da mao em vez de dentro dela.
    */
   private static readonly PUNHO: { x: number; y: number }[] = [
-    { x: 0.242, y: -0.402 }, // 0-1 frente
-    { x: 0.242, y: -0.402 },
-    { x: 0.266, y: -0.508 }, // 2-3 cima
-    { x: 0.258, y: -0.508 },
-    { x: 0.227, y: -0.273 }, // 4-5 baixo
-    { x: 0.227, y: -0.273 },
-    { x: 0.188, y: -0.414 }, // 6-7 coice
-    { x: 0.25, y: -0.406 },
-    { x: 0.242, y: -0.406 }, // 8-9 andando
-    { x: 0.242, y: -0.402 },
+    { x: 0.207, y: -0.406 }, // 0-1 frente
+    { x: 0.208, y: -0.399 },
+    { x: 0.231, y: -0.508 }, // 2-3 cima
+    { x: 0.223, y: -0.508 },
+    { x: 0.188, y: -0.313 }, // 4-5 baixo
+    { x: 0.185, y: -0.34 },
+    { x: 0.145, y: -0.447 }, // 6-7 coice
+    { x: 0.215, y: -0.405 },
+    { x: 0.205, y: -0.364 }, // 8-9 andando
+    { x: 0.208, y: -0.387 },
   ];
 
   /** Qual quadro da tira de mira foi desenhado agora. */
@@ -333,9 +335,10 @@ export class PlayerSprite {
     ctx.save();
     ctx.translate(p.x * alturaDoCorpo, linhaDosPes + p.y * alturaDoCorpo);
     ctx.rotate(ang);
-    // O cabo fica no punho e o cano aponta para fora: a arte vem com o cabo a
-    // esquerda, entao ela comeca no zero e cresce para a frente.
-    ctx.drawImage(arte, -larguraArma * 0.28, -alturaArma / 2, larguraArma, alturaArma);
+    // O CABO fica no punho e o cano aponta para fora. A arte de inventario vem
+    // com a arma inteira centrada, entao recuo pouco mais de um terco: o
+    // suficiente para o cabo cair na mao e o cano sair dela.
+    ctx.drawImage(arte, -larguraArma * 0.34, -alturaArma / 2, larguraArma, alturaArma);
     ctx.restore();
   }
 }

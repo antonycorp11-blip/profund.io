@@ -193,6 +193,18 @@ export const ART = {
   npcDir: 'npc/',
   /** Estruturas das bases de extracao (ver tools/slice-base.mjs). */
   baseDir: 'base/',
+  /**
+   * Efeitos do tiro, gerados como folha de dez.
+   *
+   * Sao desenho, e nao particula de codigo: o fogo de boca, o rastro, a poeira
+   * na rocha e a faisca no bicho tem forma propria e uma bolinha vetorial nao
+   * substitui nenhuma delas.
+   */
+  shotArts: [
+    'fogo_1', 'fogo_2', 'rastro', 'bala',
+    'poeira_1', 'poeira_2', 'sangue_1', 'sangue_2',
+  ],
+
   /** Armas soltas, presas na mao do heroi (ver PlayerSprite.desenharArma). */
   weaponArts: [
     'pistola', 'pistola_2', 'escopeta', 'escopeta_2', 'fuzil', 'fuzil_2',

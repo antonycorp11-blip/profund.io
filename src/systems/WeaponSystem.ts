@@ -1,10 +1,10 @@
 import type { Camera } from '../core/camera';
+import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { Haptics } from '../fx/Haptics';
 import { weaponDef, type WeaponDef, type WeaponId } from '../data/weapons';
 import type { Attributes } from './Attributes';
-import type { Particles } from '../fx/Particles';
 import type { Player } from '../player/Player';
 import type { World } from '../world/World';
 
@@ -32,6 +32,28 @@ interface Bala {
 const MAX_BALAS = 96;
 
 /**
+ * Um efeito de UM quadro so, que vive por alguns decimos de segundo.
+ *
+ * O fogo de boca e o impacto nao sao animacoes longas: sao dois quadros que
+ * aparecem e somem. Guardar cada um como objeto de animacao completo seria
+ * maquinario demais para algo que dura 0,12 s.
+ */
+interface Estampido {
+  ativo: boolean;
+  x: number;
+  y: number;
+  ang: number;
+  /** Segundos restantes. */
+  vida: number;
+  total: number;
+  /** Prefixo da arte: `fogo`, `poeira` ou `sangue` (o sufixo e 1 ou 2). */
+  tipo: 'fogo' | 'poeira' | 'sangue';
+  tamanho: number;
+}
+
+const MAX_FX = 40;
+
+/**
  * O TIRO.
  *
  * A bala e um objeto que VIAJA, e nao um teste de alcance como era o golpe da
@@ -46,6 +68,7 @@ const MAX_BALAS = 96;
  */
 export class WeaponSystem {
   private pool: Bala[] = [];
+  private fx: Estampido[] = [];
   /** Tempo ate poder atirar de novo. */
   private recarga = 0;
   /** Arma na mao. Uma so por enquanto; o slot vem depois. */
@@ -56,7 +79,6 @@ export class WeaponSystem {
   constructor(
     private world: World,
     private player: Player,
-    private particles: Particles,
     private attrs: Attributes,
     /** Quem leva o dano: devolve quantas criaturas a bala acertou aqui. */
     private acertar: (x: number, y: number, raio: number, dano: number) => number,
@@ -72,6 +94,9 @@ export class WeaponSystem {
      */
     private efeitos: () => { balas: number; furos: number; quiques: number }
   ) {
+    for (let i = 0; i < MAX_FX; i++) {
+      this.fx.push({ ativo: false, x: 0, y: 0, ang: 0, vida: 0, total: 1, tipo: 'fogo', tamanho: 16 });
+    }
     for (let i = 0; i < MAX_BALAS; i++) {
       this.pool.push({
         ativo: false,
@@ -92,6 +117,20 @@ export class WeaponSystem {
     }
   }
 
+  /** Acende um efeito de quadro unico no mundo. */
+  private acender(tipo: Estampido['tipo'], x: number, y: number, ang: number, tamanho: number, vida: number): void {
+    const e = this.fx.find((f) => !f.ativo);
+    if (!e) return;
+    e.ativo = true;
+    e.x = x;
+    e.y = y;
+    e.ang = ang;
+    e.vida = vida;
+    e.total = vida;
+    e.tipo = tipo;
+    e.tamanho = tamanho;
+  }
+
   get def(): WeaponDef {
     return weaponDef(this.equipada);
   }
@@ -105,6 +144,11 @@ export class WeaponSystem {
   update(dt: number, segurandoGatilho: boolean, mirarX: number, mirarY: number): void {
     this.recarga = Math.max(0, this.recarga - dt);
     this.flash = Math.max(0, this.flash - dt * 6);
+    for (const e of this.fx) {
+      if (!e.ativo) continue;
+      e.vida -= dt;
+      if (e.vida <= 0) e.ativo = false;
+    }
     if (segurandoGatilho && this.recarga <= 0) this.atirar(mirarX, mirarY);
     this.moverBalas(dt);
   }
@@ -152,13 +196,7 @@ export class WeaponSystem {
     this.player.vx -= mirarX * d.recoil;
     this.player.vy -= mirarY * d.recoil * 0.5;
 
-    this.particles.burst(bocaX, bocaY, 5, [d.color, '#fff2c0'], {
-      speed: 130,
-      spread: 0.7,
-      dirX: mirarX,
-      dirY: mirarY,
-      life: 0.18,
-    });
+    this.acender('fogo', bocaX, bocaY, Math.atan2(mirarY, mirarX), 22, 0.1);
     Haptics.hit();
     Events.emit('weapon:fired', { id: d.id, x: bocaX, y: bocaY });
   }
@@ -187,7 +225,7 @@ export class WeaponSystem {
 
         if (this.world.isSolidAtPixel(b.x, b.y)) {
           // Bate na pedra. NAO escava: a picareta e que escava.
-          this.particles.burst(b.x, b.y, 4, ['#d8c9a8', '#9c8a6a'], { speed: 70, life: 0.22 });
+          this.acender('poeira', b.x, b.y, Math.random() * Math.PI * 2, 18, 0.16);
           if (b.quiques > 0 && this.quicar(b)) {
             b.quiques--;
             break;
@@ -196,7 +234,7 @@ export class WeaponSystem {
           break;
         }
         if (this.acertar(b.x, b.y, b.raio + 6, b.dano) > 0) {
-          this.particles.burst(b.x, b.y, 6, [b.cor, '#ff9a6a'], { speed: 110, life: 0.2 });
+          this.acender('sangue', b.x, b.y, Math.atan2(b.vy, b.vx), 18, 0.16);
           if (b.furos <= 0) {
             b.ativo = false;
             break;
@@ -249,11 +287,39 @@ export class WeaponSystem {
   render(ctx: CanvasRenderingContext2D, camera: Camera): void {
     ctx.save();
     ctx.lineCap = 'round';
+
+    const rastro = Assets.shotFx('rastro');
+    const bala = Assets.shotFx('bala');
+
     for (const b of this.pool) {
       if (!b.ativo) continue;
       if (!camera.sees(b.x, b.y)) continue;
-      // A risca do rastro conta a DIRECAO. Um ponto sozinho a essa velocidade
-      // vira um piscar sem sentido de leitura.
+      const ang = Math.atan2(b.vy, b.vx);
+
+      if (bala) {
+        // Arte: o rastro atras e a bala na ponta, os dois girados pela
+        // direcao real do voo.
+        if (rastro) {
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          ctx.rotate(ang);
+          ctx.globalAlpha = 0.75;
+          const lr = b.raio * 9;
+          ctx.drawImage(rastro, -lr, -b.raio * 2, lr, b.raio * 4);
+          ctx.restore();
+        }
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(ang);
+        ctx.globalAlpha = 1;
+        const lb = b.raio * 4;
+        ctx.drawImage(bala, -lb / 2, -lb / 2, lb, lb);
+        ctx.restore();
+        continue;
+      }
+
+      // Sem arte carregada, o desenho vetorial de sempre. A risca conta a
+      // DIRECAO: um ponto sozinho a essa velocidade e um piscar sem leitura.
       ctx.strokeStyle = b.cor;
       ctx.globalAlpha = 0.5;
       ctx.lineWidth = b.raio * 1.1;
@@ -261,21 +327,31 @@ export class WeaponSystem {
       ctx.moveTo(b.px, b.py);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
-
-      // Miolo claro com halo: a bala precisa se ler contra rocha escura E
-      // contra o brilho de um veio de cristal.
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = b.cor;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.raio * 2.1, 0, Math.PI * 2);
-      ctx.fill();
-
       ctx.globalAlpha = 1;
       ctx.fillStyle = '#fff6d8';
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.raio, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Estampidos e impactos, por cima das balas.
+    for (const e of this.fx) {
+      if (!e.ativo) continue;
+      if (!camera.sees(e.x, e.y)) continue;
+      const t = 1 - e.vida / e.total;
+      // Dois quadros: a primeira metade da vida mostra o 1, a segunda o 2.
+      const arte = Assets.shotFx(`${e.tipo}_${t < 0.5 ? 1 : 2}`);
+      if (!arte) continue;
+      ctx.save();
+      ctx.translate(e.x, e.y);
+      ctx.rotate(e.ang);
+      // Cresce um pouco e some: e o que faz um quadro parado parecer um estouro.
+      const s2 = e.tamanho * (0.8 + t * 0.5);
+      ctx.globalAlpha = 1 - t * t;
+      ctx.drawImage(arte, -s2 / 2, -s2 / 2, s2, s2);
+      ctx.restore();
+    }
+
     ctx.restore();
     void CONFIG;
   }
