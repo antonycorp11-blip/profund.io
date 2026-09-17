@@ -554,15 +554,28 @@ export class TechScreen {
                     ${money >= def.cost ? '' : 'disabled'}>✦ ${def.cost.toLocaleString('pt-BR')}</button>`;
         }
 
+        // Arte a ESQUERDA e o texto a direita, como no conceito. Com a arte em
+        // cima o cartao virava uma coluna estreita onde o desenho da peca
+        // ficava do tamanho de um icone de lista; deitado, a peca aparece e o
+        // texto ganha a largura que ele precisa.
+        const estado = vestido
+          ? '<small class="eq-estado on">EQUIPADO</small>'
+          : tem
+            ? '<small class="eq-estado">NA MOCHILA</small>'
+            : longe
+              ? `<small class="eq-estado">A ${def.requiredDepth} M</small>`
+              : '<small class="eq-estado">A VENDA</small>';
+
         return `
           <div class="eq-card ${vestido ? 'on' : ''} ${longe && !tem ? 'locked' : ''}">
-            <div class="eq-head">
-              ${this.equipArte(def.id, def.icon)}
+            ${this.equipArte(def.id, def.icon)}
+            <div class="eq-texto">
               <b>${def.name}</b>
+              ${estado}
+              <p>${def.description}</p>
+              <ul class="eq-mods">${efeitos}</ul>
+              <div class="eq-foot">${acao}</div>
             </div>
-            <p>${def.description}</p>
-            <ul class="eq-mods">${efeitos}</ul>
-            <div class="eq-foot">${acao}</div>
           </div>`;
       })
       .join('');
@@ -593,11 +606,16 @@ export class TechScreen {
     const encaixe = (sl: { id: EquipSlot; name: string; icon: string }, pos: string) => {
       const atual = eq.equippedIn(sl.id);
       const def = atual ? equipDef(atual) : null;
+      // Rotulo do encaixe EM CIMA e a peca vestida na plaquinha embaixo, como
+      // no conceito. O rotulo diz onde e o encaixe e nunca muda; a plaquinha
+      // diz o que esta la e muda o tempo todo — em cima, o que se le primeiro
+      // era justamente a palavra que nunca traz noticia.
       return `
         <button class="boneco-slot ${pos} ${def ? 'on' : ''} ${sl.id === aberto ? 'foco' : ''}"
                 data-slot="${sl.id}" title="${sl.name}">
-          <span class="boneco-arte">${def ? this.equipArte(def.id, def.icon) : ''}</span>
           <span class="boneco-rotulo"><i>${sl.name}</i></span>
+          <span class="boneco-arte">${def ? this.equipArte(def.id, def.icon) : ''}</span>
+          <span class="boneco-peca">${def ? def.name : 'vazio'}</span>
         </button>`;
     };
     const [c0, c1, c2, c3] = slots;

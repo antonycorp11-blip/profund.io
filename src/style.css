@@ -3217,18 +3217,51 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .eq-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  /* Cartao deitado pede mais largura que o cartao em pe. */
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
   gap: 9px;
 }
 
+/*
+ * A peca a ESQUERDA, o texto a direita — o cartao do conceito.
+ *
+ * Empilhado, o desenho da peca ficava do tamanho de um icone de lista e o
+ * texto espremido numa coluna estreita. Deitado, a arte tem espaco para ser
+ * arte e o texto tem linha inteira para respirar.
+ */
 .eq-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
   border: 1px solid var(--stroke);
   border-radius: 11px;
-  padding: 10px;
+  padding: 11px;
   background: rgba(255, 255, 255, 0.03);
+}
+
+.eq-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.eq-texto b {
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.eq-estado {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 1.1px;
+  color: var(--ink-dim);
+}
+
+.eq-estado.on {
+  color: var(--accent);
 }
 
 .eq-card.on {
@@ -3249,6 +3282,40 @@ body:has(.hud-map-slot.folded) .toasts {
 .eq-head b {
   font-size: 12px;
   color: var(--ink);
+}
+
+/* Cartao deitado nao cabe em meia coluna de celular: volta a empilhar. */
+@media (max-width: 620px) {
+  .eq-card {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 9px;
+  }
+  .eq-card > .eq-icon {
+    width: 58px;
+    height: 58px;
+  }
+  .eq-card > .eq-icon img {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+.eq-card > .eq-icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  font-size: 30px;
+  background: center / contain no-repeat url('/art/hud/encaixe/vazio.png');
+}
+
+.eq-card.on > .eq-icon {
+  background-image: url('/art/hud/encaixe/aceso.png');
+}
+
+.eq-card > .eq-icon img {
+  width: 46px;
+  height: 46px;
 }
 
 .eq-icon img {
@@ -3399,6 +3466,28 @@ body:has(.hud-map-slot.folded) .toasts {
   color: var(--accent);
 }
 
+/* A plaquinha com a peca que esta vestida. E ela que muda; por isso ela fica
+   embaixo, onde o olho para depois de ver o desenho. */
+.boneco-peca {
+  max-width: 96px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(0, 0, 0, 0.42);
+  font-size: 8.5px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--ink-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boneco-slot.on .boneco-peca {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--stroke));
+  color: var(--ink);
+}
+
 .boneco-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3443,28 +3532,44 @@ body:has(.hud-map-slot.folded) .toasts {
   padding-right: 12px;
 }
 
+/* A linha de apoio do cinto e apoio: no tamanho do corpo do texto ela
+   competia com o titulo por atencao. */
+.skl-cinto > .dim {
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
 .cinto-titulo {
   margin: 0 0 3px;
   font-size: 13px;
   color: var(--ink);
 }
 
+/* GRADE, e nao coluna: coluna e a forma de uma lista, e o cinto nao e uma
+   lista — e um objeto com lugares, que se le de uma vez. */
 .cinto-lugares {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   margin-top: 10px;
+}
+
+/* Sao TRES lugares, nao quatro. Em vez de fingir um quarto encaixe vazio, o
+   ultimo se centra na linha de baixo. */
+.cinto-lugar:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  width: calc(50% - 4px);
+  justify-self: center;
 }
 
 /* Um lugar do cinto. O anel vem da folha do ninho: e o mesmo vocabulario da
    arvore de atributos, e as duas telas falam de escolher um caminho. */
 .cinto-lugar {
-  display: grid;
-  grid-template-columns: 62px minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0 10px;
-  padding: 8px;
+  gap: 3px;
+  padding: 9px 6px 8px;
   border: 1px solid var(--stroke);
   border-radius: 13px;
   background: rgba(0, 0, 0, 0.32);
@@ -3479,9 +3584,8 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .cinto-anel {
-  grid-row: 1 / 3;
-  width: 62px;
-  height: 62px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
   background: center / contain no-repeat url('/art/tree/anel_bloqueada.png');
@@ -3505,9 +3609,10 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .cinto-lugar b {
-  font-size: 11.5px;
+  font-size: 10.5px;
+  line-height: 1.15;
+  text-align: center;
   color: var(--ink-dim);
-  align-self: end;
 }
 
 .cinto-lugar.on b {
@@ -3515,40 +3620,111 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .cinto-lugar small {
-  font-size: 9px;
+  font-family: var(--font-display);
+  font-size: 8px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
   color: var(--ink-dim);
-  align-self: start;
 }
 
-.cinto-dica {
-  margin-top: 12px;
-  font-size: 9.5px;
-  line-height: 1.4;
-  color: var(--ink-dim);
+/* A placa de madeira embaixo do cinto, como no conceito. A regra do cinto
+   cheio e a unica coisa da tela que nao se descobre olhando — entao ela e
+   justamente a que merece estar pregada na parede em vez de virar mais uma
+   linha cinza de texto. */
+.cinto-placa {
+  margin: 14px auto 0;
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  width: min(100%, 210px);
+  padding: 10px 24px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  line-height: 1.35;
+  letter-spacing: 0.4px;
+  text-align: center;
+  /* A madeira desta placa e ESCURA (44,33,21): tinta escura nela some. O
+     texto e claro, com sombra preta atras — letreiro pintado, nao entalhe. */
+  color: #f0dcb0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  background: center / 100% 100% no-repeat url('/art/hud/moldura/placa.png');
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
 }
 
 .skl-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--cartao-min), 1fr));
+  /* Cartao COMPLETO pede largura: com 128 px nao cabe descricao nenhuma, e a
+     descricao e justamente o que o conceito poe dentro do cartao. */
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
   gap: 9px;
   margin-top: 10px;
 }
 
+/*
+ * O cartao de habilidade, COMPLETO.
+ *
+ * Ele so identificava — icone, nome, estado — e descobrir o que uma
+ * habilidade fazia custava um clique por habilidade. Agora ele diz o que ela
+ * faz, quanto ela custa e traz o proprio botao; a ficha do lado continua para
+ * quem quer o numero fino e o proximo nivel.
+ */
 .skl-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 12px 8px 10px;
+  align-items: stretch;
+  gap: 7px;
+  min-height: 118px;
+  padding: 12px 10px 10px;
   border: 1px solid var(--stroke);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
   font-family: var(--font);
-  text-align: center;
+  text-align: left;
   cursor: pointer;
   opacity: 0.62;
+}
+
+.skl-card-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.skl-card-nome {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.skl-card-desc {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--ink-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.skl-card-stats {
+  font-size: 10px;
+  color: #7fb6ff;
+}
+
+.skl-card-stats:empty {
+  display: none;
+}
+
+/* SPAN, nao button: o cartao inteiro ja e um button, e button dentro de
+   button o navegador desmonta — o clique cairia em lugar nenhum. */
+.skl-card-acao {
+  margin-top: auto;
+  text-align: center;
+  font-size: 10px;
+  padding: 0 6px;
+}
+
+.skl-card-acao[data-inerte] {
+  opacity: 0.75;
 }
 
 .skl-card.owned {
@@ -3568,15 +3744,29 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .skl-card b {
-  font-size: 11.5px;
+  display: block;
+  font-size: 12px;
   color: var(--ink);
   line-height: 1.2;
 }
 
 .skl-card small {
-  font-size: 9px;
-  letter-spacing: 0.8px;
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   color: var(--ink-dim);
+}
+
+.skl-card.owned small {
+  color: #7fb6ff;
+}
+
+/* A etiqueta de estado vai para a ponta do cabecalho, longe do nome: sao
+   duas leituras diferentes e coladas elas viram uma frase so. */
+.skl-card .skl-flag {
+  flex: 0 0 auto;
+  align-self: flex-start;
 }
 
 .skl-flag {
@@ -3628,13 +3818,16 @@ body:has(.hud-map-slot.folded) .toasts {
     border-bottom: 1px solid var(--stroke);
     padding: 0 0 10px;
   }
+  /* Deitado, o cinto vira uma fileira de tres: e a leitura que importa no
+     celular — o que esta equipado — sem gastar altura. */
   .skl-cinto .cinto-lugares {
-    flex-direction: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .skl-cinto .cinto-lugar {
-    flex: 1;
+  .skl-cinto .cinto-lugar:last-child:nth-child(odd) {
+    grid-column: auto;
+    width: auto;
   }
-  .skl-cinto .cinto-dica {
+  .skl-cinto .cinto-placa {
     display: none;
   }
 }

@@ -117,7 +117,15 @@ export class ActiveSkillsUI {
     this.refreshLive();
   }
 
-  /** O cinto: tres lugares, sempre a vista. */
+  /**
+   * O cinto: os lugares em GRADE, com a placa embaixo.
+   *
+   * Era uma coluna de tres, e coluna e a forma de uma lista — o cinto nao e
+   * uma lista, e um objeto com lugares. Em grade os tres ficam lado a lado no
+   * mesmo golpe de vista, que e o que o conceito mostra. Sao tres e nao
+   * quatro de proposito: o limite do cinto e uma decisao do jogo, entao o
+   * ultimo lugar se centra em vez de fingir um quarto encaixe vazio.
+   */
   private renderCinto(metas: ActiveSkillMeta[]): void {
     const cinto = this.host.active.equipped;
     const lugares = [0, 1, 2]
@@ -137,9 +145,9 @@ export class ActiveSkillsUI {
 
     this.cintoEl.innerHTML = `
       <h4 class="cinto-titulo">Cinto</h4>
-      <p class="dim">Tres lugares. O que esta aqui aparece nos botoes do jogo.</p>
+      <p class="dim">O que esta aqui aparece nos botoes do jogo.</p>
       <div class="cinto-lugares">${lugares}</div>
-      <p class="cinto-dica">Com o cinto cheio, a nova entra no lugar da primeira.</p>`;
+      <p class="cinto-placa">Cinto cheio? A nova entra no lugar da primeira.</p>`;
 
     for (const b of Array.from(this.cintoEl.querySelectorAll('[data-cinto]'))) {
       const id = (b as HTMLElement).dataset.cinto;
@@ -151,41 +159,87 @@ export class ActiveSkillsUI {
     }
   }
 
-  /** A vitrine: cartao que so identifica. */
+  /**
+   * A vitrine: cartao COMPLETO, como no conceito.
+   *
+   * O cartao so identificava — icone, nome, estado — e para saber o que cada
+   * habilidade fazia era preciso clicar uma por uma e ler a ficha do lado. Com
+   * tres habilidades isso e tres viagens para responder uma pergunta so.
+   * Agora o cartao diz o que ela faz, quanto ela custa e traz o proprio botao
+   * de aprender; a ficha continua existindo para quem quer o detalhe fino.
+   */
   private renderGrade(metas: ActiveSkillMeta[]): void {
     if (metas.length === 0) {
       this.gradeEl.innerHTML = '<p class="map-empty">Nenhuma habilidade ativa ainda.</p>';
       return;
     }
+    const tree = this.host.tree;
+    const money = Math.floor(this.host.stock.money);
+    const prof = this.host.currentDepth();
+
     this.gradeEl.innerHTML = `
       <h4 class="cinto-titulo">Todas as habilidades</h4>
       <div class="skl-cards">
         ${metas
           .map((meta) => {
             const def = skillDef(meta.skill)!;
-            const nivel = this.host.tree.levelOf(def.id);
+            const nivel = tree.levelOf(def.id);
+            const maxed = nivel >= def.maxLevel;
+            const check = tree.canLearn(def.id, prof);
+            const preco = meta.prices[Math.min(nivel, meta.prices.length - 1)] ?? 0;
+            const podePagar = money >= preco;
+            const pode = !maxed && check.ok && podePagar;
             const equipada = this.host.active.isEquipped(meta.id);
             const sel = meta.id === this.selecionada ? ' sel' : '';
-            const estado =
-              nivel === 0
+            const estado = maxed
+              ? '<span class="skl-flag on">completa</span>'
+              : nivel === 0
                 ? '<span class="skl-flag"><img src="art/hud/cadeado.png" alt="">nao aprendida</span>'
                 : equipada
                   ? '<span class="skl-flag on">no cinto</span>'
                   : '<span class="skl-flag">pronta</span>';
+
+            let acao: string;
+            if (maxed) acao = '✓ COMPLETA';
+            else if (!check.ok) acao = check.reason ?? 'BLOQUEADA';
+            else if (!podePagar) acao = `FALTAM ✦${(preco - money).toLocaleString('pt-BR')}`;
+            else acao = `${nivel > 0 ? 'MELHORAR' : 'APRENDER'} · ✦${preco.toLocaleString('pt-BR')}`;
+
             return `
               <button class="skl-card ${nivel > 0 ? 'owned' : ''}${sel}" data-pick="${meta.id}">
-                <span class="skl-icone">${this.arte(def, meta)}</span>
-                <b>${def.name}</b>
-                <small>${nivel > 0 ? `NIVEL ${nivel}/${def.maxLevel}` : '—'}</small>
-                ${estado}
+                <span class="skl-card-head">
+                  <span class="skl-icone">${this.arte(def, meta)}</span>
+                  <span class="skl-card-nome">
+                    <b>${def.name}</b>
+                    <small>${nivel > 0 ? `NIVEL ${nivel}/${def.maxLevel}` : 'NAO APRENDIDA'}</small>
+                  </span>
+                  ${estado}
+                </span>
+                <span class="skl-card-desc">${def.description}</span>
+                <span class="active-stats skl-card-stats" data-live-stats="${meta.id}"></span>
+                <span class="btn ${pode ? 'primary' : ''} skl-card-acao" ${pode ? '' : 'data-inerte'}>
+                  ${acao}
+                </span>
               </button>`;
           })
           .join('')}
       </div>`;
 
     for (const b of Array.from(this.gradeEl.querySelectorAll('[data-pick]'))) {
-      b.addEventListener('click', () => {
-        this.selecionada = (b as HTMLElement).dataset.pick!;
+      b.addEventListener('click', (ev) => {
+        const id = (b as HTMLElement).dataset.pick!;
+        const meta = metas.find((m) => m.id === id)!;
+        const def = skillDef(meta.skill)!;
+        // Tocar no BOTAO aprende na hora; tocar no resto do cartao escolhe e
+        // manda a ficha para o lado. Botao que so enfeita e pior que nenhum.
+        const acao = (ev.target as HTMLElement).closest('.skl-card-acao');
+        if (acao && !acao.hasAttribute('data-inerte')) {
+          const preco = meta.prices[Math.min(tree.levelOf(def.id), meta.prices.length - 1)] ?? 0;
+          if (this.host.stock.money >= preco && tree.learn(def.id, prof)) {
+            this.host.stock.money -= preco;
+          }
+        }
+        this.selecionada = id;
         this.render();
       });
     }
@@ -325,20 +379,20 @@ export class ActiveSkillsUI {
         status.classList.toggle('cooling', st.charges === 0 && st.cooldown > 0);
       }
 
-      const stats = this.wrap.querySelector(`[data-live-stats="${meta.id}"]`);
-      if (!stats) continue;
-      if (!st.unlocked) {
-        if (stats.textContent !== '') stats.textContent = '';
-        continue;
-      }
-      const linha = meta.stats
-        .map((s) => {
-          const v = this.host.attrs.get(s.attr);
-          const num = s.percent ? `${Math.round(v * 100)}%` : `${Math.round(v)}`;
-          return `${num} ${s.label}`;
-        })
-        .join(' · ');
-      if (stats.textContent !== linha) stats.textContent = linha;
+      // querySelectorAll, e nao querySelector: a mesma leitura aparece no
+      // cartao e na ficha, e o primeiro que aparecesse roubaria o valor do
+      // outro, que ficaria em branco para sempre.
+      const stats = Array.from(this.wrap.querySelectorAll(`[data-live-stats="${meta.id}"]`));
+      const linha = !st.unlocked
+        ? ''
+        : meta.stats
+            .map((s) => {
+              const v = this.host.attrs.get(s.attr);
+              const num = s.percent ? `${Math.round(v * 100)}%` : `${Math.round(v)}`;
+              return `${num} ${s.label}`;
+            })
+            .join(' · ');
+      for (const el of stats) if (el.textContent !== linha) el.textContent = linha;
     }
     void CONFIG;
   }
