@@ -3520,183 +3520,381 @@ body:has(.hud-map-slot.folded) .toasts {
   color: var(--ink-dim);
 }
 
-/* --- SKILLS: cinto | vitrine | ficha --- */
+/* ==========================================================================
+   SKILLS — cinto | vitrine | ficha
+   --------------------------------------------------------------------------
+   Remontada em cima do conceito. As tres diferencas que mais pesavam:
+
+   1. A tela era MARROM inteira, porque o chassi pintado passou por cima de
+      tudo. No conceito o cartao e AZUL-NOITE e o ouro so aparece no que esta
+      escolhido e no botao de gastar. Ouro em tudo nao e mais fiel, e menos:
+      vira parede de ouro e a hierarquia some.
+   2. Todo cartao carregava um botao gordo, inclusive os que diziam
+      "FALTAM 21.201" — peso de botao para coisa que nao da para clicar.
+   3. A ficha despejava os numeros numa linha corrida. No conceito ela e
+      TABELA: nome da leitura a esquerda, numero a direita.
+   ========================================================================== */
 .tech-body.skl-tres {
-  grid-template-columns: 236px minmax(0, 1fr) 300px;
+  grid-template-columns: 268px minmax(0, 1fr) 320px;
 }
 
+/* ------------------------------------------------------------- o cinto --- */
 .skl-cinto {
   min-height: 0;
   overflow-y: auto;
-  border-right: 1px solid var(--stroke);
-  padding-right: 12px;
-}
-
-/* A linha de apoio do cinto e apoio: no tamanho do corpo do texto ela
-   competia com o titulo por atencao. */
-.skl-cinto > .dim {
-  font-size: 9.5px;
-  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 12px 10px;
+  text-align: center;
 }
 
 .cinto-titulo {
-  margin: 0 0 3px;
-  font-size: 13px;
-  color: var(--ink);
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
-/* GRADE, e nao coluna: coluna e a forma de uma lista, e o cinto nao e uma
-   lista — e um objeto com lugares, que se le de uma vez. */
+.cinto-sub {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* DOIS POR DOIS, os quatro lugares sempre a vista. Coluna e a forma de uma
+   lista; o cinto nao e uma lista, e um objeto com lugares. */
 .cinto-lugares {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px 10px;
+  margin: 16px 0 0;
+  width: 100%;
 }
 
-/* Sao TRES lugares, nao quatro. Em vez de fingir um quarto encaixe vazio, o
-   ultimo se centra na linha de baixo. */
-.cinto-lugar:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-  width: calc(50% - 4px);
-  justify-self: center;
-}
-
-/* Um lugar do cinto. O anel vem da folha do ninho: e o mesmo vocabulario da
-   arvore de atributos, e as duas telas falam de escolher um caminho. */
 .cinto-lugar {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 9px 6px 8px;
-  border: 1px solid var(--stroke);
-  border-radius: 13px;
-  background: rgba(0, 0, 0, 0.32);
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
   font-family: var(--font);
-  text-align: left;
   cursor: pointer;
 }
 
-.cinto-lugar.on {
-  border-color: #7fb6ff;
-  background: rgba(127, 182, 255, 0.07);
-}
-
+/* O anel do cinto e o MESMO anel do ninho de atributos: as duas telas falam
+   de escolher um caminho, e repetir o vocabulario poupa uma explicacao. */
 .cinto-anel {
-  width: 58px;
-  height: 58px;
+  width: 74px;
+  height: 74px;
   display: grid;
   place-items: center;
   background: center / contain no-repeat url('/art/tree/anel_bloqueada.png');
-  font-size: 22px;
+  font-size: 26px;
 }
 
 .cinto-lugar.on .cinto-anel {
   background-image: url('/art/tree/anel_aprendida.png');
+  filter: drop-shadow(0 0 10px rgba(255, 196, 83, 0.45));
 }
 
 .cinto-anel img {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
 .cinto-anel i {
   font-style: normal;
-  font-size: 22px;
-  color: var(--ink-dim);
+  font-size: 24px;
+  color: rgba(255, 224, 170, 0.35);
 }
 
-.cinto-lugar b {
+/* A plaquinha do nome, embaixo do anel: e a mesma leitura do botao do pad. */
+.cinto-placa {
+  display: block;
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid var(--stroke);
+  border-radius: 9px;
+  background: rgba(8, 12, 22, 0.75);
+}
+
+.cinto-lugar.on .cinto-placa {
+  border-color: rgba(255, 196, 83, 0.5);
+  background: rgba(40, 30, 12, 0.7);
+}
+
+.cinto-placa b {
+  display: block;
+  font-family: var(--font-display);
   font-size: 10.5px;
   line-height: 1.15;
-  text-align: center;
-  color: var(--ink-dim);
-}
-
-.cinto-lugar.on b {
-  color: var(--ink);
-}
-
-.cinto-lugar small {
-  font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-dim);
 }
 
-/* A placa de madeira embaixo do cinto, como no conceito. A regra do cinto
-   cheio e a unica coisa da tela que nao se descobre olhando — entao ela e
-   justamente a que merece estar pregada na parede em vez de virar mais uma
-   linha cinza de texto. */
-.cinto-placa {
-  margin: 14px auto 0;
+.cinto-lugar.on .cinto-placa b {
+  color: var(--ink);
+}
+
+.cinto-placa small {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(185, 171, 152, 0.75);
+}
+
+/* A placa de madeira no pe da coluna, como no conceito. */
+.cinto-lema {
+  margin: auto 0 4px;
   display: grid;
   place-items: center;
-  min-height: 54px;
-  width: min(100%, 210px);
-  padding: 10px 24px;
+  width: 168px;
+  min-height: 104px;
+  padding: 16px 22px;
   font-family: var(--font-display);
-  font-size: 10px;
-  line-height: 1.35;
-  letter-spacing: 0.4px;
-  text-align: center;
-  /* A madeira desta placa e ESCURA (44,33,21): tinta escura nela some. O
-     texto e claro, com sombra preta atras — letreiro pintado, nao entalhe. */
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  /* A madeira desta placa e escura: tinta escura nela some. */
   color: #f0dcb0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
   background: center / 100% 100% no-repeat url('/art/hud/moldura/placa.png');
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+  transform: rotate(-2deg);
+}
+
+/* ---------------------------------------------------------- a vitrine --- */
+.skl-cab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  /* O titulo e o subtitulo nao quebram: numa coluna estreita eles viravam
+     quatro linhas e empurravam a grade inteira para baixo. Quem cede espaco e
+     o subtitulo, com reticencia. */
+  white-space: nowrap;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--stroke);
+  margin-bottom: 12px;
+}
+
+.skl-cab-icone {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.skl-cab-txt b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.skl-cab-txt {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.skl-cab-txt small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* A pilula do caixa: e o que compra tudo nesta tela, entao ela fica onde a
+   decisao acontece e nao so la em cima na barra do jogo. */
+.skl-pontos {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 196, 83, 0.45);
+  border-radius: 999px;
+  background: rgba(40, 30, 12, 0.6);
+}
+
+.skl-pontos img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.skl-pontos b {
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.skl-pontos small {
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
 }
 
 .skl-cards {
   display: grid;
-  /* Cartao COMPLETO pede largura: com 128 px nao cabe descricao nenhuma, e a
-     descricao e justamente o que o conceito poe dentro do cartao. */
-  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
-  gap: 9px;
-  margin-top: 10px;
+  /* TRES por linha como no conceito. Com 208 px de minimo cabiam duas, e a
+     tela virava uma pilha de cartoes largos em vez de uma vitrine. */
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  align-content: start;
+  gap: 10px;
 }
 
 /*
- * O cartao de habilidade, COMPLETO.
+ * O CARTAO, azul-noite como no conceito.
  *
- * Ele so identificava — icone, nome, estado — e descobrir o que uma
- * habilidade fazia custava um clique por habilidade. Agora ele diz o que ela
- * faz, quanto ela custa e traz o proprio botao; a ficha do lado continua para
- * quem quer o numero fino e o proximo nivel.
+ * Ele nao entra no chassi pintado de proposito (ver o bloco CHASSI): com a
+ * moldura de couro em todos, a tela virava um muro marrom onde o cartao
+ * escolhido nao se destacava de nada. Aqui o ouro so aparece no escolhido.
  */
 .skl-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 7px;
-  min-height: 118px;
-  padding: 12px 10px 10px;
-  border: 1px solid var(--stroke);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 5px;
+  min-height: 176px;
+  padding: 12px 12px 11px;
+  border: 1px solid rgba(120, 160, 220, 0.22);
+  border-radius: 14px;
+  background: linear-gradient(170deg, rgba(22, 32, 52, 0.95), rgba(12, 18, 32, 0.95));
   font-family: var(--font);
   text-align: left;
   cursor: pointer;
-  opacity: 0.62;
 }
 
-.skl-card-head {
+.skl-card.locked {
+  opacity: 0.55;
+  background: linear-gradient(170deg, rgba(20, 22, 28, 0.95), rgba(12, 13, 17, 0.95));
+}
+
+.skl-card.sel {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 20px rgba(255, 196, 83, 0.25);
+}
+
+.skl-card-topo {
   display: flex;
-  align-items: center;
-  gap: 9px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
 }
 
-.skl-card-nome {
-  min-width: 0;
-  flex: 1 1 auto;
+/* Anel redondo, escuro, com o brilho por fora — e o mesmo desenho do botao
+   do pad, que e onde a habilidade aparece durante o jogo. */
+.skl-icone {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid rgba(120, 160, 220, 0.4);
+  background: radial-gradient(circle at 50% 42%, rgba(60, 90, 140, 0.4), rgba(8, 12, 22, 0.95) 72%);
+  font-size: 24px;
+}
+
+.skl-card.owned .skl-icone,
+.skl-card.pronta .skl-icone {
+  border-color: rgba(122, 214, 235, 0.75);
+  box-shadow: 0 0 14px rgba(122, 214, 235, 0.3);
+}
+
+.skl-card.sel .skl-icone {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(255, 196, 83, 0.4);
+}
+
+.skl-icone img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+}
+
+/* O selo de estado: pilula ciano no conceito. Ciano porque e a unica cor da
+   tela que nao e nem o ouro de gastar nem o verde de ganho — le como
+   "estado", e nao como "acao". */
+.skl-selo {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(122, 214, 235, 0.45);
+  background: rgba(30, 80, 100, 0.35);
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9fe8f2;
+}
+
+.skl-selo.max {
+  border-color: rgba(125, 220, 125, 0.5);
+  background: rgba(40, 90, 50, 0.35);
+  color: #9fe9a8;
+}
+
+.skl-selo.off {
+  border-color: var(--stroke);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ink-dim);
+}
+
+.skl-cadeado {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  opacity: 0.75;
+}
+
+.skl-card b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.skl-card small {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8fb2d8;
+}
+
+.skl-card.locked small {
+  color: var(--ink-dim);
 }
 
 .skl-card-desc {
-  font-size: 10px;
+  margin-top: 3px;
+  font-size: 10.5px;
   line-height: 1.4;
   color: var(--ink-dim);
   display: -webkit-box;
@@ -3706,128 +3904,247 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .skl-card-stats {
+  margin-top: auto;
+  padding-top: 6px;
   font-size: 10px;
-  color: #7fb6ff;
+  line-height: 1.4;
+  color: #8fd6e8;
 }
 
 .skl-card-stats:empty {
   display: none;
 }
 
-/* SPAN, nao button: o cartao inteiro ja e um button, e button dentro de
-   button o navegador desmonta — o clique cairia em lugar nenhum. */
+/*
+ * O botao do cartao SO existe quando ha o que fazer.
+ *
+ * Antes todo cartao tinha um botao gordo, inclusive os que diziam
+ * "FALTAM 21.201" — peso de botao para coisa que nao da para clicar, e a tela
+ * inteira gritando. Agora a ausencia dele ja e a resposta, e o preco continua
+ * na ficha ao lado para quem quer saber quanto falta.
+ *
+ * SPAN e nao button: o cartao inteiro ja e um button, e button dentro de
+ * button o navegador desmonta — o clique cairia em lugar nenhum.
+ */
 .skl-card-acao {
-  margin-top: auto;
-  text-align: center;
-  font-size: 10px;
-  padding: 0 6px;
-}
-
-.skl-card-acao[data-inerte] {
-  opacity: 0.75;
-}
-
-.skl-card.owned {
-  opacity: 1;
-}
-
-.skl-card.sel {
-  border-color: #7fb6ff;
-  box-shadow: 0 0 0 1px #7fb6ff, 0 0 16px rgba(127, 182, 255, 0.22);
-}
-
-.skl-icone img {
-  width: var(--icone-grande);
-  height: var(--icone-grande);
-  object-fit: contain;
-  display: block;
-}
-
-.skl-card b {
-  display: block;
-  font-size: 12px;
-  color: var(--ink);
-  line-height: 1.2;
-}
-
-.skl-card small {
-  font-family: var(--font-display);
-  font-size: 8.5px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-
-.skl-card.owned small {
-  color: #7fb6ff;
-}
-
-/* A etiqueta de estado vai para a ponta do cabecalho, longe do nome: sao
-   duas leituras diferentes e coladas elas viram uma frase so. */
-.skl-card .skl-flag {
-  flex: 0 0 auto;
-  align-self: flex-start;
-}
-
-.skl-flag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 8.5px;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-
-.skl-flag.on {
-  color: #7fb6ff;
-}
-
-.skl-flag img {
-  width: 11px;
-  height: 11px;
-  object-fit: contain;
-}
-
-.det-botoes {
-  margin-top: 14px;
+  margin-top: 8px;
   display: flex;
-  flex-direction: column;
-  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10.5px;
+  padding: 0 8px;
 }
 
-.det-botoes .btn {
+/* ------------------------------------------------------------- a ficha --- */
+.det-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.det-icone.skl-icone {
+  width: 58px;
+  height: 58px;
+}
+
+.det-icone.skl-icone img {
+  width: 34px;
+  height: 34px;
+}
+
+.det-nome b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.det-nome small {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8fb2d8;
+}
+
+/* A frase do Santiago. Em italico e dourada porque e VOZ, nao regra — o
+   paragrafo debaixo dela e que explica o que a habilidade faz. */
+.active-status:empty {
+  display: none;
+}
+
+.det-flavor {
+  margin: 11px 0 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  font-style: italic;
+  color: var(--accent);
+}
+
+.det-desc {
+  margin: 7px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
+/*
+ * TABELA, e nao linha corrida.
+ *
+ * "4 de raio · 300% de forca · 2 cargas · 43 s de recarga" cabe numa linha,
+ * mas nao se CONFERE numa linha: o olho tem que contar as palavras para achar
+ * a recarga. Nome a esquerda, numero a direita, uma leitura por linha.
+ */
+.det-tabela {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.det-tabela li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 2px;
+  border-bottom: 1px solid rgba(255, 224, 170, 0.09);
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+.det-tabela li:last-child {
+  border-bottom: 0;
+}
+
+.det-tabela img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.det-tabela b {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* O que o proximo nivel acrescenta: verde, um ganho por linha, com o sinal
+   na frente. Melhora que ABAIXA um numero (recarga) tambem e ganho. */
+.det-ganhos {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.det-ganhos li {
+  position: relative;
+  padding: 3px 0 3px 18px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #8fe3a4;
+}
+
+.det-ganhos li::before {
+  content: '▸';
+  position: absolute;
+  left: 2px;
+  color: #6fcf8a;
+}
+
+.det-ganhos li.baixa {
+  color: #8fd6e8;
+}
+
+.det-ganhos li.baixa::before {
+  content: '▾';
+  color: #6fbcd8;
+}
+
+/*
+ * O botao de cinto e SECUNDARIO, sempre.
+ *
+ * Ele pegava o latao do `.btn.on` quando a habilidade estava equipada, e ai
+ * "TIRAR DO CINTO" virava o maior objeto da ficha enquanto o MELHORAR — que e
+ * a acao que a tela existe para vender — ficava apagado embaixo. O ouro
+ * grande e um so por tela, e nesta tela ele e o de gastar.
+ */
+.cinto-troca,
+/* `.btn.on` mora no bloco do chassi, LA EMBAIXO: com a mesma especificidade
+   ele ganharia por vir depois. Por isso esta leva as duas classes. */
+.btn.cinto-troca.on {
   width: 100%;
+  margin-top: 14px;
+  font-size: 10.5px;
+  border-image-source: url('/art/hud/chassi/botao_secundario.png');
+  color: #f3e4c0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-.det-head .skl-icone img {
-  width: 44px;
-  height: 44px;
+.btn.cinto-troca.on {
+  color: var(--accent);
 }
 
-/* Estreito: o cinto vira uma faixa horizontal em cima, que e onde ele importa
-   mesmo no celular — saber o que esta equipado sem abrir mais nada. */
+.det-rodape {
+  margin-top: 10px;
+  padding-top: 11px;
+  border-top: 1px solid var(--stroke);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.det-faltam {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--warn);
+}
+
+.det-faltam img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+
+.det-comprar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.det-comprar .btn-icon {
+  width: 17px;
+  height: 17px;
+}
+
+/* Estreito: o cinto vira uma fileira em cima, que e a leitura que importa no
+   celular — o que esta equipado — sem gastar altura. */
 @media (max-width: 620px) {
   .tech-body.skl-tres {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
   .skl-cinto {
     order: -2;
-    border-right: 0;
-    border-bottom: 1px solid var(--stroke);
     padding: 0 0 10px;
+    border-bottom: 1px solid var(--stroke);
   }
-  /* Deitado, o cinto vira uma fileira de tres: e a leitura que importa no
-     celular — o que esta equipado — sem gastar altura. */
   .skl-cinto .cinto-lugares {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  .skl-cinto .cinto-lugar:last-child:nth-child(odd) {
-    grid-column: auto;
-    width: auto;
-  }
-  .skl-cinto .cinto-placa {
+  .skl-cinto .cinto-lema {
     display: none;
   }
 }
@@ -5403,8 +5720,10 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 /* --- cartoes --- */
+/* `.skl-card` NAO entra aqui: no conceito o cartao de habilidade e
+   azul-noite, e a moldura de couro em todos eles virava um muro marrom onde o
+   cartao escolhido nao se destacava de nada. Ele tem o proprio bloco. */
 .tech-card,
-.skl-card,
 .eq-card,
 .up-card {
   border: var(--moldura-cartao) solid transparent;
@@ -5414,7 +5733,6 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .tech-card.sel,
-.skl-card.sel,
 .eq-card.on,
 .up-card.done {
   border-image-source: url('/art/hud/chassi/cartao_sel.png');
@@ -5422,7 +5740,6 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .tech-card.locked,
-.skl-card:not(.owned),
 .eq-card.locked {
   border-image-source: url('/art/hud/chassi/cartao_bloq.png');
 }
@@ -5476,19 +5793,26 @@ body:has(.hud-map-slot.folded) .toasts {
  * escolhido, e o resto e escuro. Tres niveis de dourado empilhados nao sao
  * mais fieis, sao menos: viram parede de ouro e a hierarquia some.
  */
-.tech-aside,
-.skl-cinto {
+.tech-aside {
   border: 0;
   border-left: 1px solid rgba(232, 180, 74, 0.28);
   padding-left: 14px;
 }
 
-.tech-body.aside-esquerda .tech-aside,
-.skl-cinto {
+.tech-body.aside-esquerda .tech-aside {
   border-left: 0;
   border-right: 1px solid rgba(232, 180, 74, 0.28);
   padding-left: 0;
   padding-right: 14px;
+}
+
+/* O cinto e um PAINEL, nao uma margem: no conceito ele e a tabua de madeira
+   com os quatro encaixes, destacada do resto da tela. */
+.skl-cinto {
+  border: var(--moldura) solid transparent;
+  border-image: url('/art/hud/chassi/painel_lateral.png') 24 fill round;
+  border-radius: 0;
+  background: none;
 }
 
 /*
@@ -5538,7 +5862,6 @@ body:has(.hud-map-slot.folded) .toasts {
 .seg-btn,
 .journal-tab,
 .tech-flag,
-.skl-flag,
 .det-sub,
 .auto-sub,
 .boneco-rotulo i,
@@ -5702,18 +6025,13 @@ body:has(.hud-map-slot.folded) .toasts {
   }
 
   .cinto-anel {
-    width: 46px;
-    height: 46px;
-  }
-
-  .cinto-lugar {
-    grid-template-columns: 46px minmax(0, 1fr);
-    padding: 5px;
+    width: 54px;
+    height: 54px;
   }
 
   .cinto-anel img {
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
   }
 
   /* O livro: capa e abas menores, texto igual. */

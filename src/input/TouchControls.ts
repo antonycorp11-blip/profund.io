@@ -69,10 +69,11 @@ export class TouchControls {
     // GADGET e DASH sairam: o lugar deles e das habilidades ativas — uma por
     // botao, e cada uma so aparece depois de aprendida.
     const specs: PadButtonSpec[] = [
-      // Tres lugares fixos. O que cada um FAZ vem do cinto, nao daqui.
+      // Quatro lugares fixos. O que cada um FAZ vem do cinto, nao daqui.
       { id: 'btn-skill1', label: '', button: 'skill1', cls: 'skill', locked: false },
       { id: 'btn-skill2', label: '', button: 'skill2', cls: 'skill', locked: false },
       { id: 'btn-skill3', label: '', button: 'skill3', cls: 'skill', locked: false },
+      { id: 'btn-skill4', label: '', button: 'skill4', cls: 'skill', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];
@@ -151,6 +152,9 @@ export class TouchControls {
     1: [[150, 120]],
     2: [[122, 118], [178, 118]],
     3: [[94, 133], [150, 140], [206, 133]],
+    // Quatro: mesmo passo de 56 px e mesma simetria em torno de 150, com o
+    // par de dentro sete pixels mais alto — a mesma curva do leque de tres.
+    4: [[66, 126], [122, 140], [178, 140], [234, 126]],
   };
 
   /**
@@ -166,7 +170,16 @@ export class TouchControls {
     for (let i = 0; i < this.skillBtns.length; i++) {
       if (estados[i]?.unlocked) visiveis.push(this.skillBtns[i]);
     }
-    const chave = Math.min(5, visiveis.length);
+    /*
+     * Presa ao MAIOR leque que existe, e nao a um numero escrito a mao.
+     *
+     * Estava preso em cinco enquanto a tabela ia so ate tres: com quatro
+     * habilidades desbloqueadas `ARCO[4]` vinha indefinido, a funcao voltava
+     * antes de posicionar nada e os botoes ficavam empilhados no canto. Assim
+     * um leque novo entra so acrescentando a linha na tabela.
+     */
+    const maior = Math.max(...Object.keys(TouchControls.ARCO).map(Number));
+    const chave = Math.min(maior, visiveis.length);
     const pontos = TouchControls.ARCO[chave];
     if (!pontos) return;
     visiveis.forEach((el, i) => {

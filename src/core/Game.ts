@@ -1463,9 +1463,9 @@ export class Game {
 
   /** Le os botoes de habilidade (tela e teclado) e liga o que der. */
   private pollSkillButtons(): void {
-    // Tres lugares; o que cada um dispara vem do cinto.
-    for (let i = 0; i < 3; i++) {
-      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3';
+    // Os lugares do cinto; o que cada um dispara vem de la, nao daqui.
+    for (let i = 0; i < ActiveSkills.SLOTS; i++) {
+      const botao = `skill${i + 1}` as 'skill1' | 'skill2' | 'skill3' | 'skill4';
       if (!this.input.wasPressed(botao)) continue;
       const id = this.activeSkills.equipped[i];
       if (!id) {

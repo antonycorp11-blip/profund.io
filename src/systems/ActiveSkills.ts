@@ -43,17 +43,17 @@ export class ActiveSkills {
 
   /** Todas, na ordem em que aparecem no pad. */
   /**
-   * As tres equipadas, na ordem dos botoes.
+   * As equipadas, na ordem dos botoes do pad.
    *
-   * O pad tem TRES lugares e nao cinco, e isso e decisao de jogo, nao de tela:
-   * cinco botoes viram um teclado que ninguem le no meio de uma luta. Com tres,
-   * escolher o que levar e parte da preparacao — e trocar antes de descer vira
-   * uma decisao com peso.
+   * QUATRO e nao cinco: cinco botoes viram um teclado que ninguem le no meio
+   * de uma luta, e escolher o que levar continua sendo parte da preparacao.
+   * Quatro e o que o conceito mostra, e e o que fecha o cinto em dois por
+   * dois — que e a forma de um cinto, nao de uma lista.
    */
-  equipped: (ActiveSkillId | null)[] = ['shock', 'drill', 'recall'];
+  equipped: (ActiveSkillId | null)[] = ['shock', 'drill', 'recall', null];
 
   /** Maximo de habilidades levadas ao mesmo tempo. */
-  static readonly SLOTS = 3;
+  static readonly SLOTS = 4;
 
   /** Icone da habilidade, para o botao do pad. */
   iconOf(id: string): string {
@@ -207,7 +207,9 @@ export class ActiveSkills {
 
   equippedFromJSON(data: (ActiveSkillId | null)[] | undefined): void {
     if (!data || data.length === 0) return;
-    this.equipped = [0, 1, 2].map((i) => data[i] ?? null);
+    // Lido pelo tamanho ATUAL do cinto: um save antigo tem tres lugares, e
+    // sem isso o quarto voltaria como undefined em vez de vazio.
+    this.equipped = Array.from({ length: ActiveSkills.SLOTS }, (_, i) => data[i] ?? null);
   }
 
   toJSON(): Record<string, { charges: number; cooldown: number }> {

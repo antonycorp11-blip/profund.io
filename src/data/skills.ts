@@ -306,8 +306,8 @@ export const SKILLS: SkillDef[] = [
     branch: 'choque',
     name: 'Choque',
     description:
-      'Liga uma corrente eletrica na picareta. Ao bater, o raio salta para os blocos ' +
-      'em volta — e prefere os do mesmo material, entao veios inteiros caem juntos.',
+      'Liga uma corrente elétrica na picareta. Ao bater, o raio salta para os blocos ' +
+      'em volta — e prefere os do mesmo material, então veios inteiros caem juntos.',
     maxLevel: 4,
     cost: [2, 2, 3, 3],
     requiredSkills: ['mining_power_1'],
@@ -341,8 +341,8 @@ export const SKILLS: SkillDef[] = [
     branch: 'broca',
     name: 'Broca',
     description:
-      'Acopla uma broca na picareta. Enquanto ligada, cada martelada abre um tunel ' +
-      'inteiro na direcao da mira — para o lado, para baixo ou para cima.',
+      'Acopla uma broca na picareta. Enquanto ligada, cada martelada abre um túnel ' +
+      'inteiro na direção da mira — para o lado, para baixo ou para cima.',
     maxLevel: 4,
     cost: [2, 2, 3, 3],
     requiredSkills: ['mining_speed_1'],
@@ -369,11 +369,11 @@ export const SKILLS: SkillDef[] = [
     id: 'mining_blast',
     category: 'active',
     branch: 'detonacao',
-    name: 'Detonacao',
+    name: 'Detonação',
     description:
-      'Uma carga que arrebenta tudo em volta do bloco atingido — rocha e bicho. Nao e ' +
-      'precisao, e forca bruta: serve para abrir camara, limpar um ninho ou sair de ' +
-      'uma toca sem saida.',
+      'Uma carga que arrebenta tudo em volta do bloco atingido — rocha e bicho. Não é ' +
+      'precisão, é força bruta: serve para abrir câmara, limpar um ninho ou sair de ' +
+      'uma toca sem saída.',
     maxLevel: 4,
     cost: [3, 3, 4, 4],
     requiredSkills: ['mining_shock'],
@@ -404,8 +404,8 @@ export const SKILLS: SkillDef[] = [
     branch: 'faro',
     name: 'Faro',
     description:
-      'Encosta o ouvido na pedra e, por alguns segundos, o minerio em volta acende ' +
-      'atraves da rocha. Nao quebra nada: so mostra onde vale bater.',
+      'Encosta o ouvido na pedra e, por alguns segundos, o minério em volta acende ' +
+      'através da rocha. Não quebra nada: só mostra onde vale bater.',
     maxLevel: 3,
     cost: [2, 3, 3],
     requiredSkills: [],
@@ -430,10 +430,10 @@ export const SKILLS: SkillDef[] = [
     id: 'move_recall',
     category: 'active',
     branch: 'volta',
-    name: 'Volta Rapida',
+    name: 'Volta Rápida',
     description:
       'Fica parado alguns segundos e a mina te devolve na base. Levar dano ou sair ' +
-      'andando cancela. Serve para nao perder a viagem de volta com a mochila cheia.',
+      'andando cancela. Serve para não perder a viagem de volta com a mochila cheia.',
     maxLevel: 3,
     cost: [2, 3, 4],
     requiredSkills: [],
