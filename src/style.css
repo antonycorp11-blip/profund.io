@@ -3840,6 +3840,14 @@ body:has(.hud-map-slot.folded) .toasts {
   padding: 14px 16px;
 }
 
+/* Palco das setas de virar: elas se penduram nas duas beiradas desta pagina.
+   A folga lateral e para o texto nao passar por baixo delas. */
+.journal-aberta {
+  position: relative;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
 /* O vinco: sombra de dobra, nao uma linha. Linha reta no meio de papel parece
    divisoria de tabela; o degrade parece papel que dobra. */
 .journal-indice {
@@ -3905,6 +3913,11 @@ body:has(.hud-map-slot.folded) .toasts {
     border-right: 0;
     border-bottom: 1px solid rgba(90, 62, 30, 0.35);
     box-shadow: none;
+  }
+  /* Empilhado, a anotacao e a linha DE BAIXO da coluna unica. */
+  .journal-virar {
+    grid-column: 1;
+    grid-row: 2;
   }
 }
 
@@ -4593,6 +4606,7 @@ body:has(.hud-map-slot.folded) .toasts {
 /* Duas paginas: indice na esquerda, anotacao aberta na direita, com o vinco
    do livro no meio. */
 .journal-page {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: grid;
@@ -4606,6 +4620,15 @@ body:has(.hud-map-slot.folded) .toasts {
   background-image:
     radial-gradient(ellipse at 30% 20%, rgba(255, 252, 240, 0.5), transparent 62%),
     radial-gradient(ellipse at 75% 80%, rgba(150, 118, 70, 0.22), transparent 58%);
+  /*
+   * O PAPEL decide a tinta.
+   *
+   * A anotacao aberta herdava a cor de texto do resto da interface — creme
+   * (242,233,220) — e creme sobre papel creme e texto invisivel. So se lia o
+   * indice, porque as linhas dele traziam cor propria. Era o texto principal
+   * do caderno inteiro que estava apagado.
+   */
+  color: #33240f;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -4636,6 +4659,56 @@ body:has(.hud-map-slot.folded) .toasts {
   border-bottom: none;
 }
 
+/*
+ * A POLAROIDE.
+ *
+ * O retrato era um quadradinho de 44 px de canto arredondado — do tamanho de
+ * um avatar de lista. Numa polaroide o retrato tem moldura, e a moldura tem a
+ * tarja de baixo onde se escreve a mao onde a foto foi tirada. O buraco da
+ * arte foi medido no proprio PNG: 17,6% / 13,3% / 63,3% / 57,8%.
+ */
+.journal-polaroid {
+  position: relative;
+  flex: none;
+  width: 132px;
+  height: 132px;
+  margin: 0 4px 4px 0;
+  background: center / contain no-repeat url('/art/journal/papel/polaroid.png');
+  filter: drop-shadow(0 3px 6px rgba(40, 26, 10, 0.4));
+  /* Pregada meio torta, que e como foto entra em caderno de campo. */
+  transform: rotate(-2.5deg);
+}
+
+.journal-polaroid .journal-face {
+  position: absolute;
+  left: 19%;
+  top: 15%;
+  width: 62%;
+  height: 55%;
+  border: 0;
+  border-radius: 0;
+}
+
+.journal-polaroid figcaption {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 72%;
+  bottom: 5%;
+  display: grid;
+  place-content: center;
+  font-size: 8px;
+  /* DUAS linhas: "Cavernas de Cristal · 210 m" nao cabe em uma so na tarja, e
+     cortar o nome da camada tira justamente o que a legenda foi escrever. */
+  line-height: 1.2;
+  text-align: center;
+  color: #4a3a22;
+  /* Letra de quem escreveu com a mao apoiada na perna. */
+  font-style: italic;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
 .journal-face {
   width: 44px;
   height: 44px;
@@ -4645,6 +4718,172 @@ body:has(.hud-map-slot.folded) .toasts {
   image-rendering: pixelated;
   border: 1px solid rgba(60, 42, 20, 0.4);
   background: rgba(255, 255, 255, 0.25);
+}
+
+/*
+ * PISTAS RELACIONADAS.
+ *
+ * O caderno guarda cada anotacao numa gaveta, e por isso a voz ouvida a 40 m e
+ * a pessoa desenterrada a 40 m ficam em abas diferentes como se nao tivessem
+ * nada a ver uma com a outra. A caixa e presa com fita crepe porque e isso
+ * que ela e: um bilhete colado depois, ligando duas paginas.
+ */
+.journal-ligadas {
+  position: relative;
+  margin: 14px 0 0;
+  padding: 13px 12px 11px;
+  border: 1px dashed rgba(90, 64, 30, 0.45);
+  border-radius: 6px;
+  background: rgba(255, 249, 232, 0.5);
+}
+
+.journal-ligadas::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  width: 74px;
+  height: 26px;
+  transform: translateX(-50%) rotate(-1.5deg);
+  background: center / 100% 100% no-repeat url('/art/journal/papel/durex.png');
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.journal-ligadas h5 {
+  margin: 0 0 7px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(60, 42, 20, 0.72);
+}
+
+.journal-ligada {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 1px dotted rgba(90, 64, 30, 0.3);
+  background: none;
+  color: #33240f;
+  font-family: var(--font);
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journal-ligada:last-child {
+  border-bottom: 0;
+}
+
+.journal-ligada b {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Sublinhado de link escrito a lapis: a pista puxa para outra pagina. */
+  text-decoration: underline dotted rgba(90, 64, 30, 0.5);
+  text-underline-offset: 2px;
+}
+
+.journal-ligada:hover b {
+  color: #7a4a12;
+}
+
+/*
+ * A FITA. Rodape da pagina aberta: em que ponto da gaveta eu estou.
+ *
+ * O marcador de livro e vermelho e pende para fora do papel — e a unica cor
+ * viva de uma tela que e toda sepia, e por isso ele e o que o olho acha
+ * primeiro quando quer saber "quantas faltam".
+ */
+.journal-fita {
+  position: relative;
+  margin: 16px 0 6px;
+  padding: 7px 10px 7px 34px;
+  border-top: 1px solid rgba(90, 64, 30, 0.3);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  color: rgba(60, 42, 20, 0.8);
+}
+
+.journal-fita::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: -10px;
+  width: 22px;
+  height: 46px;
+  background: center / contain no-repeat url('/art/journal/papel/fita.png');
+  filter: drop-shadow(0 2px 3px rgba(40, 26, 10, 0.35));
+  pointer-events: none;
+}
+
+.journal-fita b {
+  font-size: 15px;
+  color: #8c2a1c;
+}
+
+.journal-fita small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+/*
+ * As SETAS ficam nas BORDAS do papel, porque virar pagina e um gesto de
+ * borda: a mao vai na beirada, nao no meio do texto.
+ */
+.journal-virar {
+  position: absolute;
+  /* Filho absoluto de um grid PODE ser colocado numa area do grid: assim a
+     seta se ancora na coluna da anotacao, e nao na largura do livro todo —
+     sem ninguem precisar repetir os 300 px do indice aqui. */
+  grid-column: 2;
+  grid-row: 1;
+  top: 50%;
+  width: 26px;
+  height: 46px;
+  margin-top: -23px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  /* No celular nao existe hover: a seta tem que ja estar visivel parada. */
+  opacity: 0.55;
+  transition: opacity 0.12s;
+}
+
+.journal-virar:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.journal-virar:disabled {
+  opacity: 0.08;
+  cursor: default;
+}
+
+.journal-virar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* O chevron da folha aponta para um lado so; o outro e ele espelhado. */
+  filter: brightness(0.3) sepia(1) saturate(0.6);
+}
+
+.journal-virar.antes {
+  left: 0;
+}
+
+.journal-virar.antes img {
+  transform: scaleX(-1);
+}
+
+.journal-virar.depois {
+  right: 0;
 }
 
 .journal-text h4 {

@@ -1,5 +1,5 @@
 import { ART } from '../data/art';
-import { LAYERS } from '../data/layers';
+import { LAYERS, layerAt } from '../data/layers';
 import { scrollsOfLayer } from '../data/scrolls';
 import type { MissionDef } from '../data/missions';
 import { Assets } from '../core/Assets';
@@ -27,6 +27,8 @@ export class JournalUI {
   private wrap: HTMLDivElement;
   private corpo: HTMLElement;
   private abertaEl!: HTMLElement;
+  /** O vao das duas paginas: e nele que as setas de virar se penduram. */
+  private paginaEl!: HTMLElement;
   /** Titulo da anotacao aberta na pagina da direita. */
   private aberta: string | null = null;
   private abaAtual: JournalTab = 'pistas';
@@ -74,6 +76,7 @@ export class JournalUI {
     parent.appendChild(this.wrap);
     this.corpo = this.wrap.querySelector('.journal-indice') as HTMLElement;
     this.abertaEl = this.wrap.querySelector('.journal-aberta') as HTMLElement;
+    this.paginaEl = this.wrap.querySelector('.journal-page') as HTMLElement;
 
     const nav = this.wrap.querySelector('.journal-tabs') as HTMLElement;
     for (const aba of ABAS) {
@@ -158,6 +161,11 @@ export class JournalUI {
     // que a faixa da HUD cortava.
     if (this.abaAtual === 'missoes') {
       this.corpo.innerHTML = '';
+      // A pagina da direita nao tem dono nesta aba: os objetivos sao a lista
+      // inteira. Sem limpar, ficava a anotacao da aba anterior aberta do lado
+      // de objetivos que nao tem nada a ver com ela.
+      this.limparSetas();
+      this.abertaEl.innerHTML = '';
       const atual = this.missions.current();
       if (atual) {
         const el = document.createElement('article');
@@ -211,6 +219,8 @@ export class JournalUI {
       this.corpo.innerHTML = `<p class="journal-vazio">${
         ABAS.find((a) => a.id === this.abaAtual)!.vazio
       }</p>`;
+      this.limparSetas();
+      this.abertaEl.innerHTML = '';
       return;
     }
     if (!itens.some((e) => this.chave(e) === this.aberta)) {
@@ -218,7 +228,11 @@ export class JournalUI {
     }
     this.corpo.innerHTML = '';
     for (const e of itens) this.corpo.appendChild(this.linhaIndice(e));
-    this.renderAberta(itens.find((e) => this.chave(e) === this.aberta) ?? itens[0]);
+    this.renderAberta(itens.find((e) => this.chave(e) === this.aberta) ?? itens[0], itens);
+  }
+
+  private limparSetas(): void {
+    for (const v of Array.from(this.paginaEl.querySelectorAll('.journal-virar'))) v.remove();
   }
 
   /** Uma anotacao nao tem id proprio; titulo + profundidade bastam. */
@@ -243,8 +257,16 @@ export class JournalUI {
     return el;
   }
 
-  /** A pagina da direita: a anotacao inteira, com o retrato quando houver. */
-  private renderAberta(e: JournalEntry | undefined): void {
+  /**
+   * A pagina da direita: a anotacao inteira.
+   *
+   * Era so titulo + paragrafos. O conceito tem quatro coisas que faltavam, e
+   * cada uma responde a uma pergunta que o texto sozinho nao responde: a
+   * POLAROIDE ("quem e essa pessoa"), as PISTAS LIGADAS ("o que mais eu anotei
+   * sobre isso"), as SETAS ("e a proxima?") e a FITA ("estou em que ponto do
+   * caderno").
+   */
+  private renderAberta(e: JournalEntry | undefined, lista: JournalEntry[]): void {
     if (!e) {
       this.abertaEl.innerHTML = '';
       return;
@@ -256,7 +278,7 @@ export class JournalUI {
     // unico lugar onde essa arte faz sentido — ela E a anotacao.
     const folha = this.folhaDaPagina(e);
     if (folha) art.appendChild(folha);
-    const retrato = this.retrato(e);
+    const retrato = this.polaroide(e);
     if (retrato) art.appendChild(retrato);
     const texto = document.createElement('div');
     texto.className = 'journal-text';
@@ -274,6 +296,111 @@ export class JournalUI {
     }
     art.appendChild(texto);
     this.abertaEl.appendChild(art);
+
+    const ligadas = this.ligadas(e);
+    if (ligadas.length > 0) this.abertaEl.appendChild(this.caixaLigadas(ligadas));
+    this.abertaEl.appendChild(this.rodape(e, lista));
+    this.setas(e, lista);
+  }
+
+  /**
+   * PISTAS LIGADAS: o que mais eu anotei sobre isto.
+   *
+   * O caderno guarda cada anotacao numa gaveta — Pessoas, Bichos, Lugares — e
+   * assim a voz que se ouve a 40 m e a pessoa que se desenterra a 40 m ficam em
+   * abas diferentes, como se nao tivessem nada a ver uma com a outra. Aqui a
+   * ligacao e a que o jogador faria sozinho: MESMA PESSOA primeiro, depois
+   * MESMA CAMADA — foi tudo anotado no mesmo lugar da mina.
+   */
+  private ligadas(e: JournalEntry): JournalEntry[] {
+    const camada = layerAt(e.depth).id;
+    const outras = this.journal.all().filter((o) => o.id !== e.id);
+    const mesmaPessoa = outras.filter((o) => e.face && o.face === e.face);
+    const mesmaCamada = outras.filter(
+      (o) => !mesmaPessoa.includes(o) && layerAt(o.depth).id === camada
+    );
+    return [...mesmaPessoa, ...mesmaCamada].slice(0, 4);
+  }
+
+  private caixaLigadas(ligadas: JournalEntry[]): HTMLElement {
+    const box = document.createElement('section');
+    box.className = 'journal-ligadas';
+    box.innerHTML = `<h5>Pistas relacionadas</h5>`;
+    for (const o of ligadas) {
+      const b = document.createElement('button');
+      b.className = 'journal-ligada';
+      b.innerHTML = `<b>${o.title}</b><span class="journal-depth">${o.depth} m</span>`;
+      b.addEventListener('click', () => {
+        // Pular de aba junto: a anotacao ligada quase nunca mora na mesma
+        // gaveta, e abrir a gaveta certa e parte de seguir a pista.
+        this.abaAtual = o.tab;
+        this.aberta = this.chave(o);
+        this.render();
+      });
+      box.appendChild(b);
+    }
+    return box;
+  }
+
+  /** A fita vermelha: onde eu estou dentro desta gaveta do caderno. */
+  private rodape(e: JournalEntry, lista: JournalEntry[]): HTMLElement {
+    const i = lista.findIndex((o) => this.chave(o) === this.chave(e));
+    const pe = document.createElement('footer');
+    pe.className = 'journal-fita';
+    pe.innerHTML = `<b>${i + 1}</b><small>de ${lista.length} em ${
+      ABAS.find((a) => a.id === this.abaAtual)!.nome
+    }</small>`;
+    return pe;
+  }
+
+  /**
+   * As setas nas BORDAS do livro, e nao um botao no meio do texto.
+   *
+   * Virar pagina e um gesto de borda: a mao vai na beirada do papel. Elas
+   * andam pela gaveta aberta, entao a esquerda e a anotacao anterior e a
+   * direita e a proxima — as mesmas que o indice lista, na mesma ordem.
+   */
+  private setas(e: JournalEntry, lista: JournalEntry[]): void {
+    // As setas moram no VAO das duas paginas, nao dentro da anotacao: a
+    // anotacao rola, e seta que rola junto com o texto some da beirada bem na
+    // hora em que se quer usar ela — no fim da pagina.
+    this.limparSetas();
+    const i = lista.findIndex((o) => this.chave(o) === this.chave(e));
+    for (const [lado, passo] of [['antes', -1], ['depois', 1]] as const) {
+      const alvo = lista[i + passo];
+      const b = document.createElement('button');
+      b.className = `journal-virar ${lado}`;
+      b.setAttribute('aria-label', passo < 0 ? 'Anotacao anterior' : 'Proxima anotacao');
+      b.innerHTML = `<img src="${ART.basePath}hud/chevron.png" alt="">`;
+      if (!alvo) b.disabled = true;
+      else
+        b.addEventListener('click', () => {
+          this.aberta = this.chave(alvo);
+          this.render();
+        });
+      this.paginaEl.appendChild(b);
+    }
+  }
+
+  /**
+   * O retrato vira POLAROIDE, com a legenda escrita a mao embaixo.
+   *
+   * Era um quadradinho de 44 px com canto arredondado — do tamanho de um
+   * avatar de lista, encostado no texto. Numa polaroide o retrato tem moldura,
+   * e a moldura tem a tarja de baixo onde se escreve ONDE a foto foi tirada.
+   * A legenda nao repete o titulo: ela diz a camada e a profundidade, que e a
+   * informacao que o caderno tem e o texto nao carrega.
+   */
+  private polaroide(e: JournalEntry): HTMLElement | null {
+    const retrato = this.retrato(e);
+    if (!retrato) return null;
+    const fig = document.createElement('figure');
+    fig.className = 'journal-polaroid';
+    fig.appendChild(retrato);
+    const cap = document.createElement('figcaption');
+    cap.textContent = `${layerAt(e.depth).name} · ${e.depth} m`;
+    fig.appendChild(cap);
+    return fig;
   }
 
   /**

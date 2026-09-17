@@ -136,6 +136,11 @@ export class Journal {
     Events.emit('journal:written', { title, novo: true });
   }
 
+  /** Todas as anotacoes, na ordem da historia. Usado pelas pistas ligadas. */
+  all(): JournalEntry[] {
+    return [...this.entries.values()].sort((a, b) => a.order - b.order);
+  }
+
   /** Anotacoes de uma aba, na ordem em que foram descobertas. */
   byTab(tab: JournalTab): JournalEntry[] {
     return [...this.entries.values()].filter((e) => e.tab === tab).sort((a, b) => a.order - b.order);
