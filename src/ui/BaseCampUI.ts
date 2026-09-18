@@ -52,9 +52,12 @@ export class BaseCampUI {
     this.wrap.className = 'panel-wrap basecamp';
     this.wrap.innerHTML = `
       <div class="camp-panel">
-        <header class="camp-header">
-          <h3 data-nome>Base</h3>
-          <button class="icon-btn" data-close>✕</button>
+        <header class="casca-cab">
+          <span class="casca-titulo">
+            <b data-nome>Base</b>
+            <span>Deposito, obra e ajudantes</span>
+          </span>
+          <button class="casca-fechar" data-close>✕</button>
         </header>
         <div class="camp-body"></div>
       </div>`;

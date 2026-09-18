@@ -539,7 +539,15 @@ export const CONFIG = {
 
   debug: {
     showColliders: false,
-    showFps: true,
+    /*
+     * DESLIGADO por padrao.
+     *
+     * "50 fps · 0 drops · 6/147 criaturas · 0 tiles alterados" estava na tela
+     * de todo mundo que abria o jogo, inclusive de quem so foi testar no
+     * celular. E informacao de quem desenvolve, nao de quem joga — quem
+     * precisar dela sabe onde ligar, em Ajustes.
+     */
+    showFps: false,
   },
 };
 

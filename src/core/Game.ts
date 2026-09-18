@@ -1697,6 +1697,15 @@ export class Game {
       target?.auto ? '' : 'E',
       this.skills.points
     );
+    /*
+     * O ajuste tem que MANDAR na tela, nao so no texto.
+     *
+     * O contador estava escondido por CSS (`.debug { display: none }`) enquanto
+     * Ajustes continuava mostrando "Mostrar FPS: LIGADO". O ajuste mentia: o
+     * jogador ligava e nada acontecia. Agora a classe no <html> e a chave, e o
+     * CSS so obedece a ela.
+     */
+    document.documentElement.classList.toggle('dev-hud', CONFIG.debug.showFps);
     if (CONFIG.debug.showFps) {
       this.hud.setDebug(
         `${this.fps.toFixed(0)} fps · ${this.drops.activeCount} drops · ${this.creatures.creatures.length}/${this.creatures.guardPostCount} criaturas · ${this.world.overrides.size} tiles alterados`

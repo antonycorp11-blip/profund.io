@@ -150,11 +150,17 @@ export class PanelUI {
 
   private render(): void {
     this.panel.innerHTML = '';
+    // O mesmo cabecalho de todas as telas: titulo, linha de apoio, fechar.
     const header = document.createElement('header');
-    const title = document.createElement('h3');
-    title.textContent = this.kind === 'workshop' ? 'Oficina' : 'Ajustes e Registro';
+    header.className = 'casca-cab';
+    const title = document.createElement('span');
+    title.className = 'casca-titulo';
+    const oficina = this.kind === 'workshop';
+    title.innerHTML = oficina
+      ? '<b>Oficina</b><span>Bancada e ferramenta</span>'
+      : '<b>Ajustes</b><span>Registro, expedicao e opcoes</span>';
     const close = document.createElement('button');
-    close.className = 'icon-btn';
+    close.className = 'casca-fechar';
     close.textContent = '✕';
     close.addEventListener('click', () => this.close());
     header.appendChild(title);

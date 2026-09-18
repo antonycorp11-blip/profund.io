@@ -9887,3 +9887,360 @@ html.dev-hud .debug {
 .tech-aside b {
   color: var(--doc-tinta);
 }
+
+/* ============================================================
+   O CONCEITO ALCANCA O RESTO
+   ============================================================
+   Mesma regra em toda parte: superficie de papel, canto reto,
+   regua de um pixel, e o ambar reservado ao que da para fazer
+   agora. A ARTE nao e tocada — os icones em pixel art continuam
+   quentes, porque eles sao o objeto, nao a moldura.
+   ============================================================ */
+
+/* ---- Skills: os cartoes viram verbetes, como os da Tecnologia ---- */
+
+.skl-card {
+  border-radius: 3px;
+  border: 1px solid var(--doc-regua);
+  background: linear-gradient(170deg, rgba(30, 34, 37, 0.96), rgba(19, 22, 24, 0.96));
+  color: var(--doc-tinta-fraca);
+  box-shadow: none;
+}
+
+.skl-card.locked,
+.skl-card.bloqueada {
+  border-color: rgba(198, 216, 228, 0.09);
+  opacity: 0.72;
+}
+
+.skl-card.ready,
+.skl-card.pode {
+  border-color: rgba(255, 196, 83, 0.34);
+  box-shadow: inset 3px 0 0 var(--doc-luz);
+}
+
+.skl-card.ativa,
+.skl-card.equipada {
+  border-color: rgba(78, 122, 114, 0.45);
+  box-shadow: inset 3px 0 0 var(--doc-oxido);
+}
+
+.skl-card.sel,
+.skl-card.selecionada {
+  border-color: var(--doc-regua-forte);
+  background: linear-gradient(170deg, rgba(40, 45, 49, 0.98), rgba(25, 29, 32, 0.98));
+}
+
+.skl-card b {
+  color: var(--doc-tinta);
+}
+
+.skl-card-desc {
+  color: var(--doc-tinta-fraca);
+}
+
+/* O cinto de habilidades equipadas: uma FICHA, com os tres lugares numerados. */
+.skl-cinto {
+  border-right: 1px solid var(--doc-regua);
+  background: var(--doc-fundo-baixo);
+}
+
+.cinto-titulo {
+  color: var(--doc-tinta);
+  letter-spacing: 0.18em;
+  font-size: 11px;
+}
+
+.cinto-sub {
+  color: var(--doc-tinta-fraca);
+  letter-spacing: 0.1em;
+  font-size: 9px;
+}
+
+/* ---- Atributos: os nos da arvore ---- */
+
+.node-name {
+  color: var(--doc-tinta);
+  letter-spacing: 0.04em;
+}
+
+/*
+ * `.skill-node .node-level` (0,2,0) vence `.node-level` (0,1,0), entao o
+ * seletor aqui precisa do mesmo alcance. Apontado pelo check-css-morto, que
+ * pegou quatro propriedades minhas nascendo mortas.
+ */
+.skill-node .node-level {
+  border-radius: 2px;
+  border: 1px solid var(--doc-regua);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--doc-tinta-fraca);
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-detail {
+  border-left: 1px solid var(--doc-regua);
+}
+
+.skill-detail b,
+.skill-detail h4 {
+  color: var(--doc-tinta);
+}
+
+/* ---- Ajustes: cada opcao e uma LINHA de formulario ---- */
+
+.panel .row,
+.panel-wrap > .panel .row {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(198, 216, 228, 0.08);
+  background: none;
+  padding: 8px 2px;
+}
+
+.panel h5 {
+  color: var(--doc-tinta-fraca);
+  letter-spacing: 0.18em;
+  font-size: 9px;
+  border-bottom: 1px solid var(--doc-regua);
+  padding-bottom: 4px;
+}
+
+/* Botao segmentado: caixa de marcar, nao pilula. */
+.seg-btn {
+  border-radius: 2px;
+  border: 1px solid var(--doc-regua);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--doc-tinta-fraca);
+  letter-spacing: 0.08em;
+}
+
+.seg-btn.on {
+  border-color: rgba(255, 196, 83, 0.5);
+  background: rgba(255, 196, 83, 0.12);
+  color: var(--doc-luz);
+}
+
+/* ---- Mapa: a lista de camadas e um sumario ---- */
+
+.map-layer {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(198, 216, 228, 0.07);
+  background: none;
+  padding: 6px 7px;
+}
+
+.map-layer.atual,
+.map-layer.on {
+  background: rgba(255, 196, 83, 0.09);
+  box-shadow: inset 3px 0 0 var(--doc-luz);
+}
+
+.map-layer b {
+  color: var(--doc-tinta);
+}
+
+.map-layer small,
+.map-layer span {
+  font-variant-numeric: tabular-nums;
+}
+
+.map-list h4 {
+  color: var(--doc-tinta-fraca);
+  letter-spacing: 0.18em;
+  font-size: 9px;
+  border-bottom: 1px solid var(--doc-regua);
+}
+
+/* ============================================================
+   O LATAO FICA NO HUD; A PAPELADA E DE PAPEL
+   ============================================================
+
+   O jogo tem uma familia de arte de moldura (`/art/hud/chassi/`)
+   com botoes e paineis de latao lavrado. Ela nao vai para o
+   lixo: ela muda de lugar.
+
+   O HUD e o EQUIPAMENTO do Elias — o lampiao, a mochila, a
+   picareta. Latao lavrado ali esta certo: e coisa que ele
+   carrega. As telas sao a papelada da COMPANHIA. Moldura
+   ornamentada num formulario de cota seria mentira.
+
+   O que voce carrega contra o que eles arquivam. A divisao nao
+   e incoerencia: e a mesma ideia dita duas vezes.
+   ============================================================ */
+
+/*
+ * O cinto de habilidades vira uma ficha de pessoal.
+ *
+ * Tinha `border-image: painel_lateral.png 24 round` — moldura de latao de
+ * 22 px em volta de uma coluna de 338 px de altura. A moldura sozinha comia
+ * mais espaco que um dos tres lugares de habilidade que ela emoldura.
+ */
+.skl-cinto {
+  border: none;
+  border-right: 1px solid var(--doc-regua);
+  border-image: none;
+  border-radius: 0;
+  background: var(--doc-fundo-baixo);
+  padding: 9px 8px;
+}
+
+/*
+ * Botao de tela: retangulo com regua, nao capsula de latao.
+ *
+ * E aqui que a regra do ambar aparece mais forte. Todo botao usava a mesma
+ * arte quente, entao "Pesquisar" (posso fazer) e "Requer 90 m" (nao posso)
+ * tinham exatamente o mesmo peso visual. Agora o comum e cinza e so o
+ * acionavel acende — o jogador acha o que fazer sem ler.
+ */
+.panel .btn,
+.camp-panel .btn,
+.tech-screen .btn,
+.skill-screen .btn,
+.map-screen .btn,
+.up-card .btn {
+  border: 1px solid var(--doc-regua);
+  border-image: none;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--doc-tinta);
+  text-shadow: none;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+}
+
+.panel .btn:disabled,
+.panel .btn[disabled],
+.camp-panel .btn:disabled,
+.tech-screen .btn:disabled,
+.tech-screen .btn[disabled],
+.skill-screen .btn:disabled,
+.skill-screen .btn[disabled],
+.up-card .btn:disabled,
+.up-card .btn[disabled] {
+  border-color: rgba(198, 216, 228, 0.09);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--doc-tinta-fraca);
+  opacity: 0.55;
+}
+
+/*
+ * O unico botao que recebe a luz do lampiao: o que da para apertar AGORA.
+ *
+ * O `:not(:disabled)` nao e detalhe. Sem ele, um botao primario desabilitado
+ * continuava ambar — "APRENDER 900" acendia bonito numa habilidade que o
+ * jogador nao tem dinheiro para comprar. Isso e pior do que nao ter regra
+ * nenhuma: promete acao onde nao ha, e ensina o jogador a desconfiar do
+ * proprio sinal que deveria guia-lo.
+ *
+ * Eu mesmo cai nisso ao escrever esta secao, porque coloquei a regra do
+ * primario DEPOIS da regra do desabilitado — mesma especificidade, e vence a
+ * ultima.
+ */
+.panel .btn.primary:not(:disabled):not([disabled]),
+.camp-panel .btn.primary:not(:disabled):not([disabled]),
+.tech-screen .btn.primary:not(:disabled):not([disabled]),
+.skill-screen .btn.primary:not(:disabled):not([disabled]),
+.up-card .btn.primary:not(:disabled):not([disabled]),
+.tech-screen .btn.on:not(:disabled):not([disabled]),
+.skill-screen .btn.on:not(:disabled):not([disabled]) {
+  border-color: rgba(255, 196, 83, 0.55);
+  background: rgba(255, 196, 83, 0.14);
+  color: var(--doc-luz);
+}
+
+/*
+ * O painel de Ajustes empilha como as outras telas: cabecalho fixo em cima,
+ * corpo rolando embaixo. Ele era um bloco unico com `overflow-y: auto`, entao
+ * o cabecalho rolava junto e sumia — e com ele o unico botao de fechar.
+ */
+.panel-wrap > .panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.panel-wrap > .panel > .casca-cab {
+  margin: 0;
+}
+
+.panel-wrap > .panel > :not(.casca-cab) {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+/* Tudo que nao e o cabecalho rola junto, dentro de um respiro. */
+.panel-wrap > .panel > .casca-cab ~ * {
+  flex: 0 0 auto;
+}
+
+/* A base tambem empilha: cabecalho fixo, corpo rolando. */
+.panel-wrap > .camp-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.camp-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+
+/* ============================================================
+   O HUD: LATAO, MAS COM A MESMA DISCIPLINA
+   ============================================================
+   O HUD fica quente de proposito — e o equipamento do Elias, nao
+   a papelada da companhia. Mas as duas regras do conceito valem
+   aqui tambem: numero e tabular, e o ambar so marca acao.
+   ============================================================ */
+
+/*
+ * Todo numero que o jogador compara e tabular.
+ *
+ * Sem isso, "0/90" vira "12/90" e a barra inteira se desloca, porque o "1" e
+ * mais estreito que o "0" em fonte proporcional. Numero que dança nao da para
+ * ler de relance — e ler de relance e a unica coisa que se faz com numero
+ * durante uma martelada.
+ */
+.quota-line,
+.quota-detail,
+.quota-days,
+.chip,
+.level-num,
+.hud-ammo,
+.health-label {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * A cota e a pressao da semana: ela merece o ambar, e so ela.
+ *
+ * O cartao tinha rotulo, numero, porcentagem, dia e prazo todos no mesmo peso
+ * de cor. Agora o numero da cota e o unico que acende; o resto e apoio.
+ */
+.quota-line b,
+.quota-line strong {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.quota-days {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.62;
+}
+
+.quota::before {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+}
+
+/* As pilulas de recurso: numero primeiro, sem caixa competindo com ele. */
+.hud-top-center .chip {
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}

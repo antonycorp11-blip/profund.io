@@ -155,8 +155,16 @@ export class ActiveSkillsUI {
     this.cintoEl.innerHTML = `
       <h4 class="cinto-titulo">Skills ativas</h4>
       <p class="cinto-sub">Equipe ${ActiveSkills.SLOTS} habilidades</p>
-      <div class="cinto-lugares">${lugares}</div>
-      <p class="cinto-lema">Cave<br>Explore<br>Evolua<br>Vá mais fundo!</p>`;
+      <div class="cinto-lugares">${lugares}</div>`;
+    /*
+     * A placa "Cave / Explore / Evolua / Va mais fundo!" saiu.
+     *
+     * Ela ocupava cerca de 80 px da coluna esquerda num painel de 338 px de
+     * altura para dizer ao jogador que ele deve jogar o jogo que ja esta
+     * jogando. Cartaz motivacional nao e interface: nao responde pergunta
+     * nenhuma, nao muda com o estado, e cobra altura que os tres lugares de
+     * habilidade usam melhor.
+     */
 
     for (const b of Array.from(this.cintoEl.querySelectorAll('[data-cinto]'))) {
       const id = (b as HTMLElement).dataset.cinto;
