@@ -264,7 +264,12 @@ export class TechScreen {
     }
 
     this.mainEl.innerHTML = `
-      ${this.tituloDaTela(meta.icon, 'Tecnologia', 'Pesquise, melhore, cave mais fundo.')}
+      ${this.tituloDaTela(
+        meta.icon,
+        'Tecnologia',
+        'Pesquise, melhore, cave mais fundo.',
+        'Boas ferramentas fazem grandes descobertas!'
+      )}
       <p class="tech-fantasy" style="color:${meta.color}">${meta.description}</p>
       <div class="tech-grid">
         ${list
@@ -331,14 +336,27 @@ export class TechScreen {
    * colado nas abas e nenhuma tela dizia onde o jogador estava — a unica pista
    * era qual aba estava acesa la em cima.
    */
-  private tituloDaTela(icone: string, nome: string, linha: string): string {
+  private tituloDaTela(icone: string, nome: string, linha: string, lousa = ''): string {
+    /*
+     * O bloco de titulo ganhou os MOVEIS do conceito.
+     *
+     * O lampiao e a lousa nao sao enfeite gratuito: sao o que separa uma tela
+     * de jogo de um painel de aplicativo. Eu tinha montado a estrutura certa e
+     * parado ali, dizendo que "batia com a referencia" — batia de arranjo e
+     * nao de acabamento, e a diferenca e o que da o cheiro de mina ao lugar.
+     *
+     * A arte ja existia e estava parada: `lampiao` e `cartao_missao` estavam
+     * entre as vinte e uma pecas sem uso nenhum no projeto.
+     */
     return `
       <header class="tela-cab">
+        <img class="tela-lampiao" src="art/hud/lampiao.png" alt="">
         <span class="tela-cab-icone">${icone}</span>
         <span class="tela-cab-txt">
           <b>${nome}</b>
           <small>${linha}</small>
         </span>
+        ${lousa ? `<span class="tela-lousa">${lousa}</span>` : ''}
       </header>`;
   }
 
@@ -513,7 +531,12 @@ export class TechScreen {
       </section>`;
 
     this.mainEl.innerHTML = `
-      ${this.tituloDaTela('⚙', 'Automação', 'Seus ajudantes não param.')}
+      ${this.tituloDaTela(
+        '⚙',
+        'Automação',
+        'Seus ajudantes não param.',
+        'Túneis hoje, prosperidade amanhã.'
+      )}
       <div class="auto-strip">
         ${numero(`${clones.clones.length}/${clones.slots}`, 'copias', 'copia_aco', clones.clones.length > 0)}
         ${numero(`${moles.units.length}/${moles.max}`, 'toupeiras', 'toupeira', moles.units.length > 0)}
@@ -627,7 +650,12 @@ export class TechScreen {
       .join('');
 
     this.mainEl.innerHTML = `
-      ${this.tituloDaTela('🛡', 'Equipamento', 'Prepare-se para cavar mais fundo.')}
+      ${this.tituloDaTela(
+        '🛡',
+        'Equipamento',
+        'Prepare-se para cavar mais fundo.',
+        'Equipamento certo, grandes descobertas.'
+      )}
       <div class="eq-filtros">
         ${slots
           .map(
