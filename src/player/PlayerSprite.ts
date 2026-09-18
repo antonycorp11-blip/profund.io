@@ -458,9 +458,18 @@ export class PlayerSprite {
       return pick('jump', last('jump') - 1);
     }
 
-    if (Math.abs(player.vx) > 12 && has('walk')) {
-      const n = strips.walk.frames;
-      return pick('walk', Math.floor(this.walkDist / 13) % n);
+    if (Math.abs(player.vx) > 12) {
+      /*
+       * CARREGADO ele anda; leve, ele corre.
+       *
+       * O jogo tem uma velocidade so, entao usar a velocidade para escolher
+       * entre andar e correr nao distinguiria nada. O peso distingue: mochila
+       * quase cheia e a unica coisa que ja muda como ele deveria se mover, e
+       * assim a corrida vira a leitura de "estou livre" e a caminhada a de
+       * "estou voltando cheio".
+       */
+      const tira = this.heavy || !has('run') ? 'walk' : 'run';
+      if (has(tira)) return pick(tira, Math.floor(this.walkDist / 13) % strips[tira].frames);
     }
 
     if (has('idle')) {
