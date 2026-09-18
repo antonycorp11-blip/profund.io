@@ -22,7 +22,8 @@
     "slice-mira": "node tools/slice-mira.mjs",
     "slice-armas-lateral": "node tools/slice-armas-lateral.mjs",
     "conferir-armas": "node tools/conferir-armas.mjs",
-    "check-estilo": "node tools/check-estilo.mjs"
+    "check-estilo": "node tools/check-estilo.mjs",
+    "medir-encaixes": "node tools/medir-encaixes.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

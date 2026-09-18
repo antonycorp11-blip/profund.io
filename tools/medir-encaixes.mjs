@@ -1,0 +1,366 @@
+#!/usr/bin/env node
+/**
+ * Mede os PONTOS DE ENCAIXE do heroi, quadro a quadro.
+ *
+ *   npm run medir-encaixes            mede, grava e desenha a folha de conferencia
+ *
+ * Saidas:
+ *   src/data/characterAnchors.ts      gerado — lido pelo PlayerSprite
+ *   arte-bruta/conferencia/encaixes.png   uma folha com os pontos marcados
+ *
+ * POR QUE MEDIR, E NAO DESENHAR JUNTO.
+ *
+ * Hoje o capacete, a mochila e a picareta estao PINTADOS DENTRO da animacao.
+ * Trocar qualquer um deles significaria redesenhar as seis tiras inteiras, e
+ * duas mochilas dariam doze tiras. E por isso que o jogo tem quatro slots de
+ * equipamento que nao aparecem no personagem: nao havia como faze-los
+ * aparecer.
+ *
+ * Com o ponto de encaixe medido, cada peca vira UM desenho preso a um ponto.
+ * Dez capacetes sao dez arquivos pequenos, nao sessenta tiras.
+ *
+ * POR QUE PELA PELE, E NAO PELO CONTORNO.
+ *
+ * A primeira versao pegava o pixel mais alto da silhueta como topo da cabeca.
+ * Em `mine` o pixel mais alto e a PICARETA ERGUIDA (quadro 2 comeca na linha
+ * 23, treze acima da cabeca) e em `climb` sao os bracos esticados — o capacete
+ * ficaria pendurado na ponta da ferramenta.
+ *
+ * A pele nao mente: o rosto e as maos sao as unicas regioes claras e quentes
+ * do desenho (V >= 0,72), enquanto o traje inteiro fica abaixo de V=0,42.
+ * Achando os borroes de pele eu acho a cabeca e os punhos onde eles REALMENTE
+ * estao naquele quadro, com o braco onde o animador colocou.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { PNG } from 'pngjs';
+
+const QUADRO = 128;
+/** Mesma altura em que o jogo desenha o heroi (ART.character.stripDrawHeight). */
+const ALTURA_DESENHADA = 66;
+/** Linha dos pes dentro do quadro — o cortador alinha todas as tiras nela. */
+const LINHA_DOS_PES = 119;
+const OPACO = 160;
+
+/** As tiras, com a quantidade de quadros de cada uma (ART.character.strips). */
+const TIRAS = [
+  ['idle', 8], ['walk', 8], ['jump', 8],
+  ['mine', 8], ['climb', 8], ['aim', 10],
+];
+
+function hsv(r, g, b) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  const v = mx / 255, s = mx ? (mx - mn) / mx : 0;
+  let h = 0;
+  if (mx !== mn) {
+    if (mx === r) h = 60 * (((g - b) / (mx - mn)) % 6);
+    else if (mx === g) h = 60 * ((b - r) / (mx - mn) + 2);
+    else h = 60 * ((r - g) / (mx - mn) + 4);
+  }
+  return [h < 0 ? h + 360 : h, s, v];
+}
+
+/**
+ * Pele: quente, clara e pouco saturada.
+ *
+ * Os limites sairam de um histograma da arte real — o rosto vive em
+ * rgb(252,200,141), que da H=32 S=0,44 V=0,99. O couro do traje divide o
+ * mesmo H mas fica em V<=0,42, entao e o BRILHO que separa os dois.
+ */
+const ehPele = (h, s, v) => h >= 18 && h <= 48 && s >= 0.2 && s <= 0.62 && v >= 0.72;
+
+class Quadro {
+  constructor(png, indice) {
+    this.png = png;
+    this.off = indice * QUADRO;
+  }
+  alfa(x, y) {
+    if (x < 0 || y < 0 || x >= QUADRO || y >= this.png.height) return 0;
+    return this.png.data[(this.png.width * y + (this.off + x)) * 4 + 3];
+  }
+  opaco(x, y) { return this.alfa(x, y) > OPACO; }
+  pele(x, y) {
+    if (!this.opaco(x, y)) return false;
+    const i = (this.png.width * y + (this.off + x)) * 4;
+    return ehPele(...hsv(this.png.data[i], this.png.data[i + 1], this.png.data[i + 2]));
+  }
+  /** Caixa da silhueta inteira. */
+  caixa() {
+    let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+    for (let y = 0; y < QUADRO; y++) for (let x = 0; x < QUADRO; x++) {
+      if (!this.opaco(x, y)) continue;
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    return x1 < 0 ? null : { x0, x1, y0, y1 };
+  }
+  /** Borroes de pele, do maior para o menor. */
+  borroes() {
+    const visto = new Uint8Array(QUADRO * QUADRO);
+    const achados = [];
+    for (let y = 0; y < QUADRO; y++) for (let x = 0; x < QUADRO; x++) {
+      const k = y * QUADRO + x;
+      if (visto[k] || !this.pele(x, y)) continue;
+      const fila = [[x, y]]; visto[k] = 1;
+      const px = [];
+      while (fila.length) {
+        const [cx, cy] = fila.pop();
+        px.push([cx, cy]);
+        for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= QUADRO || ny >= QUADRO) continue;
+          const nk = ny * QUADRO + nx;
+          if (!visto[nk] && this.pele(nx, ny)) { visto[nk] = 1; fila.push([nx, ny]); }
+        }
+      }
+      if (px.length < 5) continue;
+      achados.push({
+        n: px.length,
+        cx: px.reduce((a, p) => a + p[0], 0) / px.length,
+        cy: px.reduce((a, p) => a + p[1], 0) / px.length,
+        topo: Math.min(...px.map((p) => p[1])),
+        base: Math.max(...px.map((p) => p[1])),
+      });
+    }
+    return achados.sort((a, b) => b.n - a.n);
+  }
+}
+
+/**
+ * Onde a cabeca esta neste quadro.
+ *
+ * O rosto e o borrao de pele MAIS ALTO entre os grandes. "Mais alto" sozinho
+ * pegaria uma mao levantada acima da cabeca (acontece em `climb` e no golpe de
+ * cima do `mine`); "maior" sozinho troca de rosto para mao quando o punho
+ * aparece de frente e o rosto sai de perfil — em `mine` q1 a mao tem 51 px e o
+ * rosto 49. Exigir os dois resolve os dois casos.
+ */
+function acharCabeca(borroes) {
+  if (!borroes.length) return null;
+  const maior = borroes[0].n;
+  const candidatos = borroes.filter((b) => b.n >= maior * 0.55);
+  return candidatos.reduce((a, b) => (b.cy < a.cy ? b : a));
+}
+
+/** Os punhos: pele que nao e o rosto, do mais baixo para o mais alto. */
+function acharPunhos(borroes, cabeca) {
+  return borroes.filter((b) => b !== cabeca).sort((a, b) => b.cy - a.cy);
+}
+
+/**
+ * As costas: a borda de TRAS do tronco, na altura das omoplatas.
+ *
+ * A faixa vai do queixo ate a cintura. A arte olha para a direita, entao
+ * "atras" e o menor x — e a mochila encosta ali.
+ */
+function acharCostas(q, caixa, cabeca) {
+  const topo = cabeca ? Math.round(cabeca.base) : caixa.y0 + Math.round((caixa.y1 - caixa.y0) * 0.3);
+  const base = Math.round(topo + (LINHA_DOS_PES - topo) * 0.45);
+  let atras = 1e9, linhas = 0;
+  for (let y = topo; y <= base; y++) {
+    for (let x = caixa.x0; x <= caixa.x1; x++) {
+      if (q.opaco(x, y)) { if (x < atras) atras = x; linhas++; break; }
+    }
+  }
+  if (!linhas) return null;
+  return { x: atras, y: (topo + base) / 2 };
+}
+
+// ---------------------------------------------------------------- medir ---
+
+/** Quadros em que a medicao nao mereceu confianca (ver `conferir`). */
+const queixas = [];
+const medidas = {};
+const cru = {};
+for (const [nome, quadros] of TIRAS) {
+  const arquivo = path.resolve(`public/art/character/${nome}.png`);
+  if (!fs.existsSync(arquivo)) { console.warn(`  (sem ${nome}.png, pulando)`); continue; }
+  const png = PNG.sync.read(fs.readFileSync(arquivo));
+  medidas[nome] = [];
+  cru[nome] = [];
+  for (let i = 0; i < quadros; i++) {
+    const q = new Quadro(png, i);
+    const caixa = q.caixa();
+    if (!caixa) { medidas[nome].push(null); cru[nome].push(null); continue; }
+    const bs = q.borroes();
+    const cabeca = acharCabeca(bs);
+    const punhos = acharPunhos(bs, cabeca);
+    const costas = acharCostas(q, caixa, cabeca);
+
+    // O topo do cranio fica acima do centro do rosto: o rosto e a metade de
+    // baixo da cabeca, o cranio e a de cima. Meio borrao acima do centro cai
+    // na testa, que e onde um capacete assenta.
+    const cranio = cabeca ? { x: cabeca.cx, y: cabeca.topo - (cabeca.base - cabeca.topo) * 0.25 } : null;
+
+    cru[nome].push({ caixa, cabeca, punhos, costas, cranio });
+    conferir(nome, i, caixa, cranio, costas, punhos[0]);
+    medidas[nome].push({
+      cabeca: cranio && emFracao(cranio.x, cranio.y),
+      costas: costas && emFracao(costas.x, costas.y),
+      punho: punhos[0] && emFracao(punhos[0].cx, punhos[0].cy),
+    });
+  }
+}
+
+/*
+ * DESCONFIANCA AUTOMATICA.
+ *
+ * A medicao nunca devolve "nao sei": ela sempre acha ALGUM borrao de pele e
+ * devolve um ponto. Rodando na arte atual, o punho do `idle` q0 caiu no PE e o
+ * do `mine` q2 caiu na BOCHECHA — porque nesta arte a mao esta enluvada e a
+ * cabeca esta de capacete, entao nao sobra pele de mao para achar, e o
+ * detector se agarra ao couro claro da bota.
+ *
+ * Numero errado entregue em silencio e pior do que numero faltando: ele so
+ * aparece la na frente, como um capacete flutuando no jogo, longe daqui. Entao
+ * cada ponto passa por um teste de plausibilidade grosseiro — a cabeca fica na
+ * metade de cima, o punho fica entre o ombro e o joelho, as costas ficam atras
+ * do meio — e o que nao passa e DENUNCIADO por tira e quadro.
+ *
+ * Quem conserta e `characterAnchorFixes.ts`, escrito a mao.
+ */
+function conferir(tira, quadro, caixa, cranio, costas, punho) {
+  const alt = caixa.y1 - caixa.y0;
+  const diz = (o) => queixas.push(`${tira} q${quadro}: ${o}`);
+  if (!cranio) diz('nao achei a cabeca (nenhum borrao de pele)');
+  else if (cranio.y > caixa.y0 + alt * 0.5) diz('cabeca na metade de BAIXO do corpo');
+  if (!costas) diz('nao achei as costas');
+  if (!punho) diz('nao achei punho nenhum');
+  else {
+    if (punho.cy > LINHA_DOS_PES - alt * 0.22) diz('punho na altura do PE');
+    if (cranio && Math.abs(punho.cx - cranio.x) < 5 && Math.abs(punho.cy - cranio.y) < 9) {
+      diz('punho colado na cabeca (provavelmente e o rosto)');
+    }
+  }
+}
+
+/**
+ * Pixel do quadro -> fracao da ALTURA DESENHADA, com o zero na linha dos pes.
+ *
+ * E o mesmo sistema em que o punho da arma ja foi medido: x cresce para a
+ * frente, y sobe negativo. Assim o encaixe nao depende do tamanho em que o
+ * heroi e desenhado — muda a altura, os pontos acompanham.
+ */
+function emFracao(x, y) {
+  const k = ALTURA_DESENHADA / QUADRO;
+  return {
+    x: +(((x - QUADRO / 2) * k) / ALTURA_DESENHADA).toFixed(4),
+    y: +(((y - LINHA_DOS_PES) * k) / ALTURA_DESENHADA).toFixed(4),
+  };
+}
+
+// -------------------------------------------------------------- gravar ---
+
+const cabecalho = `/**
+ * PONTOS DE ENCAIXE DO HEROI — arquivo GERADO. Nao edite a mao.
+ *
+ *   npm run medir-encaixes
+ *
+ * Um ponto por QUADRO, e nao um por animacao. Essa foi a licao que a arma ja
+ * ensinou: andando de arma em punho o corpo usa quadros com o braco a frente,
+ * e uma ancora "media" pendura a peca fora do corpo. A ancora tem que seguir o
+ * desenho que esta na tela.
+ *
+ * Coordenadas em FRACAO DA ALTURA DESENHADA, com o zero na linha dos pes:
+ * x cresce para a frente do heroi, y sobe negativo. Nao dependem do tamanho em
+ * que o heroi e desenhado.
+ *
+ * Correcoes a mao vao em \`ENCAIXES_CORRIGIDOS\` (characterAnchorFixes.ts), que
+ * e escrito por humano e sobrevive a proxima medicao.
+ */
+
+export interface Encaixe {
+  x: number;
+  y: number;
+}
+
+export interface EncaixesDoQuadro {
+  /** Testa, onde um capacete assenta. */
+  cabeca: Encaixe | null;
+  /** Omoplatas, onde a mochila encosta. */
+  costas: Encaixe | null;
+  /** Punho fechado, onde entra o cabo da ferramenta ou da arma. */
+  punho: Encaixe | null;
+}
+
+export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = `;
+
+const corpo = JSON.stringify(medidas, null, 2).replace(/"([a-z]+)":/g, '$1:');
+fs.writeFileSync(
+  path.resolve('src/data/characterAnchors.ts'),
+  `${cabecalho}${corpo};\n`,
+  'utf8'
+);
+console.log('  gerado  src/data/characterAnchors.ts');
+
+// -------------------------------------------- folha de conferencia ---
+/*
+ * Numero que ninguem olhou e numero em que ninguem pode confiar.
+ *
+ * O punho da arma so ficou certo depois de eu RENDERIZAR as armas na mao e
+ * olhar. Aqui e a mesma coisa: cada quadro sai com os tres pontos marcados por
+ * cima do desenho, e um encaixe errado aparece na hora, em vez de aparecer
+ * como um capacete flutuando dentro do jogo.
+ */
+const MARCAS = {
+  cabeca: [90, 200, 255],   // azul   — testa
+  costas: [255, 190, 60],   // ambar  — omoplatas
+  punho: [255, 90, 120],    // rosa   — punho
+};
+
+const linhasDeTira = Object.keys(cru);
+const colunas = Math.max(...linhasDeTira.map((n) => cru[n].length));
+const folha = new PNG({ width: colunas * QUADRO, height: linhasDeTira.length * QUADRO });
+folha.data.fill(0);
+
+function ponto(px, py, cor, raio) {
+  for (let dy = -raio; dy <= raio; dy++) for (let dx = -raio; dx <= raio; dx++) {
+    if (dx * dx + dy * dy > raio * raio) continue;
+    const x = Math.round(px + dx), y = Math.round(py + dy);
+    if (x < 0 || y < 0 || x >= folha.width || y >= folha.height) continue;
+    const i = (folha.width * y + x) * 4;
+    folha.data[i] = cor[0]; folha.data[i+1] = cor[1]; folha.data[i+2] = cor[2]; folha.data[i+3] = 255;
+  }
+}
+
+linhasDeTira.forEach((nome, linha) => {
+  const png = PNG.sync.read(fs.readFileSync(path.resolve(`public/art/character/${nome}.png`)));
+  cru[nome].forEach((m, col) => {
+    const dx = col * QUADRO, dy = linha * QUADRO;
+    // o desenho
+    for (let y = 0; y < QUADRO; y++) for (let x = 0; x < QUADRO; x++) {
+      const o = (png.width * y + (col * QUADRO + x)) * 4;
+      if (o + 3 >= png.data.length) continue;
+      const d = (folha.width * (dy + y) + (dx + x)) * 4;
+      folha.data[d] = png.data[o]; folha.data[d+1] = png.data[o+1];
+      folha.data[d+2] = png.data[o+2]; folha.data[d+3] = png.data[o+3];
+    }
+    // a linha dos pes, para ver de relance se a tira esta alinhada
+    for (let x = 0; x < QUADRO; x++) {
+      const d = (folha.width * (dy + LINHA_DOS_PES) + (dx + x)) * 4;
+      folha.data[d] = 60; folha.data[d+1] = 255; folha.data[d+2] = 120; folha.data[d+3] = 90;
+    }
+    if (!m) return;
+    if (m.cranio) ponto(dx + m.cranio.x, dy + m.cranio.y, MARCAS.cabeca, 3);
+    if (m.costas) ponto(dx + m.costas.x, dy + m.costas.y, MARCAS.costas, 3);
+    if (m.punhos[0]) ponto(dx + m.punhos[0].cx, dy + m.punhos[0].cy, MARCAS.punho, 3);
+  });
+});
+
+const destino = path.resolve('arte-bruta/conferencia/encaixes.png');
+fs.mkdirSync(path.dirname(destino), { recursive: true });
+fs.writeFileSync(destino, PNG.sync.write(folha));
+console.log(`  conferencia  ${path.relative(process.cwd(), destino)}  (${folha.width}x${folha.height})`);
+console.log(`  azul = cabeca, ambar = costas, rosa = punho, verde = linha dos pes`);
+
+if (queixas.length) {
+  console.log(`\n  ${queixas.length} encaixe(s) que eu NAO consegui medir com confianca:`);
+  for (const q of queixas) console.log(`    ? ${q}`);
+  console.log(
+    `\n  Isso e esperado enquanto o heroi estiver de CAPACETE e de LUVA: sem pele\n` +
+    `  na mao e no craneo, nao ha o que medir. Com a arte de cabeca e maos\n` +
+    `  descobertas estes avisos devem sumir sozinhos.\n`
+  );
+} else {
+  console.log('\n  todos os encaixes passaram no teste de plausibilidade.\n');
+}
