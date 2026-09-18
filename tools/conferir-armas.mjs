@@ -37,17 +37,24 @@ const ARMA_ALTURA = num('ARMA_ALTURA');
 const ARMA_SOBE = num('ARMA_SOBE');
 
 /*
- * O punho vem de `characterAnchorFixes.ts`, que e onde mora o encaixe
- * conferido a mao. Ele saiu do PlayerSprite quando os encaixes viraram um
- * sistema so — se um dia sumir de la tambem, esta leitura tem que EXPLODIR e
- * nao cair num valor padrao: uma folha de conferencia que mente e pior do que
- * nenhuma.
+ * O punho vem de `characterAnchors.ts`, que e MEDIDO da arte de verdade por
+ * `npm run medir-encaixes`.
+ *
+ * Ja morou no PlayerSprite e depois no arquivo de correcoes a mao. Saiu dos
+ * dois quando o heroi passou a ser desenhado de maos e cabeca descobertas: com
+ * pele para achar, a medicao acerta o punho sozinha, e numero medido acompanha
+ * a arte quando ela muda. Numero a mao nao acompanha.
+ *
+ * Se a leitura falhar isto tem que EXPLODIR e nao cair num valor padrao: uma
+ * folha de conferencia que mente e pior do que nenhuma.
  */
-const fixes = fs.readFileSync(path.resolve('src/data/characterAnchorFixes.ts'), 'utf8');
-const achado = fixes.match(/PUNHO_DA_MIRA:[^[]*\[([\s\S]*?)\];/);
-if (!achado) throw new Error('nao achei PUNHO_DA_MIRA em src/data/characterAnchorFixes.ts');
-const tabela = achado[1];
-const punhos = [...tabela.matchAll(/x:\s*(-?[0-9.]+),\s*y:\s*(-?[0-9.]+)/g)].map((m) => ({
+const gerado = fs.readFileSync(path.resolve('src/data/characterAnchors.ts'), 'utf8');
+const bloco = gerado.match(/aim:\s*\[([\s\S]*?)\n  \]/);
+if (!bloco) throw new Error('nao achei a tira `aim` em src/data/characterAnchors.ts');
+const tabela = bloco[1];
+// So o `punho` de cada quadro: o bloco tambem traz `cabeca` e `costas`, e uma
+// regex de `x:`/`y:` solta misturaria os tres na mesma lista.
+const punhos = [...tabela.matchAll(/punho:\s*\{\s*x:\s*(-?[0-9.]+),\s*y:\s*(-?[0-9.]+)/g)].map((m) => ({
   x: Number(m[1]),
   y: Number(m[2]),
 }));

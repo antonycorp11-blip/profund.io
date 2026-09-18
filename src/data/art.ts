@@ -249,11 +249,11 @@ export const ART = {
     stripFrame: 128,
     stripDrawHeight: 66,
     strips: {
-      idle: { file: 'idle.png', frames: 8, fps: 6, facing: 1 },
-      walk: { file: 'walk.png', frames: 8, fps: 13, facing: -1 },
-      jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
-      mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
-      climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
+      idle: { file: 'idle.png', frames: 9, fps: 6, facing: 1 },
+      walk: { file: 'walk.png', frames: 9, fps: 13, facing: -1 },
+      jump: { file: 'jump.png', frames: 6, fps: 12, facing: 1 },
+      mine: { file: 'mine.png', frames: 12, fps: 12, facing: 1 },
+      climb: { file: 'climb.png', frames: 6, fps: 10, facing: 1 },
       /*
        * POSE DE MIRA, dez quadros e MAO VAZIA.
        *

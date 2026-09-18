@@ -23,6 +23,7 @@
     "slice-armas-lateral": "node tools/slice-armas-lateral.mjs",
     "conferir-armas": "node tools/conferir-armas.mjs",
     "check-estilo": "node tools/check-estilo.mjs",
+    "slice-heroi": "node tools/slice-heroi.mjs",
     "medir-encaixes": "node tools/medir-encaixes.mjs"
   },
   "devDependencies": {

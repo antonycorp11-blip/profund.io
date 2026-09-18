@@ -42,11 +42,22 @@ const ALTURA_DESENHADA = 66;
 const LINHA_DOS_PES = 119;
 const OPACO = 160;
 
-/** As tiras, com a quantidade de quadros de cada uma (ART.character.strips). */
-const TIRAS = [
-  ['idle', 8], ['walk', 8], ['jump', 8],
-  ['mine', 8], ['climb', 8], ['aim', 10],
-];
+/**
+ * As tiras, com a quantidade de quadros LIDA DO PROPRIO ARQUIVO.
+ *
+ * Estava fixa aqui — 8, 8, 8, 8, 8, 10 — e dessincronizou na primeira vez que
+ * a arte mudou: `mine` passou a ter 12 quadros e a medicao continuou olhando
+ * os 8 primeiros, calada. Os quatro ultimos ficariam sem encaixe nenhum e o
+ * motivo nao apareceria em lugar nenhum.
+ *
+ * A largura do PNG nao mente: sao quadros de 128 px lado a lado, entao a
+ * contagem e uma divisao. Um numero que se deduz nao pode discordar da arte.
+ */
+const TIRAS = ['idle', 'walk', 'jump', 'mine', 'climb', 'aim'].map((nome) => {
+  const arq = path.resolve(`public/art/character/${nome}.png`);
+  if (!fs.existsSync(arq)) return [nome, 0];
+  return [nome, Math.round(PNG.sync.read(fs.readFileSync(arq)).width / QUADRO)];
+});
 
 function hsv(r, g, b) {
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
@@ -142,9 +153,33 @@ function acharCabeca(borroes) {
   return candidatos.reduce((a, b) => (b.cy < a.cy ? b : a));
 }
 
-/** Os punhos: pele que nao e o rosto, do mais baixo para o mais alto. */
+/**
+ * Os punhos: pele que nao e o rosto, do mais A FRENTE para o mais atras.
+ *
+ * Ordenava pelo mais BAIXO, e nas poses de mira isso escolhia a mao errada: o
+ * braco que aponta fica na altura do peito enquanto a outra mao pende junto ao
+ * quadril, mais baixa. A ancora ia para a mao parada e a arma nascia atras do
+ * corpo.
+ *
+ * A arte olha para a direita, entao a mao que segura e a de maior x. Vale para
+ * as duas coisas que se prendem nela: a ferramenta no golpe e a arma na mira.
+ */
 function acharPunhos(borroes, cabeca) {
-  return borroes.filter((b) => b !== cabeca).sort((a, b) => b.cy - a.cy);
+  return borroes.filter((b) => b !== cabeca).sort((a, b) => b.cx - a.cx);
+}
+
+/** O pixel opaco mais alto dentro da largura do rosto: o topo do cabelo. */
+function altoDaCabeca(q, cabeca) {
+  const meia = 7;
+  const x0 = Math.round(cabeca.cx - meia), x1 = Math.round(cabeca.cx + meia);
+  let topo = Math.round(cabeca.topo);
+  for (let y = Math.round(cabeca.topo); y >= 0; y--) {
+    let achou = false;
+    for (let x = x0; x <= x1; x++) if (q.opaco(x, y)) { achou = true; break; }
+    if (!achou) break;
+    topo = y;
+  }
+  return { x: cabeca.cx, y: topo };
 }
 
 /**
@@ -187,10 +222,19 @@ for (const [nome, quadros] of TIRAS) {
     const punhos = acharPunhos(bs, cabeca);
     const costas = acharCostas(q, caixa, cabeca);
 
-    // O topo do cranio fica acima do centro do rosto: o rosto e a metade de
-    // baixo da cabeca, o cranio e a de cima. Meio borrao acima do centro cai
-    // na testa, que e onde um capacete assenta.
-    const cranio = cabeca ? { x: cabeca.cx, y: cabeca.topo - (cabeca.base - cabeca.topo) * 0.25 } : null;
+    /*
+     * O ALTO DA CABECA, e nao o alto do ROSTO.
+     *
+     * Subir uma fracao do borrao de pele a partir da testa punha o ponto na
+     * altura do olho — e capacete nao assenta no olho. O cabelo fica ACIMA da
+     * pele e nao e pele, entao ele nao entra no borrao: o alto de verdade e o
+     * pixel opaco mais alto NA LARGURA DO ROSTO, que e o topo da cabeleira.
+     *
+     * Limitar a busca a largura do rosto e o que impede o braco erguido de
+     * roubar o ponto quando ele passa acima da cabeca — que e o caso em metade
+     * dos quadros de golpe e em todos os de escalada.
+     */
+    const cranio = cabeca ? altoDaCabeca(q, cabeca) : null;
 
     cru[nome].push({ caixa, cabeca, punhos, costas, cranio });
 
