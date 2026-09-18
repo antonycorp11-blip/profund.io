@@ -22,8 +22,16 @@ export interface TechCategoryMeta {
 export const TECH_CATEGORIES: Record<TechCategory, TechCategoryMeta> = {
   copias: {
     id: 'copias',
-    name: 'Copias',
-    description: 'A copiadora e tudo que faz suas copias trabalharem melhor.',
+    /*
+     * A aba se chama PESQUISA, e nao "Copias".
+     *
+     * Ela deixou de ser so sobre a copiadora: agora traz as melhorias das
+     * toupeiras junto, e "Copias" passou a mentir sobre metade do conteudo. O
+     * `id` continua `copias` de proposito — trocar chave de dado por causa de
+     * rotulo quebra save e nao arruma nada.
+     */
+    name: 'Pesquisa',
+    description: 'A bancada onde a equipe inteira melhora: copias e toupeiras.',
     icon: '⧉',
     color: '#5ac7d0',
   },

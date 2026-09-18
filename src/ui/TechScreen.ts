@@ -304,6 +304,31 @@ export class TechScreen {
           .join('')}
       </div>`;
 
+    /*
+     * A aba COPIAS recebe as melhorias das TOUPEIRAS.
+     *
+     * Elas nao tinham casa: moravam numa secao da tela de Automacao, que e
+     * onde o jogador vai para ver a equipe TRABALHANDO, nao para mexer nela.
+     * Aqui embaixo das pesquisas, a aba passa a ser sobre a equipe inteira —
+     * as copias por pesquisa, as toupeiras por moeda, e as duas no mesmo
+     * lugar, que e onde alguem procuraria.
+     */
+    if (cat === 'copias') {
+      this.mainEl.insertAdjacentHTML(
+        'beforeend',
+        `<section class="auto-melhorias">
+           <header>
+             <img src="art/auto/toupeira.png" alt="">
+             <div>
+               <h4>Melhorias das toupeiras</h4>
+               <p>Valem para TODAS elas, as de agora e as que vierem depois.</p>
+             </div>
+           </header>
+           <div class="up-grid">${this.moleUpgrades()}</div>
+         </section>`
+      );
+    }
+
     this.renderTechDetalhe(cat);
 
     for (const btn of Array.from(this.mainEl.querySelectorAll('[data-pick]'))) {
@@ -336,6 +361,30 @@ export class TechScreen {
    * colado nas abas e nenhuma tela dizia onde o jogador estava — a unica pista
    * era qual aba estava acesa la em cima.
    */
+  /**
+   * A PLACA DE MADEIRA da Automacao, com o mineiro ao lado.
+   *
+   * Nao e o bloco de titulo comum das outras telas. No conceito esta tela abre
+   * com uma tabua pregada na parede e o proprio Elias encostado nela, de
+   * prancheta na mao — e isso muda o que a tela diz: nao e um relatorio, e o
+   * quadro de aviso da equipe dele.
+   *
+   * O retrato e o primeiro quadro da folha que anda pela mina, o mesmo que a
+   * tela de Equipamento ja usa: nao pede arte nova e garante que e a MESMA
+   * pessoa.
+   */
+  private placaDaTela(): string {
+    return `
+      <header class="auto-placa">
+        <img class="auto-placa-heroi" src="${this.heroiUrl()}" alt="">
+        <div class="auto-placa-txt">
+          <b>Automação</b>
+          <small>Seus ajudantes não param</small>
+        </div>
+        <span class="auto-placa-lema">Mais minério<br>menos esforço</span>
+      </header>`;
+  }
+
   private tituloDaTela(icone: string, nome: string, linha: string, lousa = ''): string {
     /*
      * O bloco de titulo ganhou os MOVEIS do conceito.
@@ -472,30 +521,48 @@ export class TechScreen {
   private renderAutomacao(): void {
     const clones = this.host.clones;
     const moles = this.host.collectors;
-    const money = Math.floor(this.host.stock.money);
     const custoMole = moles.costFor();
-    const trabalhando =
-      clones.clones.filter((c: Clone) => c.state !== 'parado').length +
-      moles.units.filter((u) => u.state !== 'procurando').length;
     const carregando = moles.carriedTotal();
     const entregue = moles.units.reduce((n, u) => n + u.delivered, 0);
 
-    const numero = (v: string, r: string, arte: string, on = true) => `
-      <div class="auto-stat ${on ? 'on' : ''}">
+    /*
+     * A FAIXA DE ESTADO: um painel so, com divisorias.
+     *
+     * Eram cinco caixas soltas com numeros do mesmo tamanho. No conceito e uma
+     * regua unica, e o numero e GRANDE e colorido por tipo — porque a faixa
+     * responde de relance "esta tudo rodando?", e para isso o olho precisa
+     * pegar os numeros sem ler os rotulos.
+     */
+    const celula = (v: string, r: string, arte: string, cor: string, on = true) => `
+      <div class="auto-stat ${on ? 'on' : ''}" style="--cor:${cor}">
         <img src="art/auto/${arte}.png" alt="">
         <div><b>${v}</b><span>${r}</span></div>
       </div>`;
 
+    // A ultima celula nao e numero: e o VEREDITO. No conceito ela e o botao
+    // verde de ligado, e e o unico lugar da tela que diz se algo esta errado.
+    const parados =
+      clones.clones.filter((c: Clone) => c.state === 'parado').length +
+      moles.units.filter((u) => u.state === 'procurando').length;
+    const total = clones.clones.length + moles.units.length;
+    const tudoOk = total > 0 && parados === 0;
+    const veredito =
+      total === 0
+        ? { t: 'SEM EQUIPE', s: 'contrate alguem', c: 'off' }
+        : tudoOk
+          ? { t: 'TUDO OK', s: 'trabalhando normalmente', c: 'ok' }
+          : { t: `${parados} PARADO${parados > 1 ? 'S' : ''}`, s: 'precisa de atencao', c: 'alerta' };
+
     const colunaCopias = `
       <section class="auto-col">
-        <header>
-          <img src="art/auto/copia_aco.png" alt="">
-          <div>
+        <header class="auto-col-cab">
+          <span class="auto-col-icone"><img src="art/auto/copia_aco.png" alt=""></span>
+          <div class="auto-col-txt">
             <h4>Copias ativas <i>(${clones.clones.length}/${clones.slots})</i></h4>
-            <p>Mineram, coletam e entregam sozinhas.</p>
+            <p>Mineram, coletam e entregam automaticamente.</p>
           </div>
           <button class="btn primary" data-newclone ${clones.canAfford() ? '' : 'disabled'}>
-            + NOVA
+            + NOVA COPIA
           </button>
         </header>
         <div class="auto-list">
@@ -509,11 +576,11 @@ export class TechScreen {
 
     const colunaMoles = `
       <section class="auto-col">
-        <header>
-          <img src="art/auto/toupeira.png" alt="">
-          <div>
+        <header class="auto-col-cab">
+          <span class="auto-col-icone"><img src="art/auto/toupeira.png" alt=""></span>
+          <div class="auto-col-txt">
             <h4>Toupeiras ativas <i>(${moles.units.length}/${moles.max})</i></h4>
-            <p>Buscam o que ficou no chao e trazem para a base.</p>
+            <p>Escavam tuneis e trazem recursos para a base.</p>
           </div>
           <button class="btn primary" data-hire ${
             moles.units.length < moles.max && moles.canAfford() ? '' : 'disabled'
@@ -531,20 +598,28 @@ export class TechScreen {
       </section>`;
 
     this.mainEl.innerHTML = `
-      ${this.tituloDaTela(
-        '⚙',
-        'Automação',
-        'Seus ajudantes não param.',
-        'Túneis hoje, prosperidade amanhã.'
-      )}
-      <div class="auto-strip">
-        ${numero(`${clones.clones.length}/${clones.slots}`, 'copias', 'copia_aco', clones.clones.length > 0)}
-        ${numero(`${moles.units.length}/${moles.max}`, 'toupeiras', 'toupeira', moles.units.length > 0)}
-        ${numero(String(trabalhando), 'trabalhando agora', 'deslizador', trabalhando > 0)}
-        ${numero(String(carregando), 'carga em viagem', 'vagonete', carregando > 0)}
-        ${numero(String(entregue), 'ja entregue', 'caixote', entregue > 0)}
+      <div class="auto-topo">
+        ${this.placaDaTela()}
+        <div class="auto-strip">
+          ${celula(`${clones.clones.length}/${clones.slots}`, 'copias ativas', 'copia_aco', '#5ac7d0', clones.clones.length > 0)}
+          ${celula(`${moles.units.length}/${moles.max}`, 'toupeiras ativas', 'toupeira', '#d8a35a', moles.units.length > 0)}
+          ${celula(String(carregando), 'cargas em viagem', 'vagonete', '#e8dcc4', carregando > 0)}
+          ${celula(String(entregue), 'entregas hoje', 'caixote', '#e8dcc4', entregue > 0)}
+          <div class="auto-veredito ${veredito.c}">
+            <span class="auto-luz"></span>
+            <div><b>${veredito.t}</b><span>${veredito.s}</span></div>
+          </div>
+        </div>
       </div>
-      <div class="auto-cols">${colunaCopias}${colunaMoles}</div>`;
+      <div class="auto-cols">${colunaCopias}${colunaMoles}</div>
+      <footer class="auto-rodape">
+        <span><img src="art/hud/nav_tecnologia.png" alt="">
+          <b>A mineracao nunca para!</b> Seus ajudantes trabalham mesmo quando voce
+          estiver explorando.</span>
+        <button class="btn" data-dumpall ${carregando > 0 ? '' : 'disabled'}>
+          MANDAR ENTREGAR (${carregando})
+        </button>
+      </footer>`;
 
     /*
      * Sem painel lateral aqui.
@@ -558,24 +633,21 @@ export class TechScreen {
     this.asideEl.innerHTML = '';
     this.asideEl.hidden = true;
 
-    this.mainEl.insertAdjacentHTML(
-      'beforeend',
-      `<section class="auto-melhorias">
-         <header>
-           <img src="art/auto/placa.png" alt="">
-           <div>
-             <h4>Melhorias</h4>
-             <p>Valem para TODAS as unidades, agora e as que vierem depois.</p>
-           </div>
-           <button class="btn" data-dumpall ${carregando > 0 ? '' : 'disabled'}>
-             MANDAR ENTREGAR (${carregando})
-           </button>
-         </header>
-         <div class="up-grid">${this.cloneUpgrades('mole')}${this.cloneUpgrades('clone')}</div>
-         <p class="dim">✦ ${money.toLocaleString('pt-BR')} em caixa.</p>
-       </section>`
-    );
-
+    /*
+     * AS MELHORIAS SAIRAM DAQUI.
+     *
+     * Elas dividiam a altura com as duas colunas e, em 393 px — a tela que o
+     * jogo de fato roda —, isso cortava o cartao da copia pela metade. O
+     * conceito nao tem esta secao aqui, e tem razao: melhorar a equipe e uma
+     * decisao ocasional; as unidades trabalhando sao o assunto permanente.
+     *
+     * E metade delas era DUPLICATA: `cloneUpgrades('clone')` renderizava as
+     * mesmas pesquisas que a aba Copias ja mostra. As das toupeiras, que nao
+     * tinham outra casa, foram para la tambem — a aba e sobre a equipe, e
+     * agora ela e sobre a equipe inteira.
+     *
+     * O que fica aqui e o que e OPERACAO e nao melhoria: mandar entregar.
+     */
     this.bindCloner();
     this.bindCollectors();
   }
@@ -857,39 +929,6 @@ export class TechScreen {
    * mesmo que nao existir: o jogador chegava a dezesseis toupeiras sem nunca
    * ter comprado Patas Rapidas, que custa 120 e vale para todas elas.
    */
-  private cloneUpgrades(lado: 'clone' | 'mole'): string {
-    if (lado === 'mole') return this.moleUpgrades();
-    const techs = techsOf('copias').filter((t) => t.id !== 'tech_cloner');
-    if (techs.length === 0) return '<p class="dim">Nada para melhorar ainda.</p>';
-
-    const cartoes = techs
-      .map((t) => {
-        const feita = this.host.tech.has(t.id);
-        const check = this.host.tech.canResearch(t.id, this.host.deepest());
-        const custo = Object.entries(t.cost)
-          .map(([id, qty]) => {
-            const rid = id as ResourceId;
-            const have = this.host.stock.count(rid);
-            return `<span class="${have >= qty ? 'ok' : 'miss'}">${RESOURCES[rid].name} ${have}/${qty}</span>`;
-          })
-          .join('');
-        return `
-          <div class="up-card ${feita ? 'done' : ''}">
-            <div class="up-head"><span>${t.icon}</span><b>${t.name}</b></div>
-            <p>${t.description}</p>
-            ${feita ? '<div class="up-done">INSTALADO</div>' : `
-              <div class="tech-cost">${custo}</div>
-              <button class="btn" data-up="${t.id}" ${check.ok ? '' : 'disabled'}>
-                ${check.ok ? 'INSTALAR' : (check.reason ?? 'Indisponivel')}
-              </button>`}
-          </div>`;
-      })
-      .join('');
-
-    return cartoes;
-  }
-
-  /** As melhorias das toupeiras, no mesmo formato de coluna. */
   private moleUpgrades(): string {
     const mgr = this.host.collectors;
     const money = Math.floor(this.host.stock.money);
@@ -946,7 +985,7 @@ export class TechScreen {
         <div class="clone-card-head">
           <img class="clone-face" src="art/auto/toupeira.png" alt="">
           <b>Toupeira ${u.index + 1}</b>
-          <span class="clone-state" data-live-cstate="${u.id}">${u.statusLabel()}</span>
+          <span class="estado-pilula" data-live-cstate="${u.id}">${u.statusLabel()}</span>
         </div>
         <div class="unidade-grade">
           <span><i>Carga max.</i><b data-live-cload="${u.id}">${u.carried}/${u.capacity}</b></span>
@@ -954,7 +993,7 @@ export class TechScreen {
           <span><i>Profundidade</i><b data-live-cdepth="${u.id}">${prof} m</b></span>
           <span><i>Entregas</i><b data-live-ctotal="${u.id}">${u.delivered}</b></span>
         </div>
-        <span class="unidade-barra"><i style="width:${carga}%"></i></span>
+        <span class="unidade-barra"><i style="width:${carga}%"></i><em>&rsaquo;&rsaquo;&rsaquo;</em></span>
         <small class="unidade-linha" data-live-ccarry="${u.id}"></small>
       </div>`;
   }
@@ -989,11 +1028,31 @@ export class TechScreen {
     }
   }
 
+  /**
+   * O CARTAO DA COPIA, mapeado do conceito.
+   *
+   * Quatro bandas, e cada uma responde uma pergunta: quem e e esta ligada
+   * (cabeca), atras do que ela esta (foco), quao longe ela vai (area), e o que
+   * ela ja rendeu (pe).
+   *
+   * O interruptor VERDE saiu de uma linha inteira com um botao escrito
+   * "LIGADO" e foi para o canto da cabeca, que e onde o conceito o poe — e e o
+   * lugar certo: ligar e desligar e uma pergunta sobre a unidade, nao sobre
+   * uma das configuracoes dela.
+   */
   private cloneCard(c: Clone): string {
-    const focos: { id: CloneFocus; label: string }[] = [
-      { id: 'minerar', label: 'Minerar' },
-      { id: 'coletar', label: 'Coletar' },
-      { id: 'equilibrado', label: 'Os dois' },
+    /*
+     * O MODO virou tres icones na cabeca do cartao.
+     *
+     * Ele ocupava uma banda inteira com tres palavras, e o cartao ficou com
+     * quatro bandas contra as duas do conceito — em 393 px de altura isso
+     * cortava o cartao pela metade. Modo e uma escolha rara e binaria de ler:
+     * icone basta, e o titulo diz a palavra para quem passar o dedo.
+     */
+    const focos: { id: CloneFocus; label: string; icone: string }[] = [
+      { id: 'minerar', label: 'Minerar', icone: '⛏' },
+      { id: 'coletar', label: 'Coletar', icone: '✋' },
+      { id: 'equilibrado', label: 'Os dois', icone: '⇄' },
     ];
     const recursos: ResourceId[] = ['coal', 'copper', 'iron', 'gold', 'crystal', 'stone'];
 
@@ -1002,34 +1061,28 @@ export class TechScreen {
         <div class="clone-card-head">
           <img class="clone-face" src="art/auto/${CHASSI[c.index % CHASSI.length]}.png" alt="">
           <b>Copia ${c.index + 1}</b>
-          <span class="clone-state" data-live-state="${c.id}">${c.statusLabel()}</span>
-          <span class="clone-depth" data-live-depth="${c.id}"></span>
-          <span class="clone-load" data-live-load="${c.id}">${c.carried}/${c.capacity}</span>
-        </div>
-        <div class="clone-live">
-          <span data-live-carry="${c.id}"></span>
-          <b data-live-total="${c.id}"></b>
-        </div>
-        <div class="clone-row">
-          <label>Foco</label>
-          <div class="seg">
+          <span class="estado-pilula" data-live-state="${c.id}">${c.statusLabel()}</span>
+          <div class="modo-seg">
             ${focos
               .map(
                 (f) =>
                   `<button class="${c.config.focus === f.id ? 'on' : ''}"
-                     data-focus="${c.id}:${f.id}">${f.label}</button>`
+                     data-focus="${c.id}:${f.id}" title="${f.label}">${f.icone}</button>`
               )
               .join('')}
           </div>
+          <button class="liga ${c.config.autoDeliver ? 'on' : ''}" data-deliver="${c.id}"
+                  title="Entregar sozinho"><i></i></button>
         </div>
-        <div class="clone-row">
-          <label>O que procurar</label>
+
+        <div class="clone-campo">
+          <label>Foco</label>
           <div class="chips-filter">
             ${recursos
               .map(
                 (r) =>
                   `<button class="${c.config.filter.includes(r) ? 'on' : ''}"
-                     data-filter="${c.id}:${r}">
+                     data-filter="${c.id}:${r}" title="${RESOURCES[r].name}">
                      <i style="background:${RESOURCES[r].color}"></i>${RESOURCES[r].name}
                    </button>`
               )
@@ -1039,22 +1092,31 @@ export class TechScreen {
             </button>
           </div>
         </div>
-        <div class="clone-row">
+
+        <div class="clone-campo area">
           <label>Area de trabalho</label>
           <input type="range" min="6" max="40" value="${c.config.workRadius}"
                  data-radius="${c.id}">
           <span class="clone-radius">${c.config.workRadius} tiles</span>
         </div>
-        <div class="clone-row">
-          <label>Entregar sozinho</label>
-          <button class="switch ${c.config.autoDeliver ? 'on' : ''}" data-deliver="${c.id}">
-            ${c.config.autoDeliver ? 'LIGADO' : 'DESLIGADO'}
+
+        <div class="clone-pe">
+          <span class="clone-leitura">
+            <img src="art/hud/pin.png" alt="">
+            <b data-live-depth="${c.id}"></b>
+          </span>
+          <span class="clone-leitura">
+            <img src="art/auto/caixote.png" alt="">
+            <b data-live-total="${c.id}"></b>
+          </span>
+          <span class="clone-leitura carga">
+            <b data-live-load="${c.id}">${c.carried}/${c.capacity}</b>
+          </span>
+          <button class="btn" data-recall="${c.id}">
+            <img class="btn-icon" src="art/hud/pin.png" alt="">TRAZER
           </button>
         </div>
-        <div class="clone-row">
-          <span class="clone-carry">Carregando: ${c.summary()}</span>
-          <button class="btn" data-recall="${c.id}">TRAZER PARA MIM</button>
-        </div>
+        <small class="unidade-linha" data-live-carry="${c.id}"></small>
       </div>`;
   }
 
