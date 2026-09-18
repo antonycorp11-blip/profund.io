@@ -145,6 +145,7 @@ class Quadro {
       if (px.length < 5) continue;
       achados.push({
         n: px.length,
+        px,
         cx: px.reduce((a, p) => a + p[0], 0) / px.length,
         cy: px.reduce((a, p) => a + p[1], 0) / px.length,
         topo: Math.min(...px.map((p) => p[1])),
@@ -261,6 +262,38 @@ function pontoDoOmbro(caixa, cabeca) {
 }
 
 /**
+ * O PUNHO e a PONTA do braco, e nao o centro do borrao de pele.
+ *
+ * Com a manga curta, o borrao vai do cotovelo ate os dedos. O centro dele cai
+ * no PULSO — e foi ali que a arma apareceu presa, atras da mao, com os dedos
+ * sobrando na frente do cano.
+ *
+ * Esta e a mesma licao que a primeira medicao de punho ja tinha aprendido
+ * ("tirava o centro das ultimas nove colunas, e isso puxava o antebraco
+ * junto") e que eu perdi ao generalizar a medicao para todas as tiras.
+ *
+ * Acha o pixel mais LONGE do ombro — a ponta dos dedos — e devolve o centro do
+ * aglomerado a cinco pixels dela. Cinco porque e o raio de um punho fechado
+ * nesta escala: menos pega so os dedos, mais volta a puxar o antebraco.
+ */
+function pontaDaMao(borrao, ombro) {
+  const dist = (p) => (p[0] - ombro.x) ** 2 + (p[1] - ombro.y) ** 2;
+  let ponta = borrao.px[0];
+  let maior = -1;
+  for (const p of borrao.px) {
+    const d = dist(p);
+    if (d > maior) { maior = d; ponta = p; }
+  }
+  const perto = borrao.px.filter(
+    (p) => (p[0] - ponta[0]) ** 2 + (p[1] - ponta[1]) ** 2 <= 25
+  );
+  return {
+    cx: perto.reduce((a, p) => a + p[0], 0) / perto.length,
+    cy: perto.reduce((a, p) => a + p[1], 0) / perto.length,
+  };
+}
+
+/**
  * O angulo do braco: do OMBRO ao punho.
  *
  * O ombro nao esta marcado em lugar nenhum do desenho, entao ele e deduzido:
@@ -356,15 +389,20 @@ for (const [nome, quadros] of TIRAS) {
      * bug la na frente e ela nao existir aqui.
      */
     const reprovados = conferir(nome, i, caixa, cranio, costas, punhos[0]);
+    /* O ponto da mao vem da PONTA do braco, nao do centro do borrao. */
+    const mao = punhos[0] && cabeca
+      ? pontaDaMao(punhos[0], pontoDoOmbro(caixa, cabeca))
+      : punhos[0] && { cx: punhos[0].cx, cy: punhos[0].cy };
+
     const ou = (campo, v) => (v && !reprovados.has(campo) ? v : null);
     medidas[nome].push({
       cabeca: ou('cabeca', cranio && emFracao(cranio.x, cranio.y)),
       costas: ou('costas', costas && emFracao(costas.x, costas.y)),
       punho: ou(
         'punho',
-        punhos[0] && {
-          ...emFracao(punhos[0].cx, punhos[0].cy),
-          angulo: anguloDoBraco(caixa, cabeca, punhos[0]),
+        mao && {
+          ...emFracao(mao.cx, mao.cy),
+          angulo: anguloDoBraco(caixa, cabeca, mao),
         }
       ),
     });
