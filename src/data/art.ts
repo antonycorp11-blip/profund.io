@@ -29,6 +29,17 @@ export interface StripDef {
 }
 
 export interface CharacterArt {
+  /**
+   * O equipamento ja esta DESENHADO no corpo desta leva de arte?
+   *
+   * `true` significa que capacete, mochila e picareta fazem parte do desenho
+   * do heroi, e que as camadas vestiveis nao devem entrar por cima — senao ele
+   * ganha um segundo capacete sobre o primeiro.
+   *
+   * E o unico interruptor entre os dois mundos: arte de heroi vestido e arte
+   * de heroi nu com pecas encaixadas.
+   */
+  equipamentoNoCorpo?: boolean;
   dir: string;
   /** Folha unica normalizada pelo slice-assets. */
   sheet: string;
@@ -206,12 +217,14 @@ export const ART = {
   ],
 
   /**
-   * Pecas que se VESTEM: presas num ponto do corpo, nunca desenhadas dentro
-   * dele (ver PlayerSprite.desenharPeca).
+   * Pecas que se VESTEM: presas num ponto medido do corpo.
    *
    * Sao de PERFIL, porque grudam num corpo de perfil. Nao confundir com
    * `art/equip/<id>.png`, que e o icone de tres quartos da mesma peca na lista
    * da tela de Equipamento — mesma coisa, duas figuras, dois usos.
+   *
+   * Ficam carregadas mesmo quando `equipamentoNoCorpo` e true: a arte muda de
+   * leva, elas continuam existindo, e o interruptor e um so.
    */
   vestirArts: [
     'eq_lanterna', 'eq_capacete', 'eq_visor',
@@ -265,24 +278,28 @@ export const ART = {
      * lado, todos ja alinhados pelos pes pelo slice-assets. Quando existem,
      * substituem a folha 4x4 inteira; quando faltam, o jogo cai nela sozinho.
      */
+    /**
+     * O EQUIPAMENTO ESTA DESENHADO NO CORPO nesta leva de arte.
+     *
+     * Capacete, mochila e picareta fazem parte do desenho do heroi — nao sao
+     * pecas separadas. Ligar as camadas modulares por cima poria um segundo
+     * capacete sobre o primeiro e uma segunda mochila sobre a primeira.
+     *
+     * A ARMA e a excecao e continua sendo peca solta: a tira de mira foi
+     * desenhada com o punho VAZIO de proposito, justamente para a arma entrar
+     * ali.
+     *
+     * Trocar para uma arte de heroi nu e virar isto para `false`. E o unico
+     * interruptor entre os dois mundos.
+     */
+    equipamentoNoCorpo: true,
     stripFrame: 128,
     stripDrawHeight: 66,
     strips: {
-      idle: { file: 'idle.png', frames: 9, fps: 6, facing: 1 },
-      /*
-       * `facing: 1` porque a arte NOVA olha para a direita.
-       *
-       * Ficou em -1 por uma leva inteira depois da troca de arte: a folha
-       * antiga de caminhada olhava para a esquerda, o codigo espelhava para
-       * compensar, e quando a arte mudou de lado o espelho continuou la. O
-       * heroi andava de re — pernas fazendo o ciclo ao contrario do movimento.
-       *
-       * Trocar a arte de uma tira obriga a conferir este campo. Ele nao e
-       * deduzido de lugar nenhum.
-       */
-      walk: { file: 'walk.png', frames: 10, fps: 13, facing: 1 },
-      jump: { file: 'jump.png', frames: 9, fps: 12, facing: 1 },
-      mine: { file: 'mine.png', frames: 12, fps: 12, facing: 1 },
+      idle: { file: 'idle.png', frames: 8, fps: 6, facing: 1 },
+      walk: { file: 'walk.png', frames: 8, fps: 13, facing: -1 },
+      jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
+      mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
       climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
       /*
        * POSE DE MIRA, dez quadros e MAO VAZIA.
@@ -297,42 +314,6 @@ export const ART = {
        * 6-7 recuo, 8-9 andando de arma em punho.
        */
       aim: { file: 'aim.png', frames: 10, fps: 6, facing: 1 },
-
-      /*
-       * TRANSICOES: tocam UMA VEZ e saem.
-       *
-       * O corpo trocava de pose num quadro — parado virava andando sem nada no
-       * meio, e inverter a direcao era um espelhamento instantaneo. E o que
-       * mais denuncia que aquilo e um desenho plano.
-       *
-       * As tres nao repetem: quem termina de arrancar entra na caminhada, quem
-       * termina de frear fica parado. E por isso que elas tem `fps` alto — sao
-       * curtas de proposito, e uma transicao que o jogador percebe como espera
-       * e pior do que transicao nenhuma.
-       */
-      arranca: { file: 'arranca.png', frames: 5, fps: 22, facing: 1 },
-      freia: { file: 'freia.png', frames: 5, fps: 20, facing: 1 },
-      /*
-       * O GIRO vai de perfil DIREITO para perfil ESQUERDO, passando por frente.
-       *
-       * O sentido esta desenhado na arte, entao o espelho aqui e ao contrario
-       * do resto: virando para a esquerda ele vai como esta; virando para a
-       * direita e que precisa espelhar. Ver PlayerSprite.render.
-       */
-      gira: { file: 'gira.png', frames: 6, fps: 24, facing: 1 },
-
-      /*
-       * ANDAR COM A ARMA: dez quadros cada, porque dois nao sao um ciclo.
-       *
-       * A tira de mira tem so dois quadros de caminhada, e com dois as pernas
-       * ficam praticamente paradas enquanto o corpo desliza.
-       *
-       * Sao duas porque o braco tem dois estados. Com a arma BAIXADA e como
-       * ele anda por ai — sacar a arma travava o corpo de braco esticado o
-       * tempo inteiro. Esticado e so quando ele esta atirando.
-       */
-      arma_anda: { file: 'arma_anda.png', frames: 10, fps: 13, facing: 1 },
-      arma_baixa: { file: 'arma_baixa.png', frames: 10, fps: 13, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,

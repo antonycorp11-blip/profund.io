@@ -1,4 +1,5 @@
 import { CONFIG } from '../data/config';
+import { ART } from '../data/art';
 import { TOOLS } from '../data/tools';
 import { RESOURCES } from '../data/resources';
 import { activeSkillMeta } from '../data/activeSkills';
@@ -1543,9 +1544,18 @@ export class Game {
      * punho, e a troca de mao e justamente a escolha que o jogo pede — ver
      * duas coisas na mesma mao desfaria essa escolha.
      */
-    this.playerSprite.capaceteArt = this.equipment.equippedIn('cabeca');
-    this.playerSprite.mochilaArt = this.equipment.equippedIn('costas');
-    this.playerSprite.picaretaArt = this.mao === 'arma' ? null : TOOLS[this.stats.toolIndex]?.key ?? null;
+    /*
+     * As camadas vestiveis so entram com arte de heroi NU.
+     *
+     * Nesta leva o capacete, a mochila e a picareta estao desenhados no corpo
+     * (ver ART.character.equipamentoNoCorpo). Desenhar as pecas por cima poria
+     * um segundo capacete sobre o primeiro.
+     */
+    const nu = !ART.character.equipamentoNoCorpo;
+    this.playerSprite.capaceteArt = nu ? this.equipment.equippedIn('cabeca') : null;
+    this.playerSprite.mochilaArt = nu ? this.equipment.equippedIn('costas') : null;
+    this.playerSprite.picaretaArt =
+      nu && this.mao !== 'arma' ? TOOLS[this.stats.toolIndex]?.key ?? null : null;
     this.weapons.boca = () => this.playerSprite.bocaDoCano(this.player);
     this.playerSprite.update(dt, this.player);
 
