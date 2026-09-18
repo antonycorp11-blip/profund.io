@@ -210,35 +210,30 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     }
 
     /*
-     * 4. A PORTA MURADA, no piso, no centro.
+     * 4. A PORTA MURADA: tijolo RENTE ao piso, no centro, nunca em pe.
      *
-     * E o motivo de tudo isto existir. Fica em tijolo antigo sobre o selo — o
-     * jogador ve a passagem, ve que ela foi fechada a mao, e nao consegue
-     * abrir enquanto o guardiao estiver de pe. Quando o selo cai, cai com ela.
+     * E o motivo de tudo isto existir. Pela BIBLIA as cidades muraram a
+     * passagem e deixaram um bicho na frente; o jogador tem que ver o tijolo
+     * antigo no chao e entender sozinho que aquilo foi fechado a mao.
+     *
+     * Ela e larga e deitada porque row0 E o piso da camara: a passagem fica
+     * sob os pes, como um alcapao. Duas versoes com batente vertical morreram
+     * aqui antes — alem de nao descreverem nada ao lado de um alcapao, elas
+     * eram INJUSTAS. Qualquer tijolo em pe no nivel do chao interrompe a
+     * investida (`blockedAhead` le na altura do peito), e com eles o chefe
+     * tinha quatro tiles de pista para uma investida que percorre sete: ele
+     * batia na propria porta. Deitada, a marca continua visivel e o piso fica
+     * liso de pilar a pilar.
+     *
+     * Quando o selo cai, ela cai junto — ver `World.openGateBand`, que recebe
+     * estas colunas justamente para nao deixar uma laje de tijolo pendurada
+     * no meio da passagem recem-aberta.
      */
-    for (let col = arenaCol - 2; col <= arenaCol + 2; col++) {
+    const meiaPorta = CONFIG.gate.doorHalf;
+    for (let col = arenaCol - meiaPorta; col <= arenaCol + meiaPorta; col++) {
       world.setTileRaw(col, row0, BLOCK_IDS.RUIN_BRICK);
     }
-    /*
-     * A soleira: tijolo RENTE ao chao, nunca em pe.
-     *
-     * Duas versoes de batente vertical morreram aqui. A primeira subia tres
-     * tiles a tres colunas do centro; a segunda, dois tiles a cinco colunas.
-     * As duas cometiam o mesmo erro, so que menos: a porta esta no PISO —
-     * row0 e o chao da camara — entao ela e um alcapao selado sob os pes, e
-     * moldura vertical ao lado de um alcapao nao descreve coisa nenhuma.
-     *
-     * Pior que feio, era injusto. Qualquer coisa solida no nivel do chao
-     * interrompe a investida, e `blockedAhead` le na altura do peito: com os
-     * batentes a cinco colunas o chefe tinha quatro tiles de pista para uma
-     * investida que percorre sete. Ele batia na propria porta.
-     *
-     * Rente ao chao a soleira ainda alarga a marca da passagem — o jogador ve
-     * onde a coisa foi fechada — e o piso continua liso de pilar a pilar.
-     */
-    for (const lado of [-4, -3, 3, 4]) {
-      world.setTileRaw(arenaCol + lado, row0, BLOCK_IDS.RUIN_BRICK);
-    }
+
 
     // 5. Entrada pelo teto: rocha normal, para o jogador cavar e cair dentro.
     for (let col = arenaCol - entranceHalf; col <= arenaCol + entranceHalf; col++) {

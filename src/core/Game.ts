@@ -54,7 +54,7 @@ import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { WeaponSystem } from '../systems/WeaponSystem';
 import { Progression } from '../systems/Progression';
-import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
+import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
 import { StoryGates } from '../systems/StoryGates';
 import { storyGateAtRow } from '../data/storyGates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
@@ -990,10 +990,32 @@ export class Game {
       }
       const def = gateLayerDef(camada);
       if (!this.biomeGate.bossDefeated(camada)) {
+        /*
+         * A dica tem que saber ONDE o jogador esta.
+         *
+         * O texto fixo mandava "ache ele pelo poco principal", e isso vinha de
+         * quando a arena era uma caixa escondida em outro lugar. Hoje o selo E
+         * o piso da camara do guardiao: quem bate nele de dentro da arena
+         * estava sendo mandado procurar um bicho que esta a dez metros dele.
+         *
+         * Fora da arena a dica tambem estava vaga. A camara ocupa 35 colunas
+         * em volta de `gateArenaCol()`, entao da para dizer o lado — e dizer o
+         * lado e o maximo: apontar a coluna exata entregaria o mapa.
+         */
+        const arenaCol = gateArenaCol();
+        const meia = Math.floor(CONFIG.gate.arenaWidth / 2);
+        const colJogador = Math.floor(this.player.cx / this.world.tileSize);
+        const fora = colJogador - arenaCol;
+        const dica =
+          Math.abs(fora) <= meia
+            ? `O guardiao de ${def?.name ?? 'la embaixo'} respira nesta sala. O chao so cede depois dele.`
+            : `O guardiao de ${def?.name ?? 'la embaixo'} ainda respira. A camara dele fica ${
+                fora > 0 ? 'a oeste' : 'a leste'
+              }, nesta mesma profundidade.`;
         this.hud.celebrate(
           'O SELO NAO CEDE',
           'Isto nao e pedra. Alguem fechou esta passagem.',
-          `O guardiao de ${def?.name ?? 'la embaixo'} ainda respira — ache ele pelo poco principal.`,
+          dica,
           'quota',
           3
         );

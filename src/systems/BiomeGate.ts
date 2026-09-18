@@ -1,4 +1,5 @@
 import { bossForLayer } from '../data/creatures';
+import { CONFIG } from '../data/config';
 import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
 import { Events } from '../core/events';
 import type { CreatureManager } from './CreatureManager';
@@ -100,8 +101,14 @@ export class BiomeGate {
       if (!st?.opened) continue;
       const layer = gateLayerDef(layerId);
       const { row0, row1 } = gateBandRows(this.world.surfaceRow, layer);
-      this.world.openGateBand(row0, row1);
+      this.world.openGateBand(row0, row1, this.portaDe(layerId));
     }
+  }
+
+  /** Colunas da passagem murada daquele selo, para caírem com ele. */
+  private portaDe(layerId: string): { col: number; half: number } | undefined {
+    const g = this.gates.find((x) => x.layerId === layerId);
+    return g ? { col: g.col, half: CONFIG.gate.doorHalf } : undefined;
   }
 
   /** Chamado pelo Game quando `creature:killed` traz um id de chefe. */
@@ -139,7 +146,7 @@ export class BiomeGate {
     st.opened = true;
     const layer = gateLayerDef(layerId);
     const { row0, row1 } = gateBandRows(this.world.surfaceRow, layer);
-    this.world.openGateBand(row0, row1);
+    this.world.openGateBand(row0, row1, this.portaDe(layerId));
     this.exploration.setMarkerDone(this.markerId(layerId));
     Events.emit('gate:opened', { layerId, layerName: layer.name });
   }

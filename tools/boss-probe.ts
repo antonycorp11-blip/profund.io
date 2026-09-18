@@ -203,5 +203,38 @@ if (def?.boss && porta) {
   ok(livreCentro, 'do centro a investida sai limpa para os dois lados');
 }
 
+// ------------------------------------------- a passagem depois da morte ---
+console.log('\nPASSAGEM (o selo cai e da para descer)');
+if (porta) {
+  const layer = gateLayerDef('stone');
+  const { row0, row1 } = gateBandRows(world.surfaceRow, layer);
+
+  /*
+   * O sintoma que isto guarda: "matei o bicho e nao me deixou descer."
+   *
+   * `openGateBand` so apagava tiles de SELO, e a passagem murada e de tijolo
+   * antigo. Ela sobrevivia a abertura como uma laje de nove tiles bem no meio
+   * da faixa — o jogador vencia a luta, via a barreira estilhacar, e
+   * continuava em pe exatamente sobre a porta que a vitoria devia ter aberto.
+   */
+  world.openGateBand(row0, row1, { col: porta.col, half: CONFIG.gate.doorHalf });
+
+  let entulho = 0;
+  for (let row = row0; row <= row1; row++) {
+    for (let col = porta.col - CONFIG.gate.doorHalf; col <= porta.col + CONFIG.gate.doorHalf; col++) {
+      if (world.isSolid(col, row)) entulho++;
+    }
+  }
+  ok(entulho === 0, 'a passagem murada cai com o selo', `${entulho} tiles ainda de pe`);
+
+  // E a queda tem que dar em algum lugar: ar continuo do piso da arena ate
+  // abaixo da faixa, na coluna do chefe.
+  let livre = true;
+  for (let row = porta.row; row <= row1 + 1; row++) {
+    if (row <= row1 && world.isSolid(porta.col, row)) livre = false;
+  }
+  ok(livre, 'a coluna do chefe fica aberta de cima a baixo da faixa');
+}
+
 console.log(falhas === 0 ? '\ntodas as sondas de chefe passaram.\n' : `\n${falhas} falha(s).\n`);
 process.exit(falhas === 0 ? 0 : 1);

@@ -359,6 +359,16 @@ export const CONFIG = {
     arenaHeight: 13,
     /** Colunas de entrada diggable no topo da arena (numero impar, centrado). */
     entranceWidth: 3,
+    /**
+     * Meia-largura da passagem murada no piso da arena, em tiles.
+     *
+     * Vive aqui porque DUAS pontas precisam concordar sobre ela: o WorldGen,
+     * que assenta o tijolo, e o BiomeGate, que precisa derrubar exatamente
+     * esse tijolo quando o selo cai. Foi um desacordo assim — o BiomeGate
+     * recalculando por conta propria a linha do chao da arena — que fez o
+     * chefe nascer emparedado. Uma conta, um lugar.
+     */
+    doorHalf: 4,
   },
 
   /**

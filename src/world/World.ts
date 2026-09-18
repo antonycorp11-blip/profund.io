@@ -415,11 +415,33 @@ export class World {
    * mesma funcao e chamada de novo — bem mais barato que gravar centenas de
    * tiles de diferenca por selo.
    */
-  openGateBand(row0: number, row1: number): void {
+  openGateBand(row0: number, row1: number, porta?: { col: number; half: number }): void {
     for (let row = row0; row <= row1; row++) {
       for (let col = 1; col < this.width - 1; col++) {
         const i = this.idx(col, row);
         if (this.tiles[i] !== BLOCK_IDS.SEAL) continue;
+        this.tiles[i] = BLOCK_IDS.AIR;
+        this.markDirtyAround(col, row);
+      }
+    }
+    if (!porta) return;
+    /*
+     * A passagem murada cai JUNTO com o selo.
+     *
+     * Ela e de tijolo antigo, nao de selo, entao a varredura acima passava
+     * por cima dela. O resultado era uma laje de nove tiles pendurada no meio
+     * da faixa recem-aberta: o jogador matava o guardiao, via a barreira
+     * estilhacar, e continuava em pe sobre exatamente a porta que a luta
+     * deveria ter aberto.
+     *
+     * So as colunas da porta, e so dentro da faixa. Alargar isto para "todo
+     * tijolo da faixa" apagaria qualquer ruina que por acaso encostasse nela.
+     */
+    for (let row = row0; row <= row1; row++) {
+      for (let col = porta.col - porta.half; col <= porta.col + porta.half; col++) {
+        if (col < 1 || col >= this.width - 1) continue;
+        const i = this.idx(col, row);
+        if (this.tiles[i] === BLOCK_IDS.AIR) continue;
         this.tiles[i] = BLOCK_IDS.AIR;
         this.markDirtyAround(col, row);
       }
