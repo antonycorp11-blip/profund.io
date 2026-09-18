@@ -22,6 +22,7 @@
     "slice-mira": "node tools/slice-mira.mjs",
     "slice-armas-lateral": "node tools/slice-armas-lateral.mjs",
     "conferir-armas": "node tools/conferir-armas.mjs",
+    "conferir-vestir": "node tools/conferir-vestir.mjs",
     "check-estilo": "node tools/check-estilo.mjs",
     "slice-heroi": "node tools/slice-heroi.mjs",
     "slice-equipamento": "node tools/slice-equipamento.mjs",

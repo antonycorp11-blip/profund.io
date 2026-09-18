@@ -1,6 +1,7 @@
 import { ART } from '../data/art';
 import { WEAPON_GRIPS } from '../data/weaponGrips';
 import { encaixe } from '../data/characterRig';
+import { TOOL_GRIPS } from '../data/toolGrips';
 import { Assets } from '../core/Assets';
 import type { Player } from './Player';
 
@@ -31,6 +32,55 @@ export class PlayerSprite {
   recoil = 0;
   /** Arquivo da arma na mao (`art/weapons/<id>.png`), ou nulo sem arma. */
   weaponArt: string | null = null;
+
+  /*
+   * O QUE ELE ESTA VESTINDO.
+   *
+   * Vem de fora, do Equipment, porque o desenho nao decide isso. Nulo = nao
+   * desenha, e nao "desenha o padrao": o heroi sem capacete e um estado
+   * legitimo, e era o unico estado possivel antes de a arte vir sem capacete
+   * pintado no corpo.
+   */
+  capaceteArt: string | null = null;
+  mochilaArt: string | null = null;
+  /** Picareta na mao — so aparece quando a arma NAO esta sacada. */
+  picaretaArt: string | null = null;
+
+  /**
+   * Tamanho de cada peca, em fracao da altura desenhada do heroi.
+   *
+   * Um numero por tipo, e nao por peca: todo capacete cobre a mesma cabeca,
+   * toda mochila cobre as mesmas costas. Se uma peca precisar de tamanho
+   * proprio um dia, isso vira campo do item — mas comecar assim seria inventar
+   * seis numeros para um problema que ainda nao existe.
+   */
+  private static readonly TAMANHO = { capacete: 0.2, mochila: 0.28, picareta: 0.3 };
+
+  /**
+   * Onde, DENTRO do sprite da peca, fica o ponto que encosta no corpo.
+   *
+   * O capacete assenta pelo alto: a ancora da cabeca e o topo do cabelo, entao
+   * o ponto do capacete que cai ali e um pouco abaixo do topo dele — ele
+   * afunda um dedo no craneo em vez de flutuar sobre ele.
+   *
+   * A mochila encosta pela lateral: a ancora das costas e a borda de tras do
+   * tronco, e o que toca ali e a face direita da mochila, no meio da altura.
+   */
+  private static readonly TOQUE = {
+    capacete: { x: 0.5, y: 0.15 },
+    /*
+     * A mochila ENTRA no tronco, nao encosta nele.
+     *
+     * Encostar pela borda (x: 1) deixava uma folga visivel em todo quadro, e a
+     * folga nao e erro de ancora: a arte da mochila esta de FRENTE, mostrando
+     * alcas e bolsos, e nao de perfil. Uma caixa frontal presa pela lateral
+     * nunca vai encostar direito.
+     *
+     * Enfiar um quarto dela atras do corpo esconde a junta ate a arte de
+     * perfil existir. E remendo, e esta anotado como remendo.
+     */
+    mochila: { x: 0.72, y: 0.4 },
+  };
 
   /** Qual quadro da tira de mira foi desenhado agora. */
   private quadroDeMira = 0;
@@ -317,11 +367,26 @@ export class PlayerSprite {
      * O cano continua a vista porque ele sai para FORA da silhueta: o braco
      * esta esticado longe do tronco em todas as poses de mira.
      */
+    /*
+     * A ORDEM DAS CAMADAS E O QUE FAZ AS PECAS PARECEREM VESTIDAS.
+     *
+     * Atras do corpo vai o que o corpo tem que TAPAR: a mochila, que so
+     * aparece pela borda das costas, e o que esta na mao, cujo cabo fica
+     * escondido pelo punho fechado — e esse encaixe que faz a mao parecer
+     * segurar de verdade, em vez de ter um objeto colado na frente dela.
+     *
+     * Na frente vai so o capacete, porque ele cobre a cabeca e nao o
+     * contrario.
+     */
+    if (strip) this.desenharCostas(ctx, h, strip.name, strip.index);
     if (this.aiming && strip?.name === 'aim') {
       this.quadroDeMira = strip.index;
       this.desenharArma(ctx, h, flipped);
+    } else if (strip) {
+      this.desenharFerramenta(ctx, h, strip.name, strip.index);
     }
     ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
+    if (strip) this.desenharCabeca(ctx, h, strip.name, strip.index);
     ctx.restore();
     return true;
   }
@@ -358,6 +423,78 @@ export class PlayerSprite {
 
     const d = PlayerSprite.direcaoDaPose(lado, this.aimY);
     return { x: punhoX + d.x * ateAPonta, y: punhoY + d.y * ateAPonta };
+  }
+
+  /**
+   * Uma peca presa a um ponto do corpo.
+   *
+   * O ponto vem medido da propria arte (ver tools/medir-encaixes.mjs) e esta
+   * em fracao da altura desenhada, com o zero na linha dos pes — entao basta
+   * multiplicar. Tudo acontece DENTRO da transformacao do corpo, e por isso a
+   * peca herda de graca o espelhamento, o squash do pouso e o balanco da
+   * escalada: ela nunca descola.
+   */
+  private prender(
+    ctx: CanvasRenderingContext2D,
+    arte: CanvasImageSource & { width: number; height: number },
+    ponto: { x: number; y: number },
+    alturaDoCorpo: number,
+    fracaoDaAltura: number,
+    toque: { x: number; y: number },
+    giro = 0
+  ): void {
+    const alt = alturaDoCorpo * fracaoDaAltura;
+    const larg = arte.width * (alt / arte.height);
+    const linhaDosPes = alturaDoCorpo * ART.character.feetAnchor;
+    ctx.save();
+    ctx.translate(ponto.x * alturaDoCorpo, linhaDosPes + ponto.y * alturaDoCorpo);
+    if (giro) ctx.rotate(giro);
+    ctx.drawImage(arte, -larg * toque.x, -alt * toque.y, larg, alt);
+    ctx.restore();
+  }
+
+  /** A mochila, encostada na borda de tras do tronco. */
+  private desenharCostas(ctx: CanvasRenderingContext2D, h: number, tira: string, quadro: number): void {
+    const arte = this.mochilaArt ? Assets.vestir(this.mochilaArt) : null;
+    const ponto = encaixe(tira, quadro, 'costas');
+    if (!arte || !arte.width || !ponto) return;
+    this.prender(ctx, arte, ponto, h, PlayerSprite.TAMANHO.mochila, PlayerSprite.TOQUE.mochila);
+  }
+
+  /** O capacete, assentado no alto da cabeca. */
+  private desenharCabeca(ctx: CanvasRenderingContext2D, h: number, tira: string, quadro: number): void {
+    const arte = this.capaceteArt ? Assets.vestir(this.capaceteArt) : null;
+    const ponto = encaixe(tira, quadro, 'cabeca');
+    if (!arte || !arte.width || !ponto) return;
+    this.prender(ctx, arte, ponto, h, PlayerSprite.TAMANHO.capacete, PlayerSprite.TOQUE.capacete);
+  }
+
+  /**
+   * A picareta, no punho e girada pelo BRACO.
+   *
+   * O giro nao e escolha do jogador como na arma — a picareta segue o gesto
+   * que a animacao ja desenhou. Sem ele a ferramenta ficaria deitada no meio
+   * de um golpe com o braco esticado acima da cabeca.
+   */
+  private desenharFerramenta(ctx: CanvasRenderingContext2D, h: number, tira: string, quadro: number): void {
+    /*
+     * SO NO GOLPE.
+     *
+     * Desenhada em todas as tiras, a picareta ficava boiando: ao lado da
+     * cabeca na escalada, atravessando as pernas no pulo, em angulo diferente
+     * a cada quadro parado. Eu estava tentando resolver o problema errado —
+     * ele nao esta USANDO a picareta quando anda, pula ou escala.
+     *
+     * Guardada, ela nao precisa de ancora nenhuma. E quando ele saca, o
+     * proprio gesto do golpe diz onde ela vai.
+     */
+    if (tira !== 'mine') return;
+    const id = this.picaretaArt;
+    const arte = id ? Assets.tool(id) : null;
+    const ponto = encaixe(tira, quadro, 'punho');
+    if (!id || !arte || !arte.width || !ponto) return;
+    const cabo = TOOL_GRIPS[id] ?? { x: 0.22, y: 0.5 };
+    this.prender(ctx, arte, ponto, h, PlayerSprite.TAMANHO.picareta, cabo, ponto.angulo ?? 0);
   }
 
   /**

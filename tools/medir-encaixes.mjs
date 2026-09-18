@@ -154,18 +154,62 @@ function acharCabeca(borroes) {
 }
 
 /**
- * Os punhos: pele que nao e o rosto, do mais A FRENTE para o mais atras.
+ * Qual das duas maos SEGURA a coisa, tira por tira.
  *
- * Ordenava pelo mais BAIXO, e nas poses de mira isso escolhia a mao errada: o
- * braco que aponta fica na altura do peito enquanto a outra mao pende junto ao
- * quadril, mais baixa. A ancora ia para a mao parada e a arma nascia atras do
- * corpo.
+ * Nao ha um criterio so, e tentar achar um custou tres rodadas:
  *
- * A arte olha para a direita, entao a mao que segura e a de maior x. Vale para
- * as duas coisas que se prendem nela: a ferramenta no golpe e a arma na mira.
+ *   "a mao mais BAIXA" errava na mira — o braco que aponta fica na altura do
+ *   peito e a outra mao pende no quadril, mais baixa. A arma nascia atras.
+ *
+ *   "a mao mais A FRENTE" errava no golpe — com a picareta acima da cabeca o
+ *   punho de trabalho fica quase sobre o eixo do corpo e a mao parada, la
+ *   embaixo, aparece mais a frente. O braco saia apontando para BAIXO em onze
+ *   dos doze quadros de um golpe para CIMA.
+ *
+ *   "a mao mais LONGE DO OMBRO" errava nos dois — o braco esticado esta longe
+ *   na horizontal, a mao caida esta longe na vertical, e a distancia nao
+ *   distingue as duas.
+ *
+ * O que decide nao e uma propriedade geometrica da mao: e o que o corpo esta
+ * FAZENDO, e isso a tira ja diz. Mirando, quem trabalha e a mao da frente;
+ * golpeando, e a de cima. Nas outras nao ha nada na mao e tanto faz.
  */
-function acharPunhos(borroes, cabeca) {
-  return borroes.filter((b) => b !== cabeca).sort((a, b) => b.cx - a.cx);
+const CRITERIO = {
+  mine: (a, b) => a.cy - b.cy,   // a mais ALTA: o golpe sobe
+  default: (a, b) => b.cx - a.cx, // a mais A FRENTE
+};
+
+function acharPunhos(borroes, cabeca, tira) {
+  const ordem = CRITERIO[tira] ?? CRITERIO.default;
+  return borroes.filter((b) => b !== cabeca).sort(ordem);
+}
+
+/**
+ * O ombro, deduzido: logo abaixo da cabeca, no eixo do tronco.
+ *
+ * Ele nao esta marcado em lugar nenhum do desenho. A aproximacao basta porque
+ * ninguem le a posicao do ombro na tela — ela so serve para comparar os dois
+ * punhos entre si e para dar a direcao do braco.
+ */
+function pontoDoOmbro(caixa, cabeca) {
+  return {
+    x: (caixa.x0 + caixa.x1) / 2,
+    y: cabeca.base + (caixa.y1 - cabeca.base) * 0.12,
+  };
+}
+
+/**
+ * O angulo do braco: do OMBRO ao punho.
+ *
+ * O ombro nao esta marcado em lugar nenhum do desenho, entao ele e deduzido:
+ * fica logo abaixo da cabeca, no meio do tronco. E uma aproximacao grosseira,
+ * e ela basta — o que importa nao e o angulo anatomico exato, e a ferramenta
+ * acompanhar o braco em vez de ficar deitada enquanto ele sobe.
+ */
+function anguloDoBraco(caixa, cabeca, punho) {
+  if (!cabeca || !punho) return undefined;
+  const ombro = pontoDoOmbro(caixa, cabeca);
+  return +Math.atan2(punho.cy - ombro.y, punho.cx - ombro.x).toFixed(4);
 }
 
 /** O pixel opaco mais alto dentro da largura do rosto: o topo do cabelo. */
@@ -219,7 +263,7 @@ for (const [nome, quadros] of TIRAS) {
     if (!caixa) { medidas[nome].push(null); cru[nome].push(null); continue; }
     const bs = q.borroes();
     const cabeca = acharCabeca(bs);
-    const punhos = acharPunhos(bs, cabeca);
+    const punhos = acharPunhos(bs, cabeca, nome);
     const costas = acharCostas(q, caixa, cabeca);
 
     /*
@@ -254,7 +298,13 @@ for (const [nome, quadros] of TIRAS) {
     medidas[nome].push({
       cabeca: ou('cabeca', cranio && emFracao(cranio.x, cranio.y)),
       costas: ou('costas', costas && emFracao(costas.x, costas.y)),
-      punho: ou('punho', punhos[0] && emFracao(punhos[0].cx, punhos[0].cy)),
+      punho: ou(
+        'punho',
+        punhos[0] && {
+          ...emFracao(punhos[0].cx, punhos[0].cy),
+          angulo: anguloDoBraco(caixa, cabeca, punhos[0]),
+        }
+      ),
     });
   }
 }
@@ -334,6 +384,18 @@ const cabecalho = `/**
 export interface Encaixe {
   x: number;
   y: number;
+  /**
+   * Para onde o ANTEBRACO aponta neste quadro, em radianos. So no punho.
+   *
+   * Sem ele a ferramenta ficaria horizontal em todo quadro, inclusive no meio
+   * do golpe com o braco esticado acima da cabeca — uma picareta deitada no ar
+   * ao lado de um punho erguido.
+   *
+   * E o angulo do ombro ate o punho, e nao o do antebraco de verdade: o
+   * cotovelo nao e achavel no desenho, mas ombro-punho acompanha o movimento
+   * de perto o bastante, porque e o braco inteiro que gira no golpe.
+   */
+  angulo?: number;
 }
 
 export interface EncaixesDoQuadro {

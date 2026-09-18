@@ -115,6 +115,23 @@ class AssetsImpl {
       );
     }
 
+    // Pecas vestiveis e ferramentas: mesmo principio das armas — sprite solto,
+    // preso a um ponto medido do corpo, nunca desenhado dentro dele.
+    for (const peca of manifest.vestirArts) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}vestir/${peca}.png`).then((img) => {
+          if (img) this.images.set(`vestir:${peca}`, img);
+        })
+      );
+    }
+    for (const ferramenta of manifest.toolArts) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}tools/${ferramenta}.png`).then((img) => {
+          if (img) this.images.set(`tool:${ferramenta}`, img);
+        })
+      );
+    }
+
     // Folhas de NPC: moradores de Blockia e mineiros presos.
     for (const npc of manifest.npcArts) {
       for (const anim of manifest.npcAnims) {
@@ -366,6 +383,15 @@ class AssetsImpl {
   /** Sprite de uma arma, ou null enquanto a arte nao carregou. */
   weapon(id: string): HTMLImageElement | null {
     return this.images.get('weapon:' + id) ?? null;
+  }
+
+  /** Peca vestivel de PERFIL (capacete, mochila), para grudar no corpo. */
+  vestir(id: string): HTMLImageElement | null {
+    return this.images.get('vestir:' + id) ?? null;
+  }
+
+  tool(id: string): HTMLImageElement | null {
+    return this.images.get('tool:' + id) ?? null;
   }
 
   /** Tira de animacao de um NPC, ou null quando a folha nao existe. */

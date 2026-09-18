@@ -1,4 +1,5 @@
 import { CONFIG } from '../data/config';
+import { TOOLS } from '../data/tools';
 import { RESOURCES } from '../data/resources';
 import { activeSkillMeta } from '../data/activeSkills';
 import { blockDef, type BlockDef } from '../data/blocks';
@@ -1517,6 +1518,21 @@ export class Game {
     this.playerSprite.aimX = this.mining.aimDirX;
     this.playerSprite.aimY = this.mining.aimDirY;
     this.playerSprite.weaponArt = this.mao === 'arma' ? this.weapons.def.id : null;
+    /*
+     * O QUE ELE VESTE NA TELA E O QUE ELE VESTE NA FICHA.
+     *
+     * Os slots de equipamento existiam e mudavam atributo, mas nao apareciam
+     * no personagem — o capacete e a mochila estavam PINTADOS na animacao, os
+     * mesmos sempre, comprasse o jogador o que comprasse. Agora a figura segue
+     * o slot: nada equipado, nada desenhado.
+     *
+     * A picareta so aparece com a arma guardada. As duas dividem o mesmo
+     * punho, e a troca de mao e justamente a escolha que o jogo pede — ver
+     * duas coisas na mesma mao desfaria essa escolha.
+     */
+    this.playerSprite.capaceteArt = this.equipment.equippedIn('cabeca');
+    this.playerSprite.mochilaArt = this.equipment.equippedIn('costas');
+    this.playerSprite.picaretaArt = this.mao === 'arma' ? null : TOOLS[this.stats.toolIndex]?.key ?? null;
     this.weapons.boca = () => this.playerSprite.bocaDoCano(this.player);
     this.playerSprite.update(dt, this.player);
 

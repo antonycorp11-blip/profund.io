@@ -205,6 +205,25 @@ export const ART = {
     'poeira_1', 'poeira_2', 'sangue_1', 'sangue_2',
   ],
 
+  /**
+   * Pecas que se VESTEM: presas num ponto do corpo, nunca desenhadas dentro
+   * dele (ver PlayerSprite.desenharPeca).
+   *
+   * Sao de PERFIL, porque grudam num corpo de perfil. Nao confundir com
+   * `art/equip/<id>.png`, que e o icone de tres quartos da mesma peca na lista
+   * da tela de Equipamento — mesma coisa, duas figuras, dois usos.
+   */
+  vestirArts: [
+    'eq_lanterna', 'eq_capacete', 'eq_visor',
+    'mochila_couro', 'mochila_lona', 'eq_mochila_carga',
+  ],
+
+  /** Picaretas soltas, presas no punho (ver PlayerSprite.desenharPeca). */
+  toolArts: [
+    'pick_old', 'pick_reinforced', 'pick_copper',
+    'pick_gold', 'pick_crystal', 'pick_ruby',
+  ],
+
   /** Armas soltas, presas na mao do heroi (ver PlayerSprite.desenharArma). */
   weaponArts: [
     'pistola', 'pistola_2', 'escopeta', 'escopeta_2', 'fuzil', 'fuzil_2',

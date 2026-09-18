@@ -53,9 +53,21 @@ const SECOES = [
       { id: 'eq_lanterna', y: [740, 864], x: [9, 133] },
       { id: 'eq_capacete', y: [740, 864], x: [150, 279] },
       { id: 'eq_visor', y: [740, 864], x: [301, 430] },
+      /*
+       * So UMA destas tem dono hoje.
+       *
+       * O slot de costas do jogo tem cinco itens, mas quatro sao asas e jatos
+       * — mochila mesmo so ha a de carga, e e a de estrutura de aco que se
+       * parece com ela. Essa sai com o id do item, para o jogo achar sozinho.
+       *
+       * As outras duas ficam com nome descritivo e sem uso por enquanto. Sao
+       * arte pronta esperando item, e nao item esperando arte: inventar dois
+       * equipamentos so para gastar os desenhos seria deixar o inventario
+       * decidido pelo que a IA calhou de gerar.
+       */
       { id: 'mochila_couro', y: [728, 894], x: [449, 560] },
       { id: 'mochila_lona', y: [728, 894], x: [577, 713] },
-      { id: 'mochila_aco', y: [728, 894], x: [737, 868] },
+      { id: 'eq_mochila_carga', y: [728, 894], x: [737, 868] },
     ],
   },
   {

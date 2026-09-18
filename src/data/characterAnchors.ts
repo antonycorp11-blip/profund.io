@@ -19,6 +19,18 @@
 export interface Encaixe {
   x: number;
   y: number;
+  /**
+   * Para onde o ANTEBRACO aponta neste quadro, em radianos. So no punho.
+   *
+   * Sem ele a ferramenta ficaria horizontal em todo quadro, inclusive no meio
+   * do golpe com o braco esticado acima da cabeca — uma picareta deitada no ar
+   * ao lado de um punho erguido.
+   *
+   * E o angulo do ombro ate o punho, e nao o do antebraco de verdade: o
+   * cotovelo nao e achavel no desenho, mas ombro-punho acompanha o movimento
+   * de perto o bastante, porque e o braco inteiro que gira no golpe.
+   */
+  angulo?: number;
 }
 
 export interface EncaixesDoQuadro {
@@ -43,7 +55,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0687,
-        y: -0.2631
+        y: -0.2631,
+        angulo: 1.0778
       }
     },
     {
@@ -57,7 +70,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0754,
-        y: -0.266
+        y: -0.266,
+        angulo: 1.0757
       }
     },
     {
@@ -71,7 +85,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0684,
-        y: -0.2643
+        y: -0.2643,
+        angulo: 1.098
       }
     },
     {
@@ -85,7 +100,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.072,
-        y: -0.2663
+        y: -0.2663,
+        angulo: 1.0937
       }
     },
     {
@@ -99,7 +115,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0726,
-        y: -0.2528
+        y: -0.2528,
+        angulo: 1.0865
       }
     },
     {
@@ -113,7 +130,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0769,
-        y: -0.2641
+        y: -0.2641,
+        angulo: 1.0955
       }
     },
     {
@@ -127,7 +145,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0813,
-        y: -0.2484
+        y: -0.2484,
+        angulo: 1.0743
       }
     },
     {
@@ -141,7 +160,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0703,
-        y: -0.2738
+        y: -0.2738,
+        angulo: 1.058
       }
     },
     {
@@ -155,7 +175,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0703,
-        y: -0.265
+        y: -0.265,
+        angulo: 1.0852
       }
     }
   ],
@@ -171,7 +192,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1157,
-        y: -0.3086
+        y: -0.3086,
+        angulo: 0.7026
       }
     },
     {
@@ -185,7 +207,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1139,
-        y: -0.2941
+        y: -0.2941,
+        angulo: 0.7264
       }
     },
     {
@@ -199,7 +222,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1263,
-        y: -0.3085
+        y: -0.3085,
+        angulo: 0.6557
       }
     },
     {
@@ -213,7 +237,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1166,
-        y: -0.3118
+        y: -0.3118,
+        angulo: 0.6779
       }
     },
     {
@@ -227,7 +252,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1282,
-        y: -0.3085
+        y: -0.3085,
+        angulo: 0.6341
       }
     },
     {
@@ -241,7 +267,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0618,
-        y: -0.307
+        y: -0.307,
+        angulo: 1.0108
       }
     },
     {
@@ -255,7 +282,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0757,
-        y: -0.2985
+        y: -0.2985,
+        angulo: 0.9318
       }
     },
     {
@@ -269,7 +297,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1094,
-        y: -0.2906
+        y: -0.2906,
+        angulo: 0.797
       }
     },
     {
@@ -283,7 +312,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0806,
-        y: -0.2863
+        y: -0.2863,
+        angulo: 0.9545
       }
     }
   ],
@@ -299,7 +329,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0799,
-        y: -0.1866
+        y: -0.1866,
+        angulo: 0.4303
       }
     },
     {
@@ -313,7 +344,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1183,
-        y: -0.2963
+        y: -0.2963,
+        angulo: 0.3562
       }
     },
     {
@@ -327,7 +359,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0888,
-        y: -0.3402
+        y: -0.3402,
+        angulo: 0.4943
       }
     },
     {
@@ -341,7 +374,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1071,
-        y: -0.2785
+        y: -0.2785,
+        angulo: 0.0924
       }
     },
     {
@@ -355,7 +389,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1462,
-        y: -0.3281
+        y: -0.3281,
+        angulo: 0.1037
       }
     },
     {
@@ -369,7 +404,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0771,
-        y: -0.2769
+        y: -0.2769,
+        angulo: 0.6612
       }
     }
   ],
@@ -384,8 +420,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.2852
       },
       punho: {
-        x: 0.0935,
-        y: -0.2639
+        x: -0.0141,
+        y: -0.4313,
+        angulo: -1.7001
       }
     },
     {
@@ -398,8 +435,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.207
       },
       punho: {
-        x: 0.05,
-        y: -0.1875
+        x: 0.0266,
+        y: -0.3438,
+        angulo: -1.3677
       }
     },
     {
@@ -413,7 +451,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0839,
-        y: -0.2416
+        y: -0.2416,
+        angulo: 0.3789
       }
     },
     {
@@ -438,7 +477,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0713,
-        y: -0.5192
+        y: -0.5192,
+        angulo: -0.1382
       }
     },
     {
@@ -452,7 +492,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1334,
-        y: -0.2607
+        y: -0.2607,
+        angulo: 0.5063
       }
     },
     {
@@ -466,7 +507,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0385,
-        y: -0.1441
+        y: -0.1441,
+        angulo: 1.1291
       }
     },
     {
@@ -480,7 +522,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1201,
-        y: -0.2769
+        y: -0.2769,
+        angulo: 0.3676
       }
     },
     {
@@ -493,8 +536,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3008
       },
       punho: {
-        x: 0.1088,
-        y: -0.3458
+        x: -0.0169,
+        y: -0.4453,
+        angulo: -1.7359
       }
     },
     {
@@ -508,7 +552,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0922,
-        y: -0.225
+        y: -0.225,
+        angulo: 0.3085
       }
     },
     {
@@ -521,8 +566,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.2969
       },
       punho: {
-        x: 0.1076,
-        y: -0.3304
+        x: 0.0563,
+        y: -0.4844,
+        angulo: -1.1836
       }
     },
     {
@@ -536,7 +582,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0805,
-        y: -0.2491
+        y: -0.2491,
+        angulo: 0.2324
       }
     }
   ],
@@ -552,7 +599,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0117,
-        y: -0.4575
+        y: -0.4575,
+        angulo: -1.2367
       }
     },
     {
@@ -566,7 +614,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: -0.104,
-        y: -0.4162
+        y: -0.4162,
+        angulo: -2.9034
       }
     },
     {
@@ -580,7 +629,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0132,
-        y: -0.4497
+        y: -0.4497,
+        angulo: -1.1402
       }
     },
     {
@@ -594,7 +644,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0635,
-        y: -0.4469
+        y: -0.4469,
+        angulo: -0.5758
       }
     },
     {
@@ -608,7 +659,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0149,
-        y: -0.4553
+        y: -0.4553,
+        angulo: -1.1561
       }
     },
     {
@@ -622,7 +674,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.0575,
-        y: -0.4526
+        y: -0.4526,
+        angulo: -0.5783
       }
     }
   ],
@@ -638,7 +691,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1084,
-        y: -0.4437
+        y: -0.4437,
+        angulo: -0.2204
       }
     },
     {
@@ -652,7 +706,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1084,
-        y: -0.4437
+        y: -0.4437,
+        angulo: -0.2204
       }
     },
     {
@@ -666,7 +721,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: -0.0412,
-        y: -0.5061
+        y: -0.5061,
+        angulo: -2.0141
       }
     },
     {
@@ -680,7 +736,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: -0.0412,
-        y: -0.5061
+        y: -0.5061,
+        angulo: -2.0141
       }
     },
     {
@@ -694,7 +751,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1088,
-        y: -0.3232
+        y: -0.3232,
+        angulo: 0.7417
       }
     },
     {
@@ -708,7 +766,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1088,
-        y: -0.3232
+        y: -0.3232,
+        angulo: 0.7417
       }
     },
     {
@@ -722,7 +781,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1632,
-        y: -0.3051
+        y: -0.3051,
+        angulo: 0.6108
       }
     },
     {
@@ -736,7 +796,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1147,
-        y: -0.4207
+        y: -0.4207,
+        angulo: -0.0694
       }
     },
     {
@@ -750,7 +811,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1157,
-        y: -0.4264
+        y: -0.4264,
+        angulo: -0.0588
       }
     },
     {
@@ -764,7 +826,8 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
       },
       punho: {
         x: 0.1207,
-        y: -0.4188
+        y: -0.4188,
+        angulo: -0.1052
       }
     }
   ]
