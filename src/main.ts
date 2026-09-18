@@ -1,6 +1,7 @@
 import './style.css';
 import { Assets } from './core/Assets';
 import { Game } from './core/Game';
+import { esperarLiberacao } from './ui/Portao';
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;
 const uiRoot = document.getElementById('ui-root');
@@ -13,14 +14,24 @@ if (!canvas || !uiRoot) {
  * A arte e carregada antes do jogo comecar.
  * Arquivo que nao existe nao e erro: o sistema correspondente usa o placeholder.
  */
-Assets.load()
-  .catch((err) => console.warn('[art] falha ao carregar assets', err))
-  .then(() => {
-    const game = new Game(canvas, uiRoot);
-    game.start();
-    // Expoe para depuracao no console durante o desenvolvimento.
-    (window as unknown as { game: Game }).game = game;
-  });
+/*
+ * A arte carrega DURANTE o portao, mas o jogo so comeca depois dele.
+ *
+ * Sao duas esperas em paralelo de proposito: quem tem a senha digita enquanto
+ * os assets baixam, e entra num jogo ja pronto em vez de esperar duas filas em
+ * sequencia. O que o portao segura e o `start()` — enquanto ele nao cair, nada
+ * e desenhado, e e por isso que ninguem sem senha ve um quadro do jogo.
+ */
+Promise.all([
+  Assets.load().catch((err) => console.warn('[art] falha ao carregar assets', err)),
+  esperarLiberacao(),
+]).then(() => {
+  document.getElementById('app')?.removeAttribute('data-trancado');
+  const game = new Game(canvas, uiRoot);
+  game.start();
+  // Expoe para depuracao no console durante o desenvolvimento.
+  (window as unknown as { game: Game }).game = game;
+});
 
 /**
  * PWA: registra o service worker e **se atualiza sozinho**.

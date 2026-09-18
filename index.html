@@ -17,9 +17,133 @@
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <title>Legado das Profundezas</title>
+    <!--
+      O PORTAO VAI AQUI DENTRO, e nao no bundle.
+
+      Se ele dependesse do JS do jogo haveria um piscar entre a pagina abrir e
+      o modulo carregar — e nesse piscar aparece exatamente o que nao pode
+      aparecer. Estilo embutido pinta na primeira passada, antes de qualquer
+      arquivo externo.
+
+      `data-trancado` esconde o jogo por baixo. Quem nao passar do portao nunca
+      chega a ver um quadro.
+    -->
+    <style>
+      #app[data-trancado] { visibility: hidden; }
+      #portao {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: 24px;
+        box-sizing: border-box;
+        background:
+          radial-gradient(ellipse 60% 45% at 50% 38%, #2a1d12 0%, #150f0a 55%, #0d0a08 100%);
+        color: #e8dcc8;
+        font-family: 'Oswald', system-ui, -apple-system, sans-serif;
+        text-align: center;
+        -webkit-font-smoothing: antialiased;
+      }
+      #portao[hidden] { display: none; }
+      .portao-lampiao {
+        width: 54px; height: 54px; border-radius: 50%;
+        background: radial-gradient(circle at 50% 42%, #ffd98a 0%, #d99a3c 42%, #5a3a18 70%, transparent 72%);
+        box-shadow: 0 0 44px 14px rgba(217, 154, 60, 0.18);
+        flex: none;
+      }
+      .portao-titulo {
+        font-size: clamp(17px, 4.4vw, 25px);
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+        color: #f0c987;
+        margin: 0;
+        font-weight: 600;
+      }
+      .portao-texto {
+        font-size: clamp(13px, 3.4vw, 15px);
+        line-height: 1.6;
+        max-width: 32ch;
+        margin: 0;
+        color: #b9a88f;
+      }
+      .portao-linha { display: flex; gap: 8px; margin-top: 6px; }
+      #portao-senha {
+        width: 122px;
+        padding: 9px 12px;
+        font: inherit;
+        font-size: 15px;
+        letter-spacing: 0.3em;
+        text-align: center;
+        color: #f0e4cc;
+        background: #120d09;
+        border: 1px solid #4a3a24;
+        border-radius: 7px;
+        outline: none;
+      }
+      #portao-senha:focus { border-color: #a97c3f; }
+      #portao-entrar {
+        padding: 9px 17px;
+        font: inherit;
+        font-size: 14px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #1a1208;
+        background: linear-gradient(#e0ae5e, #b77f34);
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      #portao-entrar:active { transform: translateY(1px); }
+      #portao-aviso {
+        font-size: 12.5px;
+        color: #d98a6a;
+        margin: 0;
+        min-height: 1em;
+      }
+      #portao-aviso[hidden] { visibility: hidden; display: block; }
+    </style>
   </head>
   <body>
-    <div id="app">
+    <div id="portao">
+      <div class="portao-lampiao"></div>
+      <h1 class="portao-titulo">Profundio</h1>
+      <p class="portao-texto">
+        O jogo está em atualização.<br />Estará disponível em breve.
+      </p>
+      <!--
+        FORM, e nao uma div com um botao.
+
+        Com `keydown` eu tinha que acertar o nome da tecla, e ja errei: o Enter
+        nao disparava. O submit nativo cobre o Enter do teclado fisico, o "Ir"
+        do teclado do celular e o leitor de tela, sem eu adivinhar nada.
+      -->
+      <form class="portao-linha" id="portao-form">
+        <input
+          id="portao-senha"
+          type="password"
+          inputmode="numeric"
+          autocomplete="off"
+          aria-label="Senha de acesso"
+        />
+        <button id="portao-entrar" type="submit">Entrar</button>
+      </form>
+      <p id="portao-aviso" hidden></p>
+    </div>
+    <script>
+      // Quem ja entrou nesta maquina nao ve o portao piscar: a checagem
+      // acontece antes da primeira pintura. A validacao de verdade continua no
+      // Portao.ts — isto aqui so evita o lampejo.
+      try {
+        if (localStorage.getItem('profundezas:acesso')) {
+          document.getElementById('portao').hidden = true;
+        }
+      } catch (e) {}
+    </script>
+    <div id="app" data-trancado>
       <canvas id="game-canvas"></canvas>
       <div id="ui-root"></div>
     </div>
