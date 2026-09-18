@@ -139,9 +139,18 @@ export class SkillTreeUI {
     this.wrap.innerHTML = `
       <div class="skill-screen">
         <header class="skill-header">
+          <img class="tela-lampiao" src="art/hud/lampiao.png" alt="">
+          <span class="tela-cab-txt">
+            <b>Atributos</b>
+            <small>Evolua seu explorador</small>
+          </span>
           <div class="skill-tabs"></div>
           <button class="btn ver-tudo" data-tudo>VER O NINHO</button>
-          <div class="skill-points"><b data-points>0</b> pontos</div>
+          <div class="skill-points">
+            <img src="art/hud/ponto.png" alt="">
+            <b data-points>0</b>
+            <small>pontos</small>
+          </div>
           <button class="icon-btn" data-close>✕</button>
         </header>
         <div class="skill-body">
@@ -210,6 +219,15 @@ export class SkillTreeUI {
     // ha mais. A leitura do mapa inteiro continua a um gesto de distancia (a
     // pinca, a roda, e o botao de ver tudo).
     this.enquadrarCamara(this.category, false);
+    /*
+     * A ficha abre com ALGO dentro.
+     *
+     * Ela abria com um paragrafo generico sobre o ninho, e o jogador tinha de
+     * clicar num no para a tela comecar a dizer alguma coisa. No conceito ha
+     * sempre um no aberto — e o primeiro que da para COMPRAR e a melhor
+     * escolha, porque e exatamente o que ele veio decidir aqui.
+     */
+    if (!this.selected) this.selected = this.primeiroComprável();
     this.refresh();
   }
 
@@ -313,6 +331,15 @@ export class SkillTreeUI {
     this.refresh();
   }
 
+  /** O primeiro no que o jogador pode comprar agora; senao, o primeiro visivel. */
+  private primeiroComprável(): string | null {
+    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
+      (sk) => this.host.tree.visibility(sk.id) !== 'escondido'
+    );
+    const prof = this.host.currentDepth();
+    return lista.find((sk) => this.host.tree.canLearn(sk.id, prof).ok)?.id ?? lista[0]?.id ?? null;
+  }
+
   /**
    * Enquadra UMA camara: zoom e posicao, nao so posicao.
    *
@@ -404,7 +431,7 @@ export class SkillTreeUI {
       btn.innerHTML = `
         <span class="node-icon">${iconMarkup(def.art, def.icon)}</span>
         <span class="node-name">${def.name}</span>
-        <span class="node-level"></span>`;
+        <span class="node-level pilula"></span>`;
       btn.addEventListener('click', () => {
         // Camara ainda nao acesa nao abre ficha: o nome dela ja e o convite, e
         // ler o efeito inteiro de algo a tres passos de distancia devolveria a

@@ -2236,13 +2236,77 @@ body:has(.hud-map-slot.folded) .toasts {
   font-size: 13px;
 }
 
+/* O cabecalho da arvore recebe o mesmo bloco de titulo das outras telas, com
+   o lampiao do conceito. A aba fica depois dele, na mesma linha. */
+.skill-header .tela-lampiao {
+  width: 30px;
+  height: 30px;
+}
+
+.skill-header .tela-cab-txt {
+  flex: 0 0 auto;
+  margin-right: 6px;
+}
+
+.skill-header .tela-cab-txt b {
+  font-size: 17px;
+}
+
+.skill-tabs {
+  min-width: 0;
+}
+
+/*
+ * Os PONTOS em pilula.
+ *
+ * Eles sao a moeda desta tela — e com eles que tudo aqui se compra — e
+ * estavam numa linha de texto de corpo 10 ao lado do botao de fechar. A
+ * primeira pergunta de quem abre Atributos e "quanto eu tenho para gastar?", e
+ * a resposta precisa estar entre as duas coisas mais visiveis da tela.
+ */
 .skill-points {
-  font-size: 12px;
-  color: var(--ink-dim);
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 5px 13px;
+  border: 1px solid rgba(255, 196, 83, 0.5);
+  border-radius: 999px;
+  background: rgba(46, 34, 12, 0.75);
+}
+
+.skill-points img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
 }
 
 .skill-points b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.skill-points small {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* Estreito: o titulo sai e ficam as abas, que sao navegacao. */
+@media (max-width: 720px) {
+  .skill-header .tela-cab-txt,
+  .skill-header .tela-lampiao {
+    display: none;
+  }
+}
+
+/* A regra antiga (linha de texto) saiu: ela vinha DEPOIS no arquivo e vencia
+   em silencio contra a pilula nova. */
+.skill-points-obsoleto b {
   color: var(--accent);
   font-size: 16px;
 }
@@ -2426,10 +2490,21 @@ body:has(.hud-map-slot.folded) .toasts {
   top: 64px;
   width: 104px;
   left: -22px;
-  font-size: 9px;
+  /* Era 9 px sob um anel de 60: o nome ficava menor que o desenho que ele
+     nomeia, e em 852 x 393 isso vira risco cinza. */
+  font-size: 10.5px;
   line-height: 1.15;
   text-align: center;
   color: var(--ink-dim);
+}
+
+.skill-node .node-level.pilula {
+  /* O nivel vira PILULA embaixo do nome, como no conceito: "2/3" solto no ar
+     parecia sujeira do desenho; numa pilula ele vira placa. */
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 196, 83, 0.4);
+  background: rgba(20, 15, 8, 0.85);
 }
 
 .skill-node .node-level {
