@@ -572,7 +572,19 @@ export class PlayerSprite {
      * contrario.
      */
     if (strip) this.desenharCostas(ctx, h, strip.name, strip.index);
-    if (this.aiming && strip && PlayerSprite.TIRAS_DE_ARMA.includes(strip.name)) {
+    /*
+     * A ARMA SO APARECE NO TIRO — mesma regra da picareta, mesmo motivo.
+     *
+     * `aiming` diz que a arma esta na cinta; `atirando` e o instante do
+     * gatilho. So o segundo poe a arma na mao. O recuo entra junto porque ele e
+     * a continuacao visivel do tiro: sumir com a arma no meio do coice seria
+     * pior do que nao mostra-la.
+     *
+     * Com isso `arma_baixa` passa a ser o que o nome diz — ele anda de mao
+     * livre, pronto, e a arma so sai quando ele puxa.
+     */
+    const sacada = this.atirando || this.recoil > 0.02;
+    if (this.aiming && sacada && strip && PlayerSprite.TIRAS_DE_ARMA.includes(strip.name)) {
       this.tiraDaArma = strip.name;
       this.quadroDeMira = strip.index;
       this.desenharArma(ctx, h, flipped);
@@ -684,18 +696,17 @@ export class PlayerSprite {
    */
   private desenharFerramenta(ctx: CanvasRenderingContext2D, h: number, tira: string, quadro: number): void {
     /*
-     * A PICARETA FICA NA MAO, SEMPRE.
+     * A PICARETA SO APARECE NO GOLPE.
      *
-     * Eu tinha desenhado ela so no golpe, porque nas outras tiras ela boiava —
-     * e isso resolvia o MEU problema, nao o do jogo. Ele e mineiro: a picareta
-     * e a primeira coisa que ele tem, veio na caixa do pai junto do revolver,
-     * e um mineiro sem picareta na mao nao le como mineiro.
+     * O argumento que decide isto nao e de gosto, e da propria arte: as nove
+     * tiras foram desenhadas com as MAOS VAZIAS. Se a ferramenta fosse para
+     * ficar na mao o tempo todo, ela teria sido desenhada junto ao corpo, e nao
+     * separada — e aI o punho fechado em volta do nada nao faria sentido em
+     * lugar nenhum.
      *
-     * A escalada e a unica excecao, e por um motivo do mundo e nao da arte: ali
-     * as duas maos estao na parede. Quem esta se puxando para cima nao esta
-     * segurando ferramenta.
+     * Maos vazias e a postura padrao. A ferramenta aparece quando e usada.
      */
-    if (tira === 'climb') return;
+    if (tira !== 'mine') return;
     const id = this.picaretaArt;
     const arte = id ? Assets.tool(id) : null;
     const ponto = encaixe(tira, quadro, 'punho');

@@ -122,7 +122,7 @@ TIRAS.forEach((tira, linha) => {
     }
     // Igual ao PlayerSprite: sempre na mao, menos escalando (as duas maos na
     // parede). No golpe segue o braco; nas outras, o angulo de carregar.
-    if (enc?.punho && tira !== 'climb') {
+    if (enc?.punho && tira === 'mine') {
       colar(pecas.picareta, emX(enc.punho), emY(enc.punho), QUADRO * TAM.picareta,
         grips[PICARETA] ?? { x: 0.22, y: 0.5 },
         tira === 'mine' ? (enc.punho.angulo ?? 0) : -Math.PI * 0.22);
