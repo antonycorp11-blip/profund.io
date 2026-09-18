@@ -2,6 +2,7 @@ import { blockDef, type BlockDef } from '../data/blocks';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { RESOURCES, type ResourceId } from '../data/resources';
+import { botDef, type BotDef, type BotId } from '../data/bots';
 import { Assets } from '../core/Assets';
 import { ART } from '../data/art';
 import type { Attributes } from '../systems/Attributes';
@@ -11,13 +12,19 @@ import type { World } from '../world/World';
 export type CloneFocus = 'minerar' | 'coletar' | 'equilibrado';
 
 export interface CloneConfig {
-  focus: CloneFocus;
-  /** Recursos que ele deve procurar. Vazio = todos. */
-  filter: ResourceId[];
+  /**
+   * O TIPO do bot. E ele que diz o que a maquina recolhe, quanto carrega e
+   * ate onde vai — o jogador escolhe na hora de comprar, e nao depois numa
+   * tela de configuracao.
+   *
+   * Antes isso eram tres controles por unidade (foco, seis caixinhas de
+   * minerio e um raio), repetidos a cada bot novo e sem nenhuma decisao
+   * interessante depois da primeira vez: o jogador clonava a mesma
+   * configuracao. Com tipo, comprar E a decisao.
+   */
+  bot: BotId;
   /** Entrega sozinho no deposito quando enche. */
   autoDeliver: boolean;
-  /** Raio de trabalho em tiles a partir do ponto de origem. */
-  workRadius: number;
 }
 
 export type CloneState =
@@ -91,8 +98,10 @@ export class Clone {
     private insertNetwork: (col: number, row: number, r: ResourceId, n: number) => number = () => 0
   ) {}
 
+  /** A cor vem do TIPO, e nao da ordem de compra: dois bots iguais sao
+   *  iguais, e e isso que a tarja do cartao precisa dizer. */
   get tint(): string {
-    return CLONE_TINTS[this.index % CLONE_TINTS.length];
+    return this.def.tint;
   }
 
   get cx(): number {
@@ -103,8 +112,9 @@ export class Clone {
     return this.y;
   }
 
+  /** A mochila do tipo, mais o que as melhorias de pesquisa somarem. */
   get capacity(): number {
-    return this.attrs.getInt('cloneCapacity');
+    return this.def.capacity + Math.max(0, this.attrs.getInt('cloneCapacity') - 20);
   }
 
   get carried(): number {
@@ -121,12 +131,14 @@ export class Clone {
     return Array.from(this.items.entries());
   }
 
-  /** Aceita o recurso conforme o filtro configurado. */
+  /** O que este TIPO de bot recolhe. O resto do chao ele ignora. */
   accepts(resource: ResourceId): boolean {
-    if (this.config.focus === 'minerar' && this.state !== 'coletando') {
-      // Mesmo minerando ele pega o que cai dele proprio.
-    }
-    return this.config.filter.length === 0 || this.config.filter.includes(resource);
+    return this.def.coleta.includes(resource);
+  }
+
+  /** A ficha do tipo dele. */
+  get def(): BotDef {
+    return botDef(this.config.bot);
   }
 
   add(resource: ResourceId, amount: number): number {
@@ -154,8 +166,15 @@ export class Clone {
 
     this.watchdog(dt);
 
-    if (this.config.focus === 'coletar') this.updateCollector(dt);
-    else this.updateMiner(dt);
+    /*
+     * Todo bot MINERA e cata o que cai.
+     *
+     * O modo "so coletar" existia porque o filtro era livre: dava para montar
+     * uma copia que so juntava o chao. Com tipo, quem so cata e a TOUPEIRA — e
+     * ter duas maquinas fazendo a mesma coisa com nomes diferentes era o tipo
+     * de escolha que parece profundidade e e so confusao.
+     */
+    this.updateMiner(dt);
 
     // So entra em entrega se ainda nao estiver entregando: senao o cheque
     // reiniciaria o temporizador de envio a cada frame e nunca concluiria.
@@ -306,20 +325,13 @@ export class Clone {
     }
   }
 
-  private updateCollector(dt: number): void {
-    if (this.state === 'entregando' || this.state === 'enviando') return;
-    const near = this.drops.findNearest(this.x, this.y, CONFIG.clones.collectSearch, (r: ResourceId) =>
-      this.accepts(r)
-    );
-    if (!near) {
-      this.state = 'procurando';
-      this.moveToward(this.homeX, this.homeY, dt, true);
-      return;
-    }
-    this.state = 'coletando';
-    this.moveToward(near.x, near.y, dt, true);
-  }
-
+  /*
+   * `updateCollector` saiu.
+   *
+   * Ele servia ao modo "so coletar", que so existia porque o filtro era
+   * livre. Com tipo de bot, quem cata o chao e a TOUPEIRA — duas maquinas
+   * fazendo a mesma coisa com nomes diferentes era escolha falsa.
+   */
   private onBroke(col: number, row: number, def: BlockDef): void {
     this.markProgress();
     const ts = this.world.tileSize;
@@ -506,7 +518,7 @@ export class Clone {
     const ts = this.world.tileSize;
     const col0 = Math.floor(this.homeX / ts);
     const row0 = Math.floor(this.homeY / ts);
-    const r = this.config.workRadius;
+    const r = this.def.radius;
     let n = 0;
     // Passo 2: contar tile a tile num raio de 18 seria 1300 leituras por
     // chamada; uma amostra a cada 2 tiles responde a mesma pergunta.
@@ -542,7 +554,7 @@ export class Clone {
     // copia entao nao achava nada mesmo cercada de minerio.
     const col0 = Math.floor(this.homeX / ts);
     const row0 = Math.floor(this.homeY / ts);
-    const radius = this.config.workRadius;
+    const radius = this.def.radius;
     const cloneCol = Math.floor(this.x / ts);
     const cloneRow = Math.floor(this.y / ts);
 

@@ -2,6 +2,7 @@ import type { Camera } from '../core/camera';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { Clone, type CloneConfig } from '../entities/Clone';
+import { botDef, type BotId } from '../data/bots';
 import type { Attributes } from './Attributes';
 import type { BaseStock } from './BaseStock';
 import type { DropManager } from '../entities/DropManager';
@@ -49,22 +50,30 @@ export class CloneManager {
     return this.clones.length < this.slots;
   }
 
-  /** Custo em moedas da proxima copia. Sobe a cada copia ja impressa. */
-  costFor(indexOverride?: number): number {
+  /**
+   * Custo de um bot: o preco do TIPO, subindo com quantos ja existem.
+   *
+   * O preco base saiu da configuracao e foi para a ficha do tipo — um Bot
+   * Prisma nao pode custar o mesmo que um Bot Simples so porque e o terceiro
+   * da fila. O crescimento por quantidade continua: ele e o que impede encher
+   * a mina de bots baratos.
+   */
+  costFor(tipo: BotId = 'bot_simples', indexOverride?: number): number {
     const n = indexOverride ?? this.clones.length;
-    return Math.round(CONFIG.clones.cost * Math.pow(CONFIG.clones.costGrowth, n));
+    return Math.round(botDef(tipo).cost * Math.pow(CONFIG.clones.costGrowth, n));
   }
 
-  canAfford(): boolean {
-    return this.stock.money >= this.costFor();
+  canAfford(tipo: BotId = 'bot_simples'): boolean {
+    return this.stock.money >= this.costFor(tipo);
   }
 
-  create(x: number, y: number): Clone | null {
+  /** @param tipo Qual bot sai da oficina. O tipo e a decisao da compra. */
+  create(x: number, y: number, tipo: BotId = 'bot_simples'): Clone | null {
     if (!this.canCreate) {
       Events.emit('ui:toast', { text: 'Sem camara livre na copiadora.', tone: 'warn' });
       return null;
     }
-    const cost = this.costFor();
+    const cost = this.costFor(tipo);
     if (this.stock.money < cost) {
       Events.emit('ui:toast', {
         text: `Faltam ${Math.ceil(cost - this.stock.money)} moedas para imprimir.`,
@@ -74,10 +83,8 @@ export class CloneManager {
     }
     this.stock.money -= cost;
     const clone = this.spawn(`clone_${this.created}`, this.clones.length, x, y, {
-      focus: 'minerar',
-      filter: [],
+      bot: tipo,
       autoDeliver: true,
-      workRadius: CONFIG.clones.defaultWorkRadius,
     });
     this.created++;
     Events.emit('clone:created', { id: clone.id, index: clone.index });

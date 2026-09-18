@@ -3464,6 +3464,12 @@ body:has(.hud-map-slot.folded) .toasts {
   overflow-y: auto;
   scrollbar-width: thin;
   padding-right: 4px;
+  /* A grade tambem vale aqui: sem repetir, o `display: flex` herdado de
+     regras antigas voltava a empilhar. */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 7px;
+  align-content: start;
 }
 
 /*
@@ -3552,6 +3558,140 @@ body:has(.hud-map-slot.folded) .toasts {
 .auto-rodape .btn {
   justify-self: end;
   font-size: 10px;
+}
+
+/*
+ * A GRADE DE BOTS: cartoes pequenos, cinco por linha.
+ *
+ * O cartao antigo tinha quatro bandas de configuracao e ocupava a coluna
+ * inteira — duas unidades enchiam a tela e o jogador comprava a quinta sem
+ * nunca ver as cinco juntas. Com o TIPO carregando o comportamento nao ha o
+ * que configurar, e o cartao encolhe ate caber a equipe inteira de relance,
+ * que e a pergunta desta tela.
+ */
+.auto-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 7px;
+  align-content: start;
+}
+
+.bot-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 8px 6px 7px;
+  border: 1px solid rgba(120, 160, 220, 0.22);
+  border-top: 3px solid var(--tint);
+  border-radius: 11px;
+  background: linear-gradient(170deg, rgba(24, 34, 55, 0.95), rgba(13, 19, 33, 0.95));
+  text-align: center;
+}
+
+.bot-face {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
+}
+
+.bot-nome {
+  font-family: var(--font-display);
+  font-size: 11px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.bot-tipo {
+  font-family: var(--font-display);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tint);
+}
+
+.bot-card .estado-pilula {
+  margin-top: 2px;
+  font-size: 7.5px;
+  padding: 2px 7px;
+}
+
+/* O que ele recolhe, em icones: e a diferenca entre um tipo e outro, e ela
+   precisa ser lida sem abrir nada. */
+.bot-coleta {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.bot-coleta img,
+.bot-coleta i {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  border-radius: 3px;
+  image-rendering: pixelated;
+}
+
+.bot-coleta i.vazia {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bot-barra {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.bot-barra > i {
+  display: block;
+  height: 100%;
+  background: var(--tint);
+  transition: width 0.25s;
+}
+
+.bot-pe {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 4px;
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.bot-pe b {
+  font-family: var(--font-display);
+  color: var(--ink);
+}
+
+.bot-pe i {
+  font-style: normal;
+}
+
+/* O interruptor no canto de cima do cartao, flutuando sobre o retrato. */
+.bot-card .liga {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 30px;
+  height: 17px;
+  margin: 0;
+  z-index: 1;
+}
+
+.bot-card .liga i {
+  width: 12px;
+  height: 12px;
+  margin: 1.5px;
+}
+
+.bot-card .liga.on i {
+  transform: translateX(13px);
 }
 
 /* --- o modo, em tres icones na cabeca do cartao --- */
@@ -3997,11 +4137,9 @@ body:has(.hud-map-slot.folded) .toasts {
   padding: 7px 10px;
 }
 
-.auto-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
+/* A pilha vertical saiu: a lista e GRADE agora (ver o bloco da grade de bots
+   mais acima). Esta regra vinha depois e vencia em silencio — os cartoes
+   compactos apareciam um por linha, esticados, que e o oposto do pedido. */
 
 /* Numa tela estreita as duas colunas viram uma pilha: dois cartoes lado a
    lado em 400 px de largura nao cabem sem cortar o nome da unidade. */

@@ -9,10 +9,11 @@ import {
   type EquipSlot,
 } from '../data/equipment';
 import { RESOURCES, type ResourceId } from '../data/resources';
+import { melhorBotAte } from '../data/bots';
 import { TECH_CATEGORIES, techsOf, type TechCategory, type TechDef } from '../data/tech';
 import { Haptics } from '../fx/Haptics';
 import type { Attributes } from '../systems/Attributes';
-import type { Clone, CloneFocus } from '../entities/Clone';
+import type { Clone } from '../entities/Clone';
 import type { CloneManager } from '../systems/CloneManager';
 import type { CollectorManager } from '../systems/CollectorManager';
 import type { Equipment } from '../systems/Equipment';
@@ -38,15 +39,6 @@ export interface TechHost {
 
 type Tab = TechCategory | 'copiadora' | 'toupeiras';
 
-/**
- * Os tres chassis de copia, na ordem em que saem da copiadora.
- *
- * A cor da copia ja existia como `tint` e servia para um ponto colorido no
- * cartao e no minimapa. O retrato veio em tres chassis, entao a copia passa a
- * TER uma cara — e quem tem cara o jogador reconhece no meio de uma lista de
- * doze.
- */
-const CHASSI = ['copia_aco', 'copia_cobre', 'copia_roxa'];
 
 /** Modificador em uma linha curta, do jeito que o jogador pensa. */
 function describeMod(m: Modifier): string {
@@ -522,6 +514,14 @@ export class TechScreen {
     const clones = this.host.clones;
     const moles = this.host.collectors;
     const custoMole = moles.costFor();
+    /*
+     * O botao compra o MELHOR tipo que a profundidade ja liberou.
+     *
+     * Um menu de tipos aqui seria uma decisao sem informacao: o jogador nao
+     * tem por que comprar um Bot Simples depois de alcancar o Reforcado. O
+     * tipo escala com o quanto ele ja desceu, que e o proprio progresso.
+     */
+    const melhor = melhorBotAte(this.host.deepest());
     const carregando = moles.carriedTotal();
     const entregue = moles.units.reduce((n, u) => n + u.delivered, 0);
 
@@ -558,17 +558,21 @@ export class TechScreen {
         <header class="auto-col-cab">
           <span class="auto-col-icone"><img src="art/auto/copia_aco.png" alt=""></span>
           <div class="auto-col-txt">
-            <h4>Copias ativas <i>(${clones.clones.length}/${clones.slots})</i></h4>
+            <h4>Bots ativos <i>(${clones.clones.length}/${clones.slots})</i></h4>
             <p>Mineram, coletam e entregam automaticamente.</p>
           </div>
-          <button class="btn primary" data-newclone ${clones.canAfford() ? '' : 'disabled'}>
-            + NOVA COPIA
+          <button class="btn primary" data-newclone ${
+            clones.canAfford(melhor.id) ? '' : 'disabled'
+          } title="${melhor.description}">
+            + ${melhor.name.toUpperCase()} ✦${clones
+              .costFor(melhor.id)
+              .toLocaleString('pt-BR')}
           </button>
         </header>
         <div class="auto-list">
           ${
             clones.clones.length === 0
-              ? '<p class="map-empty">Nenhuma copia ainda.</p>'
+              ? '<p class="map-empty">Nenhum bot ainda.</p>'
               : clones.clones.map((c: Clone) => this.cloneCard(c)).join('')
           }
         </div>
@@ -955,6 +959,38 @@ export class TechScreen {
   }
 
   /** Cartao de uma toupeira na coluna da direita. */
+  /**
+   * Os numeros que mudam sozinhos, sem repintar o cartao.
+   *
+   * Repintar apagaria o foco de quem esta com o dedo no interruptor e faria a
+   * grade inteira piscar quatro vezes por segundo. So os campos marcados sao
+   * tocados, e so quando o valor muda de verdade.
+   */
+  private refreshCloneLive(): void {
+    const texto = (sel: string, v: string) => {
+      const el = this.bodyEl.querySelector(sel);
+      if (el && el.textContent !== v) el.textContent = v;
+    };
+
+    for (const c of this.host.clones.clones) {
+      texto(`[data-live-state="${c.id}"]`, c.statusLabel());
+      texto(`[data-live-load="${c.id}"]`, `${c.carried}/${c.capacity}`);
+      texto(`[data-live-depth="${c.id}"]`, `${Math.round(this.host.depthOf(c.y))} m`);
+      const barra = this.bodyEl.querySelector(`[data-live-bar="${c.id}"]`) as HTMLElement | null;
+      if (barra) {
+        const pct = `${Math.round((c.carried / Math.max(1, c.capacity)) * 100)}%`;
+        if (barra.style.width !== pct) barra.style.width = pct;
+      }
+    }
+
+    for (const u of this.host.collectors.units) {
+      texto(`[data-live-cstate="${u.id}"]`, u.statusLabel());
+      texto(`[data-live-cload="${u.id}"]`, `${u.carried}/${u.capacity}`);
+      texto(`[data-live-ctotal="${u.id}"]`, String(u.delivered));
+    }
+  }
+
+  /** O cartao da toupeira, no mesmo formato compacto do bot. */
   private moleCard(u: {
     id: string;
     index: number;
@@ -966,157 +1002,53 @@ export class TechScreen {
     statusLabel(): string;
     entries(): [ResourceId, number][];
   }): string {
-    /*
-     * Quatro leituras em linha, barra e uma frase de estado.
-     *
-     * O cartao tinha nome e estado, e so. O conceito mostra CARGA, RECURSO,
-     * DISTANCIA e ENTREGAS lado a lado porque sao as quatro perguntas que o
-     * jogador faz olhando uma toupeira: ela cabe mais? esta trazendo o que eu
-     * quero? esta longe? esta rendendo?
-     */
     const carga = Math.round((u.carried / Math.max(1, u.capacity)) * 100);
     const [rec] = u.entries();
-    const recurso = rec
-      ? `<img src="art/ui/${rec[0]}.png" alt="">${RESOURCES[rec[0]].name}`
-      : '<span class="dim">vazia</span>';
-    const prof = Math.round(this.host.depthOf(u.y));
     return `
-      <div class="clone-card" style="--tint:#d8a35a">
-        <div class="clone-card-head">
-          <img class="clone-face" src="art/auto/toupeira.png" alt="">
-          <b>Toupeira ${u.index + 1}</b>
-          <span class="estado-pilula" data-live-cstate="${u.id}">${u.statusLabel()}</span>
-        </div>
-        <div class="unidade-grade">
-          <span><i>Carga max.</i><b data-live-cload="${u.id}">${u.carried}/${u.capacity}</b></span>
-          <span><i>Recurso</i><b class="com-icone">${recurso}</b></span>
-          <span><i>Profundidade</i><b data-live-cdepth="${u.id}">${prof} m</b></span>
-          <span><i>Entregas</i><b data-live-ctotal="${u.id}">${u.delivered}</b></span>
-        </div>
-        <span class="unidade-barra"><i style="width:${carga}%"></i><em>&rsaquo;&rsaquo;&rsaquo;</em></span>
-        <small class="unidade-linha" data-live-ccarry="${u.id}"></small>
+      <div class="bot-card toupeira" style="--tint:#d8a35a">
+        <img class="bot-face" src="art/auto/toupeira.png" alt="">
+        <b class="bot-nome">Toupeira ${u.index + 1}</b>
+        <small class="bot-tipo">Catadora</small>
+        <span class="estado-pilula" data-live-cstate="${u.id}">${u.statusLabel()}</span>
+        <span class="bot-coleta">
+          ${
+            rec
+              ? `<img src="art/ore/${rec[0]}.png" alt="" title="${RESOURCES[rec[0]].name}">`
+              : '<i class="vazia"></i>'
+          }
+        </span>
+        <span class="bot-barra"><i style="width:${carga}%"></i></span>
+        <span class="bot-pe">
+          <b data-live-cload="${u.id}">${u.carried}/${u.capacity}</b>
+          <i data-live-ctotal="${u.id}">${u.delivered}</i>
+        </span>
       </div>`;
   }
 
-  /**
-   * Atualiza so os numeros vivos dos cartoes (estado, profundidade, carga,
-   * total entregue). Redesenhar o painel inteiro a cada 400 ms mataria o
-   * arrastar dos controles e piscaria a tela.
-   */
-  private refreshCloneLive(): void {
-    for (const c of this.host.clones.clones) {
-      const set = (attr: string, txt: string) => {
-        const el = this.bodyEl.querySelector(`[data-live-${attr}="${c.id}"]`);
-        if (el && el.textContent !== txt) el.textContent = txt;
-      };
-      set('state', c.statusLabel());
-      set('depth', `${Math.round(this.host.depthOf(c.y))} m`);
-      set('load', `${c.carried}/${c.capacity}`);
-      set('carry', c.summary());
-      set('total', `${c.delivered} entregues`);
-    }
-    for (const u of this.host.collectors.units) {
-      const set = (attr: string, txt: string) => {
-        const el = this.bodyEl.querySelector(`[data-live-c${attr}="${u.id}"]`);
-        if (el && el.textContent !== txt) el.textContent = txt;
-      };
-      set('state', u.statusLabel());
-      set('depth', `${Math.round(this.host.depthOf(u.y))} m`);
-      set('load', `${u.carried}/${u.capacity}`);
-      set('carry', u.summary());
-      set('total', `${u.delivered} entregues`);
-    }
-  }
-
-  /**
-   * O CARTAO DA COPIA, mapeado do conceito.
-   *
-   * Quatro bandas, e cada uma responde uma pergunta: quem e e esta ligada
-   * (cabeca), atras do que ela esta (foco), quao longe ela vai (area), e o que
-   * ela ja rendeu (pe).
-   *
-   * O interruptor VERDE saiu de uma linha inteira com um botao escrito
-   * "LIGADO" e foi para o canto da cabeca, que e onde o conceito o poe — e e o
-   * lugar certo: ligar e desligar e uma pergunta sobre a unidade, nao sobre
-   * uma das configuracoes dela.
-   */
   private cloneCard(c: Clone): string {
-    /*
-     * O MODO virou tres icones na cabeca do cartao.
-     *
-     * Ele ocupava uma banda inteira com tres palavras, e o cartao ficou com
-     * quatro bandas contra as duas do conceito — em 393 px de altura isso
-     * cortava o cartao pela metade. Modo e uma escolha rara e binaria de ler:
-     * icone basta, e o titulo diz a palavra para quem passar o dedo.
-     */
-    const focos: { id: CloneFocus; label: string; icone: string }[] = [
-      { id: 'minerar', label: 'Minerar', icone: '⛏' },
-      { id: 'coletar', label: 'Coletar', icone: '✋' },
-      { id: 'equilibrado', label: 'Os dois', icone: '⇄' },
-    ];
-    const recursos: ResourceId[] = ['coal', 'copper', 'iron', 'gold', 'crystal', 'stone'];
-
+    const d = c.def;
     return `
-      <div class="clone-card" style="--tint:${c.tint}">
-        <div class="clone-card-head">
-          <img class="clone-face" src="art/auto/${CHASSI[c.index % CHASSI.length]}.png" alt="">
-          <b>Copia ${c.index + 1}</b>
-          <span class="estado-pilula" data-live-state="${c.id}">${c.statusLabel()}</span>
-          <div class="modo-seg">
-            ${focos
-              .map(
-                (f) =>
-                  `<button class="${c.config.focus === f.id ? 'on' : ''}"
-                     data-focus="${c.id}:${f.id}" title="${f.label}">${f.icone}</button>`
-              )
-              .join('')}
-          </div>
-          <button class="liga ${c.config.autoDeliver ? 'on' : ''}" data-deliver="${c.id}"
-                  title="Entregar sozinho"><i></i></button>
-        </div>
-
-        <div class="clone-campo">
-          <label>Foco</label>
-          <div class="chips-filter">
-            ${recursos
-              .map(
-                (r) =>
-                  `<button class="${c.config.filter.includes(r) ? 'on' : ''}"
-                     data-filter="${c.id}:${r}" title="${RESOURCES[r].name}">
-                     <i style="background:${RESOURCES[r].color}"></i>${RESOURCES[r].name}
-                   </button>`
-              )
-              .join('')}
-            <button class="${c.config.filter.length === 0 ? 'on' : ''}" data-filter="${c.id}:__all">
-              Tudo
-            </button>
-          </div>
-        </div>
-
-        <div class="clone-campo area">
-          <label>Area de trabalho</label>
-          <input type="range" min="6" max="40" value="${c.config.workRadius}"
-                 data-radius="${c.id}">
-          <span class="clone-radius">${c.config.workRadius} tiles</span>
-        </div>
-
-        <div class="clone-pe">
-          <span class="clone-leitura">
-            <img src="art/hud/pin.png" alt="">
-            <b data-live-depth="${c.id}"></b>
-          </span>
-          <span class="clone-leitura">
-            <img src="art/auto/caixote.png" alt="">
-            <b data-live-total="${c.id}"></b>
-          </span>
-          <span class="clone-leitura carga">
-            <b data-live-load="${c.id}">${c.carried}/${c.capacity}</b>
-          </span>
-          <button class="btn" data-recall="${c.id}">
-            <img class="btn-icon" src="art/hud/pin.png" alt="">TRAZER
-          </button>
-        </div>
-        <small class="unidade-linha" data-live-carry="${c.id}"></small>
+      <div class="bot-card" style="--tint:${d.tint}" data-bot="${c.id}">
+        <button class="liga ${c.config.autoDeliver ? 'on' : ''}" data-deliver="${c.id}"
+                title="Entregar sozinho"><i></i></button>
+        <img class="bot-face" src="art/auto/${d.arte}.png" alt="">
+        <b class="bot-nome">Bot ${c.index + 1}</b>
+        <small class="bot-tipo">${d.name}</small>
+        <span class="estado-pilula" data-live-state="${c.id}">${c.statusLabel()}</span>
+        <span class="bot-coleta">
+          ${d.coleta
+            .map(
+              (r) =>
+                `<img src="art/ore/${r}.png" alt="" title="${RESOURCES[r].name}"
+                   onerror="this.replaceWith(Object.assign(document.createElement('i'),{style:'background:${RESOURCES[r].color}'}))">`
+            )
+            .join('')}
+        </span>
+        <span class="bot-barra"><i data-live-bar="${c.id}" style="width:0%"></i></span>
+        <span class="bot-pe">
+          <b data-live-load="${c.id}">${c.carried}/${c.capacity}</b>
+          <i data-live-depth="${c.id}"></i>
+        </span>
       </div>`;
   }
 
@@ -1136,46 +1068,21 @@ export class TechScreen {
     q('[data-create]').forEach((b) =>
       b.addEventListener('click', () => {
         const p = this.host.spawnPoint();
-        if (this.host.clones.create(p.x, p.y)) {
+        // O tipo e o melhor que a profundidade ja liberou — o mesmo que o
+        // botao anuncia.
+        if (this.host.clones.create(p.x, p.y, melhorBotAte(this.host.deepest()).id)) {
           Haptics.ui();
           this.render();
         }
       })
     );
-    q('[data-focus]').forEach((b) =>
-      b.addEventListener('click', () => {
-        const [id, focus] = (b as HTMLElement).dataset.focus!.split(':');
-        const clone = this.host.clones.clones.find((c) => c.id === id);
-        if (!clone) return;
-        clone.config.focus = focus as CloneFocus;
-        this.render();
-      })
-    );
-    q('[data-filter]').forEach((b) =>
-      b.addEventListener('click', () => {
-        const [id, res] = (b as HTMLElement).dataset.filter!.split(':');
-        const clone = this.host.clones.clones.find((c) => c.id === id);
-        if (!clone) return;
-        if (res === '__all') clone.config.filter = [];
-        else {
-          const r = res as ResourceId;
-          const i = clone.config.filter.indexOf(r);
-          if (i >= 0) clone.config.filter.splice(i, 1);
-          else clone.config.filter.push(r);
-        }
-        this.render();
-      })
-    );
-    q('[data-radius]').forEach((b) =>
-      b.addEventListener('input', () => {
-        const el = b as HTMLInputElement;
-        const clone = this.host.clones.clones.find((c) => c.id === el.dataset.radius);
-        if (!clone) return;
-        clone.config.workRadius = Number(el.value);
-        const label = el.parentElement?.querySelector('.clone-radius');
-        if (label) label.textContent = `${el.value} tiles`;
-      })
-    );
+    /*
+     * Sumiram os ligadores de FOCO, FILTRO e RAIO.
+     *
+     * Eles configuravam o que agora vem do TIPO do bot. Manter os tres seria
+     * dar ao jogador controles que brigam com a ficha da maquina — e a ficha
+     * ganharia, porque e dela que o comportamento sai.
+     */
     q('[data-deliver]').forEach((b) =>
       b.addEventListener('click', () => {
         const clone = this.host.clones.clones.find(
