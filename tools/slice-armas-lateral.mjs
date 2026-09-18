@@ -129,8 +129,15 @@ function medirCabo(box) {
   if (n === 0) return { x: 0.2, y: 0.5 };
   const cx = sx / n;
   const cy = sy / n;
-  // Sobe em direcao ao cano: a mao fecha no alto do cabo, nao no fundo dele.
-  const alto = linhaDoCano + (cy - linhaDoCano) * 0.35;
+  /*
+   * Sobe POUCO em direcao ao cano.
+   *
+   * Eu subia 35% e o ponto acabava praticamente NA linha do cano — ou seja,
+   * acima do cabo, no ar. A mao fecha no alto da empunhadura, que ainda e
+   * empunhadura: 75% do caminho do cano ate o centro do cabo poe o pivo dentro
+   * dela.
+   */
+  const alto = linhaDoCano + (cy - linhaDoCano) * 0.75;
   return {
     x: +((cx - box.x) / box.w).toFixed(3),
     y: +((alto - box.y) / box.h).toFixed(3),

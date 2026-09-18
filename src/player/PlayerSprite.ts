@@ -40,22 +40,22 @@ export class PlayerSprite {
    * para fora da mao. A ancora tem que seguir o desenho que esta na tela, e
    * nao a intencao do jogador.
    *
-   * Medidos no proprio arquivo pelo CENTRO da mao — o miolo do desenho nas
-   * ultimas nove colunas de cada quadro — e nao pela ponta do braco. A borda
-   * e o lado de fora do punho: prender a arma ali a deixa sempre um pouco
-   * adiantada, pendurada na beirada da mao em vez de dentro dela.
+   * Medidos isolando o BLOB DA MAO: um preenchimento a partir da ponta do
+   * braco, limitado a nove pixels de raio. Antes eu tirava o centro das ultimas
+   * nove COLUNAS, e isso puxava o antebraco junto — o ponto caia atras da mao.
+   * O flood pega so o punho fechado, que e onde o cabo tem que estar.
    */
   private static readonly PUNHO: { x: number; y: number }[] = [
-    { x: 0.207, y: -0.406 }, // 0-1 frente
-    { x: 0.208, y: -0.399 },
-    { x: 0.231, y: -0.508 }, // 2-3 cima
-    { x: 0.223, y: -0.508 },
-    { x: 0.188, y: -0.313 }, // 4-5 baixo
-    { x: 0.185, y: -0.34 },
-    { x: 0.145, y: -0.447 }, // 6-7 coice
-    { x: 0.215, y: -0.405 },
-    { x: 0.205, y: -0.364 }, // 8-9 andando
-    { x: 0.208, y: -0.387 },
+    { x: 0.21, y: -0.398 }, // 0-1 frente
+    { x: 0.209, y: -0.401 },
+    { x: 0.233, y: -0.512 }, // 2-3 cima
+    { x: 0.225, y: -0.512 },
+    { x: 0.192, y: -0.276 }, // 4-5 baixo
+    { x: 0.19, y: -0.272 },
+    { x: 0.153, y: -0.408 }, // 6-7 coice
+    { x: 0.218, y: -0.403 },
+    { x: 0.209, y: -0.401 }, // 8-9 andando
+    { x: 0.211, y: -0.402 },
   ];
 
   /** Qual quadro da tira de mira foi desenhado agora. */
@@ -70,6 +70,17 @@ export class PlayerSprite {
    * tiro passa a sair numa destas tres, e a arma acompanha o braco.
    */
   static readonly ANGULOS = [0, -Math.PI / 4, Math.PI / 4] as const;
+
+  /**
+   * Altura da arma, em fracao da altura desenhada do heroi.
+   *
+   * Escolhido comparando 0,22, 0,15 e 0,11 lado a lado com a arte de verdade.
+   * Com 0,22 o revolver tinha metade do comprimento do corpo e o cabo sobrava
+   * para fora do punho; com 0,11 ele some no meio da rocha. Uma constante so
+   * porque o DESENHO e a BOCA DO CANO precisam sair do mesmo numero — se
+   * divergirem, a bala deixa de nascer na ponta.
+   */
+  static readonly ARMA_ALTURA = 0.15;
 
   /**
    * Para onde a arma REALMENTE aponta, dada a mira do jogador.
@@ -311,11 +322,22 @@ export class PlayerSprite {
       ctx.translate(0, h * (1 - sq));
       ctx.scale(1 + player.landSquash * 0.12, sq);
     }
-    ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
+    /*
+     * A ARMA VAI POR TRAS DO CORPO.
+     *
+     * Desenhada por cima, ela ficava COLADA na frente da mao — dava para ver
+     * o cabo inteiro passando por cima dos dedos, e nada segurava nada. Por
+     * tras, o punho fechado do desenho cobre o cabo, e e esse encaixe que faz
+     * a mao parecer estar segurando de verdade.
+     *
+     * O cano continua a vista porque ele sai para FORA da silhueta: o braco
+     * esta esticado longe do tronco em todas as poses de mira.
+     */
     if (this.aiming && strip?.name === 'aim') {
       this.quadroDeMira = strip.index;
       this.desenharArma(ctx, h, flipped);
     }
+    ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
     ctx.restore();
     return true;
   }
@@ -345,7 +367,7 @@ export class PlayerSprite {
     const punhoX = player.cx + lado * punho.x * h;
     const punhoY = player.feetY + punho.y * h;
 
-    const alturaArma = h * 0.22;
+    const alturaArma = h * PlayerSprite.ARMA_ALTURA;
     const larguraArma = arte.width * (alturaArma / arte.height);
     const ateAPonta = larguraArma * (1 - cabo.x);
 
@@ -380,7 +402,7 @@ export class PlayerSprite {
     const d = PlayerSprite.direcaoDaPose(flipped ? -this.aimX : this.aimX, this.aimY);
     const ang = Math.atan2(d.y, d.x);
 
-    const alturaArma = alturaDoCorpo * 0.22;
+    const alturaArma = alturaDoCorpo * PlayerSprite.ARMA_ALTURA;
     const escala = alturaArma / arte.height;
     const larguraArma = arte.width * escala;
     // Onde a mao fecha NESTA arma, medido no proprio sprite pelo cortador.

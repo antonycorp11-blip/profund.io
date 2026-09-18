@@ -11,26 +11,26 @@
 export const WEAPON_GRIPS: Record<string, { x: number; y: number }> = {
   "pistola": {
     "x": 0.225,
-    "y": 0.294
+    "y": 0.46
   },
   "pistola_2": {
     "x": 0.215,
-    "y": 0.275
+    "y": 0.428
   },
   "escopeta": {
     "x": 0.166,
-    "y": 0.501
+    "y": 0.59
   },
   "escopeta_2": {
     "x": 0.17,
-    "y": 0.507
+    "y": 0.595
   },
   "fuzil": {
     "x": 0.189,
-    "y": 0.445
+    "y": 0.552
   },
   "fuzil_2": {
     "x": 0.186,
-    "y": 0.524
+    "y": 0.616
   }
 };
