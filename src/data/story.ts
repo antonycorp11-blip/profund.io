@@ -244,9 +244,23 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     id: 'npc_jonas',
     name: 'Jonas',
     col: 74,
-    // 64 m, e nao 38: o primeiro bioma foi de 50 para 90 m e o Jonas desceu
-    // junto. Entre a marca do pai (26 m) e ele agora ha caminho de verdade.
-    row: 18 + 64,
+    /*
+     * 84 m, e ele precisa de FOLGA do selo.
+     *
+     * Ficou em 64 por uma leva inteira, e aos 64 passou a morar exatamente o
+     * selo de historia `sg_marca`, cuja faixa vai de 62 a 64. A sala do Jonas
+     * tem quatro de altura e comeca no topo — a linha de cima dela caia DENTRO
+     * do selo, e ele podia nascer parcialmente emparedado.
+     *
+     * A profundidade dele estava escrita como CONTA (`18 + 64`) e nao como
+     * campo `depth`, entao o remapeamento que moveu todos os selos passou por
+     * cima dela sem tocar. Numero que descreve profundidade e se esconde numa
+     * expressao nao participa dos ajustes de progressao.
+     *
+     * 84 deixa vinte metros de caminho depois do selo aberto e vinte de folga
+     * antes do proximo. Ver a checagem em tools/check-progress.mjs.
+     */
+    row: 18 + 84,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,

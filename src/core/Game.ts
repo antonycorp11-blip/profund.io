@@ -475,7 +475,11 @@ export class Game {
     // DEPOIS do save (se houver) restaurar quem ja morreu — senao um chefe
     // ja derrotado em sessao anterior voltaria vivo por um instante.
     this.biomeGate = new BiomeGate(this.world, this.exploration, this.worldInfo.gates);
-    this.storyGates = new StoryGates(this.world, (id) => this.skills.hasStoryFlag(id));
+    this.storyGates = new StoryGates(
+      this.world,
+      (id) => this.skills.hasStoryFlag(id),
+      () => this.deepestMeters
+    );
     this.missions = new Missions(
       (id) => this.skills.hasStoryFlag(id),
       () => this.deepestMeters

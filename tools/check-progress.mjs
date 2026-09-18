@@ -30,6 +30,7 @@ import { MISSIONS } from '../src/data/missions';
 import { BASE_CAMPS } from '../src/data/basecamp';
 import { REFINE_RECIPES } from '../src/data/structures';
 import { CLUES, RESCUE_NPCS } from '../src/data/story';
+import { STORY_GATES } from '../src/data/storyGates';
 import { SCROLLS } from '../src/data/scrolls';
 import { BLOCKIA_NPCS } from '../src/data/blockia';
 import { OUTPOST_NPCS } from '../src/data/outpost';
@@ -75,6 +76,30 @@ for (const l of GATE_LAYERS) {
     // da camada, ela so seria feita depois do selo que ela mesma destrava.
     if (m.depth >= gateLayerDef(l).minDepth) {
       erros.push(\`selo \${l} exige "\${m.title}" (\${m.depth}m), que fica DEPOIS do proprio selo\`);
+    }
+  }
+}
+
+// --- 2b. sala de resgate encostando em selo de historia ------------------
+//
+// O Jonas ficou com a sala comecando exatamente na ultima linha da faixa
+// selada do sg_marca: a linha de cima da sala dele caia DENTRO do selo, e ele
+// podia nascer emparedado. Como o selo seguinte exige a flag dele, um Jonas
+// inalcancavel tranca a descida de vez.
+//
+// O erro nasceu porque a profundidade dele esta escrita como CONTA
+// (row: 18 + 64) e nao como campo depth — o remapeamento que moveu todos os
+// selos passou por cima dela sem tocar, e nada acusou.
+for (const sala of RESCUE_NPCS) {
+  const topo = sala.row - 18;
+  const base = topo + sala.roomH - 1;
+  for (const g of STORY_GATES) {
+    const row0 = g.depth - CONFIG.gate.storyBandThickness + 1;
+    if (topo <= g.depth && base >= row0) {
+      erros.push(
+        sala.id + ' ocupa ' + topo + '..' + base + ' m e encosta no selo ' +
+          g.id + ' (faixa ' + row0 + '..' + g.depth + ' m): pode nascer emparedado'
+      );
     }
   }
 }
