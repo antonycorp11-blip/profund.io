@@ -172,10 +172,24 @@ export const BLOCKS: BlockDef[] = [
     name: 'Pedra',
     type: 'terreno',
     hp: 34,
+    /*
+     * PEDRA SEMPRE CAI, e cai de uma a tres.
+     *
+     * Era 35% de chance de UMA unidade, ou seja 0,35 pedra por bloco. Isso
+     * ficou de pe enquanto pedra era so o refugo que enchia a mochila. Deixou
+     * de valer quando ela virou MUNICAO: a pistola come duas pedras por tiro,
+     * entao cada tiro custava seis blocos minerados, e o jogador quebrava cinco
+     * blocos seguidos sem receber nada — parecia bug, nao economia.
+     *
+     * Com 1 a 3 garantidas a media vai a 2 por bloco, quase seis vezes mais: um
+     * bloco vira um tiro. Ficar sem municao continua significando "vai
+     * minerar", que e o proprio jogo, mas deixa de significar "minere seis
+     * blocos para atirar uma vez".
+     */
     drop: 'stone',
     dropMin: 1,
-    dropMax: 1,
-    dropChance: 0.35,
+    dropMax: 3,
+    dropChance: 1,
     tags: ['stone'],
     rarity: 'comum',
     value: 1,
@@ -195,10 +209,11 @@ export const BLOCKS: BlockDef[] = [
     name: 'Pedra profunda',
     type: 'terreno',
     hp: 58,
+    /* Mais dura que a pedra comum, e paga mais: e o que faz descer compensar. */
     drop: 'stone',
-    dropMin: 1,
-    dropMax: 2,
-    dropChance: 0.45,
+    dropMin: 2,
+    dropMax: 4,
+    dropChance: 1,
     tags: ['stone', 'hardStone'],
     rarity: 'comum',
     value: 1,

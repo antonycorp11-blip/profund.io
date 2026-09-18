@@ -229,17 +229,38 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     world.setTileRaw(col, baseFloorRow, BLOCK_IDS.PLANK);
   }
 
-  // Poco de entrada da mina, ja escavado alguns metros.
-  const half = Math.floor(CONFIG.base.shaftWidth / 2);
-  for (let col = shaftCol - half; col <= shaftCol + half; col++) {
-    for (let row = baseFloorRow; row <= baseFloorRow + CONFIG.base.shaftDepth; row++) {
-      world.setTileRaw(col, row, BLOCK_IDS.AIR);
+  /*
+   * ENTRADA DA MINA: uma GALERIA que entra de lado e desce, e nao um buraco.
+   *
+   * Era um poco vertical de tres tiles, cavado reto para baixo a partir do
+   * piso da base — e um poco assim nao e entrada de mina, e um alcapao. Mina de
+   * verdade ataca a encosta pela lateral e vai descendo: e assim que se leva
+   * vagonete, escada e gente para dentro.
+   *
+   * Muda tambem o que o primeiro minuto ENSINA. Num buraco a unica coisa a
+   * fazer e cair; numa galeria em degraus o jogador ANDA para dentro da
+   * montanha, e a descida vira uma escolha em vez de uma queda.
+   *
+   * Cada degrau desce um tile e avanca `AVANCO`, o que deixa a subida possivel
+   * a pe: degrau de um tile e o que o movimento ja sobe andando (ver
+   * tools/climb-probe). Com dois tiles o jogador ficaria preso la dentro.
+   *
+   * O teto e o que faz virar galeria e nao vala: so a altura livre e escavada,
+   * e a rocha acima dela fica de pe.
+   */
+  const ALTURA_LIVRE = 3;
+  const AVANCO = 2;
+  for (let degrau = 0; degrau <= CONFIG.base.shaftDepth; degrau++) {
+    const pisoRow = baseFloorRow + degrau;
+    const colIni = shaftCol + degrau * AVANCO;
+    for (let col = colIni; col < colIni + AVANCO; col++) {
+      if (col < 0 || col >= width) continue;
+      // O degrau em que se pisa: tabua, porque a galeria foi CONSTRUIDA.
+      world.setTileRaw(col, pisoRow, BLOCK_IDS.PLANK);
+      for (let r = pisoRow - 1; r >= pisoRow - ALTURA_LIVRE; r--) {
+        world.setTileRaw(col, r, BLOCK_IDS.AIR);
+      }
     }
-  }
-  // Moldura do poco.
-  for (let row = baseFloorRow; row <= baseFloorRow + CONFIG.base.shaftDepth; row++) {
-    world.setTileRaw(shaftCol - half - 1, row, BLOCK_IDS.PLANK);
-    world.setTileRaw(shaftCol + half + 1, row, BLOCK_IDS.PLANK);
   }
 
   // ---- 4b. Selos de historia ----------------------------------------------
