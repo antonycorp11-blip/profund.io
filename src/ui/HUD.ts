@@ -55,6 +55,7 @@ export class HUD {
   private quotaEl: HTMLDivElement;
   private quotaTotalFill!: HTMLElement;
   private quotaTotalLabel!: HTMLElement;
+  private quotaPct!: HTMLElement;
   private quotaRows = new Map<ResourceId, { fill: HTMLElement; label: HTMLElement }>();
   private promptEl: HTMLDivElement;
   private toastsEl: HTMLDivElement;
@@ -118,22 +119,18 @@ export class HUD {
     this.levelFill = this.levelEl.querySelector('.level-bar > i') as HTMLElement;
     this.moneyEl.appendChild(this.levelEl);
 
-    // Retrato do heroi: o card do topo-esquerdo deixa de ser "saldo" e passa a
-    // ser "voce". Vida, vigor e EXP moram dentro dele — sao os tres numeros que
-    // falam do personagem, e estavam espalhados por tres caixas diferentes.
-    const face = document.createElement('div');
-    face.className = 'hero-face';
-    const faceUrl = Assets.heroPortraitUrl?.();
-    if (faceUrl) {
-      const img = document.createElement('img');
-      img.src = faceUrl;
-      img.alt = 'Elias';
-      face.appendChild(img);
-    } else {
-      face.textContent = '⛏';
-    }
-    this.moneyEl.insertBefore(face, this.moneyEl.firstChild);
-
+    /*
+     * SEM RETRATO e SEM CAIXA no canto do saldo.
+     *
+     * O retrato existia para transformar o card em "voce" em vez de "saldo".
+     * A ideia se sustentava numa tela de computador; em 852 x 393 ele comia um
+     * canto inteiro para mostrar uma miniatura que o jogador ja tem na tela em
+     * tamanho real, andando.
+     *
+     * A caixa em volta do numero saiu pelo mesmo motivo: num HUD, moldura e
+     * cromo que ocupa espaco sem dizer nada. O numero sozinho ja e o contador.
+     */
+    this.moneyEl.classList.add('sem-caixa');
     left.appendChild(this.moneyEl);
     // Recursos saem da coluna da esquerda e viram uma fileira no topo-centro:
     // e a unica zona larga da tela que nao disputa espaco com nada.
@@ -493,17 +490,31 @@ export class HUD {
    */
   private buildQuota(): void {
     this.quotaRows.clear();
+    /*
+     * A COTA DIZ O QUE FALTA, e nao so a porcentagem.
+     *
+     * A faixa mostrava "S1 [barra] 42%", e 42% nao e informacao acionavel: o
+     * jogador nao sabe se falta uma viagem ou seis, nem de qual minerio. A
+     * palavra COTA tambem nao aparecia em lugar nenhum — quem abrisse o jogo
+     * pela primeira vez via uma barra sem nome.
+     *
+     * Agora o rotulo diz COTA, e o numero e o total entregue sobre o total
+     * pedido. A porcentagem fica, pequena, porque ela serve para ler a barra de
+     * relance; o que decide a proxima acao e "faltam 160".
+     */
     this.quotaEl.innerHTML = `
       <div class="quota-line">
-        <span class="quota-week">S${this.quota.week}</span>
+        <span class="quota-week">COTA · S${this.quota.week}</span>
         <span class="quota-bar"><i></i></span>
-        <b data-quota-total>0%</b>
+        <b data-quota-total>0/0</b>
+        <small data-quota-pct>0%</small>
       </div>
       <div class="quota-detail"></div>
       <div class="quota-days"></div>`;
 
     this.quotaTotalFill = this.quotaEl.querySelector('.quota-bar > i') as HTMLElement;
     this.quotaTotalLabel = this.quotaEl.querySelector('[data-quota-total]') as HTMLElement;
+    this.quotaPct = this.quotaEl.querySelector('[data-quota-pct]') as HTMLElement;
 
     const detail = this.quotaEl.querySelector('.quota-detail') as HTMLElement;
     for (const entry of this.quota.entries) {
@@ -622,10 +633,24 @@ export class HUD {
         if (have > previous) this.pulse(refs.fill, 'advanced');
       }
     }
+    /*
+     * O numero grande e ENTREGUE / PEDIDO somando todos os recursos. E o que
+     * responde "quanto falta"; a porcentagem sozinha nao responde.
+     */
+    let entregue = 0;
+    let pedido = 0;
+    for (const entry of this.quota.entries) {
+      entregue += this.quota.progress(entry.resource);
+      pedido += entry.amount;
+    }
+    const totalTexto = `${entregue}/${pedido}`;
+    if (this.quotaTotalLabel.textContent !== totalTexto) {
+      this.quotaTotalLabel.textContent = totalTexto;
+    }
     const percent = Math.round(this.quota.ratio * 100);
     const percentText = `${percent}%`;
-    if (this.quotaTotalLabel.textContent !== percentText) {
-      this.quotaTotalLabel.textContent = percentText;
+    if (this.quotaPct.textContent !== percentText) {
+      this.quotaPct.textContent = percentText;
       this.quotaTotalFill.style.width = percentText;
     }
     const daysEl = this.quotaEl.querySelector('.quota-days') as HTMLElement | null;
