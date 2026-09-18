@@ -69,6 +69,22 @@ const REFERENCIA = ['idle', 0];
  * ordem; os dois ultimos saem da linha de andar com o braco esticado, que e
  * exatamente o que "andar atirando" quer dizer.
  */
+/**
+ * Folhas de UMA animacao so, espalhada em varias linhas.
+ *
+ * A caminhada detalhada chegou como 4 linhas x 6 colunas: nao sao quatro
+ * animacoes, sao 24 quadros de UMA, lidos da esquerda para a direita e de cima
+ * para baixo. E o formato certo para um ciclo longo — numa fila unica de 24 o
+ * personagem sairia minusculo.
+ *
+ * `escala: 'maisAlto'` porque um ciclo de passada nao tem quadro em pe: o mais
+ * alto e aquele com as pernas mais juntas, uns tres por cento abaixo da altura
+ * real, e isso ninguem ve a 46 px de tela.
+ */
+const FOLHAS_SOLTAS = {
+  walk: { arq: 'walk24.png', linhas: 4, colunas: 6 },
+};
+
 const MIRA = [
   ['tiro', 0], ['tiro', 1], ['tiro', 2], ['tiro', 3], ['tiro', 4], ['tiro', 5],
   ['tiro', 6], ['tiro', 7],
@@ -331,6 +347,18 @@ const tiras = {};
   };
   escalas.set('aim', escala);
   delete tiras.tiro;
+}
+
+/* Folhas de uma animacao so substituem a linha correspondente da grade. */
+for (const [nome, f] of Object.entries(FOLHAS_SOLTAS)) {
+  const png = ler(f.arq);
+  const quadros = [];
+  for (let li = 0; li < f.linhas; li++) {
+    for (const c of linhaDaGrade(png, li, f.linhas, f.colunas)) if (c) quadros.push(c);
+  }
+  const maisAlto = quadros.reduce((a, b) => (b.y1 - b.y0 > a.y1 - a.y0 ? b : a));
+  tiras[nome] = { png, quadros };
+  escalas.set(nome, ALTURA_EM_PE / (maisAlto.y1 - maisAlto.y0 + 1));
 }
 
 // 4. Escrever.

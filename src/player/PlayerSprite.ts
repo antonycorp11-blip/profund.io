@@ -129,6 +129,21 @@ export class PlayerSprite {
   private static readonly LIMIAR_ANDAR = 12;
 
   /**
+   * Quantos pixels ele percorre num ciclo completo de passada.
+   *
+   * O quadro sai da DISTANCIA andada, e nao de um cronometro: parou o pe,
+   * parou o desenho, e a perna bate com o chao em qualquer velocidade.
+   *
+   * O passo por quadro se deduz disto dividido pela contagem de quadros da
+   * tira — e nao pode ser um numero fixo. Era 13 px por quadro, calibrado para
+   * oito quadros; a caminhada detalhada chegou com VINTE E QUATRO e o mesmo 13
+   * faria o ciclo durar 312 px em vez de 104, ou seja, perna em camera lenta a
+   * um terco da velocidade. Amarrando a distancia ao CICLO, qualquer contagem
+   * de quadros anda na mesma cadencia.
+   */
+  private static readonly PASSADA = 104;
+
+  /**
    * Limiar de passo COM A ARMA NA MAO — mais alto, e de proposito.
    *
    * O tiro empurra o heroi para tras a 40 px/s (ver `recoil` em weapons.ts).
@@ -251,6 +266,11 @@ export class PlayerSprite {
 
     this.andavaAntes = anda;
     this.ladoAntes = lado;
+  }
+
+  /** Em que ponto do ciclo de passada ele esta, para uma tira de `n` quadros. */
+  private quadroDoPasso(n: number): number {
+    return Math.floor(this.walkDist / (PlayerSprite.PASSADA / n)) % n;
   }
 
   /** O quadro da transicao em curso, ou null quando nao ha nenhuma. */
@@ -401,8 +421,7 @@ export class PlayerSprite {
       const andando = Math.abs(player.vx) > PlayerSprite.LIMIAR_PASSO_ARMADO;
       /* O passo vem da distancia andada, e nao de um cronometro: parou o pe,
        * parou o quadro. E o que faz a perna bater com o chao. */
-      const passo = Math.floor(this.walkDist / 13);
-      const ciclo = (n: string): number => passo % strips[n].frames;
+      const ciclo = (n: string): number => this.quadroDoPasso(strips[n].frames);
 
       /*
        * ANDANDO, O CICLO DA PERNA GANHA DO RECUO.
@@ -469,7 +488,7 @@ export class PlayerSprite {
        * "estou voltando cheio".
        */
       const tira = this.heavy || !has('run') ? 'walk' : 'run';
-      if (has(tira)) return pick(tira, Math.floor(this.walkDist / 13) % strips[tira].frames);
+      if (has(tira)) return pick(tira, this.quadroDoPasso(strips[tira].frames));
     }
 
     if (has('idle')) {

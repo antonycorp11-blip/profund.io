@@ -279,7 +279,7 @@ export const ART = {
        */
       idle: { file: 'idle.png', frames: 8, fps: 6, facing: 1 },
       /* Andar e o passo de CARREGADO; correr e o padrao. Ver PlayerSprite. */
-      walk: { file: 'walk.png', frames: 8, fps: 12, facing: 1 },
+      walk: { file: 'walk.png', frames: 24, fps: 12, facing: 1 },
       run: { file: 'run.png', frames: 8, fps: 14, facing: 1 },
       jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
       mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
