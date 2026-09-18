@@ -34,7 +34,7 @@ export interface StoryGateDef {
 export const STORY_GATES: StoryGateDef[] = [
   {
     id: 'sg_marca',
-    depth: 32,
+    depth: 64,
     requires: 'clue_marca_do_pai',
     titulo: 'A ROCHA NAO ABRE',
     aviso:
@@ -43,7 +43,7 @@ export const STORY_GATES: StoryGateDef[] = [
   },
   {
     id: 'sg_jonas',
-    depth: 72,
+    depth: 144,
     requires: 'npc_jonas',
     titulo: 'A ROCHA NAO ABRE',
     aviso: 'Tem alguem gritando acima deste ponto. Ninguem passa por cima disso.',

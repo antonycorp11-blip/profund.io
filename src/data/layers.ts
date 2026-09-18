@@ -109,7 +109,7 @@ export const LAYERS: LayerDef[] = [
      * de espaco, com a mesma pista de abertura aos 26 m (o caderno diz 26 e o
      * caderno e canone), da lugar para procurar em vez de so cair dentro.
      */
-    minDepth: 90,
+    minDepth: 180,
     color: '#5c5c66',
     tunnelColor: '#1d1d22',
     rockKey: 'stone',
@@ -130,7 +130,7 @@ export const LAYERS: LayerDef[] = [
   {
     id: 'crystal',
     name: 'Cavernas de Cristal',
-    minDepth: 200,
+    minDepth: 360,
     color: '#5a4a78',
     tunnelColor: '#171222',
     rockKey: 'stone',

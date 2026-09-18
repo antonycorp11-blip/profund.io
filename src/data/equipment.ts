@@ -58,7 +58,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Capacete Reforcado',
     description: 'Casco de aco: menos dano de criatura e de queda.',
     cost: 1200,
-    requiredDepth: 120,
+    requiredDepth: 229,
     modifiers: [
       { target: 'defense', op: 'flat', value: 0.12 },
       { target: 'maxHealth', op: 'flat', value: 30 },
@@ -71,7 +71,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Visor de Prospector',
     description: 'Minerio raro brilha atraves da rocha ao seu redor.',
     cost: 3200,
-    requiredDepth: 300,
+    requiredDepth: 407,
     modifiers: [
       { target: 'rareOreGlow', op: 'unlock', value: 1 },
       { target: 'rareOreDetectionRadius', op: 'flat', value: 150 },
@@ -87,7 +87,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Traje de Couro',
     description: 'Grosso o bastante para o primeiro bicho que te morder.',
     cost: 600,
-    requiredDepth: 40,
+    requiredDepth: 80,
     modifiers: [
       { target: 'defense', op: 'flat', value: 0.1 },
       { target: 'knockbackResistance', op: 'flat', value: 0.25 },
@@ -100,7 +100,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Traje de Placas',
     description: 'Defesa de verdade, ao preco de andar um pouco mais devagar.',
     cost: 2600,
-    requiredDepth: 250,
+    requiredDepth: 383,
     modifiers: [
       { target: 'defense', op: 'flat', value: 0.24 },
       { target: 'maxHealth', op: 'flat', value: 60 },
@@ -144,7 +144,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Mochila Cargueira',
     description: 'Cabe muito mais antes de precisar voltar.',
     cost: 800,
-    requiredDepth: 30,
+    requiredDepth: 60,
     modifiers: [
       { target: 'inventoryCapacity', op: 'flat', value: 30 },
       { target: 'carryMovePenalty', op: 'percentAdd', value: -0.2 },
@@ -157,7 +157,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Asas de Planador',
     description: 'A queda vira planeio: da para atravessar vao e pousar inteiro.',
     cost: 2200,
-    requiredDepth: 180,
+    requiredDepth: 327,
     modifiers: [
       { target: 'glide', op: 'unlock', value: 1 },
       { target: 'airControl', op: 'percentAdd', value: 0.5 },
@@ -183,7 +183,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Mochila a Jato',
     description: 'Segure PULAR no ar para subir. O tanque e curto e enche no chao.',
     cost: 6000,
-    requiredDepth: 400,
+    requiredDepth: 453,
     modifiers: [
       { target: 'jetpack', op: 'unlock', value: 1 },
       { target: 'glide', op: 'unlock', value: 1 },
@@ -237,7 +237,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Botas de Aderencia',
     description: 'Agarram na pedra: escalar cansa muito menos.',
     cost: 700,
-    requiredDepth: 60,
+    requiredDepth: 120,
     modifiers: [
       { target: 'climbStamina', op: 'percentAdd', value: 0.6 },
       { target: 'climbSpeed', op: 'percentAdd', value: 0.2 },
@@ -250,7 +250,7 @@ export const EQUIPMENT: EquipDef[] = [
     name: 'Botas do Mensageiro',
     description: 'Leves e firmes: voce anda bem mais rapido pela mina.',
     cost: 2400,
-    requiredDepth: 200,
+    requiredDepth: 360,
     modifiers: [
       { target: 'moveSpeed', op: 'percentAdd', value: 0.25 },
       { target: 'climbSpeed', op: 'percentAdd', value: 0.15 },

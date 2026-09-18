@@ -41,7 +41,7 @@ export interface MissionDef {
    *
    * Serve para escolher qual missao mostrar quando o jogador esta mais fundo
    * do que a fila. Sem isto, quem ja tinha derrubado a Matriarca ficava preso
-   * olhando "Trilhos Novos, 112 m" para sempre, porque a lista e em ordem e a
+   * olhando "Trilhos Novos, 216 m" para sempre, porque a lista e em ordem e a
    * primeira em aberto ganhava — mesmo estando 100 m acima dele.
    */
   depth: number;
@@ -70,7 +70,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm2_a_voz_na_pedra',
-    depth: 64,
+    depth: 128,
     title: 'A Voz na Pedra',
     goal: 'Tem alguem gritando abaixo da marca. Siga o som e tire essa pessoa de la.',
     requires: ['npc_jonas'],
@@ -80,7 +80,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3_a_primeira_barreira',
-    depth: 84,
+    depth: 168,
     title: 'A Primeira Barreira',
     goal: 'A parede que Jonas descreveu tem guarda. Derrube a Mae dos Esporos.',
     requires: ['boss_golem_escombros', 'gate_stone'],
@@ -90,7 +90,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3b_trilhos_novos',
-    depth: 112,
+    depth: 216,
     title: 'Trilhos Novos',
     goal: 'Ha trilho remendado com solda nova numa mina fechada ha quatorze anos. Ache e veja com os proprios olhos.',
     requires: ['clue_trilhos'],
@@ -100,7 +100,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm3c_posto_nove',
-    depth: 150,
+    depth: 278,
     title: 'Posto Nove',
     goal: 'Os trilhos levam a algum lugar. Siga a linha e descubra quem mora no fim dela.',
     requires: ['rui_cabeca'],
@@ -110,9 +110,9 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm4_o_segundo_selo',
-    depth: 194,
+    depth: 350,
     title: 'O Segundo Selo',
-    goal: 'A coisa na parede dos 194 m e o que Rui falou. Derrube a Matriarca de Cristal.',
+    goal: 'A coisa na parede dos 350 m e o que Rui falou. Derrube a Matriarca de Cristal.',
     requires: ['boss_arauto_quartzo', 'gate_crystal'],
     onDone: 'Duas barreiras, dois guardioes. Isto nao e coincidencia geologica.',
     rewardMoney: 900,
@@ -120,9 +120,9 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm4b_a_base_do_cristal',
-    depth: 236,
+    depth: 377,
     title: 'A Base do Cristal',
-    goal: 'Ha uma camara abandonada a 236 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 236 metros e passam a entregar ali.',
+    goal: 'Ha uma camara abandonada a 377 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 377 metros e passam a entregar ali.',
     requires: ['base_cristal:deposito'],
     onDone: 'A base respira. Daqui para baixo, o minerio nao sobe mais nas costas de ninguem.',
     rewardMoney: 700,
@@ -130,9 +130,9 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm5_luzes_abaixo',
-    depth: 260,
+    depth: 388,
     title: 'Luzes Abaixo',
-    goal: 'Tem outra voz nas Cavernas de Cristal. E a Pagina 01 do caderno, a 230 m.',
+    goal: 'Tem outra voz nas Cavernas de Cristal. E a Pagina 01 do caderno, a 374 m.',
     requires: ['npc_vilma', 'clue_pagina_01'],
     onDone: 'Tres pulsos longos, dois curtos. John ouviu isso primeiro.',
     rewardMoney: 600,
@@ -140,9 +140,9 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm6_a_rota_comercial',
-    depth: 494,
+    depth: 497,
     title: 'A Rota Comercial',
-    goal: 'A Rainha Escavadora bloqueia a passagem aos 494 m. Abra o caminho.',
+    goal: 'A Rainha Escavadora bloqueia a passagem aos 497 m. Abra o caminho.',
     requires: ['boss_automato_enferrujado', 'gate_minerals'],
     onDone: 'Uma rota comercial, fechada por dentro. Por quem vive do outro lado.',
     rewardMoney: 1800,
