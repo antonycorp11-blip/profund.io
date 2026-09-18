@@ -81,8 +81,16 @@ export class JournalUI {
         <nav class="journal-tabs"></nav>
         <div class="journal-livro">
           <header class="journal-header">
-            <h3>Guia de Campo</h3>
-            <small>de Santiago Ramires</small>
+            <div class="journal-titulo">
+              <h3>Guia de Campo</h3>
+              <small>de Santiago Ramires</small>
+            </div>
+            <!--
+              A frase de quem escreveu o caderno, na cabeceira.
+              Nao e enfeite: e a voz do Santiago, e e o que transforma uma
+              lista de anotacoes no diario de uma pessoa.
+            -->
+            <span class="journal-lema">"Toda pedra tem uma história."<i>— S. R.</i></span>
             <button class="icon-btn" data-close>✕</button>
           </header>
           <div class="journal-score" hidden></div>
