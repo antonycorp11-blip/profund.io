@@ -64,6 +64,7 @@ import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
 import { BossBar } from '../ui/BossBar';
+import { Telas } from '../ui/Telas';
 import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
@@ -202,6 +203,12 @@ export class Game {
   private voices = new VoiceEcho();
   /** Moldura da luta de chefe. Escuta eventos sozinha; o Game so a desliga. */
   private bossBar!: BossBar;
+  /**
+   * O dono das telas cheias: garante no maximo uma aberta por vez.
+   *
+   * Nasce antes do HUD porque os botoes da barra ja passam por ele.
+   */
+  private telas = new Telas();
   private reputation = new Reputation();
   private cityNpcs: CityNpc[] = [];
   private decor: SurfaceDecor;
@@ -282,11 +289,14 @@ export class Game {
       this.inventory,
       this.stock,
       this.quota,
-      () => this.panels.toggle('settings'),
-      () => this.techScreen.toggle(),
-      () => this.skillUI.toggle(),
-      () => this.journalUI.toggle(),
-      () => this.activeUI.toggle()
+      // Todos os botoes da barra passam pelo coordenador. Antes cada um
+      // chamava `toggle()` na sua propria tela, e abrir a segunda deixava a
+      // primeira aberta atras dela.
+      () => this.telas.alternar('ajustes', () => this.panels.open('settings')),
+      () => this.telas.alternar('tecnologia', () => this.techScreen.open()),
+      () => this.telas.alternar('atributos', () => this.skillUI.open()),
+      () => this.telas.alternar('guia', () => this.journalUI.open()),
+      () => this.telas.alternar('skills', () => this.activeUI.open())
     );
     this.campUI = new BaseCampUI(uiRoot, this.camps, {
       total: () => this.collectors.units.length,
@@ -407,7 +417,7 @@ export class Game {
       this.hud.mapSlot(),
       this.world,
       this.exploration,
-      () => this.mapScreen.open(),
+      () => this.telas.abrir('mapa', () => this.mapScreen.open()),
       () => this.helperDots()
     );
 
@@ -708,6 +718,24 @@ export class Game {
         if (index > this.stats.toolIndex) this.stats.setTool(index);
       },
     });
+
+    /*
+     * O registro das telas. Feito num lugar so, DEPOIS de todas existirem.
+     *
+     * Enquanto cada tela cuidava de si, "quantas telas existem" estava
+     * escrito a mao em dois lugares do Game e os dois ja discordavam — um
+     * incluia o Guia, o outro nao. Aqui ha uma lista, e quem esquecer de
+     * registrar uma tela nova perde o fecha-automatico e o Escape, que e um
+     * sintoma barulhento em vez de silencioso.
+     */
+    this.telas.registrar('ajustes', this.panels);
+    this.telas.registrar('tecnologia', this.techScreen);
+    this.telas.registrar('atributos', this.skillUI);
+    this.telas.registrar('guia', this.journalUI);
+    this.telas.registrar('skills', this.activeUI);
+    this.telas.registrar('mapa', this.mapScreen);
+    this.telas.registrar('base', this.campUI);
+
     this.bindEvents();
     this.input.attach(canvas);
 
@@ -749,7 +777,7 @@ export class Game {
     const workshop = new Workshop(
       (CONFIG.base.centerCol + CONFIG.base.layout.workshop) * ts + ts / 2,
       floorY,
-      () => this.techScreen.open()
+      () => this.telas.abrir('tecnologia', () => this.techScreen.open())
     );
 
     this.clueObjects = STORY_CLUES.map((c) => new ClueObject(c));
@@ -798,7 +826,7 @@ export class Game {
       ...this.npcs,
       ...this.cityNpcs,
       ...BASE_CAMPS.map(
-        (b) => new BaseTerminal(b, this.world.surfaceRow, (base) => this.campUI.open(base))
+        (b) => new BaseTerminal(b, this.world.surfaceRow, (base) => this.telas.abrir('base', () => this.campUI.open(base)))
       ),
       ...BASE_CAMPS.map(
         (b) =>
@@ -1449,16 +1477,17 @@ export class Game {
     requestAnimationFrame(this.frame);
   };
 
-  /** Alguma tela que cobre o jogo inteiro esta aberta? */
+  /**
+   * Alguma tela que cobre o jogo inteiro esta aberta?
+   *
+   * Pergunta ao coordenador em vez de manter uma lista propria. A lista
+   * anterior era mantida a mao em DOIS lugares e as duas ja divergiam: uma
+   * incluia o Guia, a outra nao, entao abrir o Guia nao bloqueava o que
+   * deveria bloquear. Tela nova esquecida na lista e um bug que so aparece
+   * meses depois.
+   */
   private telaCheiaAberta(): boolean {
-    return (
-      this.panels.isOpen ||
-      this.skillUI.isOpen ||
-      this.mapScreen.isOpen ||
-      this.activeUI.isOpen ||
-      this.techScreen.isOpen ||
-      this.journalUI.isOpen
-    );
+    return this.telas.algumaAberta;
   }
 
   private update(dt: number): void {
@@ -1466,13 +1495,7 @@ export class Game {
     this.clock.update(dt);
     this.dialog.update(dt);
 
-    const uiBlocking =
-      this.dialog.isOpen ||
-      this.panels.isOpen ||
-      this.skillUI.isOpen ||
-      this.mapScreen.isOpen ||
-      this.activeUI.isOpen ||
-      this.techScreen.isOpen;
+    const uiBlocking = this.dialog.isOpen || this.telas.algumaAberta;
     // No modo construir o toque no mundo constroi, entao a mineracao para.
     const building = this.buildMode.isActive;
     if (uiBlocking || this.vitals.dead) {

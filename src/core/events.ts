@@ -88,6 +88,9 @@ export interface GameEvents {
   'city:met': { id: string; name: string; city: string; trust: number };
   'rep:changed': { city: string; axis: string; value: number };
   'mission:done': { id: string; title: string; text: string };
+  /** Uma tela cheia abriu ou fechou. Quem coordena e /ui/Telas.ts. */
+  'tela:aberta': { nome: string };
+  'tela:fechada': { nome: string };
   'boss:summon': { id: string; name: string; count: number };
   /**
    * O guardiao viu o jogador. A luta comecou de verdade.

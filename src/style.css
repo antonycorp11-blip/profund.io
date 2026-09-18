@@ -7981,11 +7981,32 @@ body:has(.hud-map-slot.folded) .toasts {
 .ui-escala .skillscreen .tech-screen,
 .ui-escala .skilltree .skill-screen,
 .ui-escala .basecamp .camp-panel,
-.ui-escala .journal .journal-book {
+.ui-escala .journal .journal-book,
+/*
+ * O mapa e os ajustes estavam FORA desta lista, e por isso eram as duas
+ * unicas telas que nao viviam no espaco virtual. Enquanto o tamanho era
+ * "100vw", a diferenca nao aparecia: as duas ficavam cheias como as outras.
+ * Assim que a casca passou a medir em fracao do espaco virtual, elas viraram
+ * as unicas de borda a borda — a mesma conta dando resultado diferente por
+ * estarem em outra escala. Toda tela no mesmo espaco, sem excecao.
+ */
+.ui-escala .mapscreen .map-screen,
+.ui-escala .panel-wrap > .panel {
   zoom: var(--ui-zoom);
-  width: calc(100vw / var(--ui-zoom));
+  /*
+   * O TAMANHO SAIU DAQUI e passou para a casca (ver "A CASCA DAS TELAS").
+   *
+   * Aqui estava `width: 100vw / zoom; height: 100vh / zoom`, que colava toda
+   * tela na viewport inteira. Era a regra que fazia as telas serem de borda a
+   * borda, e era ela que vencia — (0,3,0) contra (0,2,0) — qualquer tentativa
+   * de encolher feita no fim da folha. Passei por isso mais de uma vez achando
+   * que a mudanca "nao tinha feito nada".
+   *
+   * O `zoom` fica: ele e o que permite autorar a UI num espaco virtual de
+   * 1518x700 e entregar em 852x393. Quem define largura e altura agora e a
+   * casca, em unidades DESSE espaco virtual.
+   */
   max-width: none;
-  height: calc(100vh / var(--ui-zoom));
   max-height: none;
 }
 
@@ -8993,4 +9014,286 @@ body:has(.hud-map-slot.folded) .toasts {
 .hud-top-center.em-luta .chips {
   opacity: 0.25;
   transition: opacity 0.3s ease;
+}
+
+/* ============================================================
+   A CASCA DAS TELAS
+   ============================================================
+
+   Antes disto nao havia casca: seis telas, seis implementacoes,
+   quatro layouts diferentes e duas paletas. Aprender uma nao
+   ensinava nada sobre as outras.
+
+   Duas decisoes mandam aqui, e as duas vem do alvo do jogo, que
+   e celular DEITADO em 852x393:
+
+   1. A TELA NAO COBRE O JOGO. Ela flutua sobre a mina, com a
+      cena viva em volta. Um painel de borda a borda faz o
+      jogador perder o lugar onde estava.
+
+   2. O TRILHO DE SECOES FICA A ESQUERDA, nunca no topo. Altura
+      e o recurso escasso (393 px) e largura sobra (852). Uma
+      faixa de abas no topo custa 30 px dos 332 uteis; um trilho
+      a esquerda custa zero altura. E, deitado, o polegar
+      esquerdo ja descansa exatamente ali.
+   ============================================================ */
+
+:root {
+  --ui-zoom: 1;
+  /*
+   * A casca inteira sai destas medidas. Mudar aqui muda tudo.
+   *
+   * Sao FRACOES DO ESPACO VIRTUAL, nao pixels de tela. A UI e autorada num
+   * espaco de 1518x700 e entregue por `zoom` em 852x393; escrever "740px"
+   * aqui daria 415 px reais, pouco mais da metade do pretendido. Foi
+   * exatamente o que aconteceu na primeira tentativa.
+   */
+  --casca-larg: calc(100vw / var(--ui-zoom) * 0.88);
+  --casca-alt: calc(100vh / var(--ui-zoom) * 0.86);
+  --casca-raio: 16px;
+  --casca-cab: 38px;
+  --casca-trilho: 96px;
+  --casca-gap: 10px;
+  --casca-borda: rgba(214, 168, 90, 0.3);
+  --casca-fundo: #15100c;
+  --casca-fundo-alto: #1d1712;
+  --casca-fundo-baixo: #0e0a07;
+}
+
+/*
+ * O tamanho comum, imposto a TODAS as telas.
+ *
+ * Cada regra antiga dizia `width:100%; height:100%` com seletor de dois
+ * niveis, entao uma regra generica no fim da folha perderia por
+ * especificidade — foi assim que varias rodadas de mudanca "nao mudaram
+ * nada". Esta lista e explicita de proposito: mesmo peso, e vem depois.
+ */
+.panel-wrap > .skill-screen,
+.panel-wrap > .tech-screen,
+.panel-wrap > .map-screen,
+.panel-wrap > .camp-panel,
+.panel-wrap > .panel,
+.panel-wrap > .journal-book,
+.ui-escala .panel-wrap > .skill-screen,
+.ui-escala .panel-wrap > .tech-screen,
+.ui-escala .panel-wrap > .map-screen,
+.ui-escala .panel-wrap > .camp-panel,
+.ui-escala .panel-wrap > .panel,
+.ui-escala .panel-wrap > .journal-book {
+  width: min(var(--casca-larg), 100%);
+  height: min(var(--casca-alt), 100%);
+  max-height: min(var(--casca-alt), 100%);
+  border-radius: var(--casca-raio);
+  border: 1px solid var(--casca-borda);
+  background: linear-gradient(180deg, var(--casca-fundo-alto), var(--casca-fundo));
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.75),
+    0 2px 0 rgba(255, 214, 150, 0.06) inset;
+  overflow: hidden;
+}
+
+/* ---- cabecalho comum ---- */
+
+.casca-cab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--casca-cab);
+  min-height: var(--casca-cab);
+  padding: 0 10px 0 12px;
+  border-bottom: 1px solid rgba(214, 168, 90, 0.16);
+  background: linear-gradient(180deg, rgba(255, 196, 83, 0.07), transparent);
+}
+
+.casca-titulo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.casca-titulo b {
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A linha de apoio e OPCIONAL e some quando aperta: ela explica, nao
+   informa, e explicacao nao pode empurrar conteudo para fora. */
+.casca-titulo span {
+  font-size: 8.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  opacity: 0.62;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contadores do cabecalho: pontos, moedas, vagas. */
+.casca-conta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 168, 90, 0.26);
+  background: rgba(0, 0, 0, 0.32);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.casca-fechar {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid rgba(214, 168, 90, 0.26);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.casca-fechar:hover {
+  background: rgba(255, 120, 80, 0.18);
+  color: var(--ink);
+}
+
+/* ---- corpo: trilho + conteudo ---- */
+
+.casca-corpo {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.casca-trilho {
+  width: var(--casca-trilho);
+  min-width: var(--casca-trilho);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 6px;
+  border-right: 1px solid rgba(214, 168, 90, 0.14);
+  background: var(--casca-fundo-baixo);
+  overflow-y: auto;
+}
+
+.casca-secao {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-dim);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.casca-secao i {
+  font-style: normal;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.casca-secao:hover {
+  background: rgba(255, 196, 83, 0.07);
+  color: var(--ink);
+}
+
+/*
+ * A secao ativa e marcada por uma BARRA, nao so por cor.
+ *
+ * So trocar a cor do texto nao sobrevive ao contraste de um celular no sol,
+ * e e a unica pista de "onde eu estou" que a tela da.
+ */
+.casca-secao.ativa {
+  background: linear-gradient(90deg, rgba(255, 196, 83, 0.17), rgba(255, 196, 83, 0.03));
+  border-color: rgba(255, 196, 83, 0.3);
+  color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.casca-secao .casca-selo {
+  margin-left: auto;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #c8432c;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.casca-conteudo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: var(--casca-gap);
+  padding: var(--casca-gap);
+  overflow: hidden;
+}
+
+/* A lista rola; o detalhe fica parado. Numa tela de 332 px de altura,
+   detalhe que rola junto com a lista faz perder o item selecionado. */
+.casca-lista {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.casca-detalhe {
+  width: 232px;
+  min-width: 232px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(214, 168, 90, 0.16);
+  background: rgba(0, 0, 0, 0.26);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Sem nada escolhido o detalhe nao some: some o VAZIO. Um painel que
+   aparece e desaparece faz a lista pular de largura a cada toque. */
+.casca-detalhe.vazio {
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-dim);
+  opacity: 0.4;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
 }
