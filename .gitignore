@@ -7,3 +7,5 @@ dist/
 
 # arte bruta gerada por IA (as versoes recortadas ficam em public/art)
 arte-bruta/
+.vercel
+.env*
