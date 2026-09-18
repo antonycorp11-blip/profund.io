@@ -4660,8 +4660,8 @@ body:has(.hud-map-slot.folded) .toasts {
 .eq-card > .eq-icon {
   display: grid;
   place-items: center;
-  width: 76px;
-  height: 76px;
+  width: 88px;
+  height: 88px;
   font-size: 30px;
   background: center / contain no-repeat url('/art/hud/encaixe/vazio.png');
 }
@@ -4670,9 +4670,22 @@ body:has(.hud-map-slot.folded) .toasts {
   background-image: url('/art/hud/encaixe/aceso.png');
 }
 
+/*
+ * 62 px, e nao 46.
+ *
+ * Na referencia a arte da peca e a PRIMEIRA coisa que se ve no cartao; a 46 px
+ * ela competia de igual para igual com o texto e o cartao virava um paragrafo
+ * com uma figurinha ao lado.
+ *
+ * Esta regra e editada AQUI, no lugar dela, e nao acrescentada no fim do
+ * arquivo. Eu perdi duas rodadas escrevendo `.eq-icon img { width: 58px }` la
+ * embaixo e vendo a tela nao mudar: `.eq-card > .eq-icon img` tem
+ * especificidade maior e ganha em qualquer posicao. Numa folha de oito mil
+ * linhas, cascata nao vence especificidade.
+ */
 .eq-card > .eq-icon img {
-  width: 46px;
-  height: 46px;
+  width: 62px;
+  height: 62px;
 }
 
 .eq-icon img {
@@ -8592,4 +8605,76 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .money.sem-caixa .hero-face {
   display: none;
+}
+
+
+/* =========================================================================
+ * O OURO VOLTA COMO ACENTO, e a arte do item cresce.
+ *
+ * Eu tinha tirado as catorze molduras pintadas e, com elas, todo o contraste:
+ * o dourado caiu de 5,1% para 1,8% quando a referencia tem 3,2%, e a densidade
+ * caiu junto. Trocar moldura feia por chatice nao e melhora.
+ *
+ * A diferenca entre os dois usos e onde o ouro mora. Como ESTRUTURA ele
+ * contorna cada caixa e a tela vira formulario. Como ACENTO ele marca o que
+ * esta ativo, o que esta selecionado e o titulo — e ai ele volta a valer.
+ * ========================================================================= */
+
+/* `image-rendering` so: o TAMANHO mora na regra de especificidade maior,
+   la em cima, porque acrescentar aqui embaixo nao ganha dela. */
+.eq-icon img {
+  image-rendering: pixelated;
+}
+
+.eq-card {
+  gap: 2px;
+}
+
+/* O cartao EQUIPADO e o unico com ouro cheio: e a resposta da tela. */
+.eq-card.on {
+  border-color: rgba(255, 198, 96, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 198, 96, 0.22),
+    0 0 22px rgba(255, 176, 60, 0.16),
+    inset 0 1px 0 rgba(255, 220, 160, 0.14);
+}
+
+/* Cartao comprado mas guardado: ouro fraco, so para separar do que e loja. */
+.eq-card:not(.on):not(.locked) {
+  border-color: rgba(214, 168, 90, 0.3);
+}
+
+.eq-card b {
+  color: #f6dfae;
+  letter-spacing: 0.02em;
+}
+
+/* Titulo de grupo em ouro: e a divisao que organiza as treze pecas. */
+.eq-grupo {
+  color: #e8b964;
+  border-bottom-color: rgba(214, 168, 90, 0.34);
+}
+
+.eq-grupo.on {
+  color: #ffd27a;
+  border-bottom-color: rgba(255, 198, 96, 0.6);
+}
+
+/* A aba ativa recebe o ouro; as outras ficam discretas. */
+.seg-btn.on {
+  border-color: rgba(255, 198, 96, 0.66);
+  color: #ffd992;
+  box-shadow: inset 0 0 18px rgba(255, 176, 60, 0.12);
+}
+
+/* Titulo da tela: o maior ponto de ouro, e o unico que pode ser forte. */
+.tela-cab-txt b,
+.tela-cab-txt > b {
+  color: #ffce7a;
+}
+
+/* Encaixe do boneco com peca dentro: ouro. Vazio: quase nada. */
+.boneco-slot.on {
+  border-color: rgba(255, 198, 96, 0.6);
+  box-shadow: 0 0 16px rgba(255, 176, 60, 0.14);
 }
