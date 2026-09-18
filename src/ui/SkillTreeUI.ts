@@ -139,28 +139,29 @@ export class SkillTreeUI {
     this.wrap.dataset.fundo = 'cristal';
     this.wrap.innerHTML = `
       <div class="skill-screen">
-        <header class="skill-header">
-          <img class="tela-lampiao" src="art/hud/lampiao.png" alt="">
-          <span class="tela-cab-txt">
+        <header class="casca-cab">
+          <span class="casca-titulo">
             <b>Atributos</b>
-            <small>Evolua seu explorador</small>
+            <span>Evolua seu explorador</span>
           </span>
-          <div class="skill-tabs"></div>
-          <button class="btn ver-tudo" data-tudo>VER O NINHO</button>
-          <div class="skill-points">
+          <button class="casca-cab-btn" data-tudo>VER O NINHO</button>
+          <div class="casca-conta skill-points">
             <img src="art/hud/ponto.png" alt="">
             <b data-points>0</b>
             <small>pontos</small>
           </div>
-          <button class="icon-btn" data-close>✕</button>
+          <button class="casca-fechar" data-close>✕</button>
         </header>
-        <div class="skill-body">
-          <div class="skill-viewport">
-            <div class="skill-canvas">
-              <svg class="skill-links"></svg>
+        <div class="casca-corpo">
+          <nav class="casca-trilho skill-tabs"></nav>
+          <div class="skill-body">
+            <div class="skill-viewport">
+              <div class="skill-canvas">
+                <svg class="skill-links"></svg>
+              </div>
             </div>
+            <aside class="skill-detail"></aside>
           </div>
-          <aside class="skill-detail"></aside>
         </div>
       </div>`;
     parent.appendChild(this.wrap);
@@ -257,9 +258,9 @@ export class SkillTreeUI {
       if (!this.host.tree.isCategoryVisible(cat.id)) continue;
       if (!nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).some((sk) => sk.category === cat.id)) continue;
       const btn = document.createElement('button');
-      btn.className = `skill-tab ${cat.id === this.category ? 'active' : ''}`;
+      btn.className = `casca-secao ${cat.id === this.category ? 'ativa' : ''}`;
       btn.style.setProperty('--cat', cat.color);
-      btn.innerHTML = `<span class="tab-icon">${iconMarkup(CATEGORY_ART[cat.id], cat.icon)}</span><span>${cat.name}</span>`;
+      btn.innerHTML = `<i>${iconMarkup(CATEGORY_ART[cat.id], cat.icon)}</i><span>${cat.name}</span>`;
       btn.addEventListener('click', () => {
         this.irParaCamara(cat.id, true);
         Haptics.ui();

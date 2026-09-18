@@ -41,21 +41,20 @@ export class ActiveSkillsUI {
     this.wrap.dataset.fundo = 'cristal';
     this.wrap.innerHTML = `
       <div class="tech-screen skl-tela">
+        <header class="casca-cab">
+          <span class="casca-titulo">
+            <b>Skills</b>
+            <span>Desbloqueie, melhore e equipe tres</span>
+          </span>
+          <span class="casca-conta skl-pontos">
+            <img src="art/hud/moeda.png" alt="">
+            <b data-points>0</b><small>em caixa</small>
+          </span>
+          <button class="casca-fechar" data-close>✕</button>
+        </header>
         <div class="tech-body skl-tres">
           <aside class="skl-cinto"></aside>
           <div class="tech-main skl-grade">
-            <header class="skl-cab">
-              <img class="skl-cab-icone" src="art/hud/nav_skills.png" alt="">
-              <span class="skl-cab-txt">
-                <b>Todas as skills</b>
-                <small>Desbloqueie, melhore e personalize seu estilo</small>
-              </span>
-              <span class="skl-pontos">
-                <img src="art/hud/moeda.png" alt="">
-                <b data-points>0</b><small>em caixa</small>
-              </span>
-              <button class="icon-btn" data-close>✕</button>
-            </header>
             <div class="skl-cards" data-cards></div>
           </div>
           <aside class="tech-aside skl-detalhe"></aside>

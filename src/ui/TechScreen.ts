@@ -116,6 +116,9 @@ export class TechScreen {
   /** Lembra a escolha por aba: trocar de aba e voltar nao pode perder o foco. */
   private ultimaEscolha = new Map<string, string>();
   private stockEl: HTMLElement;
+  /** Titulo e linha de apoio da casca: mudam a cada aba. */
+  private tituloEl!: HTMLElement;
+  private subtituloEl!: HTMLElement;
   private tab: Tab = 'copias';
   /** True depois que o jogador escolheu uma aba a mao nesta sessao. */
   private tabChosen = false;
@@ -139,16 +142,40 @@ export class TechScreen {
      * fica parado enquanto a lista rola, que e a unica forma de escolher uma
      * coisa olhando para ela. Em tela estreita as duas viram uma coluna so.
      */
+    /*
+     * A CASCA COMUM: cabecalho fino, trilho a esquerda, corpo em duas colunas.
+     *
+     * As abas sairam do TOPO e foram para o trilho. Numa tela util de 338 px
+     * de altura, uma faixa de abas horizontal custava 46 px — quase um sexto
+     * do que existe — e o painel ja e largo de sobra. A esquerda elas custam
+     * zero altura, e, com o celular deitado, caem exatamente onde o polegar
+     * esquerdo ja esta.
+     *
+     * As classes internas (`tech-main`, `tech-aside`) ficam: todo o CSS dos
+     * cartoes pende delas. Elas so passaram a viver dentro da casca.
+     */
+    /*
+     * O corpo NAO recebe as classes da casca.
+     *
+     * `.tech-body` ja e um grid de duas colunas que funciona, e
+     * `.casca-conteudo` e flex: impor as duas fazia o flex vencer por vir
+     * depois na folha, o grid morria, e o painel de detalhe subia por cima do
+     * proprio titulo. A casca resolve a MOLDURA; quem ja tem um corpo que
+     * serve fica com o dele.
+     */
     this.wrap.innerHTML = `
       <div class="tech-screen">
-        <header class="tech-header">
-          <div class="tech-tabs"></div>
+        <header class="casca-cab">
+          <span class="casca-titulo"><b></b><span></span></span>
           <div class="tech-stock"></div>
-          <button class="icon-btn" data-close>✕</button>
+          <button class="casca-fechar" data-close>✕</button>
         </header>
-        <div class="tech-body">
-          <div class="tech-main"></div>
-          <aside class="tech-aside"></aside>
+        <div class="casca-corpo">
+          <nav class="casca-trilho tech-tabs"></nav>
+          <div class="tech-body">
+            <div class="tech-main"></div>
+            <aside class="tech-aside"></aside>
+          </div>
         </div>
       </div>`;
     parent.appendChild(this.wrap);
@@ -157,6 +184,8 @@ export class TechScreen {
     this.mainEl = this.wrap.querySelector('.tech-main') as HTMLElement;
     this.asideEl = this.wrap.querySelector('.tech-aside') as HTMLElement;
     this.stockEl = this.wrap.querySelector('.tech-stock') as HTMLElement;
+    this.tituloEl = this.wrap.querySelector('.casca-titulo b') as HTMLElement;
+    this.subtituloEl = this.wrap.querySelector('.casca-titulo span') as HTMLElement;
 
     (this.wrap.querySelector('[data-close]') as HTMLElement).addEventListener('click', () =>
       this.close()
@@ -258,9 +287,9 @@ export class TechScreen {
     this.tabsEl.innerHTML = '';
     for (const t of tabs) {
       const btn = document.createElement('button');
-      btn.className = `skill-tab ${t.id === this.tab ? 'active' : ''}`;
+      btn.className = `casca-secao ${t.id === this.tab ? 'ativa' : ''}`;
       btn.style.setProperty('--cat', t.color);
-      btn.innerHTML = `<span class="tab-icon">${t.icon}</span><span>${t.name}</span>`;
+      btn.innerHTML = `<i>${t.icon}</i><span>${t.name}</span>`;
       btn.addEventListener('click', () => {
         this.tab = t.id;
         this.tabChosen = true;
@@ -300,14 +329,21 @@ export class TechScreen {
       this.selecionado = list.some((t) => t.id === lembrado) ? lembrado! : (list[0]?.id ?? null);
     }
 
+    /*
+     * O banner de titulo saiu do CORPO.
+     *
+     * Ele era redesenhado dentro de cada aba — lampiao, icone, nome, linha de
+     * apoio e uma lousa com "Boas ferramentas fazem grandes descobertas!" —
+     * e comia perto de 50 px dos 338 uteis para repetir, em toda aba, uma
+     * informacao que nao muda: o nome da tela em que o jogador ja esta.
+     *
+     * Agora quem diz onde estamos e o cabecalho da casca, que custa 38 px UMA
+     * vez. A lousa era enfeite e nao voltou.
+     */
+    this.tituloEl.textContent = meta.name ?? 'Tecnologia';
+    this.subtituloEl.textContent = meta.description ?? '';
+
     this.mainEl.innerHTML = `
-      ${this.tituloDaTela(
-        meta.icon,
-        'Tecnologia',
-        'Pesquise, melhore, cave mais fundo.',
-        'Boas ferramentas fazem grandes descobertas!'
-      )}
-      <p class="tech-fantasy" style="color:${meta.color}">${meta.description}</p>
       <div class="tech-grid">
         ${list
           .map((def) => {
@@ -424,29 +460,6 @@ export class TechScreen {
       </header>`;
   }
 
-  private tituloDaTela(icone: string, nome: string, linha: string, lousa = ''): string {
-    /*
-     * O bloco de titulo ganhou os MOVEIS do conceito.
-     *
-     * O lampiao e a lousa nao sao enfeite gratuito: sao o que separa uma tela
-     * de jogo de um painel de aplicativo. Eu tinha montado a estrutura certa e
-     * parado ali, dizendo que "batia com a referencia" — batia de arranjo e
-     * nao de acabamento, e a diferenca e o que da o cheiro de mina ao lugar.
-     *
-     * A arte ja existia e estava parada: `lampiao` e `cartao_missao` estavam
-     * entre as vinte e uma pecas sem uso nenhum no projeto.
-     */
-    return `
-      <header class="tela-cab">
-        <img class="tela-lampiao" src="art/hud/lampiao.png" alt="">
-        <span class="tela-cab-icone">${icone}</span>
-        <span class="tela-cab-txt">
-          <b>${nome}</b>
-          <small>${linha}</small>
-        </span>
-        ${lousa ? `<span class="tela-lousa">${lousa}</span>` : ''}
-      </header>`;
-  }
 
   /** A prancheta: o que a pesquisa escolhida faz, cobra e muda. */
   private renderTechDetalhe(cat: TechCategory): void {
@@ -658,6 +671,8 @@ export class TechScreen {
         </div>
       </section>`;
 
+    this.tituloEl.textContent = 'Automacao';
+    this.subtituloEl.textContent = 'A mina trabalhando sem voce.';
     this.mainEl.innerHTML = `
       <img class="auto-lampiao esq" src="art/hud/lampiao.png" alt="">
       <img class="auto-lampiao dir" src="art/hud/lampiao.png" alt="">
@@ -800,13 +815,9 @@ export class TechScreen {
       })
       .join('');
 
+    this.tituloEl.textContent = 'Equipamento';
+    this.subtituloEl.textContent = 'Prepare-se para cavar mais fundo.';
     this.mainEl.innerHTML = `
-      ${this.tituloDaTela(
-        '🛡',
-        'Equipamento',
-        'Prepare-se para cavar mais fundo.',
-        'Equipamento certo, grandes descobertas.'
-      )}
       <div class="eq-filtros">
         ${slots
           .map(

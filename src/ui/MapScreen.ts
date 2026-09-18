@@ -56,12 +56,15 @@ export class MapScreen {
     this.wrap.className = 'panel-wrap mapscreen';
     this.wrap.innerHTML = `
       <div class="map-screen">
-        <header class="map-header">
-          <h3>Mapa da Mina</h3>
-          <div class="map-info"></div>
-          <button class="icon-btn map-tp" data-tp title="Ir direto para Blockia (teste)">🏙</button>
-          <button class="icon-btn" data-center title="Centralizar no jogador">◎</button>
-          <button class="icon-btn" data-close>✕</button>
+        <header class="casca-cab">
+          <span class="casca-titulo">
+            <b>Mapa da Mina</b>
+            <span>Onde voce ja esteve</span>
+          </span>
+          <div class="map-info casca-conta"></div>
+          <button class="casca-fechar map-tp" data-tp title="Ir direto para Blockia (teste)">🏙</button>
+          <button class="casca-fechar" data-center title="Centralizar no jogador">◎</button>
+          <button class="casca-fechar" data-close>✕</button>
         </header>
         <div class="map-body">
           <div class="map-viewport"><canvas></canvas></div>

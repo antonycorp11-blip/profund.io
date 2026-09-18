@@ -9052,7 +9052,14 @@ body:has(.hud-map-slot.folded) .toasts {
   --casca-alt: calc(100vh / var(--ui-zoom) * 0.86);
   --casca-raio: 16px;
   --casca-cab: 38px;
-  --casca-trilho: 96px;
+  /*
+   * Largura do trilho.
+   *
+   * Comecou em 96 e cortava metade dos rotulos: "AUTOMACA", "FERRAMEN",
+   * "CONSTRUC". Rotulo cortado e pior que rotulo pequeno — o jogador le uma
+   * palavra que nao existe. 132 cabe a maior delas com folga.
+   */
+  --casca-trilho: 132px;
   --casca-gap: 10px;
   --casca-borda: rgba(214, 168, 90, 0.3);
   --casca-fundo: #15100c;
@@ -9185,8 +9192,19 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .casca-trilho {
+  /*
+   * `flex` explicito, nao so `width`.
+   *
+   * As faixas de aba antigas (`.skill-tabs`, `.tech-tabs`) declaram `flex: 1`
+   * porque viviam esticadas no topo. Num pai flex, `flex-basis` vence
+   * `width` — entao o trilho herdava o "estique-se" e ocupava quase metade da
+   * tela, com a secao ativa virando uma barra gigante. Declarar a base aqui
+   * encerra a discussao sem precisar cacar cada regra antiga.
+   */
+  flex: 0 0 var(--casca-trilho);
   width: var(--casca-trilho);
   min-width: var(--casca-trilho);
+  max-width: var(--casca-trilho);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -9199,15 +9217,23 @@ body:has(.hud-map-slot.folded) .toasts {
 .casca-secao {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 8px;
+  gap: 6px;
+  padding: 7px 7px;
   border-radius: 8px;
   border: 1px solid transparent;
   background: none;
   color: var(--ink-dim);
-  font-size: 10px;
+  /*
+   * Fonte e espacamento apertados de proposito.
+   *
+   * O rotulo mais longo e "EQUIPAMENTO", 11 letras. Em 10 px com 0,07em de
+   * espacamento ele nao cabia no trilho e saia como "EQUIPAMEN…". Alargar o
+   * trilho resolveria roubando largura do conteudo; encolher a letra resolve
+   * de graca, porque o trilho e lido de relance e nao palavra por palavra.
+   */
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   text-align: left;
   cursor: pointer;
@@ -9219,6 +9245,25 @@ body:has(.hud-map-slot.folded) .toasts {
   font-style: normal;
   font-size: 12px;
   opacity: 0.75;
+  flex: 0 0 auto;
+}
+
+.casca-secao > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * O trilho da tecnologia guarda a cor da categoria.
+ *
+ * Cada aba tem uma cor propria (`--cat`), e ela era a unica coisa que dizia
+ * "pesquisa e azul, construcao e ocre" antes de o jogador clicar. Perder isso
+ * na mudanca para o trilho seria trocar informacao por arrumacao.
+ */
+.casca-secao[style*='--cat'] i {
+  color: var(--cat, var(--accent));
+  opacity: 1;
 }
 
 .casca-secao:hover {
@@ -9296,4 +9341,146 @@ body:has(.hud-map-slot.folded) .toasts {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-align: center;
+}
+
+/*
+ * Botao de texto no cabecalho da casca ("VER O NINHO").
+ *
+ * Nasceu com `.btn`, que e o botao grande do jogo: 32 px de altura num
+ * cabecalho de 38 nao sobra ar nenhum, e ele competia com o titulo.
+ */
+.casca-cab-btn {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-radius: 7px;
+  border: 1px solid rgba(214, 168, 90, 0.26);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--ink-dim);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.casca-cab-btn:hover {
+  background: rgba(255, 196, 83, 0.14);
+  color: var(--accent);
+}
+
+/* O contador aceita as imagenzinhas que as telas ja usavam. */
+.casca-conta img {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+}
+
+.casca-conta small {
+  font-weight: 600;
+  opacity: 0.62;
+  letter-spacing: 0.05em;
+}
+
+/* O icone da secao pode ser uma imagem recortada, nao so um caractere. */
+.casca-secao i img {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Os corpos que vivem dentro da casca preenchem o que sobra. */
+.casca-corpo > .skill-body,
+.casca-corpo > .tech-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ * O Guia continua sendo um CADERNO dentro da casca comum.
+ *
+ * Ele era a unica tela fora do mundo visual das outras: papel creme, tipo
+ * serifado, trilho proprio com setas. A tentacao era pintar tudo de marrom e
+ * acabar com a diferenca — mas a diferenca aqui SIGNIFICA alguma coisa: e um
+ * objeto do jogo, o caderno de campo do Santiago, e nao mais um painel.
+ *
+ * Entao a moldura vira padrao (cabecalho, fechar, trilho) e a PAGINA continua
+ * papel. Unifica-se o que era arbitrario; preserva-se o que carrega sentido.
+ */
+.journal-book .journal-livro {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.journal-lema {
+  font-style: italic;
+  font-size: 9px;
+  line-height: 1.25;
+  text-align: right;
+  color: var(--ink-dim);
+  opacity: 0.68;
+  white-space: nowrap;
+}
+
+.journal-lema i {
+  display: block;
+  font-size: 8px;
+  opacity: 0.8;
+}
+
+/* O trilho do caderno ganha a cor do papel na secao ativa, em vez do ambar
+   das outras telas: e a unica pista de que aquele trilho abre um caderno. */
+.journal-tabs .casca-secao.ativa {
+  background: linear-gradient(90deg, rgba(232, 214, 176, 0.2), rgba(232, 214, 176, 0.04));
+  border-color: rgba(232, 214, 176, 0.34);
+  color: #efe2c6;
+  box-shadow: inset 3px 0 0 #d9c69a;
+}
+
+/* Some a seta decorativa da aba antiga: dentro do trilho ela virava um
+   triangulo solto no meio do rotulo. */
+.journal-tabs .casca-secao::before,
+.journal-tabs .casca-secao::after {
+  content: none;
+}
+
+/*
+ * O livro empilha: cabecalho em cima, corpo embaixo.
+ *
+ * `.journal-book` era flex em LINHA, porque antes ele so continha o trilho e
+ * o livro lado a lado. Ao ganhar o cabecalho da casca, este virou uma
+ * terceira coluna espremida na esquerda.
+ */
+.panel-wrap > .journal-book {
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * O cabecalho antigo do caderno sai de cena.
+ *
+ * Marcar `hidden` no HTML nao bastou: `.journal-header { display: flex }`
+ * vence o atributo, que so equivale a `display: none` na folha padrao do
+ * navegador. Qualquer regra de display do autor passa por cima dele.
+ */
+.journal-header[hidden] {
+  display: none !important;
+}
+
+/*
+ * Contador de cabecalho nao estica, NUNCA.
+ *
+ * `.tech-stock` e `.map-info` declaram `flex: 1` de quando eram faixas soltas
+ * no topo. Dentro da casca isso vira uma pilula vazia atravessando a tela
+ * inteira — o elemento mais largo do cabecalho passando a ser o que tem menos
+ * a dizer. Como e o mesmo defeito em toda tela, a correcao mora na casca.
+ */
+.casca-cab .casca-conta {
+  flex: 0 0 auto;
+  justify-content: center;
+  overflow: hidden;
 }

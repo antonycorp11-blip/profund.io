@@ -79,9 +79,23 @@ export class JournalUI {
      */
     this.wrap.innerHTML = `
       <div class="journal-book">
-        <nav class="journal-tabs"></nav>
+        <header class="casca-cab">
+          <span class="casca-titulo">
+            <b>Guia de Campo</b>
+            <span>de Santiago Ramires</span>
+          </span>
+          <!--
+            A frase de quem escreveu o caderno.
+            Nao e enfeite: e a voz do Santiago, e e o que transforma uma lista
+            de anotacoes no diario de uma pessoa.
+          -->
+          <span class="journal-lema">"Toda pedra tem uma historia."<i>&mdash; S. R.</i></span>
+          <button class="casca-fechar" data-close>✕</button>
+        </header>
+        <div class="casca-corpo">
+        <nav class="casca-trilho journal-tabs"></nav>
         <div class="journal-livro">
-          <header class="journal-header">
+          <header class="journal-header" hidden>
             <div class="journal-titulo">
               <h3>Guia de Campo</h3>
               <small>de Santiago Ramires</small>
@@ -100,6 +114,7 @@ export class JournalUI {
             <div class="journal-aberta"></div>
           </div>
         </div>
+        </div>
       </div>`;
     parent.appendChild(this.wrap);
     this.corpo = this.wrap.querySelector('.journal-indice') as HTMLElement;
@@ -109,7 +124,7 @@ export class JournalUI {
     const nav = this.wrap.querySelector('.journal-tabs') as HTMLElement;
     for (const aba of ABAS) {
       const b = document.createElement('button');
-      b.className = 'journal-tab';
+      b.className = 'casca-secao journal-tab';
       b.dataset.tab = aba.id;
       b.innerHTML = `<i>${aba.icone}</i><span data-nome>${aba.nome}</span>`;
       b.addEventListener('click', () => {
@@ -151,6 +166,9 @@ export class JournalUI {
     for (const b of this.wrap.querySelectorAll<HTMLElement>('.journal-tab')) {
       const aba = b.dataset.tab as JournalTab;
       b.classList.toggle('active', aba === this.abaAtual);
+      // A casca marca a secao ativa por 'ativa'; o caderno usava 'active'.
+      // As duas ficam: a classe antiga ainda pinta o papel da aba.
+      b.classList.toggle('ativa', aba === this.abaAtual);
       const n = aba === 'missoes' ? 0 : this.journal.count(aba);
       const nome = b.querySelector('[data-nome]');
       // So o NOME, e nao o botao inteiro: reescrever o botao apagaria o icone.
