@@ -3364,11 +3364,19 @@ body:has(.hud-map-slot.folded) .toasts {
 /* A placa de madeira e o mineiro: esta tela abre com o quadro de aviso da
    equipe, nao com um cabecalho de relatorio. */
 .auto-topo {
+  /*
+   * Uma coluna, nao duas.
+   *
+   * O grid era `auto minmax(0,1fr)`: a primeira coluna era a placa de madeira
+   * do titulo, a segunda a faixa de numeros. Com a placa removida, a faixa
+   * continuou na SEGUNDA coluna e a primeira virou um vazio de 180 px que
+   * empurrava os contadores para o meio da tela.
+   */
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /*
@@ -10243,4 +10251,59 @@ html.dev-hud .debug {
 .hud-top-center .chip {
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- Automacao: a faixa de numeros vira um quadro de expediente ---- */
+
+/*
+ * Os lampioes laterais e a placa de madeira SAIRAM.
+ *
+ * Os dois `.auto-lampiao` eram `position:absolute` com `left:-6px` e
+ * `right:-6px` — ou seja, propositalmente PARA FORA do proprio contêiner. Num
+ * painel de borda a borda eles encostavam na moldura; depois que a tela virou
+ * um cartao recuado de 750x338, passaram a cruzar por cima do conteudo.
+ *
+ * A placa repetia o cabecalho inteiro: titulo "Automação", a mesma linha de
+ * apoio, mais uma tabua, um caixote, o heroi e um lema. O cabecalho da casca
+ * ja diz as duas primeiras coisas, e as outras nao dizem nada.
+ */
+.auto-lampiao {
+  display: none;
+}
+
+.auto-strip {
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.auto-strip b,
+.auto-strip strong {
+  color: var(--doc-tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.auto-strip small,
+.auto-strip span {
+  color: var(--doc-tinta-fraca);
+  letter-spacing: 0.1em;
+}
+
+/* As duas colunas (bots e toupeiras) sao fichas, como todo o resto. */
+.auto-cols > section,
+.auto-col {
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background: linear-gradient(170deg, rgba(30, 34, 37, 0.9), rgba(19, 22, 24, 0.92));
+}
+
+.auto-cols h4,
+.auto-col h4 {
+  color: var(--doc-tinta);
+  letter-spacing: 0.08em;
+}
+
+.auto-rodape {
+  border-top: 1px solid var(--doc-regua);
+  color: var(--doc-tinta-fraca);
 }

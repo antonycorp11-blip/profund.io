@@ -446,19 +446,6 @@ export class TechScreen {
    * tela de Equipamento ja usa: nao pede arte nova e garante que e a MESMA
    * pessoa.
    */
-  private placaDaTela(): string {
-    return `
-      <header class="auto-placa">
-        <img class="auto-placa-tabua" src="art/auto/placa.png" alt="">
-        <img class="auto-placa-caixote" src="art/auto/caixote.png" alt="">
-        <img class="auto-placa-heroi" src="${this.heroiUrl()}" alt="">
-        <div class="auto-placa-txt">
-          <b>Automação</b>
-          <small>Seus ajudantes não param</small>
-        </div>
-        <span class="auto-placa-lema">Mais minério<br>menos esforço</span>
-      </header>`;
-  }
 
 
   /** A prancheta: o que a pesquisa escolhida faz, cobra e muda. */
@@ -674,10 +661,7 @@ export class TechScreen {
     this.tituloEl.textContent = 'Automacao';
     this.subtituloEl.textContent = 'A mina trabalhando sem voce.';
     this.mainEl.innerHTML = `
-      <img class="auto-lampiao esq" src="art/hud/lampiao.png" alt="">
-      <img class="auto-lampiao dir" src="art/hud/lampiao.png" alt="">
       <div class="auto-topo">
-        ${this.placaDaTela()}
         <div class="auto-strip">
           ${celula(String(clones.clones.length), String(clones.slots), 'bots ativos', 'copia_aco', '#5ac7d0', clones.clones.length > 0)}
           ${celula(String(moles.units.length), String(moles.max), 'toupeiras ativas', 'toupeira', '#d8a35a', moles.units.length > 0)}
