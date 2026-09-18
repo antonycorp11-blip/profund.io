@@ -1,5 +1,6 @@
 import { ART } from '../data/art';
 import { WEAPON_GRIPS } from '../data/weaponGrips';
+import { encaixe } from '../data/characterRig';
 import { Assets } from '../core/Assets';
 import type { Player } from './Player';
 
@@ -30,33 +31,6 @@ export class PlayerSprite {
   recoil = 0;
   /** Arquivo da arma na mao (`art/weapons/<id>.png`), ou nulo sem arma. */
   weaponArt: string | null = null;
-
-  /**
-   * Onde fica o PUNHO em CADA QUADRO, em fracao do quadro de 128 px.
-   *
-   * Um valor por quadro, e nao um por direcao — e essa era a falha. Andando de
-   * arma em punho o corpo usa os quadros 8-9, que tem o braco na FRENTE; se a
-   * mira estivesse para cima, eu escolhia a ancora de cima e a arma saltava
-   * para fora da mao. A ancora tem que seguir o desenho que esta na tela, e
-   * nao a intencao do jogador.
-   *
-   * Medidos isolando o BLOB DA MAO: um preenchimento a partir da ponta do
-   * braco, limitado a nove pixels de raio. Antes eu tirava o centro das ultimas
-   * nove COLUNAS, e isso puxava o antebraco junto — o ponto caia atras da mao.
-   * O flood pega so o punho fechado, que e onde o cabo tem que estar.
-   */
-  private static readonly PUNHO: { x: number; y: number }[] = [
-    { x: 0.21, y: -0.398 }, // 0-1 frente
-    { x: 0.209, y: -0.401 },
-    { x: 0.233, y: -0.512 }, // 2-3 cima
-    { x: 0.225, y: -0.512 },
-    { x: 0.192, y: -0.276 }, // 4-5 baixo
-    { x: 0.19, y: -0.272 },
-    { x: 0.153, y: -0.408 }, // 6-7 coice
-    { x: 0.218, y: -0.403 },
-    { x: 0.209, y: -0.401 }, // 8-9 andando
-    { x: 0.211, y: -0.402 },
-  ];
 
   /** Qual quadro da tira de mira foi desenhado agora. */
   private quadroDeMira = 0;
@@ -369,7 +343,8 @@ export class PlayerSprite {
     if (!this.aiming || !id || !arte || !arte.width) return null;
 
     const h = ART.character.stripDrawHeight;
-    const punho = PlayerSprite.PUNHO[this.quadroDeMira] ?? PlayerSprite.PUNHO[0];
+    const punho = encaixe('aim', this.quadroDeMira, 'punho');
+    if (!punho) return null;
     const cabo = WEAPON_GRIPS[id] ?? { x: 0.2, y: 0.5 };
     const lado = player.facing < 0 ? -1 : 1;
 
@@ -401,7 +376,8 @@ export class PlayerSprite {
     const arte = id ? Assets.weapon(id) : null;
     if (!id || !arte || !arte.width) return;
 
-    const p = PlayerSprite.PUNHO[this.quadroDeMira] ?? PlayerSprite.PUNHO[0];
+    const p = encaixe('aim', this.quadroDeMira, 'punho');
+    if (!p) return;
 
     // As fracoes do punho foram medidas na folha com o heroi olhando para a
     // DIREITA. Espelhado, o `ctx.scale(-1,1)` ja inverte o desenho — mas o

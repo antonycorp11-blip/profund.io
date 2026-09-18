@@ -193,11 +193,24 @@ for (const [nome, quadros] of TIRAS) {
     const cranio = cabeca ? { x: cabeca.cx, y: cabeca.topo - (cabeca.base - cabeca.topo) * 0.25 } : null;
 
     cru[nome].push({ caixa, cabeca, punhos, costas, cranio });
-    conferir(nome, i, caixa, cranio, costas, punhos[0]);
+
+    /*
+     * O que nao passou no teste sai como `null`, e nao como o numero que o
+     * detector achou.
+     *
+     * Rodando na arte de hoje, o punho da mira saiu CONSTANTE nos dez quadros
+     * (y = -0,337 em todos) enquanto o punho de verdade vai de -0,272 a
+     * -0,512: o detector estava achando a mesma manchinha de pele perto do
+     * quadril em todo quadro. Um numero desses nao e uma medida ruim, e uma
+     * medida INEXISTENTE com cara de boa — e o unico jeito de ela nao virar
+     * bug la na frente e ela nao existir aqui.
+     */
+    const reprovados = conferir(nome, i, caixa, cranio, costas, punhos[0]);
+    const ou = (campo, v) => (v && !reprovados.has(campo) ? v : null);
     medidas[nome].push({
-      cabeca: cranio && emFracao(cranio.x, cranio.y),
-      costas: costas && emFracao(costas.x, costas.y),
-      punho: punhos[0] && emFracao(punhos[0].cx, punhos[0].cy),
+      cabeca: ou('cabeca', cranio && emFracao(cranio.x, cranio.y)),
+      costas: ou('costas', costas && emFracao(costas.x, costas.y)),
+      punho: ou('punho', punhos[0] && emFracao(punhos[0].cx, punhos[0].cy)),
     });
   }
 }
@@ -221,17 +234,22 @@ for (const [nome, quadros] of TIRAS) {
  */
 function conferir(tira, quadro, caixa, cranio, costas, punho) {
   const alt = caixa.y1 - caixa.y0;
-  const diz = (o) => queixas.push(`${tira} q${quadro}: ${o}`);
-  if (!cranio) diz('nao achei a cabeca (nenhum borrao de pele)');
-  else if (cranio.y > caixa.y0 + alt * 0.5) diz('cabeca na metade de BAIXO do corpo');
-  if (!costas) diz('nao achei as costas');
-  if (!punho) diz('nao achei punho nenhum');
+  const reprovados = new Set();
+  const diz = (campo, o) => {
+    reprovados.add(campo);
+    queixas.push(`${tira} q${quadro}: ${o}`);
+  };
+  if (!cranio) diz('cabeca', 'nao achei a cabeca (nenhum borrao de pele)');
+  else if (cranio.y > caixa.y0 + alt * 0.5) diz('cabeca', 'cabeca na metade de BAIXO do corpo');
+  if (!costas) diz('costas', 'nao achei as costas');
+  if (!punho) diz('punho', 'nao achei punho nenhum');
   else {
-    if (punho.cy > LINHA_DOS_PES - alt * 0.22) diz('punho na altura do PE');
+    if (punho.cy > LINHA_DOS_PES - alt * 0.22) diz('punho', 'punho na altura do PE');
     if (cranio && Math.abs(punho.cx - cranio.x) < 5 && Math.abs(punho.cy - cranio.y) < 9) {
-      diz('punho colado na cabeca (provavelmente e o rosto)');
+      diz('punho', 'punho colado na cabeca (provavelmente e o rosto)');
     }
   }
+  return reprovados;
 }
 
 /**

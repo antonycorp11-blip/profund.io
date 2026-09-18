@@ -36,8 +36,17 @@ const num = (nome) => {
 const ARMA_ALTURA = num('ARMA_ALTURA');
 const ARMA_SOBE = num('ARMA_SOBE');
 
-/** O punho do quadro escolhido, lido da tabela do PlayerSprite. */
-const tabela = fonte.match(/PUNHO:[^[]*\[([\s\S]*?)\];/)[1];
+/*
+ * O punho vem de `characterAnchorFixes.ts`, que e onde mora o encaixe
+ * conferido a mao. Ele saiu do PlayerSprite quando os encaixes viraram um
+ * sistema so — se um dia sumir de la tambem, esta leitura tem que EXPLODIR e
+ * nao cair num valor padrao: uma folha de conferencia que mente e pior do que
+ * nenhuma.
+ */
+const fixes = fs.readFileSync(path.resolve('src/data/characterAnchorFixes.ts'), 'utf8');
+const achado = fixes.match(/PUNHO_DA_MIRA:[^[]*\[([\s\S]*?)\];/);
+if (!achado) throw new Error('nao achei PUNHO_DA_MIRA em src/data/characterAnchorFixes.ts');
+const tabela = achado[1];
 const punhos = [...tabela.matchAll(/x:\s*(-?[0-9.]+),\s*y:\s*(-?[0-9.]+)/g)].map((m) => ({
   x: Number(m[1]),
   y: Number(m[2]),
