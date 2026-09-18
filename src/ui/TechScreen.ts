@@ -686,16 +686,35 @@ export class TechScreen {
     const aberto = (this.ultimaEscolha.get('equip') ?? slots[0].id) as EquipSlot;
 
     /*
-     * VITRINE de UM slot por vez, e nao os quatro empilhados.
+     * TODAS as pecas, numa GRADE DE TRES COLUNAS.
      *
-     * Antes a tela era uma pilha de quatro secoes com todas as pecas de todos
-     * os encaixes: dezoito cartoes em coluna unica, e a peca que o jogador
-     * esta usando ficava a tres rolagens de distancia da peca que ele esta
-     * pensando em comprar. Comparar era impossivel, que e a unica coisa que se
-     * faz numa loja de equipamento.
+     * Passei por dois extremos errados antes deste. Primeiro os dezoito
+     * cartoes numa coluna unica: comparar exigia tres rolagens, e comparar e a
+     * unica coisa que se faz numa loja. Depois um slot por vez, o que resolveu
+     * a comparacao e criou o problema oposto — o slot da cabeca tem TRES
+     * pecas, entao a vitrine virava uma fileira com dois tercos da tela
+     * vazios. Medido: 32% de cobertura contra os 91% da referencia.
+     *
+     * A referencia resolve os dois de uma vez, e eu nao tinha percebido: ela
+     * mostra trajes E mochilas ao mesmo tempo, lado a lado. Quem compara
+     * compara na LARGURA, e nao escondendo o resto — tres cartoes cabem na
+     * mesma linha, e as treze pecas enchem a tela.
+     *
+     * A aba deixa de esconder e passa a levar ate o grupo.
      */
-    const itens = equipmentOfSlot(aberto)
-      .map((def) => {
+    const itens = slots
+      .flatMap((sl) => [
+        { cabecalho: sl, def: null as ReturnType<typeof equipDef> | null },
+        ...equipmentOfSlot(sl.id).map((def) => ({ cabecalho: null, def })),
+      ])
+      .map((entrada) => {
+        if (entrada.cabecalho) {
+          const sl = entrada.cabecalho;
+          return `<h5 class="eq-grupo ${sl.id === aberto ? 'on' : ''}" id="grupo-${sl.id}">
+                    ${sl.icon} ${sl.name}
+                  </h5>`;
+        }
+        const def = entrada.def!;
         const tem = eq.has(def.id);
         const vestido = eq.isEquipped(def.id);
         const longe = deepest < def.requiredDepth;
@@ -704,7 +723,7 @@ export class TechScreen {
           .join('');
 
         let acao: string;
-        if (vestido) acao = `<button class="btn" data-uneq="${aberto}">EQUIPADO</button>`;
+        if (vestido) acao = `<button class="btn" data-uneq="${def.slot}">EQUIPADO</button>`;
         else if (tem) acao = `<button class="btn primary" data-eq="${def.id}">EQUIPAR</button>`;
         else if (longe) {
           acao = `<div class="tech-status"><img class="btn-icon" src="art/hud/cadeado.png" alt="">Chegue a ${def.requiredDepth} m</div>`;
@@ -713,10 +732,7 @@ export class TechScreen {
                     ${money >= def.cost ? '' : 'disabled'}>✦ ${def.cost.toLocaleString('pt-BR')}</button>`;
         }
 
-        // Arte a ESQUERDA e o texto a direita, como no conceito. Com a arte em
-        // cima o cartao virava uma coluna estreita onde o desenho da peca
-        // ficava do tamanho de um icone de lista; deitado, a peca aparece e o
-        // texto ganha a largura que ele precisa.
+        // Arte a ESQUERDA e o texto a direita, como no conceito.
         const estado = vestido
           ? '<small class="eq-estado on">EQUIPADO</small>'
           : tem
@@ -805,9 +821,20 @@ export class TechScreen {
 
     for (const b of Array.from(this.wrap.querySelectorAll('[data-slot]'))) {
       b.addEventListener('click', () => {
-        this.ultimaEscolha.set('equip', (b as HTMLElement).dataset.slot!);
+        const slot = (b as HTMLElement).dataset.slot!;
+        this.ultimaEscolha.set('equip', slot);
         Haptics.ui();
         this.render();
+        /*
+         * A aba LEVA ate o grupo; ela nao esconde mais o resto.
+         *
+         * Escondendo, o encaixe com tres pecas deixava dois tercos da tela
+         * vazios. Levando, as treze pecas continuam la para comparar e a aba
+         * vira o atalho que ela sempre deveria ter sido.
+         */
+        this.wrap
+          .querySelector(`#grupo-${slot}`)
+          ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
       });
     }
     this.bindEquipment();

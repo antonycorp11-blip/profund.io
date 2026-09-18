@@ -1934,10 +1934,43 @@ body:has(.hud-map-slot.folded) .toasts {
   font-size: 10.5px;
 }
 
+/*
+ * TRES COLUNAS FIXAS, e nao `auto-fill`.
+ *
+ * Com `auto-fill minmax(190px)` o numero de colunas dependia da largura
+ * disponivel, e numa tela de 852 px davam duas — o que deixava os cartoes
+ * estreitos e a tela com dois tercos vazios. A referencia usa TRES em todas as
+ * larguras, e tres e o numero que permite comparar: duas pecas nao sao uma
+ * escolha, quatro nao cabem legiveis.
+ */
 .eq-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  align-content: start;
+}
+
+/*
+ * O CABECALHO DO GRUPO atravessa a grade inteira.
+ *
+ * Ele existe porque a vitrine deixou de esconder os outros encaixes: com as
+ * treze pecas juntas, e o cabecalho que diz onde uma familia acaba e a outra
+ * comeca. Sem ele a grade vira um amontoado.
+ */
+.eq-grupo {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  border-bottom: 1px solid var(--stroke);
+  padding-bottom: 3px;
+}
+
+.eq-grupo.on {
+  color: var(--ouro);
+  border-bottom-color: rgba(255, 205, 110, 0.5);
 }
 
 .eq-card {
@@ -1945,9 +1978,9 @@ body:has(.hud-map-slot.folded) .toasts {
   flex-direction: column;
   border: 1px solid var(--stroke);
   border-radius: 10px;
-  padding: 7px 9px;
+  padding: 9px 11px;
   background: rgba(30, 26, 22, 0.75);
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .eq-card.on {
@@ -1966,7 +1999,7 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .eq-head b {
-  font-size: 11.5px;
+  font-size: 13px;
 }
 
 .eq-icon {
@@ -3204,12 +3237,27 @@ body:has(.hud-map-slot.folded) .toasts {
   grid-template-columns: 330px minmax(0, 1fr);
 }
 
+/*
+ * A COLUNA DA ESQUERDA VAI ATE EMBAIXO.
+ *
+ * Ela terminava no meio da tela: o boneco, os atributos, e depois oito linhas
+ * de nada ate a borda inferior. Medido, esse vazio sozinho era um decimo da
+ * tela — e a referencia poe justamente ali a barra de atributos, colada na
+ * base.
+ *
+ * `1fr` no palco e `auto` nos atributos: o boneco cresce para ocupar o que
+ * sobrar e a barra fica ancorada embaixo, em qualquer altura de tela.
+ */
 .tech-body.aside-esquerda .tech-aside {
   order: -1;
   border-left: 0;
   border-right: 1px solid var(--stroke);
   padding-left: 0;
   padding-right: 12px;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  align-content: stretch;
+  gap: 6px;
 }
 
 /* Tela estreita (celular deitado): vira coluna unica e o detalhe vai para
@@ -4621,7 +4669,13 @@ body:has(.hud-map-slot.folded) .toasts {
      esparramava de borda a borda com o heroi perdido no meio. Palco e palco:
      tem tamanho. */
   max-width: 340px;
-  margin: 0 auto 4px;
+  /*
+   * `height: 100%` porque o palco agora recebe a linha `1fr` do painel: ele
+   * cresce com a tela em vez de manter altura de miniatura com vazio embaixo.
+   */
+  height: 100%;
+  align-content: center;
+  margin: 0 auto;
 }
 
 .boneco-palco {
@@ -5521,12 +5575,22 @@ body:has(.hud-map-slot.folded) .toasts {
  * uma linha de subtitulo. Sem ele o conteudo comecava colado nas abas e
  * nenhuma tela dizia onde o jogador estava.
  */
+/*
+ * O CABECALHO ENCOLHE NA VERTICAL.
+ *
+ * Ele gastava vinte pixels em margem e respiro embaixo do titulo, e medindo a
+ * tela essa faixa aparecia como seis linhas vazias atravessando a largura
+ * inteira — sozinha, um setimo da tela. Na referencia as abas comecam logo
+ * abaixo da barra de cima; nao ha esse corredor.
+ *
+ * O titulo nao perdeu tamanho de letra: perdeu o vazio em volta dele.
+ */
 .tela-cab {
   display: flex;
   align-items: center;
   gap: 11px;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
+  margin-bottom: 5px;
+  padding-bottom: 5px;
   border-bottom: 1px solid var(--stroke);
 }
 
