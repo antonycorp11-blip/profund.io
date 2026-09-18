@@ -31,7 +31,8 @@
     "slice-equipamento": "node tools/slice-equipamento.mjs",
     "medir-encaixes": "node tools/medir-encaixes.mjs",
     "boss": "esbuild tools/boss-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/boss-probe.cjs --log-level=warning && node node_modules/.cache/boss-probe.cjs",
-    "foto-chefe": "node tools/fotografar-chefe.mjs"
+    "foto-chefe": "node tools/fotografar-chefe.mjs",
+    "quem-ganha": "node tools/quem-ganha.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

@@ -7972,6 +7972,23 @@ body:has(.hud-map-slot.folded) .toasts {
  * a tela vazou para fora da viewport parecendo que tinha ampliado.
  */
 :root {
+  /* Grafite da papelada, nao marrom de taverna. */
+  --doc-fundo: #16181a;
+  --doc-fundo-alto: #1c1f22;
+  --doc-fundo-baixo: #101214;
+  /* A pauta: quase invisivel, mas o olho sente que ha papel. */
+  --doc-pauta: rgba(190, 215, 230, 0.045);
+  --doc-regua: rgba(198, 216, 228, 0.16);
+  --doc-regua-forte: rgba(198, 216, 228, 0.3);
+  --doc-tinta: #e9eef1;
+  --doc-tinta-fraca: #9aa7ae;
+  /* Ambar do lampiao: so para o que da para fazer agora. */
+  --doc-luz: #ffc453;
+  /* Cobre oxidado: o que existe mas ainda nao e seu. */
+  --doc-oxido: #4e7a72;
+}
+
+:root {
   --ui-zoom: 1;
 }
 
@@ -9101,12 +9118,26 @@ body:has(.hud-map-slot.folded) .toasts {
   width: min(var(--casca-larg), 100%);
   height: min(var(--casca-alt), 100%);
   max-height: min(var(--casca-alt), 100%);
-  border-radius: var(--casca-raio);
-  border: 1px solid var(--casca-borda);
-  background: linear-gradient(180deg, var(--casca-fundo-alto), var(--casca-fundo));
+  /*
+   * A SUPERFICIE E PAPEL DA COMPANHIA (ver "CONCEITO" mais abaixo).
+   *
+   * Canto reto e regua fina; a pauta horizontal e o que faz a superficie ser
+   * papel em vez de retangulo escuro, e ela e fraca de proposito — quem
+   * reparar nela conscientemente ja e demais.
+   *
+   * Isto esta escrito AQUI, e nao num bloco de conceito no fim da folha,
+   * porque esta regra carrega as variantes `.ui-escala` e portanto tem
+   * especificidade (0,3,0): qualquer tentativa de repintar por cima com
+   * (0,2,0) perde em silencio. Ja perdi tres rodadas para isso neste arquivo.
+   */
+  border-radius: 3px;
+  border: 1px solid var(--doc-regua);
+  background:
+    repeating-linear-gradient(180deg, transparent 0 21px, var(--doc-pauta) 21px 22px),
+    linear-gradient(180deg, var(--doc-fundo-alto), var(--doc-fundo));
   box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.75),
-    0 2px 0 rgba(255, 214, 150, 0.06) inset;
+    0 20px 54px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 
@@ -9657,4 +9688,202 @@ html.dev-hud .debug {
 .minimap-label span {
   font-size: 8.5px;
   opacity: 0.68;
+}
+
+/* ============================================================
+   CONCEITO: AS TELAS DA COMPANHIA SAO DOCUMENTOS
+   ============================================================
+
+   O visual anterior dizia "painel de jogo de fantasia": marrom,
+   dourado, canto arredondado, moldura ornamentada. Servia para
+   qualquer jogo, e portanto para nenhum.
+
+   Profundio tem um assunto proprio. Uma COMPANHIA reabriu a mina
+   e cobra uma cota toda semana; o Elias assina por ela. As telas
+   da companhia sao papelada dela: ficha de requisicao, folha de
+   pessoal, mapa de levantamento. Papel pautado, canto reto,
+   regua de um pixel, numero tabular, carimbo.
+
+   E isso da sentido a unica tela que NAO e da companhia: o Guia
+   do Santiago, papel quente e letra inclinada. O pessoal contra
+   o institucional. A diferenca deixa de ser inconsistencia e
+   passa a ser a propria historia.
+
+   O ambar continua, mas com emprego fixo: ele e a luz do
+   lampiao, e so marca o que pode ser FEITO agora. Se tudo
+   brilha, nada indica.
+   ============================================================ */
+
+
+
+.casca-cab {
+  height: 34px;
+  min-height: 34px;
+  border-bottom: 1px solid var(--doc-regua-forte);
+  background: var(--doc-fundo-baixo);
+}
+
+/* O titulo vira cabecalho de formulario: espacado, seco, sem brilho. */
+.casca-titulo b {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--doc-tinta);
+  text-shadow: none;
+}
+
+.casca-titulo span {
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.75;
+}
+
+.casca-trilho {
+  background: var(--doc-fundo-baixo);
+  border-right: 1px solid var(--doc-regua);
+  gap: 0;
+  padding: 4px 0;
+}
+
+/*
+ * As secoes viram LINHAS de um indice, nao pastilhas.
+ *
+ * Pastilha arredondada e vocabulario de aplicativo. Um indice de documento e
+ * uma lista: cada item numa linha, separados por uma regua, e o item corrente
+ * marcado por uma barra na margem — que e como se marca papel.
+ */
+.casca-secao {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid rgba(198, 216, 228, 0.07);
+  padding: 8px 9px;
+  color: var(--doc-tinta-fraca);
+  letter-spacing: 0.1em;
+}
+
+.casca-secao:last-child {
+  border-bottom: none;
+}
+
+.casca-secao:hover {
+  background: rgba(198, 216, 228, 0.05);
+  color: var(--doc-tinta);
+}
+
+.casca-secao.ativa {
+  background: rgba(255, 196, 83, 0.09);
+  border-color: rgba(198, 216, 228, 0.07);
+  color: var(--doc-luz);
+  box-shadow: inset 3px 0 0 var(--doc-luz);
+}
+
+/* Contador vira campo carimbado: retangulo, nao pilula. */
+.casca-conta {
+  border-radius: 2px;
+  border: 1px solid var(--doc-regua);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--doc-tinta);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+}
+
+.casca-fechar,
+.casca-cab-btn {
+  border-radius: 2px;
+  border: 1px solid var(--doc-regua);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--doc-tinta-fraca);
+}
+
+.casca-fechar:hover {
+  background: rgba(200, 67, 44, 0.24);
+  color: var(--doc-tinta);
+}
+
+/* Todo numero do jogo e tabular: numero que dança ao mudar nao da para
+   comparar de relance, e comparar de relance e a unica coisa que se faz
+   com numero no HUD. */
+.casca-conta b,
+.casca-conta strong,
+.minimap-label strong,
+.money-copy strong {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- o conceito alcanca os cartoes ---- */
+
+/*
+ * Cartao vira VERBETE de uma ficha, nao pastilha de aplicativo.
+ *
+ * Canto reto, regua de um pixel, fundo quase plano. O que distingue um estado
+ * do outro deixa de ser "quanto marrom" e passa a ser a MARGEM: uma barra na
+ * borda esquerda, como quem marca uma linha de formulario a caneta.
+ *
+ * E a regra do ambar, que vale para a tela inteira: ele so aparece no que da
+ * para FAZER agora. Antes tudo brilhava — pesquisado, disponivel e bloqueado
+ * usavam a mesma paleta quente — e por isso o brilho nao indicava nada.
+ */
+.tech-card {
+  border-radius: 3px;
+  border: 1px solid var(--doc-regua);
+  padding: 10px 11px;
+  min-height: 0;
+  background: linear-gradient(170deg, rgba(30, 34, 37, 0.96), rgba(19, 22, 24, 0.96));
+  color: var(--doc-tinta-fraca);
+  box-shadow: none;
+}
+
+/* BLOQUEADA: existe, mas ainda nao e sua. Sem luz nenhuma. */
+.tech-card.locked {
+  border-color: rgba(198, 216, 228, 0.09);
+  background: rgba(18, 21, 23, 0.85);
+  opacity: 0.72;
+}
+
+/* DISPONIVEL: a unica coisa da tela que recebe a luz do lampiao. */
+.tech-card.ready {
+  border-color: rgba(255, 196, 83, 0.34);
+  box-shadow: inset 3px 0 0 var(--doc-luz);
+}
+
+/* PESQUISADA: cobre oxidado. Feito, registrado, sem chamar atencao. */
+.tech-card.done {
+  border-color: rgba(78, 122, 114, 0.4);
+  box-shadow: inset 3px 0 0 var(--doc-oxido);
+  opacity: 0.9;
+}
+
+/* ESCOLHIDA: a regua acende, sem trocar de cor de fundo. */
+.tech-card.sel {
+  border-color: var(--doc-regua-forte);
+  background: linear-gradient(170deg, rgba(40, 45, 49, 0.98), rgba(25, 29, 32, 0.98));
+}
+
+.tech-card b,
+.tech-card-nome b {
+  color: var(--doc-tinta);
+  letter-spacing: 0.04em;
+}
+
+.tech-card small {
+  letter-spacing: 0.14em;
+  opacity: 0.7;
+}
+
+/* Todo custo e numero de ficha: tabular, retangular, sem pilula. */
+.tech-card .cost,
+.tech-card [class*='custo'],
+.tech-cost {
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* O painel de detalhe tambem e papel. */
+.tech-aside {
+  border-left: 1px solid var(--doc-regua);
+}
+
+.tech-aside h4,
+.tech-aside b {
+  color: var(--doc-tinta);
 }
