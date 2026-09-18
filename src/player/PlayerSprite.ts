@@ -83,6 +83,16 @@ export class PlayerSprite {
   static readonly ARMA_ALTURA = 0.15;
 
   /**
+   * Quanto a arma sobe dentro da mao, em fracao da altura do heroi.
+   *
+   * O punho medido e o CENTRO do blob da mao, e o cabo de uma arma fica um
+   * pouco acima disso — os dedos fecham por baixo dela, nao em volta do meio.
+   * Um retoque pequeno e o unico numero desta tela ajustado no olho, e ele
+   * vale para todas as armas de uma vez.
+   */
+  static readonly ARMA_SOBE = 0.035;
+
+  /**
    * Para onde a arma REALMENTE aponta, dada a mira do jogador.
    *
    * Devolve o vetor ja preso a uma das tres poses. O Game usa isto tanto para
@@ -365,7 +375,7 @@ export class PlayerSprite {
 
     // O punho no mundo: em X espelha com o lado, em Y sai da linha dos pes.
     const punhoX = player.cx + lado * punho.x * h;
-    const punhoY = player.feetY + punho.y * h;
+    const punhoY = player.feetY + (punho.y - PlayerSprite.ARMA_SOBE) * h;
 
     const alturaArma = h * PlayerSprite.ARMA_ALTURA;
     const larguraArma = arte.width * (alturaArma / arte.height);
@@ -418,7 +428,10 @@ export class PlayerSprite {
      */
     const linhaDosPes = alturaDoCorpo * ART.character.feetAnchor;
     ctx.save();
-    ctx.translate(p.x * alturaDoCorpo, linhaDosPes + p.y * alturaDoCorpo);
+    ctx.translate(
+      p.x * alturaDoCorpo,
+      linhaDosPes + (p.y - PlayerSprite.ARMA_SOBE) * alturaDoCorpo
+    );
     ctx.rotate(ang);
     /*
      * O CABO cai exatamente na origem — que e o punho — e o resto da arma se

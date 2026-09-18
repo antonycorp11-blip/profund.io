@@ -20,7 +20,8 @@
     "slice-ui": "node tools/slice-ui.mjs",
     "slice-armas": "node tools/slice-armas.mjs",
     "slice-mira": "node tools/slice-mira.mjs",
-    "slice-armas-lateral": "node tools/slice-armas-lateral.mjs"
+    "slice-armas-lateral": "node tools/slice-armas-lateral.mjs",
+    "conferir-armas": "node tools/conferir-armas.mjs"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",
