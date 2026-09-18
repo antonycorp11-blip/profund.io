@@ -89,6 +89,24 @@ const FONTES = {
    * este numero tem que ser reconferido.
    */
   climb: { arq: 'n2-climb.png', escalaManual: 0.1585, esperado: 8 },
+
+  /*
+   * ANDAR COM A ARMA — duas tiras, e as duas por falta de quadro.
+   *
+   * A tira de mira tem dez quadros e so DOIS sao de caminhada. Dois quadros
+   * nao formam um ciclo: as pernas ficavam praticamente paradas enquanto o
+   * corpo deslizava. Nao havia ajuste possivel, faltavam os quadros.
+   *
+   * `arma_anda` e com o braco ESTICADO, para quando ele anda atirando.
+   * `arma_baixa` e com o braco CAIDO, e resolve a outra metade da queixa:
+   * sacar a arma travava o corpo numa pose so, de braco esticado o tempo
+   * inteiro. Agora o braco so sobe quando ele realmente atira.
+   *
+   * Nenhuma das duas tem quadro em pe — sao ciclos inteiros — entao a escala
+   * sai do quadro mais alto, igual a caminhada comum.
+   */
+  arma_anda: { arq: 'n3-arma-anda.png', referencia: 'maisAlto', esperado: 10 },
+  arma_baixa: { arq: 'n3-arma-baixa.png', referencia: 'maisAlto', esperado: 10 },
 };
 
 /**
@@ -323,7 +341,7 @@ for (const nome of Object.keys(FONTES)) {
 }
 
 // 4. Escrever.
-const ORDEM = ['idle', 'walk', 'jump', 'mine', 'climb', 'aim', 'arranca', 'freia', 'gira'];
+const ORDEM = ['idle', 'walk', 'jump', 'mine', 'climb', 'aim', 'arranca', 'freia', 'gira', 'arma_anda', 'arma_baixa'];
 const resumo = [];
 for (const nome of ORDEM) {
   const t = tiras[nome];

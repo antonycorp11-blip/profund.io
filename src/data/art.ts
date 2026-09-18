@@ -320,6 +320,19 @@ export const ART = {
        * direita e que precisa espelhar. Ver PlayerSprite.render.
        */
       gira: { file: 'gira.png', frames: 6, fps: 24, facing: 1 },
+
+      /*
+       * ANDAR COM A ARMA: dez quadros cada, porque dois nao sao um ciclo.
+       *
+       * A tira de mira tem so dois quadros de caminhada, e com dois as pernas
+       * ficam praticamente paradas enquanto o corpo desliza.
+       *
+       * Sao duas porque o braco tem dois estados. Com a arma BAIXADA e como
+       * ele anda por ai — sacar a arma travava o corpo de braco esticado o
+       * tempo inteiro. Esticado e so quando ele esta atirando.
+       */
+      arma_anda: { file: 'arma_anda.png', frames: 10, fps: 13, facing: 1 },
+      arma_baixa: { file: 'arma_baixa.png', frames: 10, fps: 13, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,

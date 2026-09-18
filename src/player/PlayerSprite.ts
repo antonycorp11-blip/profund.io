@@ -30,6 +30,15 @@ export class PlayerSprite {
   aimY = 0;
   /** Sobe para 1 a cada tiro e desce sozinho: e o que escolhe o par do recuo. */
   recoil = 0;
+  /**
+   * O gatilho esta sendo puxado AGORA?
+   *
+   * Separado de `aiming` porque sao coisas diferentes: `aiming` quer dizer que
+   * a arma esta na mao, e isso vale o tempo todo enquanto ele nao troca para a
+   * picareta. Atirar e o instante. Era a confusao entre os dois que deixava o
+   * braco esticado para sempre.
+   */
+  atirando = false;
   /** Arquivo da arma na mao (`art/weapons/<id>.png`), ou nulo sem arma. */
   weaponArt: string | null = null;
 
@@ -82,8 +91,19 @@ export class PlayerSprite {
     mochila: { x: 0.72, y: 0.4 },
   };
 
-  /** Qual quadro da tira de mira foi desenhado agora. */
+  /**
+   * Qual tira e qual quadro de ARMA foram desenhados agora.
+   *
+   * Guardava so o quadro, porque a arma so existia numa tira. Com `arma_anda`
+   * e `arma_baixa` passaram a ser tres, e o punho de cada uma foi medido na
+   * sua propria — perguntar pelo punho da tira errada poe a arma no lugar
+   * errado sem erro nenhum aparecer.
+   */
+  private tiraDaArma = 'aim';
   private quadroDeMira = 0;
+
+  /** As tiras em que ele esta de arma na mao. */
+  private static readonly TIRAS_DE_ARMA = ['aim', 'arma_anda', 'arma_baixa'];
 
   /*
    * TRANSICOES.
@@ -107,6 +127,19 @@ export class PlayerSprite {
 
   /** Acima disto ele conta como andando. Abaixo, como parado. */
   private static readonly LIMIAR_ANDAR = 12;
+
+  /**
+   * Limiar de passo COM A ARMA NA MAO — mais alto, e de proposito.
+   *
+   * O tiro empurra o heroi para tras a 40 px/s (ver `recoil` em weapons.ts).
+   * Com o limiar normal de 12 esse empurrao contava como passo, e o corpo
+   * piscava para a pose de caminhada por um quadro a cada tiro, parado no
+   * lugar. Andar de verdade e 150, entao 60 separa os dois sem ambiguidade.
+   *
+   * Nao da para usar a intencao do jogador aqui: o desenho nao ve o controle,
+   * so a velocidade. Entao o numero tem que ficar entre o coice e o passo.
+   */
+  private static readonly LIMIAR_PASSO_ARMADO = 60;
 
   /**
    * As TRES direcoes que o braco sabe apontar, em radianos.
@@ -336,7 +369,14 @@ export class PlayerSprite {
      * `atualizarTransicao`: se ele saiu do chao ou grudou na parede, ela foi
      * cancelada la, e aqui nem existe mais.
      */
-    const t = this.quadroDaTransicao();
+    /*
+     * Com a arma na mao as transicoes nao entram.
+     *
+     * Elas foram desenhadas de maos vazias. Tocar uma arrancada no meio de um
+     * tiroteio faria a arma PISCAR para fora da mao por um quarto de segundo,
+     * que e pior do que nao ter transicao.
+     */
+    const t = this.aiming ? null : this.quadroDaTransicao();
     if (t) return t;
 
     if (player.climbingWall !== 0 && has('climb')) {
@@ -357,12 +397,46 @@ export class PlayerSprite {
      * sozinha, contando uma coisa que nao aconteceu. Fica depois da escalada e
      * do pulo de proposito: no ar, o corpo precisa dizer que esta no ar.
      */
-    if (this.aiming && player.onGround && has('aim')) {
-      if (this.recoil > 0.02) return pick('aim', 6 + (this.recoil > 0.5 ? 0 : 1));
-      if (Math.abs(player.vx) > 12) return pick('aim', 8 + (Math.floor(this.walkDist / 13) % 2));
-      if (this.aimY < -0.45) return pick('aim', 2);
-      if (this.aimY > 0.45) return pick('aim', 4);
-      return pick('aim', 0);
+    if (this.aiming && player.onGround) {
+      const andando = Math.abs(player.vx) > PlayerSprite.LIMIAR_PASSO_ARMADO;
+      /* O passo vem da distancia andada, e nao de um cronometro: parou o pe,
+       * parou o quadro. E o que faz a perna bater com o chao. */
+      const passo = Math.floor(this.walkDist / 13);
+      const ciclo = (n: string): number => passo % strips[n].frames;
+
+      /*
+       * ANDANDO, O CICLO DA PERNA GANHA DO RECUO.
+       *
+       * O recuo vinha antes de tudo, e andando atirando o resultado era o
+       * mesmo defeito de sempre: a pistola dispara 4,5 vezes por segundo e o
+       * recuo leva mais que isso para cair, entao o corpo ficava preso no par
+       * de quadros do coice e as pernas paravam outra vez.
+       *
+       * Parado, o coice e o que se ve — nao ha perna competindo. Andando, e a
+       * perna. Cada um ganha onde e visto.
+       */
+      const paraOndeMira = (): { name: string; index: number } | null => {
+        if (this.aimY < -0.45 && has('aim')) return pick('aim', 2);
+        if (this.aimY > 0.45 && has('aim')) return pick('aim', 4);
+        return null;
+      };
+
+      if (andando && has('arma_anda') && (this.atirando || this.recoil > 0.02)) {
+        return paraOndeMira() ?? pick('arma_anda', ciclo('arma_anda'));
+      }
+
+      // Parado: o coice tem os dois quadros so para ele.
+      if (this.recoil > 0.02 && has('aim')) {
+        return pick('aim', 6 + (this.recoil > 0.5 ? 0 : 1));
+      }
+
+      if (this.atirando) {
+        return paraOndeMira() ?? (has('aim') ? pick('aim', 0) : pick('arma_baixa', 0));
+      }
+
+      /* Sem gatilho, a arma fica BAIXADA — andando ou parado. */
+      if (has('arma_baixa')) return pick('arma_baixa', andando ? ciclo('arma_baixa') : 0);
+      if (has('aim')) return pick('aim', 0);
     }
 
     if (player.swing > 0.02 && has('mine')) {
@@ -489,7 +563,8 @@ export class PlayerSprite {
      * contrario.
      */
     if (strip) this.desenharCostas(ctx, h, strip.name, strip.index);
-    if (this.aiming && strip?.name === 'aim') {
+    if (this.aiming && strip && PlayerSprite.TIRAS_DE_ARMA.includes(strip.name)) {
+      this.tiraDaArma = strip.name;
       this.quadroDeMira = strip.index;
       this.desenharArma(ctx, h, flipped);
     }
@@ -530,7 +605,7 @@ export class PlayerSprite {
     if (!this.aiming || !id || !arte || !arte.width) return null;
 
     const h = ART.character.stripDrawHeight;
-    const punho = encaixe('aim', this.quadroDeMira, 'punho');
+    const punho = encaixe(this.tiraDaArma, this.quadroDeMira, 'punho');
     if (!punho) return null;
     const cabo = WEAPON_GRIPS[id] ?? { x: 0.2, y: 0.5 };
     const lado = player.facing < 0 ? -1 : 1;
@@ -663,7 +738,7 @@ export class PlayerSprite {
     const arte = id ? Assets.weapon(id) : null;
     if (!id || !arte || !arte.width) return;
 
-    const p = encaixe('aim', this.quadroDeMira, 'punho');
+    const p = encaixe(this.tiraDaArma, this.quadroDeMira, 'punho');
     if (!p) return;
 
     // As fracoes do punho foram medidas na folha com o heroi olhando para a

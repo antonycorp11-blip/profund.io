@@ -1515,6 +1515,19 @@ export class Game {
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     // A pose do braco e a arma na mao seguem a MAO ATUAL e a mira.
     this.playerSprite.aiming = this.mao === 'arma';
+    /*
+     * ESTAR ARMADO E ATIRAR SAO COISAS DIFERENTES.
+     *
+     * `aiming` diz que a arma esta na mao, e isso vale ate ele trocar de volta
+     * para a picareta. `atirando` e o instante do gatilho. Confundir os dois
+     * deixava o braco esticado para frente o tempo todo, e o jogador passava a
+     * exploracao inteira em pose de tiro.
+     *
+     * Mesma condicao que dispara a arma de verdade — se ela mudar, esta muda
+     * junto, porque o corpo tem que estar na pose em que o tiro sai.
+     */
+    this.playerSprite.atirando =
+      this.mao === 'arma' && !uiBlocking && !this.vitals.dead && this.input.isHeld('mine');
     this.playerSprite.aimX = this.mining.aimDirX;
     this.playerSprite.aimY = this.mining.aimDirY;
     this.playerSprite.weaponArt = this.mao === 'arma' ? this.weapons.def.id : null;
