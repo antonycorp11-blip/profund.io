@@ -343,8 +343,20 @@ export const CONFIG = {
     storyBandThickness: 3,
     /** Espessura do selo em tiles (== metros, ja que metersPerTile = 1). */
     bandThickness: 6,
-    /** Largura da arena do chefe, centrada no poco principal. */
-    arenaWidth: 9,
+    /**
+     * A ARENA DO CHEFE, em tiles.
+     *
+     * Era 9 x 4 — uma caixa oca dentro da faixa selada, e nada mais. Com arma
+     * de fogo no jogo isso deixou de servir: nao ha onde se cobrir, nao ha
+     * altura para usar, nao ha distancia para o tiro significar alguma coisa.
+     * Um quadrado transforma chefe em troca de porrada.
+     *
+     * Agora ela sobe ACIMA da faixa, escavada na rocha da camada de cima, e a
+     * faixa selada vira o PISO dela. E o que permite ela ser um lugar: 34 de
+     * largura dao espaco para recuar e mirar, 13 de altura dao verticalidade.
+     */
+    arenaWidth: 35,
+    arenaHeight: 13,
     /** Colunas de entrada diggable no topo da arena (numero impar, centrado). */
     entranceWidth: 3,
   },

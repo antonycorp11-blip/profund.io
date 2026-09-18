@@ -89,6 +89,26 @@ export interface GameEvents {
   'rep:changed': { city: string; axis: string; value: number };
   'mission:done': { id: string; title: string; text: string };
   'boss:summon': { id: string; name: string; count: number };
+  /**
+   * O guardiao viu o jogador. A luta comecou de verdade.
+   *
+   * Emitido uma vez por encontro, no instante em que o chefe engaja — nao ao
+   * entrar na camara. Quem desce so para olhar a arena nao dispara nada.
+   */
+  'boss:engaged': {
+    id: string;
+    name: string;
+    tagline: string;
+    health: number;
+    maxHealth: number;
+    enrageAt: number;
+  };
+  /** Vida do chefe mudou. So enquanto a luta esta em curso. */
+  'boss:health': { id: string; health: number; maxHealth: number };
+  /** O chefe virou. Passou do limiar e mudou de comportamento. */
+  'boss:enraged': { id: string; name: string };
+  /** O chefe caiu, ou o jogador sumiu e o encontro esfriou. */
+  'boss:ended': { id: string; defeated: boolean };
   /** Chefe caiu mas o selo nao abriu: ha missao pendente na faixa. */
   'gate:blocked': { layerId: string; faltam: string[] };
   'gate:opened': { layerId: string; layerName: string };

@@ -148,24 +148,108 @@ export function generateWorld(world: World): GeneratedWorldInfo {
         world.setTileRaw(col, row, BLOCK_IDS.SEAL);
       }
     }
-    // Arena: oca por dentro, paredes e piso continuam selados ate a vitoria.
+    /*
+     * A ARENA E UMA CAMARA CONSTRUIDA, e nao um buraco na faixa.
+     *
+     * Era uma caixa oca de 9 x 4 dentro do proprio selo. Com arma de fogo no
+     * jogo isso deixou de servir — sem cobertura, sem altura e sem distancia,
+     * um chefe vira troca de porrada encostado na parede.
+     *
+     * E o lugar tambem precisava dizer o que ele e. Pela BIBLIA, os guardioes
+     * foram POSTOS aqui pelas cidades para impedir que alguem as encontrasse:
+     * entao isto nao e uma caverna, e uma PORTA que alguem murou, com um bicho
+     * na frente. Quem entra tem que ver tijolo antigo, pilar e uma passagem
+     * fechada, e entender sozinho que houve gente aqui antes.
+     *
+     * A camara sobe para DENTRO da camada de cima e a faixa selada vira o piso
+     * dela. E o que permite ter altura sem engrossar o selo.
+     */
+    const alturaArena = CONFIG.gate.arenaHeight;
+    const tetoArena = row0 - alturaArena;
+    const pisoArena = row0 - 1; // a ultima linha de ar, logo acima do selo
+    const rochaDaCamada = blockByKey(layer.rockKey)?.id ?? BLOCK_IDS.STONE;
+
+    // 1. O vao: escavado na rocha da camada de cima.
     for (let col = arenaCol - arenaHalf; col <= arenaCol + arenaHalf; col++) {
-      for (let row = row0 + 1; row <= row1 - 1; row++) {
+      for (let row = tetoArena; row <= pisoArena; row++) {
+        if (row <= 0) continue;
         world.setTileRaw(col, row, BLOCK_IDS.AIR);
       }
     }
-    // Entrada diggable no teto da arena: rocha normal da propria camada de
-    // cima, para o jogador cavar e cair dentro em vez de esbarrar em selo.
-    const entranceRock = blockByKey(layer.rockKey)?.id ?? BLOCK_IDS.STONE;
+
+    /*
+     * 2. PILARES de tijolo antigo, pares e simetricos.
+     *
+     * Sao a cobertura que a arma pediu: a bala para na pedra, entao um pilar
+     * transforma "andar para tras atirando" em "escolher de que lado sair".
+     * Tijolo tem 120 de vida — da para derrubar, mas custa a briga inteira.
+     */
+    for (const dist of [10, 15]) {
+      for (const lado of [-1, 1]) {
+        const col = arenaCol + lado * dist;
+        for (let row = pisoArena - 4; row <= pisoArena; row++) {
+          if (row <= 0) continue;
+          world.setTileRaw(col, row, BLOCK_IDS.RUIN_BRICK);
+        }
+      }
+    }
+
+    /*
+     * 3. SACADAS nas duas pontas, na meia-altura.
+     *
+     * Dao verticalidade: de cima o jogador ve a arena inteira e atira em
+     * angulo, mas fica sem recuo. E uma troca, nao um esconderijo.
+     */
+    for (const lado of [-1, 1]) {
+      const ini = arenaCol + lado * (arenaHalf - 5);
+      for (let k = 0; k < 5; k++) {
+        const col = ini + lado * k;
+        const row = pisoArena - 6;
+        if (row > 0) world.setTileRaw(col, row, BLOCK_IDS.RUIN_BRICK);
+      }
+    }
+
+    /*
+     * 4. A PORTA MURADA, no piso, no centro.
+     *
+     * E o motivo de tudo isto existir. Fica em tijolo antigo sobre o selo — o
+     * jogador ve a passagem, ve que ela foi fechada a mao, e nao consegue
+     * abrir enquanto o guardiao estiver de pe. Quando o selo cai, cai com ela.
+     */
+    for (let col = arenaCol - 2; col <= arenaCol + 2; col++) {
+      world.setTileRaw(col, row0, BLOCK_IDS.RUIN_BRICK);
+    }
+    /*
+     * A soleira: tijolo RENTE ao chao, nunca em pe.
+     *
+     * Duas versoes de batente vertical morreram aqui. A primeira subia tres
+     * tiles a tres colunas do centro; a segunda, dois tiles a cinco colunas.
+     * As duas cometiam o mesmo erro, so que menos: a porta esta no PISO —
+     * row0 e o chao da camara — entao ela e um alcapao selado sob os pes, e
+     * moldura vertical ao lado de um alcapao nao descreve coisa nenhuma.
+     *
+     * Pior que feio, era injusto. Qualquer coisa solida no nivel do chao
+     * interrompe a investida, e `blockedAhead` le na altura do peito: com os
+     * batentes a cinco colunas o chefe tinha quatro tiles de pista para uma
+     * investida que percorre sete. Ele batia na propria porta.
+     *
+     * Rente ao chao a soleira ainda alarga a marca da passagem — o jogador ve
+     * onde a coisa foi fechada — e o piso continua liso de pilar a pilar.
+     */
+    for (const lado of [-4, -3, 3, 4]) {
+      world.setTileRaw(arenaCol + lado, row0, BLOCK_IDS.RUIN_BRICK);
+    }
+
+    // 5. Entrada pelo teto: rocha normal, para o jogador cavar e cair dentro.
     for (let col = arenaCol - entranceHalf; col <= arenaCol + entranceHalf; col++) {
-      world.setTileRaw(col, row0, entranceRock);
+      if (tetoArena - 1 > 0) world.setTileRaw(col, tetoArena - 1, rochaDaCamada);
     }
 
     gates.push({
       layerId,
       bossId: boss.id,
       col: arenaCol,
-      row: row1 - 1, // encosta no piso selado — o chefe guarda a saida
+      row: pisoArena, // em pe no chao da camara, entre o jogador e a porta
     });
   }
 

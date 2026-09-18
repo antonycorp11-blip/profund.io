@@ -63,6 +63,7 @@ import { BaseCampRenderer } from '../world/BaseCampRenderer';
 import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
+import { BossBar } from '../ui/BossBar';
 import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
@@ -199,6 +200,8 @@ export class Game {
   private scrollObjects: ScrollObject[] = [];
   private npcs: RescueNpc[] = [];
   private voices = new VoiceEcho();
+  /** Moldura da luta de chefe. Escuta eventos sozinha; o Game so a desliga. */
+  private bossBar!: BossBar;
   private reputation = new Reputation();
   private cityNpcs: CityNpc[] = [];
   private decor: SurfaceDecor;
@@ -380,6 +383,9 @@ export class Game {
         },
       },
     });
+
+    // A moldura da luta de chefe: nome, vida e o limiar da furia marcado.
+    this.bossBar = new BossBar(uiRoot);
 
     this.activeUI = new ActiveSkillsUI(uiRoot, {
       tree: this.skills,
@@ -1231,6 +1237,8 @@ export class Game {
   }
 
   private loadOrStart(): void {
+    // Mundo trocando: se havia luta em curso, ela nao existe mais.
+    this.bossBar.esconder();
     const data = SaveSystem.load();
     if (!data) {
       this.player.setPosition(this.worldInfo.spawnX, this.worldInfo.spawnY);

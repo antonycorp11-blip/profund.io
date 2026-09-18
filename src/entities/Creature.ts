@@ -49,11 +49,20 @@ export class Creature {
   enraged = false;
   /** Contagem para a proxima investida. */
   private chargeTimer = 0;
-  /** > 0 = parado, preparando a investida (o telegrafo). */
-  private windup = 0;
+  /**
+   * > 0 = parado, preparando a investida (o telegrafo).
+   *
+   * Publico porque o telegrafo so existe se alguem DESENHAR. Enquanto este
+   * numero era privado a investida saia do nada: 260 px/s cruzando a arena
+   * sem aviso nenhum nao e dificuldade, e so dano que o jogador nao tinha
+   * como evitar. O renderizador le isto para marcar o corredor no chao.
+   */
+  windup = 0;
+  /** Quanto durou o preparo desta investida, para medir o progresso 0..1. */
+  windupTotal = 0;
   /** > 0 = investindo nesta direcao. */
-  private charging = 0;
-  private chargeDir: 1 | -1 = 1;
+  charging = 0;
+  chargeDir: 1 | -1 = 1;
   /** Contagem para a proxima convocacao. */
   private summonTimer = 0;
   /**
@@ -275,6 +284,7 @@ export class Creature {
     if (this.chargeTimer <= 0 && this.charging <= 0 && this.windup <= 0) {
       this.chargeTimer = boss.chargeEverySec * (this.enraged ? 0.65 : 1);
       this.windup = boss.chargeWindupSec;
+      this.windupTotal = boss.chargeWindupSec;
       this.play('attack', boss.chargeWindupSec);
     }
 

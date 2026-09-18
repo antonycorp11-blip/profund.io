@@ -1,5 +1,5 @@
 import { bossForLayer } from '../data/creatures';
-import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
+import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../data/gates';
 import { Events } from '../core/events';
 import type { CreatureManager } from './CreatureManager';
 import type { Exploration } from './Exploration';
@@ -30,7 +30,7 @@ export class BiomeGate {
   constructor(
     private world: World,
     private exploration: Exploration,
-    gates: GeneratedWorldInfo['gates']
+    private gates: GeneratedWorldInfo['gates']
   ) {
     for (const g of gates) {
       this.states.set(g.layerId, { bossDefeated: false, opened: false });
@@ -67,15 +67,24 @@ export class BiomeGate {
    */
   spawnBosses(creatures: CreatureManager): void {
     const ts = this.world.tileSize;
-    const arenaCol = gateArenaCol();
-    for (const layerId of GATE_LAYERS) {
-      const st = this.states.get(layerId);
-      const def = bossForLayer(layerId);
+    for (const g of this.gates) {
+      const st = this.states.get(g.layerId);
+      const def = bossForLayer(g.layerId);
       if (!st || !def || st.bossDefeated) continue;
-      const layer = gateLayerDef(layerId);
-      const { row1 } = gateBandRows(this.world.surfaceRow, layer);
-      // Encosta no piso selado (row1 - 1): o chefe guarda a propria saida.
-      creatures.spawnBoss(def, arenaCol * ts + ts / 2, (row1 - 1) * ts + ts / 2);
+      /*
+       * A posicao vem do WorldGen, nao de uma segunda conta aqui.
+       *
+       * Esta funcao calculava sozinha `row1 - 1` — a ultima linha da faixa do
+       * selo. Isso so funcionava enquanto a arena era um buraco DENTRO da
+       * faixa. Quando a camara subiu para a camada de cima, essa linha virou
+       * rocha selada macica e o chefe nasceria emparedado: invisivel,
+       * inalcancavel, e o selo nunca mais abriria.
+       *
+       * O WorldGen e quem escava a arena, entao e ele quem sabe onde esta o
+       * chao dela. Ele grava isso em `gates[].row`; aqui so se obedece.
+       */
+      const chao = (g.row + 1) * ts; // topo do tile solido logo abaixo
+      creatures.spawnBoss(def, g.col * ts + ts / 2, chao - def.h / 2);
     }
   }
 
