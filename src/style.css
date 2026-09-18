@@ -8678,3 +8678,46 @@ body:has(.hud-map-slot.folded) .toasts {
   border-color: rgba(255, 198, 96, 0.6);
   box-shadow: 0 0 16px rgba(255, 176, 60, 0.14);
 }
+
+
+/* =========================================================================
+ * A TELA E UM CONJUNTO DE BLOCOS SOBRE A CENA, e nao um painel unico.
+ *
+ * Esta e a diferenca estrutural que faltava, e ela explica as tres medidas
+ * travadas ao mesmo tempo. A referencia nao tem painel: tem barra de cima,
+ * titulo, boneco, atributos, abas e cartoes como blocos SOLTOS, cada um com
+ * sua moldura, e a mina aparecendo entre eles.
+ *
+ * A minha era um retangulo so cobrindo 97% da tela. Por isso a cena pintada
+ * nao contava (nao havia por onde ela aparecer), a saturacao ficou em 27
+ * contra 53, e a densidade nao subia com nenhum ajuste de acabamento — um
+ * campo chapado e vazio por definicao, por mais bonito que seja o que esta
+ * dentro dele.
+ * ========================================================================= */
+
+.techscreen.panel-wrap,
+.skilltree.panel-wrap,
+.skillscreen.panel-wrap {
+  /* O respiro em volta e por onde a cena entra. Sem ele nao ha "entre". */
+  padding: 10px 14px;
+}
+
+.techscreen .panel,
+.skilltree .panel,
+.skillscreen .panel {
+  width: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+/* A barra de baixo tambem se desgruda: na referencia ela e um bloco proprio. */
+.techscreen .tela-rodape {
+  background: linear-gradient(168deg, rgba(24, 21, 19, 0.9), rgba(10, 8, 7, 0.93));
+  border: 1px solid var(--borda-painel);
+  border-radius: 12px;
+  box-shadow: var(--sombra-painel);
+  padding: 5px 12px;
+  margin-top: 8px;
+}
