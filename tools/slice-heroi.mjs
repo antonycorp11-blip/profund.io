@@ -48,39 +48,32 @@ const bruta = (f) => path.resolve('arte-bruta/heroi', f);
 /**
  * De onde sai cada tira.
  *
- * A arte agora chega em GRADE: uma imagem, uma animacao por linha, oito
- * quadros por linha. Antes era uma imagem por animacao — e isso multiplicou
- * por quatro o numero de geracoes necessarias, que foi o custo real da troca
- * de personagem.
- *
- * `linha` e o indice da faixa horizontal dentro da grade, de cima para baixo.
+ * Uma imagem, nove animacoes, oito quadros cada. Uma imagem por animacao
+ * multiplicava por nove o numero de geracoes — e foi esse o custo real da
+ * troca de personagem, nao a arte em si.
  */
-const GRADES = {
-  'grade-mover.png': { idle: 0, walk: 1, run: 2 },
-  'grade-acao.png': { jump: 0, mine: 1, tiro: 2 },
-};
+const GRADE = 'grade9.png';
+const LINHAS = 9;
 const COLUNAS = 8;
+const ORDEM_DAS_LINHAS = ['idle', 'walk', 'run', 'jump', 'mine', 'climb', 'tiro', 'arma_baixa', 'arma_anda'];
 
-/**
- * Qual quadro de cada grade esta EM PE — e dele que sai a escala.
- *
- * So um corpo em pe mede o corpo: normalizar por um quadro agachado ou
- * encolhido faria o heroi mudar de estatura ao trocar de animacao.
- */
-const REFERENCIA = { 'grade-mover.png': ['idle', 0], 'grade-acao.png': ['jump', 0] };
+/** O quadro EM PE: so um corpo em pe mede o corpo. `idle` quadro 0. */
+const REFERENCIA = ['idle', 0];
 
 /**
  * A tira de MIRA e MONTADA, e nao recortada.
  *
- * Ela e a unica em que o indice do quadro tem significado: o jogo pede o 0
- * para o tiro reto, o 2 para cima, o 4 para baixo, 6-7 para o recuo e 8-9 para
- * andar atirando (ver PlayerSprite.stripFrame). A grade entrega as oito poses
- * numa ordem propria; aqui elas viram os dez indices que o jogo espera.
- *
- * Os pares das tres direcoes repetem a mesma pose: o jogo so le o primeiro de
- * cada par, entao um segundo desenho ali seria trabalho que ninguem ve.
+ * E a unica em que o indice tem significado: o jogo pede o 0 para o tiro reto,
+ * o 2 para cima, o 4 para baixo, 6-7 para o recuo e 8-9 para andar atirando
+ * (ver PlayerSprite.stripFrame). A linha `tiro` traz as oito poses na sua
+ * ordem; os dois ultimos saem da linha de andar com o braco esticado, que e
+ * exatamente o que "andar atirando" quer dizer.
  */
-const MIRA_DA_GRADE = [0, 1, 2, 2, 3, 3, 4, 5, 6, 7];
+const MIRA = [
+  ['tiro', 0], ['tiro', 1], ['tiro', 2], ['tiro', 3], ['tiro', 4], ['tiro', 5],
+  ['tiro', 6], ['tiro', 7],
+  ['arma_anda', 0], ['arma_anda', 4],
+];
 
 const cache = new Map();
 function ler(arq) {
@@ -101,46 +94,75 @@ function alfa(png, x, y) {
  * folha base: dois quadros de caminhada sairam grudados num blob de 169 px.
  */
 /**
- * Recorta uma LINHA de uma grade em N colunas iguais.
+ * Recorta a celula (linha, coluna) de uma grade regular.
  *
- * A grade e regular por construcao — foi assim que ela foi pedida —, entao
- * aqui nao ha busca por vale nenhuma: divide o intervalo de conteudo da linha
- * em partes iguais e pronto. Procurar vale numa grade so criaria chance de
- * errar onde nao havia duvida.
+ * DIVIDE POR ARITMETICA, e nao procurando vao vazio. A grade de nove linhas
+ * chegou com as figuras SE TOCANDO — so cinco vaos em toda a imagem, quando
+ * seriam precisos oito. Detectar linha por vao nao funcionaria, e nao precisa:
+ * a grade e regular por construcao, entao a celula e largura/colunas por
+ * altura/linhas.
  */
-function acharNaGrade(png, banda, colunas) {
-  const [y0, y1] = banda;
-  /*
-   * Divide a LARGURA INTEIRA da imagem, e nao o intervalo de conteudo.
-   *
-   * Pelo conteudo, uma linha cujos quadros das pontas sao estreitos desloca
-   * todos os cortes: no pulo, o agachamento e a queda ocupam menos largura que
-   * o apice, e a divisao escorregou meio quadro — um deles saiu quase vazio.
-   *
-   * A grade e regular por construcao, entao a celula e largura/colunas. Medir
-   * o conteudo para deduzir onde a celula comeca e inventar incerteza onde nao
-   * havia nenhuma.
-   */
-  const passo = png.width / colunas;
-  const saida = [];
-  for (let k = 0; k < colunas; k++) {
-    saida.push(caixa(png, Math.round(passo * k), Math.round(passo * (k + 1)) - 1, y0, y1));
-  }
-  return saida;
+function celula(png, linha, coluna, linhas, colunas) {
+  const larguraCel = png.width / colunas;
+  const alturaCel = png.height / linhas;
+  const x0 = Math.round(larguraCel * coluna);
+  const x1 = Math.round(larguraCel * (coluna + 1)) - 1;
+  const y0 = Math.round(alturaCel * linha);
+  const y1 = Math.round(alturaCel * (linha + 1)) - 1;
+  return corpoDaCelula(png, x0, x1, y0, y1);
 }
 
-/** As faixas horizontais com conteudo: cada uma e uma linha da grade. */
-function acharLinhas(png) {
-  const linhas = [];
-  let ini = -1;
-  for (let y = 0; y < png.height; y++) {
-    let n = 0;
-    for (let x = 0; x < png.width; x++) if (alfa(png, x, y) > OPACO) n++;
-    if (n > 4) { if (ini < 0) ini = y; }
-    else { if (ini >= 0 && y - ini > 20) linhas.push([ini, y - 1]); ini = -1; }
+/**
+ * O CORPO dentro de uma celula: a maior mancha conexa, e so ela.
+ *
+ * Com as linhas encostadas, o braco erguido de uma invade a celula de cima e a
+ * bota da outra invade a de baixo. Esses pedacos entram na caixa e no centro
+ * de massa, e o personagem sai deslocado e cortado.
+ *
+ * A mancha conexa resolve sem ambiguidade: o corpo e uma peca so, e o que
+ * vazou do vizinho esta separado dele. Fico com a maior e descarto o resto.
+ */
+function corpoDaCelula(png, x0, x1, y0, y1) {
+  const larg = x1 - x0 + 1;
+  const alt = y1 - y0 + 1;
+  const visto = new Uint8Array(larg * alt);
+  let melhor = null;
+  for (let y = 0; y < alt; y++) {
+    for (let x = 0; x < larg; x++) {
+      const k = y * larg + x;
+      if (visto[k] || alfa(png, x0 + x, y0 + y) <= OPACO) continue;
+      const fila = [k];
+      visto[k] = 1;
+      let n = 0, a = 1e9, b = -1, t = 1e9, u = -1, soma = 0;
+      while (fila.length) {
+        const c = fila.pop();
+        const cy = (c / larg) | 0;
+        const cx = c % larg;
+        n++; soma += cx;
+        if (cx < a) a = cx; if (cx > b) b = cx;
+        if (cy < t) t = cy; if (cy > u) u = cy;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= larg || ny >= alt) continue;
+          const nk = ny * larg + nx;
+          if (visto[nk]) continue;
+          visto[nk] = 1;
+          if (alfa(png, x0 + nx, y0 + ny) > OPACO) fila.push(nk);
+        }
+      }
+      if (!melhor || n > melhor.n) {
+        melhor = { n, x0: x0 + a, x1: x0 + b, y0: y0 + t, y1: y0 + u, massaX: x0 + soma / n };
+      }
+    }
   }
-  if (ini >= 0) linhas.push([ini, png.height - 1]);
-  return linhas;
+  return melhor;
+}
+
+/** Uma linha inteira da grade. */
+function linhaDaGrade(png, linha, linhas, colunas) {
+  const saida = [];
+  for (let c = 0; c < colunas; c++) saida.push(celula(png, linha, c, linhas, colunas));
+  return saida;
 }
 
 function acharQuadros(png, banda, faixa, esperado) {
@@ -294,38 +316,25 @@ function desenhar(destino, cx, png, cx0, escala) {
 
 const escalas = new Map();
 const tiras = {};
-
-/** A escala de uma grade: o quadro em pe dela levado a 90 px. */
-function escalaDaGrade(png, linhas, nome) {
-  const [tira, quadro] = REFERENCIA[nome];
-  const li = GRADES[nome][tira];
-  const c = acharNaGrade(png, linhas[li], COLUNAS)[quadro];
-  return ALTURA_EM_PE / (c.y1 - c.y0 + 1);
-}
-
-for (const arq of Object.keys(GRADES)) {
-  const png = ler(arq);
-  const linhas = acharLinhas(png);
-  if (linhas.length < Object.keys(GRADES[arq]).length) {
-    throw new Error(`${arq}: achei ${linhas.length} linhas, esperava ${Object.keys(GRADES[arq]).length}`);
-  }
-  const escala = escalaDaGrade(png, linhas, arq);
-  for (const [nome, li] of Object.entries(GRADES[arq])) {
-    tiras[nome] = { png, quadros: acharNaGrade(png, linhas[li], COLUNAS).filter(Boolean) };
-    escalas.set(nome, escala);
-  }
-}
-
-/* A mira sai da linha `tiro`, remontada na ordem do jogo. */
 {
-  const base = tiras.tiro;
-  tiras.aim = { montada: MIRA_DA_GRADE.map((i) => ({ png: base.png, cx: base.quadros[i], escala: escalas.get('tiro') })) };
-  escalas.set('aim', escalas.get('tiro'));
+  const png = ler(GRADE);
+  ORDEM_DAS_LINHAS.forEach((nome, li) => {
+    tiras[nome] = { png, quadros: linhaDaGrade(png, li, LINHAS, COLUNAS).filter(Boolean) };
+  });
+  const [tRef, qRef] = REFERENCIA;
+  const c = tiras[tRef].quadros[qRef];
+  const escala = ALTURA_EM_PE / (c.y1 - c.y0 + 1);
+  for (const nome of ORDEM_DAS_LINHAS) escalas.set(nome, escala);
+
+  tiras.aim = {
+    montada: MIRA.map(([tira, i]) => ({ png, cx: tiras[tira].quadros[i], escala })),
+  };
+  escalas.set('aim', escala);
   delete tiras.tiro;
 }
 
 // 4. Escrever.
-const ORDEM = ['idle', 'walk', 'run', 'jump', 'mine', 'aim'];
+const ORDEM = ['idle', 'walk', 'run', 'jump', 'mine', 'climb', 'aim', 'arma_baixa', 'arma_anda'];
 const resumo = [];
 for (const nome of ORDEM) {
   const t = tiras[nome];

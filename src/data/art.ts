@@ -269,32 +269,33 @@ export const ART = {
     stripDrawHeight: 66,
     strips: {
       /*
-       * A arte vem em GRADE: uma imagem, uma animacao por linha, oito quadros
-       * por linha (ver tools/slice-heroi.mjs). Uma imagem por animacao
-       * multiplicava por quatro o numero de geracoes, e foi o custo real da
-       * troca de personagem.
+       * TODAS as nove saem da MESMA grade (arte-bruta/heroi/grade9.png), uma
+       * imagem com uma animacao por linha. Uma imagem por animacao multiplicava
+       * por nove o numero de geracoes — foi esse o custo real da troca de
+       * personagem, e nao a arte.
        *
-       * SO ENTRAM AQUI as tiras que vieram da leva ATUAL. `climb`, `arranca`,
-       * `freia`, `gira`, `arma_anda` e `arma_baixa` existem em disco mas sao
-       * do personagem ANTERIOR — deixa-las ligadas faria o heroi trocar de
-       * corpo ao escalar ou ao virar, que e exatamente o defeito de misturar
-       * duas levas. Voltam quando forem regeradas em grade.
+       * Vir tudo da mesma leva e o que garante que ele nao troca de corpo ao
+       * escalar ou ao sacar a arma, que foi o defeito de misturar geracoes.
        */
       idle: { file: 'idle.png', frames: 8, fps: 6, facing: 1 },
+      /* Andar e o passo de CARREGADO; correr e o padrao. Ver PlayerSprite. */
       walk: { file: 'walk.png', frames: 8, fps: 12, facing: 1 },
-      /*
-       * CORRIDA. A caminhada fica para quando ele esta CARREGADO: mochila
-       * quase cheia e passo pesado. E a unica diferenca de leitura entre as
-       * duas que o jogo tem hoje, e ela conta uma coisa de verdade.
-       */
       run: { file: 'run.png', frames: 8, fps: 14, facing: 1 },
       jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
       mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
+      climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
       /*
-       * MIRA, dez quadros montados de oito poses. O indice tem significado:
-       * 0-1 frente, 2-3 cima, 4-5 baixo, 6-7 recuo, 8-9 andando atirando.
+       * MIRA, dez quadros montados: 0-1 frente, 2-3 cima, 4-5 baixo, 6-7 recuo,
+       * 8-9 andando atirando. O indice tem significado — ver stripFrame.
        */
       aim: { file: 'aim.png', frames: 10, fps: 6, facing: 1 },
+      /*
+       * Andar com a arma: BAIXA e como ele anda por ai, ANDA e com o braco
+       * esticado, para quando esta atirando em movimento. Estar armado e
+       * atirar sao coisas diferentes.
+       */
+      arma_baixa: { file: 'arma_baixa.png', frames: 8, fps: 12, facing: 1 },
+      arma_anda: { file: 'arma_anda.png', frames: 8, fps: 12, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,
