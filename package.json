@@ -24,6 +24,7 @@
     "conferir-armas": "node tools/conferir-armas.mjs",
     "conferir-vestir": "node tools/conferir-vestir.mjs",
     "check-estilo": "node tools/check-estilo.mjs",
+    "check-css-morto": "node tools/check-css-morto.mjs",
     "capturar-telas": "node tools/capturar-telas.mjs",
     "comparar-tela": "node tools/comparar-tela.mjs",
     "slice-heroi": "node tools/slice-heroi.mjs",
