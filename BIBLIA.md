@@ -1,4 +1,4 @@
-# Bíblia Narrativa — Legado das Profundezas
+# Bíblia Narrativa — Profundio
 
 > **Fonte canônica.** Este documento e a autoridade final sobre historia,
 > personagens, cidades, profundidades e tom. Quando o codigo discordar daqui,

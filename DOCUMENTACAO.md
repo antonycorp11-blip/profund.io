@@ -1,4 +1,4 @@
-# Auditoria do protótipo — Legado das Profundezas 0.1
+# Auditoria do protótipo — Profundio 0.1
 
 ## 1. Estrutura dos arquivos
 

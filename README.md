@@ -1,4 +1,4 @@
-# Legado das Profundezas
+# Profundio
 
 Jogo 2D de mineração, exploração e automação — **mobile landscape**, feito em
 **TypeScript + Canvas2D + Vite**, sem engine e sem nenhuma dependência de runtime.

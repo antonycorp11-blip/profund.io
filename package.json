@@ -1,9 +1,9 @@
 {
-  "name": "legado-das-profundezas",
+  "name": "profundio",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Legado das Profundezas - prototipo vertical slice (mineracao 2D mobile landscape)",
+  "description": "Profundio - prototipo vertical slice (mineracao 2D mobile landscape)",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

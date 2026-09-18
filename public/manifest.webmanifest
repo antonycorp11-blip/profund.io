@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Legado das Profundezas",
-  "short_name": "Profundezas",
+  "name": "Profundio",
+  "short_name": "Profundio",
   "description": "Mineracao, exploracao e misterio nas profundezas.",
   "start_url": "./",
   "scope": "./",
