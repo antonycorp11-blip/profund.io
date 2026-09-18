@@ -193,8 +193,27 @@ function acharCabeca(borroes) {
  * golpeando, e a de cima. Nas outras nao ha nada na mao e tanto faz.
  */
 const CRITERIO = {
-  mine: (a, b) => a.cy - b.cy,   // a mais ALTA: o golpe sobe
-  default: (a, b) => b.cx - a.cx, // a mais A FRENTE
+  // O golpe SOBE: a mao que trabalha e a de cima.
+  mine: (a, b) => a.cy - b.cy,
+
+  /*
+   * ANDANDO E PARADO o braco PENDE: a mao que segura e a de baixo.
+   *
+   * Com "a mais a frente" o `walk` q0 e q9 devolveram punho na altura do
+   * QUEIXO — nesses dois o braco esta para tras, entao a pele mais a frente
+   * deixa de ser a mao e vira o pescoco. A picareta subia e cruzava o rosto.
+   *
+   * Nestas tiras nao ha ambiguidade nenhuma: a mao pende junto ao quadril, e o
+   * unico jeito de errar e procurar outra coisa.
+   */
+  idle: (a, b) => b.cy - a.cy,
+  walk: (a, b) => b.cy - a.cy,
+  arranca: (a, b) => b.cy - a.cy,
+  freia: (a, b) => b.cy - a.cy,
+  gira: (a, b) => b.cy - a.cy,
+
+  // MIRANDO e ESCALANDO o braco se estende: a mao que trabalha e a da frente.
+  default: (a, b) => b.cx - a.cx,
 };
 
 function acharPunhos(borroes, cabeca, tira) {

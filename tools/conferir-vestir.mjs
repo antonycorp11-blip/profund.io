@@ -109,13 +109,6 @@ TIRAS.forEach((tira, linha) => {
 
     // atras: mochila e ferramenta
     if (enc?.costas) colar(pecas.mochila, emX(enc.costas), emY(enc.costas), QUADRO * TAM.mochila, TOQ.mochila, 0);
-    // Igual ao PlayerSprite: sempre na mao, menos escalando (as duas maos na
-    // parede). No golpe segue o braco; nas outras, o angulo de carregar.
-    if (enc?.punho && tira !== 'climb') {
-      colar(pecas.picareta, emX(enc.punho), emY(enc.punho), QUADRO * TAM.picareta,
-        grips[PICARETA] ?? { x: 0.22, y: 0.5 },
-        tira === 'mine' ? (enc.punho.angulo ?? 0) : Math.PI * 0.42);
-    }
     // o corpo
     for (let y = 0; y < QUADRO; y++) for (let x = 0; x < QUADRO; x++) {
       const s = (corpo.width * y + (col * QUADRO + x)) * 4;
@@ -126,6 +119,13 @@ TIRAS.forEach((tira, linha) => {
       folha.data[d] = Math.round(corpo.data[s] * a + folha.data[d] * (1 - a));
       folha.data[d + 1] = Math.round(corpo.data[s + 1] * a + folha.data[d + 1] * (1 - a));
       folha.data[d + 2] = Math.round(corpo.data[s + 2] * a + folha.data[d + 2] * (1 - a));
+    }
+    // Igual ao PlayerSprite: sempre na mao, menos escalando (as duas maos na
+    // parede). No golpe segue o braco; nas outras, o angulo de carregar.
+    if (enc?.punho && tira !== 'climb') {
+      colar(pecas.picareta, emX(enc.punho), emY(enc.punho), QUADRO * TAM.picareta,
+        grips[PICARETA] ?? { x: 0.22, y: 0.5 },
+        tira === 'mine' ? (enc.punho.angulo ?? 0) : -Math.PI * 0.22);
     }
     // na frente: capacete
     if (enc?.cabeca) colar(pecas.capacete, emX(enc.cabeca), emY(enc.cabeca), QUADRO * TAM.capacete, TOQ.capacete, 0);

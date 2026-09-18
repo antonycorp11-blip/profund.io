@@ -159,9 +159,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3555
       },
       punho: {
-        x: 0.0703,
-        y: -0.2738,
-        angulo: 1.058
+        x: -0.0994,
+        y: -0.2678,
+        angulo: 2.1769
       }
     },
     {
@@ -191,9 +191,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3711
       },
       punho: {
-        x: 0.0234,
-        y: -0.4701,
-        angulo: -1.076
+        x: -0.0329,
+        y: -0.3039,
+        angulo: 1.817
       }
     },
     {
@@ -236,9 +236,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3828
       },
       punho: {
-        x: 0.0868,
-        y: -0.341,
-        angulo: 0.7927
+        x: -0.0996,
+        y: -0.3387,
+        angulo: 2.3632
       }
     },
     {
@@ -326,9 +326,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.375
       },
       punho: {
-        x: 0.096,
-        y: -0.567,
-        angulo: -0.9722
+        x: 0.0491,
+        y: -0.3045,
+        angulo: 1.1878
       }
     }
   ],
@@ -977,9 +977,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3555
       },
       punho: {
-        x: 0.1964,
-        y: -0.3538,
-        angulo: 0.2532
+        x: 0.1462,
+        y: -0.3477,
+        angulo: 0.3685
       }
     },
     {
@@ -1009,9 +1009,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3633
       },
       punho: {
-        x: -0.0068,
-        y: -0.5146,
-        angulo: -1.6376
+        x: -0.1065,
+        y: -0.329,
+        angulo: 2.4771
       }
     },
     {
@@ -1024,9 +1024,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3711
       },
       punho: {
-        x: 0.1062,
-        y: -0.3835,
-        angulo: 0.3258
+        x: 0.0305,
+        y: -0.3501,
+        angulo: 1.1564
       }
     },
     {
@@ -1039,9 +1039,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3516
       },
       punho: {
-        x: 0.072,
-        y: -0.3191,
-        angulo: 0.8357
+        x: -0.1183,
+        y: -0.2844,
+        angulo: 2.3731
       }
     },
     {
@@ -1131,9 +1131,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3711
       },
       punho: {
-        x: 0.1127,
-        y: -0.2984,
-        angulo: 0.804
+        x: -0.1201,
+        y: -0.2978,
+        angulo: 2.3333
       }
     },
     {
@@ -1146,9 +1146,9 @@ export const ENCAIXES: Record<string, (EncaixesDoQuadro | null)[]> = {
         y: -0.3711
       },
       punho: {
-        x: 0.1053,
-        y: -0.3044,
-        angulo: 0.8292
+        x: -0.0781,
+        y: -0.2982,
+        angulo: 2.1434
       }
     },
     {

@@ -492,10 +492,22 @@ export class PlayerSprite {
     if (this.aiming && strip?.name === 'aim') {
       this.quadroDeMira = strip.index;
       this.desenharArma(ctx, h, flipped);
-    } else if (strip) {
-      this.desenharFerramenta(ctx, h, strip.name, strip.index);
     }
     ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
+    /*
+     * A FERRAMENTA VAI NA FRENTE — ao contrario da arma.
+     *
+     * Por tras, o topo do cabo sumia atras do quadril e voce nunca via ele
+     * entrar na mao: lia como uma picareta boiando ao lado da perna, nao como
+     * uma picareta segurada.
+     *
+     * Com a arma o calculo e outro e por isso ela continua atras: o cano sai
+     * para FORA da silhueta em toda pose de mira, entao o que some atras do
+     * corpo e so o cabo, e o punho fechado cobrindo o cabo e justamente o que
+     * vende o aperto. Uma ferramenta carregada junto ao corpo nao tem essa
+     * sobra — se ela for para tras, some.
+     */
+    if (strip) this.desenharFerramenta(ctx, h, strip.name, strip.index);
     if (strip) this.desenharCabeca(ctx, h, strip.name, strip.index);
     ctx.restore();
     return true;
@@ -623,8 +635,16 @@ export class PlayerSprite {
    */
   private giroDaFerramenta(tira: string, ponto: { angulo?: number }): number {
     if (tira === 'mine') return ponto.angulo ?? 0;
-    // Pendurada na mao, cabo para cima e lamina para baixo.
-    return Math.PI * 0.42;
+    /*
+     * Carregada com a LAMINA PARA CIMA, e nao para baixo.
+     *
+     * Com a lamina para baixo o punho fica na altura do quadril e a ponta
+     * acaba na altura do tornozelo — le como ferramenta sendo arrastada pelo
+     * chao, nao carregada. Virada, a cabeca da picareta sobe para a altura do
+     * peito e a silhueta ganha a linha diagonal que diz "isto e uma picareta"
+     * mesmo a 46 px de tela.
+     */
+    return -Math.PI * 0.22;
   }
 
   /**
