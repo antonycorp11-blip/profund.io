@@ -1227,16 +1227,29 @@ body:has(.hud-map-slot.folded) .toasts {
   color: var(--warn);
 }
 
+/*
+ * O BOTAO NAO E MAIS `width: 100%` POR PADRAO.
+ *
+ * Essa linha me mordeu tres vezes. Num contexto empilhado ela e inofensiva,
+ * mas dentro de uma LINHA o botao passa a exigir a largura inteira do pai e
+ * esmaga o que esta ao lado: as toupeiras viraram barras, o "VER O NINHO"
+ * comeu as abas do ninho, e o "MANDAR ENTREGAR" espremeu o texto das Melhorias
+ * numa palavra por linha. Tres sintomas diferentes, a mesma linha.
+ *
+ * O padrao passa a ser `auto` — do tamanho do que ele diz. Quem QUER um botao
+ * de largura cheia pede, e ja pedia: `.det-botoes .btn`, `.eq-foot .btn`,
+ * `.cinto-troca`. Aqui ficam os painteis que empilham botao por natureza.
+ */
 .btn {
   pointer-events: auto;
-  width: 100%;
+  width: auto;
   border: 1px solid var(--stroke);
   background: linear-gradient(180deg, #3a2c1d, #2a2016);
   color: var(--ink);
   font-family: var(--font);
   font-size: 13px;
   font-weight: bold;
-  padding: 9px 22px;
+  padding: 4px 8px;
   border-radius: 10px;
   cursor: pointer;
 }
@@ -4297,7 +4310,7 @@ body:has(.hud-map-slot.folded) .toasts {
   width: 100%;
   margin-top: 14px;
   font-size: 10.5px;
-  background-image: url('/art/hud/chassi/botao_secundario.png');
+  border-image-source: url('/art/hud/chassi/botao_secundario.png');
   color: #f3e4c0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
@@ -4515,8 +4528,9 @@ body:has(.hud-map-slot.folded) .toasts {
   color: var(--ink-dim);
 }
 
-/* `width: auto` explicito: o `.btn` base e `width: 100%`, e num cabecalho em
-   linha isso vira a largura inteira do cabecalho — o botao comia as abas. */
+/* Ficou de quando o `.btn` base era `width: 100%` e este botao comia as abas
+   do ninho. A causa foi corrigida na raiz; a regra fica porque o tamanho fixo
+   aqui ainda e o que mantem a aba e o botao na mesma linha. */
 .ver-tudo {
   flex: 0 0 auto;
   width: auto;
@@ -6178,25 +6192,40 @@ body:has(.hud-map-slot.folded) .toasts {
  * Capsula estica bem: as pontas continuam redondas, o meio alonga, e o rim
  * fica continuo. E o mesmo tratamento que a placa de madeira ja usava.
  */
+/*
+ * VOLTOU para `border-image`, e o esticado foi erro meu.
+ *
+ * Eu troquei para fundo esticado achando que a capsula sofria com a borda
+ * pequena. Sofria o oposto: `border-image` desenha as pontas no tamanho da
+ * BORDA, o que e justamente o que faz um botao de 50 px e outro de 890 px
+ * terem pontas do MESMO tamanho. Esticado, o de 890 virou uma bolha achatada
+ * atravessando a tela e o de 50 ficou com o texto engolido pelo rim.
+ *
+ * A borda tambem e o respiro: o texto vive dentro dela, longe do ouro. Por
+ * isso o padding aqui e pequeno — somar os dois era o que esmagava
+ * "+ NOVA" em oito pixels de espaco util.
+ */
 .btn {
-  border: 0;
-  border-radius: 999px;
-  /*
-   * O respiro agora e PADDING, e nao a borda transparente de antes.
-   *
-   * A capsula tem rim dourado proprio nas pontas, e sem folga o texto senta em
-   * cima dele. A borda de 14 px fazia esse papel por acidente; ao tira-la eu
-   * tirei o respiro junto e a palavra invadiu o ouro.
-   */
-  padding: 9px 22px;
-  background: center / 100% 100% no-repeat url('/art/hud/chassi/botao_secundario.png');
+  border: var(--moldura-botao) solid transparent;
+  border-image: url('/art/hud/chassi/botao_secundario.png') 62 fill round;
+  border-radius: 0;
+  background: none;
   color: #f3e4c0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
+/* Onde botao E lista: painel de ajustes, oficina e o balcao da base. */
+.panel .btn,
+.camp-panel .btn,
+.dev-grid .btn,
+.up-card .btn,
+.tech-status + .btn {
+  width: 100%;
+}
+
 .btn.primary,
 .btn.on {
-  background-image: url('/art/hud/chassi/botao_primario.png');
+  border-image-source: url('/art/hud/chassi/botao_primario.png');
   /* Sobre latao claro o texto tem que escurecer, senao some. */
   color: #2a1d0c;
   text-shadow: 0 1px 0 rgba(255, 236, 190, 0.5);
@@ -6204,7 +6233,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .btn:disabled,
 .btn[disabled] {
-  background-image: url('/art/hud/chassi/botao_inativo.png');
+  border-image-source: url('/art/hud/chassi/botao_inativo.png');
   color: rgba(240, 235, 225, 0.55);
   text-shadow: none;
 }
@@ -6213,15 +6242,15 @@ body:has(.hud-map-slot.folded) .toasts {
 /* A aba e capsula fechada — 58 px de ponta numa borda de 12 seria pior ainda
    que o botao. Mesma solucao. */
 .skill-tab {
-  border: 0;
-  border-radius: 999px;
-  padding: 7px 18px;
-  background: center / 100% 100% no-repeat url('/art/hud/chassi/aba_off.png');
+  border: var(--moldura-aba) solid transparent;
+  border-image: url('/art/hud/chassi/aba_off.png') 58 fill round;
+  border-radius: 0;
+  background: none;
   color: #cbb896;
 }
 
 .skill-tab.active {
-  background-image: url('/art/hud/chassi/aba_on.png');
+  border-image-source: url('/art/hud/chassi/aba_on.png');
   color: #2a1d0c;
   text-shadow: 0 1px 0 rgba(255, 236, 190, 0.45);
 }
@@ -6653,9 +6682,7 @@ body:has(.hud-map-slot.folded) .toasts {
   margin-top: auto;
   text-align: center;
   font-size: 10px;
-  /* Menos folga que o botao solto: aqui a largura e a da coluna do cartao, e
-     22 px de cada lado comeriam metade dela. */
-  padding: 7px 12px;
+  padding: 0 4px;
 }
 
 .tech-card-acao[data-inerte] {
