@@ -479,15 +479,19 @@ export class PlayerSprite {
 
     if (Math.abs(player.vx) > 12) {
       /*
-       * CARREGADO ele anda; leve, ele corre.
+       * ANDAR e o padrao. Correr e a excecao.
        *
-       * O jogo tem uma velocidade so, entao usar a velocidade para escolher
-       * entre andar e correr nao distinguiria nada. O peso distingue: mochila
-       * quase cheia e a unica coisa que ja muda como ele deveria se mover, e
-       * assim a corrida vira a leitura de "estou livre" e a caminhada a de
-       * "estou voltando cheio".
+       * Estava invertido, e o efeito foi que a caminhada detalhada de 24
+       * quadros nunca aparecia: com a mochila vazia o jogo tocava `run`, de
+       * oito quadros, e a arte boa ficava guardada esperando o heroi encher a
+       * mochila.
+       *
+       * A regra certa e a que o jogador consegue ler: ele anda. `run` fica
+       * reservado para quando existir uma velocidade de corrida de verdade —
+       * hoje o jogo tem uma so, e escolher pela velocidade nao distinguiria
+       * nada.
        */
-      const tira = this.heavy || !has('run') ? 'walk' : 'run';
+      const tira = has('walk') ? 'walk' : 'run';
       if (has(tira)) return pick(tira, this.quadroDoPasso(strips[tira].frames));
     }
 
