@@ -61,13 +61,47 @@ function describeMod(m: Modifier): string {
     rareOreGlow: 'minerio raro brilha',
     glide: 'planeio',
   };
+  /*
+   * CADA EFEITO GANHA UM ICONE.
+   *
+   * Na referencia o efeito e uma LINHA com simbolo, numero e nome — escudo,
+   * coracao, bota — e sao esses simbolos que fazem o cartao ter peso visual.
+   * Aqui era so texto pequeno, e medindo a tela o resultado apareceu: 9% de
+   * tinta visivel contra os 22% da referencia. Texto fino nao enche tela.
+   *
+   * Os icones ja existiam em `art/hud/encaixe/` e eram usados so na barra de
+   * atributos. Sao cinco desenhos que estavam parados enquanto a tela ao lado
+   * media um terco da densidade que devia ter.
+   */
+  const icones: Record<string, string> = {
+    defense: 'escudo',
+    maxHealth: 'vida',
+    healthRegeneration: 'vida',
+    knockbackResistance: 'escudo',
+    fireResistance: 'escudo',
+    environmentalResistance: 'escudo',
+    moveSpeed: 'mobilidade',
+    jumpForce: 'mobilidade',
+    airControl: 'mobilidade',
+    climbSpeed: 'mobilidade',
+    climbStamina: 'recarga',
+    glide: 'mobilidade',
+    inventoryCapacity: 'forca',
+    carryMovePenalty: 'forca',
+    lightRadius: 'recarga',
+    rareOreDetectionRadius: 'recarga',
+    rareOreGlow: 'recarga',
+  };
+  const arte = icones[m.target] ?? 'recarga';
+  const icone = `<img class="mod-icone" src="art/hud/encaixe/${arte}.png" alt="">`;
+
   const nome = nomes[m.target] ?? m.target;
-  if (m.op === 'unlock') return nome;
+  if (m.op === 'unlock') return icone + nome;
   if (m.op === 'percentAdd') {
-    return `${m.value > 0 ? '+' : ''}${Math.round(m.value * 100)}% ${nome}`;
+    return `${icone}<b>${m.value > 0 ? '+' : ''}${Math.round(m.value * 100)}%</b> ${nome}`;
   }
   const v = Math.abs(m.value) < 1 ? `${Math.round(m.value * 100)}%` : `${m.value}`;
-  return `${m.value > 0 ? '+' : ''}${v} ${nome}`;
+  return `${icone}<b>${m.value > 0 ? '+' : ''}${v}</b> ${nome}`;
 }
 
 /** Tela de Pesquisa e Tecnologia + painel da Copiadora. */
@@ -806,8 +840,15 @@ export class TechScreen {
         <button class="boneco-slot ${pos} ${def ? 'on' : ''} ${sl.id === aberto ? 'foco' : ''}"
                 data-slot="${sl.id}" title="${sl.name}">
           <span class="boneco-rotulo"><i>${sl.name}</i></span>
-          <span class="boneco-arte">${def ? this.equipArte(def.id, def.icon) : ''}</span>
-          <span class="boneco-peca">${def ? def.name : 'vazio'}</span>
+          <span class="boneco-arte">${
+            def
+              ? this.equipArte(def.id, def.icon)
+              : /* Encaixe vazio mostra o SIMBOLO do slot, e nao a palavra
+                   "vazio": quatro quadrados escritos "vazio" e o oposto de
+                   informacao, e deixavam a coluna sem tinta nenhuma. */
+                `<span class="boneco-vazio">${sl.icon}</span>`
+          }</span>
+          <span class="boneco-peca">${def ? def.name : sl.name}</span>
         </button>`;
     };
     const [c0, c1, c2, c3] = slots;

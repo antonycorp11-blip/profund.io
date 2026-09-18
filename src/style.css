@@ -2077,7 +2077,12 @@ body:has(.hud-map-slot.folded) .toasts {
   padding-top: 6px;
 }
 
+/* O botao ocupa a largura toda e ganha altura: na referencia ele e a linha
+   mais forte do cartao, e aqui era um chip apertado. */
 .eq-foot .btn {
+  padding: 8px 10px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
   width: 100%;
   font-size: 12.5px;
   padding: 6px 8px;
@@ -4714,19 +4719,64 @@ body:has(.hud-map-slot.folded) .toasts {
   color: var(--ink-dim);
 }
 
+/*
+ * Os efeitos viram LINHAS COM ICONE, e nao itens de lista com marcador.
+ *
+ * Eram texto fino, e texto fino nao enche tela: a minha media 9% de tinta
+ * visivel contra os 22% da referencia. La cada efeito e uma linha com simbolo,
+ * numero destacado e nome — sao os simbolos que dao peso ao cartao.
+ */
 .eq-mods {
   margin: 0;
-  padding-left: 15px;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 3px;
   font-size: 12.5px;
   line-height: 1.5;
   color: #7ee7a8;
+}
+
+.eq-mods li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mod-icone {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.eq-mods b {
+  color: #f3dca6;
+  font-size: 13px;
+  min-width: 44px;
+}
+
+/*
+ * O simbolo do encaixe vazio ocupa o lugar que a peca ocupara.
+ *
+ * Quatro quadrados escritos "vazio" era o oposto de informacao e deixava a
+ * coluna esquerda sem tinta nenhuma.
+ */
+.boneco-vazio {
+  font-size: 28px;
+  opacity: 0.45;
 }
 
 .eq-foot {
   margin-top: auto;
 }
 
+/* O botao ocupa a largura toda e ganha altura: na referencia ele e a linha
+   mais forte do cartao, e aqui era um chip apertado. */
 .eq-foot .btn {
+  padding: 8px 10px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
   width: 100%;
 }
 
