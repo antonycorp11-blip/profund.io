@@ -135,13 +135,14 @@ export class PlayerSprite {
    * parou o desenho, e a perna bate com o chao em qualquer velocidade.
    *
    * O passo por quadro se deduz disto dividido pela contagem de quadros da
-   * tira — e nao pode ser um numero fixo. Era 13 px por quadro, calibrado para
-   * oito quadros; a caminhada detalhada chegou com VINTE E QUATRO e o mesmo 13
-   * faria o ciclo durar 312 px em vez de 104, ou seja, perna em camera lenta a
-   * um terco da velocidade. Amarrando a distancia ao CICLO, qualquer contagem
-   * de quadros anda na mesma cadencia.
+   * tira — e nao pode ser um numero fixo. Era 13 px por quadro, e isso so vale
+   * para uma contagem: com dez quadros da 130 px de ciclo, com vinte e quatro
+   * daria 312, ou seja, perna em camera lenta a um terco da velocidade.
+   * Amarrando a distancia ao CICLO INTEIRO, qualquer contagem de quadros anda
+   * na mesma cadencia — e 130 e o valor que a caminhada de dez quadros ja
+   * usava, entao ela continua andando exatamente como andava.
    */
-  private static readonly PASSADA = 104;
+  private static readonly PASSADA = 130;
 
   /**
    * Limiar de passo COM A ARMA NA MAO — mais alto, e de proposito.

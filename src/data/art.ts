@@ -268,34 +268,71 @@ export const ART = {
     stripFrame: 128,
     stripDrawHeight: 66,
     strips: {
+      idle: { file: 'idle.png', frames: 9, fps: 6, facing: 1 },
       /*
-       * TODAS as nove saem da MESMA grade (arte-bruta/heroi/grade9.png), uma
-       * imagem com uma animacao por linha. Uma imagem por animacao multiplicava
-       * por nove o numero de geracoes — foi esse o custo real da troca de
-       * personagem, e nao a arte.
+       * `facing: 1` porque a arte NOVA olha para a direita.
        *
-       * Vir tudo da mesma leva e o que garante que ele nao troca de corpo ao
-       * escalar ou ao sacar a arma, que foi o defeito de misturar geracoes.
+       * Ficou em -1 por uma leva inteira depois da troca de arte: a folha
+       * antiga de caminhada olhava para a esquerda, o codigo espelhava para
+       * compensar, e quando a arte mudou de lado o espelho continuou la. O
+       * heroi andava de re — pernas fazendo o ciclo ao contrario do movimento.
+       *
+       * Trocar a arte de uma tira obriga a conferir este campo. Ele nao e
+       * deduzido de lugar nenhum.
        */
-      idle: { file: 'idle.png', frames: 8, fps: 6, facing: 1 },
-      /* Andar e o passo de CARREGADO; correr e o padrao. Ver PlayerSprite. */
-      walk: { file: 'walk.png', frames: 24, fps: 12, facing: 1 },
-      run: { file: 'run.png', frames: 8, fps: 14, facing: 1 },
-      jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
-      mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
+      walk: { file: 'walk.png', frames: 10, fps: 13, facing: 1 },
+      jump: { file: 'jump.png', frames: 9, fps: 12, facing: 1 },
+      mine: { file: 'mine.png', frames: 12, fps: 12, facing: 1 },
       climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
       /*
-       * MIRA, dez quadros montados: 0-1 frente, 2-3 cima, 4-5 baixo, 6-7 recuo,
-       * 8-9 andando atirando. O indice tem significado — ver stripFrame.
+       * POSE DE MIRA, dez quadros e MAO VAZIA.
+       *
+       * O punho fechado esta vazio de proposito: a arma e um sprite separado,
+       * preso ali e girado pelo angulo da mira. Com a arma desenhada dentro do
+       * corpo, cada arma nova exigiria a folha inteira do personagem outra vez
+       * — tres armas virariam trinta quadros, e trocar de arma no jogo seria
+       * trocar de personagem.
+       *
+       * Os quadros vao em pares por direcao: 0-1 frente, 2-3 cima, 4-5 baixo,
+       * 6-7 recuo, 8-9 andando de arma em punho.
        */
       aim: { file: 'aim.png', frames: 10, fps: 6, facing: 1 },
+
       /*
-       * Andar com a arma: BAIXA e como ele anda por ai, ANDA e com o braco
-       * esticado, para quando esta atirando em movimento. Estar armado e
-       * atirar sao coisas diferentes.
+       * TRANSICOES: tocam UMA VEZ e saem.
+       *
+       * O corpo trocava de pose num quadro — parado virava andando sem nada no
+       * meio, e inverter a direcao era um espelhamento instantaneo. E o que
+       * mais denuncia que aquilo e um desenho plano.
+       *
+       * As tres nao repetem: quem termina de arrancar entra na caminhada, quem
+       * termina de frear fica parado. E por isso que elas tem `fps` alto — sao
+       * curtas de proposito, e uma transicao que o jogador percebe como espera
+       * e pior do que transicao nenhuma.
        */
-      arma_baixa: { file: 'arma_baixa.png', frames: 8, fps: 12, facing: 1 },
-      arma_anda: { file: 'arma_anda.png', frames: 8, fps: 12, facing: 1 },
+      arranca: { file: 'arranca.png', frames: 5, fps: 22, facing: 1 },
+      freia: { file: 'freia.png', frames: 5, fps: 20, facing: 1 },
+      /*
+       * O GIRO vai de perfil DIREITO para perfil ESQUERDO, passando por frente.
+       *
+       * O sentido esta desenhado na arte, entao o espelho aqui e ao contrario
+       * do resto: virando para a esquerda ele vai como esta; virando para a
+       * direita e que precisa espelhar. Ver PlayerSprite.render.
+       */
+      gira: { file: 'gira.png', frames: 6, fps: 24, facing: 1 },
+
+      /*
+       * ANDAR COM A ARMA: dez quadros cada, porque dois nao sao um ciclo.
+       *
+       * A tira de mira tem so dois quadros de caminhada, e com dois as pernas
+       * ficam praticamente paradas enquanto o corpo desliza.
+       *
+       * Sao duas porque o braco tem dois estados. Com a arma BAIXADA e como
+       * ele anda por ai — sacar a arma travava o corpo de braco esticado o
+       * tempo inteiro. Esticado e so quando ele esta atirando.
+       */
+      arma_anda: { file: 'arma_anda.png', frames: 10, fps: 13, facing: 1 },
+      arma_baixa: { file: 'arma_baixa.png', frames: 10, fps: 13, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,
