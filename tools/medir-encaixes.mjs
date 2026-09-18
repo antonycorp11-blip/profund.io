@@ -156,19 +156,44 @@ class Quadro {
 }
 
 /**
- * Onde a cabeca esta neste quadro.
+ * Onde a cabeca esta neste quadro: no borrao de pele que TEM OLHOS.
  *
- * O rosto e o borrao de pele MAIS ALTO entre os grandes. "Mais alto" sozinho
- * pegaria uma mao levantada acima da cabeca (acontece em `climb` e no golpe de
- * cima do `mine`); "maior" sozinho troca de rosto para mao quando o punho
- * aparece de frente e o rosto sai de perfil — em `mine` q1 a mao tem 51 px e o
- * rosto 49. Exigir os dois resolve os dois casos.
+ * Duas tentativas anteriores falharam por motivos opostos, e as duas por
+ * tentar deduzir a cabeca do tamanho ou da altura do borrao:
+ *
+ *   "o maior borrao" trocava rosto por mao quando o punho aparecia de frente.
+ *   "o mais alto entre os grandes" quebrou de vez na arte em grade: ali o
+ *   antebraco nu esticado e um borrao de pele MAIOR que o rosto, entao o
+ *   rosto nem entrava na lista de candidatos. A medicao passou no teste de
+ *   plausibilidade e devolveu a cabeca no punho e o punho no rosto — a arma
+ *   nascia na altura da orelha.
+ *
+ * O olho resolve porque nao e heuristica: e uma coisa que a cabeca TEM e a
+ * mao nao. Dentro da caixa do rosto ha pixels quase brancos, a esclera, com
+ * preto colado do lado. Mao nenhuma tem isso em nenhuma pose.
  */
-function acharCabeca(borroes) {
+function temOlho(q, b) {
+  const x0 = Math.floor(b.cx - 9), x1 = Math.ceil(b.cx + 9);
+  const y0 = Math.floor(b.topo), y1 = Math.ceil(b.base);
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (!q.opaco(x, y)) continue;
+      const i = (q.png.width * y + (q.off + x)) * 4;
+      const [, s, v] = hsv(q.png.data[i], q.png.data[i + 1], q.png.data[i + 2]);
+      if (v > 0.88 && s < 0.18) return true;
+    }
+  }
+  return false;
+}
+
+function acharCabeca(q, borroes) {
   if (!borroes.length) return null;
+  const comOlho = borroes.filter((b) => temOlho(q, b));
+  /* Com olho, o maior deles — o rosto e maior que um reflexo solto.
+   * Sem nenhum, cai no antigo: o mais alto entre os grandes. */
+  if (comOlho.length) return comOlho[0];
   const maior = borroes[0].n;
-  const candidatos = borroes.filter((b) => b.n >= maior * 0.55);
-  return candidatos.reduce((a, b) => (b.cy < a.cy ? b : a));
+  return borroes.filter((b) => b.n >= maior * 0.55).reduce((a, b) => (b.cy < a.cy ? b : a));
 }
 
 /**
@@ -299,7 +324,7 @@ for (const [nome, quadros] of TIRAS) {
     const caixa = q.caixa();
     if (!caixa) { medidas[nome].push(null); cru[nome].push(null); continue; }
     const bs = q.borroes();
-    const cabeca = acharCabeca(bs);
+    const cabeca = acharCabeca(q, bs);
     const punhos = acharPunhos(bs, cabeca, nome);
     const costas = acharCostas(q, caixa, cabeca);
 
