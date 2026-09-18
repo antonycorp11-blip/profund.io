@@ -21,6 +21,7 @@ export class HUD {
   /** Quem troca a mao quando o botao e tocado. Ligado pelo Game. */
   onTrocarMao: (() => void) | null = null;
   private maoAtual: 'picareta' | 'arma' | null = null;
+  private ammoRecurso: string | null = null;
   private healthFill: HTMLElement;
   private healthLabel: HTMLElement;
   private levelEl: HTMLDivElement;
@@ -230,7 +231,7 @@ export class HUD {
     this.ammoEl = document.createElement('div');
     this.ammoEl.className = 'slim ammo';
     this.ammoEl.innerHTML = `
-      <span class="slim-icon">🔫</span>
+      <img class="slim-icon" src="art/ore/stone.png" alt="" data-ammo-arte>
       <span class="slim-num" data-ammo-count>0</span>`;
     this.ammoLabel = this.ammoEl.querySelector('[data-ammo-count]') as HTMLElement;
 
@@ -725,9 +726,23 @@ export class HUD {
    * Pisca em vermelho no fim do pente — o aviso tem que chegar ANTES do clique
    * seco, nao depois dele.
    */
-  setAmmo(n: number): void {
+  /**
+   * @param recurso ID do recurso (para a arte), @param nome como ele se chama.
+   *
+   * Sao dois porque o arquivo e `stone.png` e a palavra e "Pedra" — derivar um
+   * do outro daria `pedra.png`, que nao existe, e o icone sumiria em silencio.
+   */
+  setAmmo(n: number, recurso = 'stone', nome = 'Municao'): void {
     const txt = String(Math.max(0, Math.floor(n)));
     if (this.ammoLabel.textContent !== txt) this.ammoLabel.textContent = txt;
+    // O que a arma come muda com a arma. Dizer QUAL recurso importa: sem isso
+    // o jogador ve um numero caindo e nao sabe o que ir buscar.
+    if (this.ammoRecurso !== recurso) {
+      this.ammoRecurso = recurso;
+      this.ammoEl.title = `${nome} — e o que a sua arma dispara`;
+      const arte = this.ammoEl.querySelector('[data-ammo-arte]') as HTMLImageElement | null;
+      if (arte) arte.src = `art/ore/${recurso}.png`;
+    }
     this.ammoEl.classList.toggle('vazio', n <= 0);
     this.ammoEl.classList.toggle('pouco', n > 0 && n <= 5);
   }

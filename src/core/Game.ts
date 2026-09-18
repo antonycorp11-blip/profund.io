@@ -120,18 +120,13 @@ export class Game {
   private panels: PanelUI;
   private weapons!: WeaponSystem;
   /**
-   * Municao na cartucheira.
+   * Municao FABRICADA guardada fora da mochila.
    *
-   * Contador proprio, e nao item de mochila: bala tem peso zero e nunca deve
-   * concorrer com minerio por espaco — essa escolha nao seria interessante,
-   * seria so punicao. E ficando fora do inventario ela tambem nao entra por
-   * engano na entrega da base e vira moeda.
-   *
-   * CENTO E VINTE de inicio enquanto o tiro esta sendo provado. O numero de
-   * equilibrio vem depois que o feel estiver certo — comecar apertado agora so
-   * faria o teste virar uma ida a base em vez de um teste de tiro.
+   * As armas basicas nao usam isto: elas comem pedra direto do inventario. O
+   * contador fica para a bala fabricada das armas melhores, que ainda vao
+   * entrar — e por isso continua no save.
    */
-  private municao = 120;
+  private municao = 0;
   /**
    * A MAO ATUAL.
    *
@@ -453,12 +448,21 @@ export class Game {
       (x, y, raio, dano) =>
         this.creatures.damageArea(x, y, raio, dano * (1 + this.attrs.get('bossDamage') * 0)),
       {
-        tem: () => this.municao,
-        gastar: (n) => {
-          if (this.municao < n) return false;
-          this.municao -= n;
-          return true;
-        },
+        /*
+         * A CARTUCHEIRA E A MOCHILA.
+         *
+         * A pistola come PEDRA, e pedra ja esta ali — nao ha contador
+         * separado nem viagem a base para poder atirar. O que isso muda de
+         * verdade nao e a conveniencia: e que ficar sem municao passa a
+         * significar "vai minerar", que e o proprio jogo, em vez de "sobe e
+         * volta".
+         *
+         * Cada arma diz o que come; a fabricada (`ammo_round`) continua
+         * valendo para as melhores, e cai no mesmo caminho porque ela tambem
+         * e um recurso de mochila.
+         */
+        tem: () => this.inventory.count(this.weapons.def.ammo),
+        gastar: (n) => this.inventory.remove(this.weapons.def.ammo, n) >= n,
       },
       /*
        * O que as habilidades de ARMA acrescentam a ESTE disparo.
@@ -1502,7 +1506,8 @@ export class Game {
       miraDaArma.y
     );
 
-    this.hud.setAmmo(this.municao);
+    const balaDe = this.weapons.def.ammo;
+    this.hud.setAmmo(this.inventory.count(balaDe), balaDe, RESOURCES[balaDe].name);
     this.hud.setMao(this.mao, this.weapons.def.name);
     this.touch.setRotuloAcao(this.mao === 'arma' ? 'ATIRAR' : 'MINERAR');
 

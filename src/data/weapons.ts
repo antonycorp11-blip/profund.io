@@ -40,7 +40,16 @@ export interface WeaponDef {
   pierce: number;
   /** Empurrao no jogador a cada tiro, em px/s. */
   recoil: number;
-  /** Municao gasta por TIRO (nao por projetil). */
+  /**
+   * O QUE ela come, e quanto por tiro (nao por projetil).
+   *
+   * As armas basicas atiram PEDRA — a mesma que ja enche a mochila e que nao
+   * valia quase nada. Tres coisas se resolvem de uma vez: a pedra ganha uso,
+   * a arma deixa de exigir uma viagem a base para funcionar, e ficar sem
+   * municao passa a significar "vai minerar", que e o proprio jogo. Municao
+   * fabricada continua existindo para as armas melhores, mais adiante.
+   */
+  ammo: ResourceId;
   ammoPerShot: number;
   /** Profundidade ja alcancada para aparecer na loja. */
   requiredDepth: number;
@@ -53,12 +62,12 @@ export interface WeaponDef {
 }
 
 /**
- * A municao e UMA so para todas as armas.
+ * Municao FABRICADA, para as armas melhores que ainda vao existir.
  *
- * Tres tipos de bala seria realismo comprado com atrito: o jogador passaria a
- * conferir tres numeros antes de descer, e trocar de arma viraria uma conta em
- * vez de uma escolha. Um calibre, e o que separa as armas e quanto cada tiro
- * come dele.
+ * As basicas comem pedra direto da mochila (ver `ammo` em cada arma). A
+ * fabricada fica para quando a escopeta e o fuzil entrarem: ai a escolha
+ * "gasto ferro em bala ou em obra?" tem peso, porque a arma que usa ela ja e
+ * boa o bastante para valer a conta.
  */
 export const AMMO: ResourceId = 'ammo_round';
 
@@ -67,8 +76,8 @@ export const WEAPONS: WeaponDef[] = [
     id: 'pistola',
     name: 'Pistola de Ferro',
     description:
-      'Feita na bancada da base, com o ferro que voce mesmo tirou. Um tiro, uma bala, ' +
-      'e a mao livre para a picareta.',
+      'Feita na bancada da base, com o ferro que voce mesmo tirou. Cospe pedra — ' +
+      'a mesma que enche a sua mochila. Acabou a pedra, volta a picareta.',
     flavor: 'Nao e bonita. Mas ja me tirou de dois buracos.',
     damage: 14,
     fireRate: 4.5,
@@ -79,7 +88,8 @@ export const WEAPONS: WeaponDef[] = [
     gravity: 0,
     pierce: 0,
     recoil: 40,
-    ammoPerShot: 1,
+    ammo: 'stone',
+    ammoPerShot: 2,
     requiredDepth: 0,
     cost: 0,
     bulletSize: 3,
