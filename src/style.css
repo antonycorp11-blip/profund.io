@@ -7306,9 +7306,22 @@ body:has(.hud-map-slot.folded) .toasts {
    * O painel continua legivel porque ele e opaco e pinta por cima; o que muda
    * e a moldura de tela em volta dele deixar de ser um borrao cinza.
    */
-  background: rgba(10, 6, 3, 0.36);
+  /*
+   * SEM cor de fundo propria quando ha cena pintada.
+   *
+   * O escurecimento morava aqui, e com ele o `::after` da cena ficava ATRAS do
+   * proprio fundo do wrap — pintado por cima, invisivel. A cena entrou e a
+   * saturacao nao subiu um ponto, o que so apareceu porque havia medida.
+   *
+   * Agora quem escurece e a propria cena, pelo `filter`. Sem cena, o fundo
+   * liso volta pela regra seguinte.
+   */
   backdrop-filter: blur(13px) saturate(1.45) brightness(0.92);
   -webkit-backdrop-filter: blur(13px) saturate(1.45) brightness(0.92);
+}
+
+.panel-wrap.open:not([data-fundo]) {
+  background: rgba(10, 6, 3, 0.36);
 }
 
 /* Sem `backdrop-filter` (navegador antigo) o veu sozinho ja segura a
@@ -7350,7 +7363,19 @@ body:has(.hud-map-slot.folded) .toasts {
    * a tela numa mancha so. A saida nao era virar a paleta para o azul: era
    * baixar a SATURACAO e deixar o ouro ser a unica cor viva da tela.
    */
-  background: linear-gradient(168deg, var(--painel-fundo), var(--breu));
+  /*
+   * TRANSLUCIDO, para a mina aparecer por tras.
+   *
+   * O painel era opaco e cobria a cena inteira. Isso segurava DUAS medidas ao
+   * mesmo tempo: a saturacao, porque a unica fonte de cor quente da tela e o
+   * mundo desfocado atras, e a densidade, porque um retangulo chapado conta
+   * como vazio na medida de contraste — e vazio e o que ele e.
+   *
+   * A referencia deixa a mina passar por tras dos paineis. Com 0,82 o texto
+   * continua legivel (o desfoque atras ja e de 13 px, entao nao ha detalhe
+   * competindo com a letra) e a tela ganha o fundo que ela nao tinha.
+   */
+  background: linear-gradient(168deg, rgba(18, 19, 20, 0.82), rgba(6, 5, 6, 0.88));
 }
 
 /* O cabecalho perde a linha de CSS: a moldura ja separa. */
@@ -8392,3 +8417,54 @@ body:has(.hud-map-slot.folded) .toasts {
     justify-self: stretch;
   }
 }
+
+
+/* =========================================================================
+ * FUNDO PINTADO DAS TELAS
+ *
+ * A medida que faltava fechar era a SATURACAO: 31% contra os 53% da
+ * referencia. Ela nao se resolve em CSS porque o que falta e pintura — a
+ * referencia tem cena de mina atras dos paineis, com lampiao, viga e cristal,
+ * e e dali que vem o calor dela.
+ *
+ * Cada fundo foi MEDIDO antes de entrar (ver tools/medir-fundo.mjs), contra
+ * tres criterios que decidem se um fundo serve para ter painel em cima:
+ * claridade do miolo abaixo de 42, contraste do miolo abaixo de 20 e detalhe
+ * nas bordas acima de 22. Fundo bonito com luz no meio e inutil: o texto
+ * briga com o desenho e a tela fica ilegivel.
+ *
+ * Os quatro entraram com miolo entre 12 e 15 de claridade e 11 a 13 de
+ * contraste — mais escuros e mais calmos que o exigido.
+ * ========================================================================= */
+
+.panel-wrap[data-fundo]::after {
+  /*
+   * O fundo vai num `::after` com `z-index: -1` DENTRO do wrap, e nao no
+   * `background` dele: o wrap ja carrega o `backdrop-filter` que desfoca o
+   * jogo, e pintar por cima mataria o desfoque que da a profundidade.
+   */
+  content: '';
+  position: absolute;
+  inset: 0;
+  /*
+   * `z-index: 0`, e nao -1. Com -1 o pseudo-elemento cai atras do fundo do
+   * proprio pai e some. O painel e filho e pinta por cima naturalmente.
+   */
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  /* Escurecido de novo por cima: a arte ja e escura, e o painel precisa de
+     mais contraste do que "escuro" para a letra assentar. */
+  filter: brightness(0.62) saturate(1.15);
+}
+
+/* O painel fica ACIMA da cena. Sem isto ele desapareceria por tras dela. */
+.panel-wrap[data-fundo] > * {
+  position: relative;
+  z-index: 1;
+}
+
+.panel-wrap[data-fundo='oficina']::after { background-image: url('art/bg/tela/oficina.png'); }
+.panel-wrap[data-fundo='cristal']::after { background-image: url('art/bg/tela/cristal.png'); }
+.panel-wrap[data-fundo='mesa']::after { background-image: url('art/bg/tela/mesa.png'); }
+.panel-wrap[data-fundo='trilhos']::after { background-image: url('art/bg/tela/trilhos.png'); }

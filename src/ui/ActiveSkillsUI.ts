@@ -38,6 +38,7 @@ export class ActiveSkillsUI {
   constructor(parent: HTMLElement, private host: ActiveSkillsHost) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap skillscreen';
+    this.wrap.dataset.fundo = 'cristal';
     this.wrap.innerHTML = `
       <div class="tech-screen skl-tela">
         <div class="tech-body skl-tres">

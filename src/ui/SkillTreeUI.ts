@@ -136,6 +136,7 @@ export class SkillTreeUI {
   constructor(parent: HTMLElement, private host: SkillTreeHost) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap skilltree';
+    this.wrap.dataset.fundo = 'cristal';
     this.wrap.innerHTML = `
       <div class="skill-screen">
         <header class="skill-header">

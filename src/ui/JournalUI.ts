@@ -63,6 +63,7 @@ export class JournalUI {
   ) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap journal';
+    this.wrap.dataset.fundo = 'mesa';
     /*
      * UM LIVRO ABERTO, com as abas de couro saindo pela lateral.
      *

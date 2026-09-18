@@ -90,6 +90,8 @@ export class TechScreen {
   constructor(parent: HTMLElement, private host: TechHost) {
     this.wrap = document.createElement('div');
     this.wrap.className = 'panel-wrap techscreen';
+    /* O fundo segue a ABA: cada uma tem a sua cena. Ver `--fundo` no style.css. */
+    this.wrap.dataset.fundo = 'oficina';
     /*
      * TRES ZONAS, e nao uma coluna que rola.
      *
@@ -188,6 +190,15 @@ export class TechScreen {
     this.renderTabs();
     this.renderStock();
     this.bodyEl.classList.toggle('aside-esquerda', this.tab === 'equipamento');
+    /*
+     * A cena de fundo segue a ABA, e nao a tela.
+     *
+     * Automacao fala de trilho e vagonete; as outras falam de bancada e
+     * ferramenta. Usar a mesma cena nas cinco jogaria fora metade do que os
+     * fundos custaram para gerar.
+     */
+    this.wrap.dataset.fundo =
+      this.tab === 'copiadora' || this.tab === 'toupeiras' ? 'trilhos' : 'oficina';
     // A Automacao e a unica tela sem painel lateral; as outras dependem dele.
     this.asideEl.hidden = false;
     this.bodyEl.classList.toggle('sem-lateral', this.tab === 'copiadora' || this.tab === 'toupeiras');
