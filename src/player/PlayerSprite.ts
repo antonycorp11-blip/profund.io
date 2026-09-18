@@ -85,6 +85,29 @@ export class PlayerSprite {
   /** Qual quadro da tira de mira foi desenhado agora. */
   private quadroDeMira = 0;
 
+  /*
+   * TRANSICOES.
+   *
+   * O corpo trocava de pose num quadro so: parado virava andando sem nada no
+   * meio, e inverter a direcao era um espelhamento instantaneo — o personagem
+   * aparecia virado do outro lado sem ter virado. E o que mais denuncia
+   * desenho plano, e a correcao nao e mais arte de caminhada: e o PEDACO ENTRE
+   * duas poses, que nao existia.
+   *
+   * Elas so mudam o DESENHO. A fisica continua respondendo ao controle no
+   * mesmo quadro — travar o movimento para tocar uma animacao seria trocar
+   * fluidez por atraso, que e o negocio errado.
+   */
+  private transicao: 'arranca' | 'freia' | 'gira' | null = null;
+  private transicaoT = 0;
+  /** Para onde ele esta virando. So vale durante o giro. */
+  private giroPara = 1;
+  private andavaAntes = false;
+  private ladoAntes = 1;
+
+  /** Acima disto ele conta como andando. Abaixo, como parado. */
+  private static readonly LIMIAR_ANDAR = 12;
+
   /**
    * As TRES direcoes que o braco sabe apontar, em radianos.
    *
@@ -130,6 +153,7 @@ export class PlayerSprite {
   }
 
   update(dt: number, player: Player): void {
+    this.atualizarTransicao(dt, player);
     const next = this.pickAnim(player);
     if (next !== this.anim) {
       this.anim = next;
@@ -139,6 +163,70 @@ export class PlayerSprite {
     this.recoil = Math.max(0, this.recoil - dt * 6);
     this.walkDist += Math.abs(player.vx) * dt;
     if (player.climbingWall !== 0 && player.vy < 0) this.climbDist += Math.abs(player.vy) * dt;
+  }
+
+  /**
+   * Decide se comeca, continua ou larga uma transicao.
+   *
+   * Chamada antes de tudo em `update`, porque a escolha do quadro depende
+   * dela. A ordem das checagens e a ordem da importancia: GIRAR ganha de
+   * parar, e parar ganha de arrancar, porque quem inverte a direcao no meio de
+   * uma corrida esta fazendo as tres coisas ao mesmo tempo e so o giro se ve.
+   */
+  private atualizarTransicao(dt: number, player: Player): void {
+    const anda = Math.abs(player.vx) > PlayerSprite.LIMIAR_ANDAR;
+    const lado = player.facing < 0 ? -1 : 1;
+
+    if (this.transicao) {
+      this.transicaoT += dt;
+      const def = ART.character.strips[this.transicao];
+      const acabou = !def || this.transicaoT >= def.frames / def.fps;
+      /*
+       * Sair do chao CORTA a transicao na hora.
+       *
+       * Uma arrancada pela metade enquanto ele ja esta no ar seria o corpo
+       * fazendo uma coisa e a fisica outra. No chao a transicao acompanha; no
+       * ar ela mente.
+       */
+      if (acabou || !player.onGround || player.climbingWall !== 0) this.transicao = null;
+    }
+
+    /*
+     * O GIRO EM CURSO NAO E INTERROMPIDO.
+     *
+     * Invertendo a direcao o `vx` cruza o zero, e no quadro em que ele passa
+     * por perto o heroi conta como PARADO — entao o `freia` disparava por cima
+     * do giro que ja tinha comecado, e a volta sumia no meio. Quem inverte
+     * correndo esta girando, parando e arrancando ao mesmo tempo; so o giro se
+     * ve, e e ele que tem que terminar.
+     */
+    const girando = this.transicao === 'gira';
+
+    if (player.onGround && player.climbingWall === 0 && !girando) {
+      if (lado !== this.ladoAntes && anda) {
+        this.transicao = 'gira';
+        this.transicaoT = 0;
+        this.giroPara = lado;
+      } else if (!anda && this.andavaAntes) {
+        this.transicao = 'freia';
+        this.transicaoT = 0;
+      } else if (anda && !this.andavaAntes && this.transicao !== 'gira') {
+        this.transicao = 'arranca';
+        this.transicaoT = 0;
+      }
+    }
+
+    this.andavaAntes = anda;
+    this.ladoAntes = lado;
+  }
+
+  /** O quadro da transicao em curso, ou null quando nao ha nenhuma. */
+  private quadroDaTransicao(): { name: string; index: number } | null {
+    if (!this.transicao) return null;
+    const def = ART.character.strips[this.transicao];
+    if (!def || !Assets.characterStrips.has(this.transicao)) return null;
+    const i = Math.min(def.frames - 1, Math.floor(this.transicaoT * def.fps));
+    return { name: this.transicao, index: i };
   }
 
   private pickAnim(player: Player): AnimName {
@@ -241,6 +329,16 @@ export class PlayerSprite {
       index: Math.max(0, Math.min(last(n), Math.round(i))),
     });
 
+    /*
+     * A TRANSICAO TEM PRIORIDADE sobre tudo que acontece no chao.
+     *
+     * Fica depois de nada e antes de tudo porque ela ja foi filtrada em
+     * `atualizarTransicao`: se ele saiu do chao ou grudou na parede, ela foi
+     * cancelada la, e aqui nem existe mais.
+     */
+    const t = this.quadroDaTransicao();
+    if (t) return t;
+
     if (player.climbingWall !== 0 && has('climb')) {
       const n = strips.climb.frames;
       if (player.mantling) return pick('climb', last('climb'));
@@ -342,7 +440,19 @@ export class PlayerSprite {
 
     // Espelha so quando o lado desejado difere do lado que a arte ja olha.
     const artFacing = usingStrip && strip ? art.strips[strip.name].facing : 1;
-    const flipped = player.facing !== artFacing;
+    /*
+     * O GIRO ESPELHA AO CONTRARIO DE TODO O RESTO.
+     *
+     * Nas outras tiras o espelho so escolhe o lado para onde ele olha. No giro
+     * o SENTIDO da volta esta desenhado: a arte sai do perfil direito, passa
+     * de frente e chega no perfil esquerdo.
+     *
+     * Entao virando para a esquerda ela vai como esta, e virando para a
+     * direita e que precisa espelhar — o oposto da regra geral. Espelhar pela
+     * regra normal faria ele girar para o lado errado e chegar olhando para
+     * onde veio.
+     */
+    const flipped = strip?.name === 'gira' ? this.giroPara === 1 : player.facing !== artFacing;
 
     ctx.save();
     ctx.translate(Math.round(player.cx), Math.round(top));

@@ -280,10 +280,10 @@ export const ART = {
        * Trocar a arte de uma tira obriga a conferir este campo. Ele nao e
        * deduzido de lugar nenhum.
        */
-      walk: { file: 'walk.png', frames: 9, fps: 13, facing: 1 },
-      jump: { file: 'jump.png', frames: 6, fps: 12, facing: 1 },
+      walk: { file: 'walk.png', frames: 10, fps: 13, facing: 1 },
+      jump: { file: 'jump.png', frames: 9, fps: 12, facing: 1 },
       mine: { file: 'mine.png', frames: 12, fps: 12, facing: 1 },
-      climb: { file: 'climb.png', frames: 6, fps: 10, facing: 1 },
+      climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
       /*
        * POSE DE MIRA, dez quadros e MAO VAZIA.
        *
@@ -297,6 +297,29 @@ export const ART = {
        * 6-7 recuo, 8-9 andando de arma em punho.
        */
       aim: { file: 'aim.png', frames: 10, fps: 6, facing: 1 },
+
+      /*
+       * TRANSICOES: tocam UMA VEZ e saem.
+       *
+       * O corpo trocava de pose num quadro — parado virava andando sem nada no
+       * meio, e inverter a direcao era um espelhamento instantaneo. E o que
+       * mais denuncia que aquilo e um desenho plano.
+       *
+       * As tres nao repetem: quem termina de arrancar entra na caminhada, quem
+       * termina de frear fica parado. E por isso que elas tem `fps` alto — sao
+       * curtas de proposito, e uma transicao que o jogador percebe como espera
+       * e pior do que transicao nenhuma.
+       */
+      arranca: { file: 'arranca.png', frames: 5, fps: 22, facing: 1 },
+      freia: { file: 'freia.png', frames: 5, fps: 20, facing: 1 },
+      /*
+       * O GIRO vai de perfil DIREITO para perfil ESQUERDO, passando por frente.
+       *
+       * O sentido esta desenhado na arte, entao o espelho aqui e ao contrario
+       * do resto: virando para a esquerda ele vai como esta; virando para a
+       * direita e que precisa espelhar. Ver PlayerSprite.render.
+       */
+      gira: { file: 'gira.png', frames: 6, fps: 24, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,

@@ -48,25 +48,47 @@ const bruta = (f) => path.resolve('arte-bruta/heroi', f);
 /**
  * De onde sai cada tira.
  *
- * `banda` e `faixa` recortam a regiao da folha; fora delas o arquivo inteiro
- * vale. `referencia` diz qual quadro esta DE PE — e dele que sai a escala da
- * fonte, porque so um corpo em pe mede o corpo. Usar o quadro que calha de ser
- * o mais alto faria o heroi encolher na animacao em que ele levanta o braco.
+ * A arte chegou em folhas soltas, uma por animacao, cada uma num tamanho — da
+ * caminhada com 484 px de silhueta ate a mira com 688. Quarenta por cento de
+ * diferenca entre elas. Por isso cada fonte declara qual e o seu quadro EM PE:
+ * e dele que sai a escala, e so um corpo em pe mede o corpo.
+ *
+ * `banda`/`faixa` recortam uma regiao (usado so na folha-base, que e um
+ * mosaico). Sem elas, o arquivo inteiro vale.
  */
 const FONTES = {
-  idle:  { arq: 'folha-base.png', banda: [59, 206],  faixa: [20, 697],   referencia: 0 },
-  walk:  { arq: 'folha-base.png', banda: [59, 206],  faixa: [724, 1517], referencia: 0 },
-  jump:  { arq: 'folha-base.png', banda: [273, 435], faixa: [11, 499],   referencia: null, escalaDe: 'idle' },
-  mine:  { arq: 'folha-base.png', banda: [273, 435], faixa: [511, 1521], referencia: null, escalaDe: 'idle' },
+  /* Ainda saem da folha-base, que veio como mosaico. */
+  idle: { arq: 'folha-base.png', banda: [59, 206], faixa: [20, 697], referencia: 0 },
+  mine: { arq: 'folha-base.png', banda: [273, 435], faixa: [511, 1521], referencia: null, escalaDe: 'idle' },
+
   /*
-   * A ESCALADA NAO TEM QUADRO EM PE.
+   * CAMINHADA: nao ha quadro em pe, e o mais alto serve.
    *
-   * Em todos os seis ele esta encolhido com os joelhos para cima e os bracos
-   * acima da cabeca, entao a altura da silhueta nao mede o corpo — mede a
-   * pose. A escala vem das poses de mira, que sao o mesmo desenho da mesma
-   * leva, e o resultado se confere na folha do fim.
+   * Num ciclo de passada o quadro mais alto e aquele com as pernas mais
+   * juntas — uns tres por cento abaixo da altura em pe, porque o joelho ainda
+   * esta levemente dobrado. Normalizar por ele deixa o heroi tres por cento
+   * mais alto andando do que parado, e isso ninguem ve a 46 px de tela.
    */
-  climb: { arq: 'escalada.png', referencia: null, escalaDe: 'aim' },
+  walk: { arq: 'n2-walk.png', referencia: 'maisAlto', esperado: 10 },
+
+  jump: { arq: 'n2-jump.png', referencia: 0, esperado: 9 },
+  gira: { arq: 'n2-gira.png', referencia: 0 },
+  arranca: { arq: 'n2-arranca.png', referencia: 0 },
+  freia: { arq: 'nova-freia.png', referencia: 'ultimo' },
+
+  /*
+   * ESCALADA: nao ha quadro em pe NEM quadro alto que sirva.
+   *
+   * Nos oito ele esta encolhido, joelho para cima e braco acima da cabeca — a
+   * silhueta mede a pose, nao o corpo. O mais alto daria um heroi uns vinte
+   * por cento maior, e vinte por cento se ve.
+   *
+   * Entao a escala dela e o unico numero deste arquivo ajustado no olho,
+   * comparando na folha de conferencia com as tiras vizinhas. Esta anotado
+   * como ajustado no olho de proposito: se a arte da escalada for refeita,
+   * este numero tem que ser reconferido.
+   */
+  climb: { arq: 'n2-climb.png', escalaManual: 0.1585, esperado: 8 },
 };
 
 /**
@@ -74,22 +96,23 @@ const FONTES = {
  *
  * Ela e a unica em que o indice do quadro tem significado: o jogo pede o
  * quadro 0 para o tiro reto, o 2 para cima, o 4 para baixo, 6-7 para o recuo e
- * 8-9 para andar atirando (ver PlayerSprite.stripFrame). A IA entregou as sete
- * poses distintas em dois arquivos; aqui elas entram na ordem que o jogo espera.
+ * 8-9 para andar atirando (ver PlayerSprite.stripFrame). As sete poses
+ * distintas vieram em dois arquivos; aqui elas entram na ordem que o jogo
+ * espera.
  *
- * Os pares repetem a mesma pose de proposito, menos no recuo e no andar: nas
- * tres direcoes o jogo so le o primeiro do par, entao um segundo desenho ali
- * seria trabalho que ninguem ve.
+ * Os pares repetem a mesma pose menos no recuo e no andar: nas tres direcoes o
+ * jogo so le o primeiro do par, entao um segundo desenho ali seria trabalho
+ * que ninguem ve.
  */
 const MIRA = [
-  ['mira-direcoes.png', 0], ['mira-direcoes.png', 0],            // 0-1 reto
-  ['mira-direcoes.png', 1], ['mira-direcoes.png', 1],            // 2-3 cima
-  ['mira-direcoes.png', 2], ['mira-direcoes.png', 2],            // 4-5 baixo
-  ['mira-recuo-e-andando.png', 0], ['mira-recuo-e-andando.png', 1], // 6-7 recuo
-  ['mira-recuo-e-andando.png', 2], ['mira-recuo-e-andando.png', 3], // 8-9 andando
+  ['n2-mira3.png', 0], ['n2-mira3.png', 0],
+  ['n2-mira3.png', 1], ['n2-mira3.png', 1],
+  ['n2-mira3.png', 2], ['n2-mira3.png', 2],
+  ['nova-mira-recuo.png', 0], ['nova-mira-recuo.png', 1],
+  ['nova-mira-recuo.png', 2], ['nova-mira-recuo.png', 3],
 ];
 /** O quadro DE PE de cada arquivo de mira, para tirar a escala. */
-const REFERENCIA_DA_MIRA = { 'mira-direcoes.png': 0, 'mira-recuo-e-andando.png': 1 };
+const REFERENCIA_DA_MIRA = { 'n2-mira3.png': 0, 'nova-mira-recuo.png': 1 };
 
 const cache = new Map();
 function ler(arq) {
@@ -109,7 +132,7 @@ function alfa(png, x, y) {
  * aos vizinhos e partido no ponto de menor conteudo. Foi o que aconteceu na
  * folha base: dois quadros de caminhada sairam grudados num blob de 169 px.
  */
-function acharQuadros(png, banda, faixa) {
+function acharQuadros(png, banda, faixa, esperado) {
   const [y0, y1] = banda ?? [0, png.height - 1];
   const [xi, xf] = faixa ?? [0, png.width - 1];
   const col = [];
@@ -125,6 +148,44 @@ function acharQuadros(png, banda, faixa) {
     else { if (ini >= 0 && x - ini > 14) brutos.push([ini, x - 1]); ini = -1; }
   }
   if (ini >= 0) brutos.push([ini, xf]);
+
+  /*
+   * QUANDO A FOLHA DIZ QUANTOS QUADROS TEM, e ela quem manda.
+   *
+   * Partir por "bloco largo demais em relacao a mediana" funciona enquanto os
+   * desenhos se separam. Na caminhada nova eles se TOCAM — o braco de um
+   * encosta no do vizinho — e a folha inteira virou dois blocos. Com dois
+   * blocos a mediana e enorme, nenhum parece largo demais, e sairam dois
+   * quadros de dez.
+   *
+   * Com a contagem declarada eu ignoro a mediana e corto o intervalo todo em
+   * N partes, cada corte caindo na coluna de menos conteudo por perto. E a
+   * mesma busca por vale, so que sabendo quantos vales procurar.
+   */
+  if (esperado && brutos.length) {
+    const a0 = brutos[0][0];
+    const b0 = brutos[brutos.length - 1][1];
+    const largura = b0 - a0 + 1;
+    const passo = largura / esperado;
+    const cortes = [a0 - 1];
+    for (let k = 1; k < esperado; k++) {
+      const alvo = a0 + Math.round(passo * k);
+      let melhor = alvo;
+      let menor = Infinity;
+      const margem = Math.round(passo * 0.3);
+      for (let x = alvo - margem; x <= alvo + margem; x++) {
+        if (x <= a0 || x >= b0) continue;
+        if (col[x] < menor) { menor = col[x]; melhor = x; }
+      }
+      cortes.push(melhor);
+    }
+    cortes.push(b0);
+    const partes = [];
+    for (let k = 0; k < cortes.length - 1; k++) {
+      partes.push(caixa(png, cortes[k] + 1, cortes[k + 1], y0, y1));
+    }
+    return partes;
+  }
 
   const larguras = brutos.map(([a, b]) => b - a + 1).sort((a, b) => a - b);
   const tipica = larguras[Math.floor(larguras.length / 2)] || 1;
@@ -207,34 +268,46 @@ function desenhar(destino, cx, png, cx0, escala) {
 const escalas = new Map();
 const tiras = {};
 
-/** A escala de uma fonte: o quadro EM PE dela levado a 90 px. */
+/**
+ * A escala de uma fonte: o quadro EM PE dela levado a 90 px.
+ *
+ * `referencia` aceita um indice, ou um dos dois nomes:
+ *   'maisAlto' — a silhueta mais alta da folha (ciclo sem quadro parado)
+ *   'ultimo'   — o ultimo quadro (animacoes que TERMINAM em pe, como frear)
+ */
 function escalaDe(png, quadros, referencia) {
-  const c = quadros[referencia];
+  let c;
+  if (referencia === 'maisAlto') {
+    c = quadros.reduce((a, b) => (b.y1 - b.y0 > a.y1 - a.y0 ? b : a));
+  } else if (referencia === 'ultimo') {
+    c = quadros[quadros.length - 1];
+  } else {
+    c = quadros[referencia];
+  }
   return ALTURA_EM_PE / (c.y1 - c.y0 + 1);
 }
 
-// 1. As quatro tiras que vieram da folha base.
-for (const nome of ['idle', 'walk', 'jump', 'mine']) {
+/** As tiras recortadas de uma folha inteira ou de uma regiao dela. */
+for (const nome of Object.keys(FONTES)) {
   const f = FONTES[nome];
   const png = ler(f.arq);
-  const quadros = acharQuadros(png, f.banda, f.faixa).filter(Boolean);
-  if (f.referencia !== null) escalas.set(nome, escalaDe(png, quadros, f.referencia));
-  tiras[nome] = { png, quadros, fonte: nome };
+  const quadros = acharQuadros(png, f.banda, f.faixa, f.esperado).filter(Boolean);
+  tiras[nome] = { png, quadros };
+  if (f.escalaManual !== undefined) escalas.set(nome, f.escalaManual);
+  else if (f.referencia !== null && f.referencia !== undefined) {
+    escalas.set(nome, escalaDe(png, quadros, f.referencia));
+  }
 }
 
-// 2. A tira de mira, montada pose a pose na ordem que o jogo espera.
+// A tira de mira, montada pose a pose na ordem que o jogo espera.
 {
   const porArquivo = new Map();
   for (const arq of Object.keys(REFERENCIA_DA_MIRA)) {
     const png = ler(arq);
     const quadros = acharQuadros(png, null, null).filter(Boolean);
-    porArquivo.set(arq, {
-      png,
-      quadros,
-      escala: escalaDe(png, quadros, REFERENCIA_DA_MIRA[arq]),
-    });
+    porArquivo.set(arq, { png, quadros, escala: escalaDe(png, quadros, REFERENCIA_DA_MIRA[arq]) });
   }
-  escalas.set('aim', porArquivo.get('mira-direcoes.png').escala);
+  escalas.set('aim', porArquivo.get('n2-mira3.png').escala);
   tiras.aim = {
     montada: MIRA.map(([arq, i]) => {
       const f = porArquivo.get(arq);
@@ -243,18 +316,14 @@ for (const nome of ['idle', 'walk', 'jump', 'mine']) {
   };
 }
 
-// 3. A escalada, emprestando a escala da mira.
-{
-  const png = ler(FONTES.climb.arq);
-  const quadros = acharQuadros(png, null, null).filter(Boolean);
-  tiras.climb = { png, quadros, fonte: 'climb' };
-}
-for (const nome of ['jump', 'mine', 'climb']) {
-  escalas.set(nome, escalas.get(FONTES[nome].escalaDe));
+// Quem empresta a escala de outra tira resolve depois que todas ja mediram.
+for (const nome of Object.keys(FONTES)) {
+  const de = FONTES[nome].escalaDe;
+  if (de) escalas.set(nome, escalas.get(de));
 }
 
 // 4. Escrever.
-const ORDEM = ['idle', 'walk', 'jump', 'mine', 'climb', 'aim'];
+const ORDEM = ['idle', 'walk', 'jump', 'mine', 'climb', 'aim', 'arranca', 'freia', 'gira'];
 const resumo = [];
 for (const nome of ORDEM) {
   const t = tiras[nome];

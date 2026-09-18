@@ -53,7 +53,25 @@ const OPACO = 160;
  * A largura do PNG nao mente: sao quadros de 128 px lado a lado, entao a
  * contagem e uma divisao. Um numero que se deduz nao pode discordar da arte.
  */
-const TIRAS = ['idle', 'walk', 'jump', 'mine', 'climb', 'aim'].map((nome) => {
+/*
+ * QUAIS tiras existem vem do art.ts, e nao de uma lista aqui.
+ *
+ * Estava fixa em seis nomes. Entraram `arranca`, `freia` e `gira` no jogo e a
+ * medicao continuou olhando as seis de sempre, calada — as tres novas ficariam
+ * sem encaixe nenhum, e o capacete simplesmente sumiria da cabeca durante a
+ * arrancada sem que nada acusasse.
+ *
+ * E a segunda vez que uma lista escrita a mao aqui dessincronizou da arte. A
+ * primeira foi a contagem de quadros, que agora sai da largura do PNG.
+ */
+const NOMES = [
+  ...fs
+    .readFileSync(path.resolve('src/data/art.ts'), 'utf8')
+    .matchAll(/^\s{6}(\w+): \{ file: '/gm),
+].map((m) => m[1]);
+if (NOMES.length < 6) throw new Error('nao consegui ler as tiras de src/data/art.ts');
+
+const TIRAS = NOMES.map((nome) => {
   const arq = path.resolve(`public/art/character/${nome}.png`);
   if (!fs.existsSync(arq)) return [nome, 0];
   return [nome, Math.round(PNG.sync.read(fs.readFileSync(arq)).width / QUADRO)];
