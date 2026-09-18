@@ -109,10 +109,12 @@ TIRAS.forEach((tira, linha) => {
 
     // atras: mochila e ferramenta
     if (enc?.costas) colar(pecas.mochila, emX(enc.costas), emY(enc.costas), QUADRO * TAM.mochila, TOQ.mochila, 0);
-    // So no golpe, igual ao PlayerSprite: guardada, ela nao se desenha.
-    if (enc?.punho && tira === 'mine') {
+    // Igual ao PlayerSprite: sempre na mao, menos escalando (as duas maos na
+    // parede). No golpe segue o braco; nas outras, o angulo de carregar.
+    if (enc?.punho && tira !== 'climb') {
       colar(pecas.picareta, emX(enc.punho), emY(enc.punho), QUADRO * TAM.picareta,
-        grips[PICARETA] ?? { x: 0.22, y: 0.5 }, enc.punho.angulo ?? 0);
+        grips[PICARETA] ?? { x: 0.22, y: 0.5 },
+        tira === 'mine' ? (enc.punho.angulo ?? 0) : Math.PI * 0.42);
     }
     // o corpo
     for (let y = 0; y < QUADRO; y++) for (let x = 0; x < QUADRO; x++) {

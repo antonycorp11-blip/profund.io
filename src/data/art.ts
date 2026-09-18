@@ -269,7 +269,18 @@ export const ART = {
     stripDrawHeight: 66,
     strips: {
       idle: { file: 'idle.png', frames: 9, fps: 6, facing: 1 },
-      walk: { file: 'walk.png', frames: 9, fps: 13, facing: -1 },
+      /*
+       * `facing: 1` porque a arte NOVA olha para a direita.
+       *
+       * Ficou em -1 por uma leva inteira depois da troca de arte: a folha
+       * antiga de caminhada olhava para a esquerda, o codigo espelhava para
+       * compensar, e quando a arte mudou de lado o espelho continuou la. O
+       * heroi andava de re — pernas fazendo o ciclo ao contrario do movimento.
+       *
+       * Trocar a arte de uma tira obriga a conferir este campo. Ele nao e
+       * deduzido de lugar nenhum.
+       */
+      walk: { file: 'walk.png', frames: 9, fps: 13, facing: 1 },
       jump: { file: 'jump.png', frames: 6, fps: 12, facing: 1 },
       mine: { file: 'mine.png', frames: 12, fps: 12, facing: 1 },
       climb: { file: 'climb.png', frames: 6, fps: 10, facing: 1 },

@@ -478,23 +478,43 @@ export class PlayerSprite {
    */
   private desenharFerramenta(ctx: CanvasRenderingContext2D, h: number, tira: string, quadro: number): void {
     /*
-     * SO NO GOLPE.
+     * A PICARETA FICA NA MAO, SEMPRE.
      *
-     * Desenhada em todas as tiras, a picareta ficava boiando: ao lado da
-     * cabeca na escalada, atravessando as pernas no pulo, em angulo diferente
-     * a cada quadro parado. Eu estava tentando resolver o problema errado —
-     * ele nao esta USANDO a picareta quando anda, pula ou escala.
+     * Eu tinha desenhado ela so no golpe, porque nas outras tiras ela boiava —
+     * e isso resolvia o MEU problema, nao o do jogo. Ele e mineiro: a picareta
+     * e a primeira coisa que ele tem, veio na caixa do pai junto do revolver,
+     * e um mineiro sem picareta na mao nao le como mineiro.
      *
-     * Guardada, ela nao precisa de ancora nenhuma. E quando ele saca, o
-     * proprio gesto do golpe diz onde ela vai.
+     * A escalada e a unica excecao, e por um motivo do mundo e nao da arte: ali
+     * as duas maos estao na parede. Quem esta se puxando para cima nao esta
+     * segurando ferramenta.
      */
-    if (tira !== 'mine') return;
+    if (tira === 'climb') return;
     const id = this.picaretaArt;
     const arte = id ? Assets.tool(id) : null;
     const ponto = encaixe(tira, quadro, 'punho');
     if (!id || !arte || !arte.width || !ponto) return;
     const cabo = TOOL_GRIPS[id] ?? { x: 0.22, y: 0.5 };
-    this.prender(ctx, arte, ponto, h, PlayerSprite.TAMANHO.picareta, cabo, ponto.angulo ?? 0);
+    this.prender(ctx, arte, ponto, h, PlayerSprite.TAMANHO.picareta, cabo, this.giroDaFerramenta(tira, ponto));
+  }
+
+  /**
+   * Para onde a picareta aponta, nesta tira.
+   *
+   * SO O GOLPE usa o angulo medido do braco. La o gesto e o conteudo da
+   * animacao — o braco sobe e desce, e a ferramenta tem que subir e descer com
+   * ele —, entao a medida e a resposta certa mesmo sendo grosseira.
+   *
+   * Nas outras tiras a medida e ruido. O braco esta parado ao lado do corpo e
+   * o angulo ombro-punho varia alguns graus por quadro por causa da respiracao
+   * e do passo; usar isso fazia a picareta tremer na mao de um homem parado.
+   * Parado, andando ou pulando, ele CARREGA a ferramenta — e carregar tem um
+   * angulo so.
+   */
+  private giroDaFerramenta(tira: string, ponto: { angulo?: number }): number {
+    if (tira === 'mine') return ponto.angulo ?? 0;
+    // Pendurada na mao, cabo para cima e lamina para baixo.
+    return Math.PI * 0.42;
   }
 
   /**
