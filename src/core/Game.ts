@@ -300,26 +300,6 @@ export class Game {
         const p = this.camps.depotPos(base, this.world.surfaceRow, CONFIG.tileSize);
         return !!this.collectors.buy(p.x, p.y - CONFIG.tileSize);
       },
-    }, {
-      /*
-       * A BANCADA. Ferro vira bala.
-       *
-       * Uma leva grande de propositio: fabricar de dez em dez faria o jogador
-       * voltar a base toda hora, e a viagem de volta ja e o custo de verdade
-       * do jogo. A conta interessante e "compensa gastar esse ferro em bala ou
-       * em obra?", e ela so aparece se a leva for grande o bastante para doer.
-       */
-      custo: () => ({ ferro: CONFIG.ammo.ferroPorLeva, leva: Math.round(CONFIG.ammo.balasPorLeva * this.attrs.get('ammoCraftYield')) }),
-      ferroNaBase: (base) => this.camps.alcance(base.id, 'iron'),
-      municaoAtual: () => this.municao,
-      fabricar: (base) => {
-        if (!this.camps.cobrar(base.id, { iron: CONFIG.ammo.ferroPorLeva })) return false;
-        const leva = Math.round(CONFIG.ammo.balasPorLeva * this.attrs.get('ammoCraftYield'));
-        this.municao += leva;
-        Events.emit('ammo:crafted', { amount: leva });
-        Events.emit('ui:toast', { text: `+${leva} de municao.`, tone: 'good' });
-        return true;
-      },
     });
     this.journalUI = new JournalUI(uiRoot, this.journal, {
       current: () => this.missions.current(),

@@ -44,9 +44,20 @@ export const TECH_CATEGORIES: Record<TechCategory, TechCategoryMeta> = {
   },
   refino: {
     id: 'refino',
-    name: 'Refino',
-    description: 'Processar minerio bruto rende mais que vender pedra.',
-    icon: '⚗',
+    /*
+     * A aba se chama CONSTRUCAO, e nao "Refino".
+     *
+     * Das cinco pesquisas dela, UMA e refinaria — as outras quatro liberam
+     * esteira, elevador, armazem e gerador. O `BuildMode` le exatamente estes
+     * desbloqueios: sem esta aba nao se constroi nada na base. O nome dizia
+     * respeito a um quinto do conteudo e escondia os outros quatro quintos.
+     *
+     * O `id` continua `refino`: trocar chave de dado por causa de rotulo
+     * quebra save e nao arruma nada.
+     */
+    name: 'Construção',
+    description: 'A linha da base: esteira, elevador, armazem, refinaria e gerador.',
+    icon: '⚒',
     color: '#5ac77d',
   },
   equipamento: {

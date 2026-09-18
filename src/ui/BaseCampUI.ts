@@ -46,20 +46,6 @@ export class BaseCampUI {
       moedas(): number;
       naBase(base: BaseCampDef): number;
       contratar(base: BaseCampDef): boolean;
-    },
-    /**
-     * A BANCADA de municao.
-     *
-     * Fabricar mora aqui, e nao numa receita automatica da refinaria, por um
-     * motivo duro: `REFINE_RECIPES` converte TUDO que chega, entao pendurar
-     * `ferro -> municao` nela faria a base comer sozinha o ferro das
-     * construcoes. Municao e uma decisao, nao um efeito colateral.
-     */
-    private bancada?: {
-      custo(): { ferro: number; leva: number };
-      ferroNaBase(base: BaseCampDef): number;
-      municaoAtual(): number;
-      fabricar(base: BaseCampDef): boolean;
     }
   ) {
     this.wrap = document.createElement('div');
@@ -277,26 +263,18 @@ export class BaseCampUI {
 
   // -------------------------------------------------------------- pintura --
 
-  /** A bancada: ferro vira bala. */
-  private secaoBancada(base: BaseCampDef): string {
-    if (!this.bancada) return '';
-    const { ferro, leva } = this.bancada.custo();
-    const tem = Math.floor(this.bancada.ferroNaBase(base));
-    const da = tem >= ferro;
-    return `
-      <section class="camp-pool">
-        <h4>Bancada de municao</h4>
-        <p class="camp-hint">A picareta abre pedra. Bicho e outra conversa —
-           e ela sai daqui, do seu proprio ferro.</p>
-        <div class="camp-list">
-          <span><b>${this.bancada.municaoAtual()}</b> na cartucheira</span>
-          <span><b>${tem}</b> de ferro nesta base</span>
-        </div>
-        <button class="btn primary" data-craft-ammo ${da ? '' : 'disabled'}>
-          ${da ? `FABRICAR ${leva} BALAS — ${ferro} DE FERRO` : `FALTA FERRO (${tem}/${ferro})`}
-        </button>
-      </section>`;
-  }
+  /*
+   * A BANCADA DE MUNICAO SAIU.
+   *
+   * Ela fabricava `ammo_round` a partir de ferro. Desde que as armas basicas
+   * passaram a comer PEDRA direto da mochila, nenhuma arma consome esse item:
+   * a bancada virou uma tela que gasta ferro em nada.
+   *
+   * O recurso continua nos dados, com a constante `AMMO` em /data/weapons.ts,
+   * para quando a escopeta e o fuzil entrarem — ai a bancada volta, e ai ela
+   * tera do que servir. Interface para item sem consumidor e pior do que
+   * ausencia: ela promete uma economia que nao existe.
+   */
 
   private render(): void {
     const base = this.baseAtual;
@@ -332,7 +310,6 @@ export class BaseCampUI {
         </div>
       </section>
 
-      ${this.secaoBancada(base)}
       ${this.secaoToupeiras(base)}
       ${this.secaoEstruturas(base)}
 
@@ -341,10 +318,6 @@ export class BaseCampUI {
           ? ''
           : '<p class="camp-aviso">Sem elevador, nada sobe. O refinado fica todo aqui.</p>'
       }`;
-
-    this.corpo.querySelector('[data-craft-ammo]')?.addEventListener('click', () => {
-      if (this.bancada?.fabricar(base)) this.render();
-    });
 
     this.corpo.querySelector('[data-hire-mole]')?.addEventListener('click', () => {
       if (this.equipe?.contratar(base)) this.render();
