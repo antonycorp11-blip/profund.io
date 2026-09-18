@@ -24,11 +24,14 @@
     "conferir-armas": "node tools/conferir-armas.mjs",
     "conferir-vestir": "node tools/conferir-vestir.mjs",
     "check-estilo": "node tools/check-estilo.mjs",
+    "capturar-telas": "node tools/capturar-telas.mjs",
+    "comparar-tela": "node tools/comparar-tela.mjs",
     "slice-heroi": "node tools/slice-heroi.mjs",
     "slice-equipamento": "node tools/slice-equipamento.mjs",
     "medir-encaixes": "node tools/medir-encaixes.mjs"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "pngjs": "^7.0.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
