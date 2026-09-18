@@ -1488,7 +1488,7 @@ export class Game {
 
     const balaDe = this.weapons.def.ammo;
     this.hud.setAmmo(this.inventory.count(balaDe), balaDe, RESOURCES[balaDe].name);
-    this.hud.setMao(this.mao, this.weapons.def.name);
+    this.hud.setMao(this.mao, this.weapons.def.shortName);
     this.touch.setRotuloAcao(this.mao === 'arma' ? 'ATIRAR' : 'MINERAR');
 
     if (!uiBlocking) this.pollSkillButtons();

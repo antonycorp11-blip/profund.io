@@ -22,6 +22,25 @@ export const PROLOGUE: DialogLine[] = [
   { speaker: 'Helena', text: 'Era. E eu devia ter queimado.' },
   { speaker: 'Elias', text: 'Tem mapas aqui. Profundidades. Uma marca a vinte e seis metros.' },
   { speaker: 'Helena', text: 'Tem obsessoes.' },
+  /*
+   * OS DOIS OBJETOS.
+   *
+   * A picareta reserva nao precisa de explicacao: todo mineiro tem duas. O
+   * REVOLVER precisa — e e justamente por isso que ele entra aqui, e nao numa
+   * loja. Um mineiro que guarda uma arma junto da ferramenta esta dizendo que
+   * sabia de alguma coisa la embaixo, e Helena nao tem a resposta.
+   *
+   * E a primeira semente dos guardioes: quando o jogador encontrar um, vai
+   * lembrar que o pai ja sabia.
+   */
+  { speaker: 'Helena', text: 'Tem mais coisa na caixa. Eu nunca mexi.' },
+  { speaker: 'Elias', text: 'A picareta reserva dele.' },
+  { speaker: 'Helena', text: 'Essa eu esperava.' },
+  { speaker: 'Elias', text: '...e um revolver.' },
+  { speaker: 'Helena', text: 'Esse nao.' },
+  { speaker: 'Elias', text: 'Para que um mineiro leva arma para dentro de uma mina?' },
+  { speaker: 'Helena', text: 'Foi o que eu perguntei. Ele mudou de assunto.' },
+  { speaker: 'Helena', text: 'Duas vezes.' },
   { speaker: 'Elias', text: 'A mina esta fechada ha quatorze anos. Eu falei com o dono.' },
   { speaker: 'Helena', text: 'E ele abriu assim, de graca?' },
   { speaker: 'Elias', text: 'Cota toda semana. Enquanto eu entregar, a mina fica aberta.' },

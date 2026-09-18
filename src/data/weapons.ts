@@ -19,6 +19,15 @@ export type WeaponId = 'pistola' | 'escopeta' | 'fuzil';
 export interface WeaponDef {
   id: WeaponId;
   name: string;
+  /**
+   * Como a arma se chama NA ETIQUETA DO HUD, onde cabem duas palavras.
+   *
+   * `name` e nome de ficha e carrega a lore ("Revolver do Pai"); ao lado de
+   * "Picareta", num canto de 852x393, ele vira uma linha comprida repetindo um
+   * "do Pai" que o jogador ja sabe. A etiqueta so precisa dizer O QUE esta na
+   * mao.
+   */
+  shortName: string;
   description: string;
   /** Frase do Santiago, para a ficha. */
   flavor: string;
@@ -74,11 +83,24 @@ export const AMMO: ResourceId = 'ammo_round';
 export const WEAPONS: WeaponDef[] = [
   {
     id: 'pistola',
-    name: 'Pistola de Ferro',
+    /*
+     * O REVOLVER DO PAI.
+     *
+     * Ele nao e comprado: estava na caixa que Helena nunca mexeu, junto da
+     * picareta reserva (ver /data/prologue.ts). Um mineiro que guarda uma arma
+     * ao lado da ferramenta sabia de alguma coisa la embaixo — e o jogador
+     * carrega essa pergunta desde o primeiro minuto, sem que ninguem a
+     * explique.
+     *
+     * Cospe PEDRA porque foi improvisado para a mina: la nao ha municao, ha
+     * cascalho. E o que um homem sozinho faria.
+     */
+    name: 'Revolver do Pai',
+    shortName: 'Revolver',
     description:
-      'Feita na bancada da base, com o ferro que voce mesmo tirou. Cospe pedra — ' +
-      'a mesma que enche a sua mochila. Acabou a pedra, volta a picareta.',
-    flavor: 'Nao e bonita. Mas ja me tirou de dois buracos.',
+      'Estava na caixa, ao lado da picareta reserva. Cospe pedra — a mesma que ' +
+      'enche a sua mochila. Acabou a pedra, volta a picareta.',
+    flavor: 'Por que ele levaria isto para dentro de uma mina?',
     damage: 14,
     fireRate: 4.5,
     pellets: 1,

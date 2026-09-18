@@ -22,6 +22,17 @@ export interface ToolDef {
 
 export const TOOLS: ToolDef[] = [
   {
+    /*
+     * A RESERVA.
+     *
+     * Esta nao e a picareta que Santiago levou — aquela desceu com ele e nao
+     * voltou. Esta e a SEGUNDA, a que ficou na caixa de casa, e e por isso que
+     * ela e a pior da lista: e a ferramenta que ninguem escolheu.
+     *
+     * Ela custa zero e nao tem requisito porque nao foi comprada. Veio junto do
+     * caderno e do revolver (ver /data/prologue.ts) — os tres objetos que o pai
+     * deixou para tras, e o jogo comeca com os tres na mao.
+     */
     index: 0,
     key: 'pick_old',
     name: 'Picareta do Pai',
@@ -31,7 +42,7 @@ export const TOOLS: ToolDef[] = [
     rangeBonus: 0,
     cost: {},
     color: '#8a5c34',
-    description: 'Velha, gasta, mas ainda corta pedra.',
+    description: 'A reserva dele. A boa desceu junto e nao voltou.',
   },
   {
     index: 1,
