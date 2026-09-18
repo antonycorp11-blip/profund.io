@@ -232,12 +232,29 @@ class AssetsImpl {
     }
   }
 
+  /**
+   * Carrega uma imagem CARIMBANDO A VERSAO DO BUILD na URL.
+   *
+   * Sem o carimbo, a arte trocada nao chegava em quem ja tinha aberto o jogo.
+   * Os arquivos sao servidos com `max-age=604800` — sete dias — e a URL nunca
+   * muda: `/art/character/idle.png` hoje e o mesmo endereco de ontem. O
+   * navegador entao servia o PNG velho do disco sem sequer perguntar ao
+   * servidor se mudou, e o service worker nao tinha como ajudar porque o cache
+   * HTTP esta na frente dele.
+   *
+   * Com `?v=<build>` a URL muda a cada deploy, e um endereco novo nunca esta em
+   * cache. E o mesmo principio do bundle, que ja resolvia isso pelo hash no
+   * nome do arquivo — a arte e que tinha ficado de fora.
+   *
+   * O cache longo continua valendo, e e isso que se quer: dentro de um mesmo
+   * build a arte carrega do disco, instantanea.
+   */
   private loadImage(src: string): Promise<HTMLImageElement | null> {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
-      img.src = src;
+      img.src = `${src}${src.includes('?') ? '&' : '?'}v=${__VERSAO__}`;
     });
   }
 
