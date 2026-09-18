@@ -119,10 +119,18 @@ export class Minimap {
     // coluna 30 e Blockia na 180, na mesma profundidade de muita coisa. Sem a
     // coluna o jogador nao tem como saber se precisa andar para a esquerda ou
     // para a direita, e as missoes citam coluna.
+    /*
+     * "col 57" saiu.
+     *
+     * Era o indice da coluna do jogador no mundo: um numero de depuracao, sem
+     * significado nenhum para quem joga, ocupando uma das quatro linhas fixas
+     * do HUD. As outras tres se justificam — a camada diz onde voce esta, a
+     * profundidade e o numero central do jogo, e "proxima em X m" e a unica
+     * coisa que mede progresso rumo ao que vem embaixo.
+     */
     this.label.innerHTML =
       `<b>${layer.name}</b>` +
       `<strong>${Math.max(0, Math.round(depth))}<small>m</small></strong>` +
-      `<span class="mini-col">col <b>${col}</b></span>` +
       (toNext !== null
         ? `<span>proxima em ${Math.max(0, Math.round(toNext))} m</span>`
         : '<span>fundo da mina</span>');

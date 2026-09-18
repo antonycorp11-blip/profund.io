@@ -241,7 +241,7 @@ body {
   align-items: center;
   gap: 2px 9px;
   min-width: 170px;
-  padding: 7px 11px 7px 8px;
+  padding: 5px 10px 5px 7px;
   border: 1px solid rgba(255, 206, 100, 0.48);
   border-radius: 13px;
   background: linear-gradient(115deg, rgba(66, 42, 16, 0.94), rgba(24, 18, 13, 0.91));
@@ -521,12 +521,23 @@ body {
 
 /* --- nivel e XP, dentro do card de saldo --- */
 .level-inline {
-  grid-column: 2 / -1;
+  /*
+   * O nivel fica na MESMA linha do saldo, nao embaixo dele.
+   *
+   * Com `grid-column: 2 / -1` ele abria uma segunda linha no cartao, e o
+   * cartao somava 68 px de altura (32 da moeda + 15 da barra + recheio) para
+   * dizer duas coisas. Numa tela de 393 px onde o jogo e DESCER, altura e o
+   * que nao se pode gastar; largura sobra.
+   *
+   * A terceira coluna do grid ja era `1fr` e estava VAZIA na primeira linha.
+   */
+  grid-column: 3;
+  grid-row: 1;
   display: flex;
   align-items: center;
   gap: 6px;
   justify-content: flex-end;
-  margin-top: 1px;
+  margin-top: 0;
 }
 
 .level-num {
@@ -9483,4 +9494,167 @@ body:has(.hud-map-slot.folded) .toasts {
   flex: 0 0 auto;
   justify-content: center;
   overflow: hidden;
+}
+
+/* ============================================================
+   O HUD DEVOLVE A TELA
+   ============================================================
+
+   Medido antes de mexer: os dois cantos ocupavam 14,7% da tela
+   CADA UM. Quase 30% do celular era HUD permanente, e o canto
+   esquerdo descia ate y=242 — mais de 60% da altura.
+
+   O jogo e sobre DESCER. Altura e o recurso escasso (393 px) e
+   e exatamente o que o jogador precisa enxergar: o que vem
+   abaixo dele. Largura sobra (852). Entao o HUD encolhe na
+   vertical e aceita ser largo.
+   ============================================================ */
+
+/*
+ * O objetivo cabe em UMA linha, nao tres.
+ *
+ * A intencao era boa e fica: "o jogador nunca fica sem uma frase dizendo o
+ * que fazer agora". So o preco estava errado — o bloco de prosa media 189x88,
+ * 5% da tela, PERMANENTE, para uma frase que o jogador le uma vez e ja sabe.
+ *
+ * Uma linha entrega a mesma promessa por um terco do custo, e o toque continua
+ * abrindo o texto inteiro. Quando o objetivo MUDA ele ainda se abre sozinho,
+ * porque frase nova e a unica que ainda nao foi lida.
+ */
+.quota.mission .quota-mission {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.quota.mission.aberto .quota-mission {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.quota.mission .quota-mission::after {
+  content: ' ▾';
+  opacity: 0.45;
+  font-size: 10px;
+}
+
+.quota.mission.aberto .quota-mission::after {
+  content: ' ▴';
+}
+
+/*
+ * O contador de quadros nao vai para o jogador.
+ *
+ * "50 fps · 0 drops · 6/147 criaturas · 0 tiles alterados" estava na tela de
+ * quem testa o jogo no celular. E informacao minha, nao dele.
+ */
+.debug {
+  display: none;
+}
+
+html.dev-hud .debug {
+  display: block;
+}
+
+/*
+ * O saldo encolhe: numero e rotulo na MESMA linha.
+ *
+ * Media 170x69 para dizer dois numeros, e o maior tipo da tela inteira era um
+ * zero. Dinheiro importa quando se esta comprando, e nessa hora o jogador
+ * esta numa tela, nao no HUD.
+ */
+.money-card {
+  padding: 5px 9px;
+  gap: 7px;
+}
+
+.money-copy {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.money-copy small {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+.money-copy strong {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.money-coin {
+  font-size: 15px;
+}
+
+/* O minimapa perde um quarto do tamanho e continua servindo: ele diz "por
+   onde eu ja passei", e isso se le de relance. */
+.hud-map-slot,
+.minimap {
+  width: 132px;
+  height: 132px;
+}
+
+/*
+ * A moeda encolhe: 32 px de disco era o que mandava na altura do cartao.
+ *
+ * (Houve aqui um bloco inteiro tentando resolver isso com `flex-wrap` e
+ * `margin-left:auto`. Nao fazia nada: `.money-card` e um GRID, e nenhuma
+ * propriedade de flex vale dentro dele. A correcao de verdade foi mover o
+ * nivel para a terceira coluna da primeira linha, la em cima.)
+ */
+.money-coin {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  font-size: 12px;
+  border-width: 2px;
+}
+
+.money-card .level-bar {
+  width: 42px;
+}
+
+/*
+ * O bloco do minimapa cabe DENTRO da propria caixa.
+ *
+ * Ao encolher o minimapa de 167 para 132 px, o rotulo — que precisa de cerca
+ * de 80 px para quatro linhas — passou a vazar 36 px para fora do painel, e
+ * "PROXIMA EM 180 M" ficava solto por cima da mina. Com "col" removido sobram
+ * tres linhas, e elas apertam.
+ *
+ * O slot tambem para de ser mais largo que o mapa: ele media 168 contra os
+ * 132 do minimapa, e a diferenca era ar contado como HUD.
+ */
+.hud-map-slot {
+  width: 132px;
+}
+
+.minimap-label {
+  padding: 3px 2px 0;
+  font-size: 9.5px;
+  gap: 0 6px;
+  line-height: 1.15;
+}
+
+.minimap-label b {
+  font-size: 10px;
+}
+
+/* A profundidade e o numero central do jogo: e o unico que cresce. */
+.minimap-label strong {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.minimap-label span {
+  font-size: 8.5px;
+  opacity: 0.68;
 }
