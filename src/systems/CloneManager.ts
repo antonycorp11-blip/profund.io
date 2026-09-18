@@ -59,8 +59,20 @@ export class CloneManager {
    * a mina de bots baratos.
    */
   costFor(tipo: BotId = 'bot_simples', indexOverride?: number): number {
-    const n = indexOverride ?? this.clones.length;
-    return Math.round(botDef(tipo).cost * Math.pow(CONFIG.clones.costGrowth, n));
+    /*
+     * O crescimento conta os bots DAQUELE TIPO, e e suave.
+     *
+     * Antes contava a frota inteira com fator 1,6, e isso vinha de quando
+     * havia um tipo so — o crescimento era a unica progressao que existia.
+     * Com tipos, ele cobrava em dobro: o oitavo Bot Simples custava 34 mil,
+     * mais caro que um Bot Prisma novo, o que e absurdo por onde se olhe.
+     *
+     * Agora o TIPO poe o patamar e a quantidade poe a pressao. Comprar o
+     * quinto Simples fica caro o bastante para voce pensar em subir de tipo,
+     * sem fingir que ele virou outra maquina.
+     */
+    const doTipo = indexOverride ?? this.clones.filter((c) => c.config.bot === tipo).length;
+    return Math.round(botDef(tipo).cost * Math.pow(1.25, doTipo));
   }
 
   canAfford(tipo: BotId = 'bot_simples'): boolean {

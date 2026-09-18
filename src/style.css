@@ -55,8 +55,8 @@
    */
   --moldura: 22px;
   --moldura-cartao: 16px;
-  --moldura-botao: 14px;
-  --moldura-aba: 12px;
+  --moldura-botao: 18px;
+  --moldura-aba: 16px;
   --respiro: 12px;
   --cartao-min: 128px;
   --icone-grande: 42px;
@@ -3178,56 +3178,101 @@ body:has(.hud-map-slot.folded) .toasts {
   margin-bottom: 12px;
 }
 
+/*
+ * A PLACA DO TITULO: a tabua pendurada do conceito, com o mineiro apoiado.
+ *
+ * Era uma caixinha escura com um retrato de 52 px e um titulo pequeno. O
+ * conceito abre com uma TABUA de madeira pendurada por correntes, o Elias
+ * encostado nela de prancheta na mao e um engradado ao pe — e isso muda o que
+ * a tela diz antes de qualquer numero: nao e um relatorio de sistema, e o
+ * quadro de aviso da equipe dele.
+ *
+ * A arte da tabua ja existia em `art/auto/placa.png` e nunca tinha sido usada.
+ */
 .auto-placa {
+  position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  padding: 10px 18px 10px 12px;
-  border: var(--moldura-cartao) solid transparent;
-  /* SEM `fill`: o miolo da arte e couro com rebite, e repetido pelo interior
-     vira parede de tachas. A moldura fica no contorno; o meio e liso. */
-  border-image: url('/art/hud/chassi/painel.png') 24 round;
-  background: linear-gradient(168deg, rgba(20, 29, 46, 0.92), rgba(11, 16, 26, 0.94));
+  align-content: center;
+  min-width: 264px;
+  min-height: 104px;
+  padding: 10px 14px 10px 76px;
 }
 
+/* A tabua e FUNDO esticado, e nao moldura: ela tem correntes no topo e uma
+   silhueta irregular — `border-image` decepava as duas coisas. */
+.auto-placa-tabua {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  z-index: 0;
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.55));
+}
+
+/* O mineiro ENCOSTADO na tabua: ele passa por fora da borda esquerda, que e o
+   que faz a cena parecer uma cena e nao um icone dentro de uma caixa. */
 .auto-placa-heroi {
-  width: 52px;
-  height: 52px;
+  position: absolute;
+  left: -6px;
+  bottom: 2px;
+  width: 78px;
+  height: 78px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.6));
+  z-index: 2;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.65));
+}
+
+.auto-placa-caixote {
+  position: absolute;
+  left: 52px;
+  bottom: -4px;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.auto-placa-txt {
+  position: relative;
+  z-index: 2;
 }
 
 .auto-placa-txt b {
   display: block;
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 23px;
   line-height: 1;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: #ffd98a;
+  /* Sobre madeira escura o texto precisa de contorno, nao de sombra suave. */
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.75), 0 0 10px rgba(255, 190, 90, 0.35);
 }
 
 .auto-placa-txt small {
   display: block;
   font-family: var(--font-display);
   font-size: 9px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: var(--ink-dim);
+  color: #e8d3a8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* O lema na tabuinha ao lado, como no conceito. Some cedo: e a primeira coisa
-   dispensavel quando a largura acaba. */
+/* A plaquinha dourada pendurada embaixo. */
 .auto-placa-lema {
-  grid-column: 1 / -1;
-  justify-self: start;
-  padding: 4px 12px;
+  position: absolute;
+  left: 58px;
+  bottom: -13px;
+  z-index: 3;
+  padding: 4px 14px;
   font-family: var(--font-display);
-  font-size: 8px;
-  line-height: 1.3;
-  letter-spacing: 0.1em;
+  font-size: 7.5px;
+  line-height: 1.25;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   text-align: center;
   color: #f0dcb0;
@@ -3236,7 +3281,51 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 @media (max-width: 900px) {
-  .auto-placa-lema {
+  .auto-placa-lema,
+  .auto-placa-caixote {
+    display: none;
+  }
+}
+
+/*
+ * O CENARIO em volta do painel: dois lampioes e a tabua do canto.
+ *
+ * No conceito a tela nao acaba na moldura — ha lampioes acesos pendurados nas
+ * bordas e uma tabua torta no canto de baixo. Sao a diferenca entre "painel de
+ * interface" e "parede de uma oficina", e a arte dos dois ja estava no
+ * projeto sem uso.
+ */
+.auto-lampiao {
+  position: absolute;
+  top: 6px;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 0 12px rgba(255, 180, 80, 0.4));
+}
+
+.auto-lampiao.esq {
+  left: -6px;
+}
+
+.auto-lampiao.dir {
+  right: -6px;
+}
+
+/*
+ * A tabua do canto SAIU.
+ *
+ * No conceito ela fica fora dos paineis, num pedaco de parede que a
+ * composicao tem de sobra. Aqui o painel ocupa a tela inteira e o unico canto
+ * livre e o do botao MANDAR ENTREGAR — ela pousava em cima dele. Enfeite que
+ * tapa acao nao e enfeite, e defeito.
+ */
+
+/* Cenario e a primeira coisa que sai quando a largura acaba. */
+@media (max-width: 820px) {
+  .auto-lampiao {
     display: none;
   }
 }
@@ -3286,6 +3375,13 @@ body:has(.hud-map-slot.folded) .toasts {
 
 .auto-stat.on b {
   color: var(--cor);
+}
+
+/* O teto ("/99") e nota de rodape do numero: menor, apagado e sem peso. */
+.auto-stat b i {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ink-dim);
 }
 
 .auto-stat span {
@@ -3554,6 +3650,11 @@ body:has(.hud-map-slot.folded) .toasts {
   position: relative;
 }
 
+/* O cenario e pendurado no painel inteiro, e nao dentro da coluna. */
+.tech-main:has(> .auto-topo) > .auto-lampiao {
+  position: absolute;
+}
+
 /* O botao que abre, no rodape. */
 .auto-rodape .btn {
   justify-self: end;
@@ -3586,6 +3687,11 @@ body:has(.hud-map-slot.folded) .toasts {
   border-top: 3px solid var(--tint);
   border-radius: 11px;
   background: linear-gradient(170deg, rgba(24, 34, 55, 0.95), rgba(13, 19, 33, 0.95));
+  /* Fio de luz no alto e sombra embaixo: e o que da relevo a um cartao
+     pequeno sem gastar moldura. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 2px 6px rgba(0, 0, 0, 0.45);
   text-align: center;
 }
 
@@ -3593,6 +3699,11 @@ body:has(.hud-map-slot.folded) .toasts {
   width: 46px;
   height: 46px;
   object-fit: contain;
+  /* O retrato senta num POCO escuro e redondo: sem ele o robo flutuava sobre
+     o cartao chapado, e era isso que deixava a grade sem profundidade. */
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, rgba(70, 100, 150, 0.35), rgba(5, 8, 14, 0.9) 70%);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55));
 }
 
@@ -7025,7 +7136,7 @@ body:has(.hud-map-slot.folded) .toasts {
  */
 .up-card {
   border: var(--moldura-cartao) solid transparent;
-  border-image: url('/art/hud/chassi/cartao.png') 38 fill round;
+  border-image: url('/art/hud/chassi/cartao.png') 38 fill stretch;
   border-radius: 0;
   background: none;
 }
@@ -7063,7 +7174,18 @@ body:has(.hud-map-slot.folded) .toasts {
  */
 .btn {
   border: var(--moldura-botao) solid transparent;
-  border-image: url('/art/hud/chassi/botao_secundario.png') 62 fill round;
+  /*
+   * `stretch`, e nao `round`.
+   *
+   * `round` REPETE a fatia do meio, e o meio desta arte e um degrade liso com
+   * brilho no alto — repetido, ele vira listra vertical, e o botao aparecia
+   * faixado como uma persiana. `round` serve para textura que emenda; para
+   * degrade, quem serve e `stretch`, que alonga sem costura.
+   *
+   * A borda subiu de 14 para 18 px porque a ponta da capsula tem uns 62 px na
+   * arte: espremida em 14 ela perdia a curva e o botao ficava retangular.
+   */
+  border-image: url('/art/hud/chassi/botao_secundario.png') 62 fill stretch;
   border-radius: 0;
   background: none;
   color: #f3e4c0;
@@ -7099,7 +7221,7 @@ body:has(.hud-map-slot.folded) .toasts {
    que o botao. Mesma solucao. */
 .skill-tab {
   border: var(--moldura-aba) solid transparent;
-  border-image: url('/art/hud/chassi/aba_off.png') 58 fill round;
+  border-image: url('/art/hud/chassi/aba_off.png') 58 fill stretch;
   border-radius: 0;
   background: none;
   color: #cbb896;

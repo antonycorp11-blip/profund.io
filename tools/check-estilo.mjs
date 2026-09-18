@@ -92,6 +92,23 @@ for (const { n, txt } of acha(
   );
 }
 
+/*
+ * 4. `round` no botao, na aba ou no cartao.
+ *
+ * `round` REPETE a fatia do meio. O meio dessas artes e um degrade liso com
+ * brilho no alto — repetido, vira listra vertical e o botao aparece faixado
+ * como uma persiana. Levei tres rodadas mexendo em cor e tamanho de botao sem
+ * ver que o defeito era a palavra `round`.
+ *
+ * `round` serve para textura que emenda. Degrade pede `stretch`.
+ */
+for (const { n, txt } of acha(/border-image:[^;]*chassi\/(botao|aba|cartao)[^;]*\bround\b/)) {
+  problemas.push(
+    `linha ${n}: \`round\` em arte de degrade — o meio repete e vira listra.\n    ${txt}\n` +
+      `    Use \`stretch\`: ele alonga sem costura.`
+  );
+}
+
 if (problemas.length > 0) {
   console.error('\n  ESTILO: erros que ja voltaram antes\n');
   for (const p of problemas) console.error(`  ✗ ${p}\n`);

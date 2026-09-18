@@ -418,6 +418,11 @@ export const CONFIG = {
      */
     cost: 900,
     /** O custo sobe a cada copia ja existente. */
+    /**
+     * Sobrou de quando havia UM tipo de copia e o crescimento era a unica
+     * progressao. Hoje quem poe o patamar e o tipo do bot (ver /data/bots.ts)
+     * e o crescimento mora la, mais suave e contado por tipo.
+     */
     costGrowth: 1.6,
     /** Ate esta distancia do deposito a copia entrega andando. */
     walkToDepot: 420,

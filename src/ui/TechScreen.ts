@@ -368,6 +368,8 @@ export class TechScreen {
   private placaDaTela(): string {
     return `
       <header class="auto-placa">
+        <img class="auto-placa-tabua" src="art/auto/placa.png" alt="">
+        <img class="auto-placa-caixote" src="art/auto/caixote.png" alt="">
         <img class="auto-placa-heroi" src="${this.heroiUrl()}" alt="">
         <div class="auto-placa-txt">
           <b>Automação</b>
@@ -533,10 +535,20 @@ export class TechScreen {
      * responde de relance "esta tudo rodando?", e para isso o olho precisa
      * pegar os numeros sem ler os rotulos.
      */
-    const celula = (v: string, r: string, arte: string, cor: string, on = true) => `
+    /*
+     * O numero em duas partes: o VALOR grande e o teto pequeno.
+     *
+     * "8/99" tudo do mesmo tamanho obriga a ler os dois para saber o que
+     * importa, que e o 8. No conceito o teto e uma nota de rodape ao lado do
+     * numero — ele diz "ainda cabe mais", nao "preste atencao em mim".
+     */
+    const celula = (v: string, teto: string, r: string, arte: string, cor: string, on = true) => `
       <div class="auto-stat ${on ? 'on' : ''}" style="--cor:${cor}">
         <img src="art/auto/${arte}.png" alt="">
-        <div><b>${v}</b><span>${r}</span></div>
+        <div>
+          <b>${v}${teto ? `<i>/${teto}</i>` : ''}</b>
+          <span>${r}</span>
+        </div>
       </div>`;
 
     // A ultima celula nao e numero: e o VEREDITO. No conceito ela e o botao
@@ -602,13 +614,15 @@ export class TechScreen {
       </section>`;
 
     this.mainEl.innerHTML = `
+      <img class="auto-lampiao esq" src="art/hud/lampiao.png" alt="">
+      <img class="auto-lampiao dir" src="art/hud/lampiao.png" alt="">
       <div class="auto-topo">
         ${this.placaDaTela()}
         <div class="auto-strip">
-          ${celula(`${clones.clones.length}/${clones.slots}`, 'copias ativas', 'copia_aco', '#5ac7d0', clones.clones.length > 0)}
-          ${celula(`${moles.units.length}/${moles.max}`, 'toupeiras ativas', 'toupeira', '#d8a35a', moles.units.length > 0)}
-          ${celula(String(carregando), 'cargas em viagem', 'vagonete', '#e8dcc4', carregando > 0)}
-          ${celula(String(entregue), 'entregas hoje', 'caixote', '#e8dcc4', entregue > 0)}
+          ${celula(String(clones.clones.length), String(clones.slots), 'bots ativos', 'copia_aco', '#5ac7d0', clones.clones.length > 0)}
+          ${celula(String(moles.units.length), String(moles.max), 'toupeiras ativas', 'toupeira', '#d8a35a', moles.units.length > 0)}
+          ${celula(String(carregando), '', 'cargas em viagem', 'vagonete', '#e8dcc4', carregando > 0)}
+          ${celula(String(entregue), '', 'entregas hoje', 'caixote', '#e8dcc4', entregue > 0)}
           <div class="auto-veredito ${veredito.c}">
             <span class="auto-luz"></span>
             <div><b>${veredito.t}</b><span>${veredito.s}</span></div>
