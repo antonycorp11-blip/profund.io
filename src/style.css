@@ -678,7 +678,7 @@ body {
   border: 1px solid var(--stroke);
   border-radius: var(--radius);
   padding: 4px 10px;
-  font-size: 15px;
+  font-size: 19px;
   font-weight: bold;
 }
 
@@ -2033,7 +2033,7 @@ body:has(.hud-map-slot.folded) .toasts {
   border: 1px solid var(--stroke);
   border-radius: 10px;
   padding: 9px 11px;
-  background: rgba(30, 26, 22, 0.75);
+  background: linear-gradient(168deg, rgba(56, 48, 41, 0.72), rgba(32, 27, 23, 0.8));
   font-size: 12px;
 }
 
@@ -3670,8 +3670,8 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .auto-rodape img {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   flex: 0 0 auto;
   object-fit: contain;
 }
@@ -3863,7 +3863,7 @@ body:has(.hud-map-slot.folded) .toasts {
   justify-items: center;
   gap: 2px;
   padding: 8px 6px 7px;
-  border: 1px solid rgba(120, 160, 220, 0.22);
+  border: 1px solid var(--borda-cartao);
   border-top: 3px solid var(--tint);
   border-radius: 11px;
   background: linear-gradient(170deg, rgba(48, 29, 18, 0.95), rgba(28, 17, 11, 0.95));
@@ -4584,13 +4584,25 @@ body:has(.hud-map-slot.folded) .toasts {
  */
 .eq-card {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
+  /* 88 px: a coluna da arte cresceu junto com a arte (ver `.eq-card > .eq-icon`). */
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: start;
   gap: 11px;
-  border: 1px solid rgba(120, 160, 220, 0.22);
+  border: 1px solid var(--borda-cartao);
   border-radius: 14px;
   padding: 11px;
-  background: linear-gradient(170deg, rgba(45, 28, 17, 0.95), rgba(27, 16, 10, 0.95));
+  /*
+   * CLAREADO ate a luminancia da referencia, e SEMITRANSPARENTE.
+   *
+   * O interior media 9 de luminancia; o da referencia, 22. Como os cartoes sao
+   * a maior area da tela, isso sozinho deixava metade do quadro sem tinta
+   * nenhuma — o mapa mostrava regioes em branco exatamente onde deveria haver
+   * cartao.
+   *
+   * A borda azulada que estava aqui (rgba(120,160,220)) e resto da leva em que
+   * eu tinha pintado a tela de azul-noite por engano.
+   */
+  background: linear-gradient(170deg, rgba(56, 48, 41, 0.74), rgba(32, 27, 23, 0.82));
 }
 
 .eq-texto {
@@ -4751,8 +4763,8 @@ body:has(.hud-map-slot.folded) .toasts {
 .boneco-palco {
   grid-column: 2;
   grid-row: 1 / 3;
-  width: 104px;
-  height: 128px;
+  width: 140px;
+  height: 172px;
   display: grid;
   place-items: end center;
   /* A plataforma de pedra da folha de encaixes, ancorada no pe. */
@@ -4760,8 +4772,10 @@ body:has(.hud-map-slot.folded) .toasts {
 }
 
 .boneco-heroi {
-  width: 82px;
-  height: 82px;
+  /* 128 px: na referencia o heroi e a maior coisa da coluna esquerda e o
+     olho pousa nele primeiro. A 82 ele era um icone ao lado de quatro caixas. */
+  width: 128px;
+  height: 128px;
   object-fit: contain;
   image-rendering: pixelated;
   margin-bottom: 14px;
@@ -4874,7 +4888,7 @@ body:has(.hud-map-slot.folded) .toasts {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 7px 9px;
+  padding: 9px 11px;
   border: 1px solid var(--stroke);
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.28);
@@ -5158,7 +5172,7 @@ body:has(.hud-map-slot.folded) .toasts {
   gap: 5px;
   min-height: 176px;
   padding: 12px 12px 11px;
-  border: 1px solid rgba(120, 160, 220, 0.22);
+  border: 1px solid var(--borda-cartao);
   border-radius: 14px;
   background: linear-gradient(170deg, rgba(45, 28, 17, 0.95), rgba(27, 16, 10, 0.95));
   font-family: var(--font);
@@ -5791,7 +5805,7 @@ body:has(.hud-map-slot.folded) .toasts {
   justify-content: flex-start;
   gap: 6px;
   min-height: 150px;
-  border: 1px solid rgba(120, 160, 220, 0.22);
+  border: 1px solid var(--borda-cartao);
   border-radius: 14px;
   padding: 12px 12px 11px;
   background: linear-gradient(170deg, rgba(45, 28, 17, 0.95), rgba(27, 16, 10, 0.95));
@@ -5974,7 +5988,7 @@ body:has(.hud-map-slot.folded) .toasts {
 .clone-card {
   /* Mesma familia dos cartoes de habilidade e pesquisa: azul-noite com fio
      azul na borda, e a cor da unidade so na tarja da esquerda. */
-  border: 1px solid rgba(120, 160, 220, 0.22);
+  border: 1px solid var(--borda-cartao);
   border-left: 3px solid var(--tint);
   border-radius: 12px;
   padding: 10px;
@@ -8508,7 +8522,21 @@ body:has(.hud-map-slot.folded) .toasts {
   background-position: center;
   /* Escurecido de novo por cima: a arte ja e escura, e o painel precisa de
      mais contraste do que "escuro" para a letra assentar. */
-  filter: brightness(0.62) saturate(1.15);
+  /*
+   * 0,95 de brilho, e nao 0,62.
+   *
+   * Eu pedi fundos pintados, medi cada um para garantir que o miolo fosse
+   * escuro e calmo — e entao escureci mais 38% por cima, apagando a textura
+   * que eles tinham. O mapa de tinta mostrou o estrago: a referencia tem
+   * marca em quase toda celula, inclusive onde "nao ha nada", porque a cena
+   * dela tem grao e luz de lampiao por toda parte. A minha tinha regioes
+   * inteiras em BRANCO.
+   *
+   * Os fundos ja nasceram com miolo entre 12 e 15 de claridade (medido em
+   * tools/medir-fundo.mjs, alvo era ate 42). Escurecer de novo foi resolver
+   * duas vezes um problema que nao existia mais.
+   */
+  filter: brightness(0.95) saturate(1.2);
 }
 
 /* O painel fica ACIMA da cena. Sem isto ele desapareceria por tras dela. */
@@ -8553,7 +8581,18 @@ body:has(.hud-map-slot.folded) .toasts {
 .skilltree .tech-main,
 .skillscreen .tech-aside,
 .skillscreen .tech-main {
-  background: linear-gradient(168deg, rgba(20, 18, 17, 0.9), rgba(8, 6, 6, 0.93));
+  /*
+   * CLAREADO ate a luminancia da referencia.
+   *
+   * O interior dos meus blocos media 9 de luminancia; os da referencia, 22.
+   * Como os blocos sao a maior area da tela, isso sozinho deixava metade do
+   * quadro sem tinta nenhuma — e o mapa mostrava regioes inteiras em branco
+   * exatamente onde deveria haver painel.
+   *
+   * Semitransparente para a cena pintada continuar passando por tras: o grao
+   * dela e o que enche o resto.
+   */
+  background: linear-gradient(168deg, rgba(46, 40, 35, 0.76), rgba(26, 22, 20, 0.82));
   border: 1px solid var(--borda-painel);
   border-radius: 12px;
   box-shadow: var(--sombra-painel);
@@ -8581,7 +8620,7 @@ body:has(.hud-map-slot.folded) .toasts {
  * imagem e nao como cabecalho de tela.
  */
 .techscreen .tela-cab {
-  background: linear-gradient(168deg, rgba(24, 21, 19, 0.9), rgba(10, 8, 7, 0.93));
+  background: linear-gradient(168deg, rgba(52, 45, 39, 0.78), rgba(30, 25, 22, 0.84));
   border: 1px solid var(--borda-painel);
   border-radius: 12px;
   box-shadow: var(--sombra-painel);
@@ -8714,7 +8753,7 @@ body:has(.hud-map-slot.folded) .toasts {
 
 /* A barra de baixo tambem se desgruda: na referencia ela e um bloco proprio. */
 .techscreen .tela-rodape {
-  background: linear-gradient(168deg, rgba(24, 21, 19, 0.9), rgba(10, 8, 7, 0.93));
+  background: linear-gradient(168deg, rgba(52, 45, 39, 0.78), rgba(30, 25, 22, 0.84));
   border: 1px solid var(--borda-painel);
   border-radius: 12px;
   box-shadow: var(--sombra-painel);
