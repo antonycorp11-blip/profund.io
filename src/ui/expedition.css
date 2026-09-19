@@ -289,12 +289,47 @@ body .touch-skills .touch-btn.skill {
   border-color: #8cc0cf88;
   box-shadow: inset 0 0 0 3px #10232bd9, 0 3px 10px #0006;
 }
-/* Centros em um mesmo raio do MINERAR (56,56): um arco, nao uma fileira.
-   !important encerra regras antigas de skins do touch-pad. */
-body #btn-skill1 { right: 118px !important; bottom: 93px !important; }
-body #btn-skill2 { right: 82px !important; bottom: 123px !important; }
-body #btn-skill3 { right: 40px !important; bottom: 135px !important; }
-body #btn-skill4 { right: 0px !important; bottom: 130px !important; }
+/*
+ * O ARCO EM VOLTA DO MINERAR — uma solucao por QUANTIDADE de habilidade.
+ *
+ * Estes numeros nao foram escolhidos a olho: `npm run arco` le a geometria
+ * real do MINERAR, do PULAR e do recolher DESTE arquivo e procura, para cada
+ * quantidade, o arco mais fechado e mais colado que ainda cabe. Mexeu num
+ * botao, roda de novo e cola a saida aqui.
+ *
+ * POR QUE POR QUANTIDADE, e nao quatro fatias fixas.
+ *
+ * O cinto tem quatro lugares e os vazios ficam `hidden`. Com tres habilidades
+ * — que e o caso normal — quatro fatias fixas nao dao um arco de tres: dao
+ * TRES QUARTOS de um arco, com a ponta faltando. Na tela isso le como uma
+ * escada solta subindo para a esquerda, que foi o relato exato do dono.
+ *
+ * E a diferenca nao e so de forma. Com tres, o arco cabe a 68 px do centro do
+ * MINERAR — encostado nele. Com quatro, os botoes comecam a se tocar e o raio
+ * precisa abrir para 86. A leva anterior usava ~100 para todos os casos, e a
+ * 100 px de um botao de 42 px de raio a curvatura simplesmente nao se enxerga.
+ *
+ * A sonda aprovava aquilo porque so cobrava EQUIDISTANCIA — e quatro pontos
+ * equidistantes de um centro podem estar em qualquer lugar de um circulo
+ * grande demais para parecer circulo. Faltava o teto do raio.
+ *
+ * `data-n` e escrito pelo TouchControls a cada troca de cinto.
+ * !important encerra regras antigas de skins do touch-pad.
+ */
+/* 1 habilidade: raio 68px, 23° a 23° */
+body .touch-skills[data-n="1"] #btn-skill1 { right: 99px !important; bottom: 63px !important; }
+/* 2 habilidades: raio 68px, 25° a 63° */
+body .touch-skills[data-n="2"] #btn-skill1 { right: 98px !important; bottom: 65px !important; }
+body .touch-skills[data-n="2"] #btn-skill2 { right: 67px !important; bottom: 97px !important; }
+/* 3 habilidades: raio 68px, 32° a 107° */
+body .touch-skills[data-n="3"] #btn-skill1 { right: 94px !important; bottom: 72px !important; }
+body .touch-skills[data-n="3"] #btn-skill2 { right: 60px !important; bottom: 100px !important; }
+body .touch-skills[data-n="3"] #btn-skill3 { right: 16px !important; bottom: 101px !important; }
+/* 4 habilidades: raio 86px, 24° a 113° */
+body .touch-skills[data-n="4"] #btn-skill1 { right: 115px !important; bottom: 71px !important; }
+body .touch-skills[data-n="4"] #btn-skill2 { right: 87px !important; bottom: 105px !important; }
+body .touch-skills[data-n="4"] #btn-skill3 { right: 46px !important; bottom: 121px !important; }
+body .touch-skills[data-n="4"] #btn-skill4 { right: 2px !important; bottom: 115px !important; }
 body .touch-skills .touch-btn.skill.ready {
   border-color: #a7e1e8;
   box-shadow: inset 0 0 0 3px #10232b, 0 0 9px #8cd5e52e;

@@ -48,7 +48,8 @@
     "slice-blockia": "node tools/slice-blockia.mjs",
     "praca": "esbuild tools/praca-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/praca-probe.cjs --log-level=warning && node node_modules/.cache/praca-probe.cjs",
     "lampiao": "node tools/compor-lampiao.mjs",
-    "cidade": "esbuild tools/cidade-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/cidade-probe.cjs --log-level=warning && node node_modules/.cache/cidade-probe.cjs"
+    "cidade": "esbuild tools/cidade-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/cidade-probe.cjs --log-level=warning && node node_modules/.cache/cidade-probe.cjs",
+    "arco": "node tools/arco-skills.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

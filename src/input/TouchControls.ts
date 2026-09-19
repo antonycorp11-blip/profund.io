@@ -19,6 +19,8 @@ export class TouchControls {
   private stickKnob: HTMLDivElement;
   private stickId: number | null = null;
   private skillBtns: HTMLButtonElement[] = [];
+  /** O container do arco: guarda `data-n`, que o CSS le para posicionar. */
+  private skillCol: HTMLDivElement | null = null;
   private stickOx = 0;
   private stickOy = 0;
   private readonly radius = 56;
@@ -43,6 +45,7 @@ export class TouchControls {
 
     const buttons = this.root.querySelector('.touch-buttons') as HTMLDivElement;
     const skillCol = this.root.querySelector('.touch-skills') as HTMLDivElement;
+    this.skillCol = skillCol;
     // A coluna de habilidades recolhe: com tres habilidades ela cresce, e nem
     // toda descida e uma luta.
 
@@ -195,6 +198,25 @@ export class TouchControls {
         if (badge.textContent !== txt) badge.textContent = txt;
         badge.hidden = txt === '';
       }
+    }
+
+    /*
+     * QUANTAS HABILIDADES ESTAO NA TELA — e o CSS posiciona o arco por isso.
+     *
+     * Os lugares vazios do cinto ficam `hidden`, entao o numero de botoes
+     * visiveis varia de um a quatro. Um arco de quatro fatias fixas com tres
+     * botoes nao e um arco de tres: e tres quartos de um, com a ponta
+     * faltando — na tela vira uma escada subindo para a esquerda, que foi o
+     * relato do dono.
+     *
+     * Aqui so se conta e se anuncia. A geometria de cada caso esta no CSS,
+     * resolvida por `npm run arco`, porque e la que ela pode ser conferida
+     * sem abrir o jogo.
+     */
+    const visiveis = this.skillBtns.filter((b) => !b.hidden).length;
+    const alvo = String(Math.max(1, visiveis));
+    if (this.skillCol && this.skillCol.dataset.n !== alvo) {
+      this.skillCol.dataset.n = alvo;
     }
   }
 
