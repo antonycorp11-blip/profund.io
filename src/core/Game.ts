@@ -1800,6 +1800,13 @@ export class Game {
       this.deepestMeters = depth;
       // Pontos de habilidade vem de descer e explorar, nunca de matar (spec, item 39).
       this.skills.checkDepthMilestone(this.deepestMeters);
+      /*
+       * O card do objetivo conta a descida, e por isso precisa saber que ela
+       * aconteceu. A cada 5 m, e nao a cada metro: repintar o card sessenta
+       * vezes por segundo para trocar um numero e desperdicio, e o jogador nao
+       * le diferenca entre 183 e 182.
+       */
+      if (Math.floor(depth / 5) !== Math.floor((depth - 1) / 5)) this.refreshObjective();
     }
 
     this.hud.setHealth(this.vitals.health, this.vitals.max);
@@ -2588,7 +2595,24 @@ export class Game {
     // que o jogo tinha acabado. A cota continua visivel logo abaixo, porque
     // ela tambem e um prazo.
     const m = this.missions.current();
-    this.hud.setMissionObjective(m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.');
+    /*
+     * A DESCIDA LONGA PRECISA CONTAR.
+     *
+     * Entre uma missao e a proxima ha trechos de quase trezentos metros em que
+     * o objetivo nao muda — sao a descida ate o proximo selo, e sao inerentes:
+     * enfiar missao de encher linguica ali seria pior que o silencio.
+     *
+     * Mas silencio e o que faz largar. Entao, enquanto o alvo estiver longe, o
+     * card conta quanto falta. A frase nao muda; o NUMERO muda a cada metro, e
+     * e ele que transforma trezentos metros mudos em trezentos metros de
+     * progresso.
+     */
+    let texto = m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.';
+    if (m) {
+      const falta = Math.round(m.depth - this.deepestMeters);
+      if (falta > 40) texto += `  ·  faltam ${falta} m`;
+    }
+    this.hud.setMissionObjective(texto);
     this.revelarAlvoDaMissao(m);
   }
 

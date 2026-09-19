@@ -88,7 +88,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm2_a_voz_na_pedra',
-    depth: 128,
+    depth: 84,
     title: 'A Voz na Pedra',
     goal: 'Tem alguem gritando abaixo da marca. Siga o som e tire essa pessoa de la.',
     requires: ['npc_jonas'],
@@ -117,7 +117,9 @@ export const MISSIONS: MissionDef[] = [
     goal: 'Ha trilho remendado com solda nova numa mina fechada ha quatorze anos. Ache e veja com os proprios olhos.',
     requires: ['clue_trilhos'],
     onDone: 'Alguem consertou aquilo este ano. A companhia jura que nao ha ninguem la embaixo.',
-    rewardMoney: 300,
+    porque:
+      'Trilho remendado com solda nova numa mina fechada ha quatorze anos significa que alguem esteve aqui DEPOIS que fecharam. Seu pai desceu por estes trilhos.',
+    rewardMoney: 400,
     rewardPoints: 1,
   },
   {
@@ -127,6 +129,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'Os trilhos levam a algum lugar. Siga a linha e descubra quem mora no fim dela.',
     requires: ['rui_cabeca'],
     onDone: 'Rui Cabeca. Mora aqui com a irma e um gato. E fala de lanternas azuis mais fundo.',
+    porque:
+      'Quem mora no fim de um trilho que nao deveria existir sabe quem passou por ele. E alguem passou.',
     rewardMoney: 450,
     rewardPoints: 1,
   },
@@ -137,27 +141,33 @@ export const MISSIONS: MissionDef[] = [
     goal: 'A coisa na parede dos 350 m e o que Rui falou. Derrube a Matriarca de Cristal.',
     requires: ['boss_arauto_quartzo', 'gate_crystal'],
     onDone: 'Duas barreiras, dois guardioes. Isto nao e coincidencia geologica.',
+    porque:
+      'A segunda parede fechada a mao. Uma pode ser geologia; duas sao decisao. Alguem nao queria que se descesse — e seu pai desceu assim mesmo.',
     rewardMoney: 900,
     rewardPoints: 2,
   },
   {
     id: 'm4b_a_base_do_cristal',
-    depth: 377,
+    depth: 396,
     title: 'A Base do Cristal',
-    goal: 'Ha uma camara abandonada a 377 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 377 metros e passam a entregar ali.',
+    goal: 'Ha uma camara abandonada a 396 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 377 metros e passam a entregar ali.',
     requires: ['base_cristal:deposito'],
     onDone: 'A base respira. Daqui para baixo, o minerio nao sobe mais nas costas de ninguem.',
-    rewardMoney: 700,
+    porque:
+      'Daqui para baixo o minerio nao sobe mais nas costas de ninguem. Sem uma base aqui, cada metro conquistado custa a viagem de volta inteira.',
+    rewardMoney: 950,
     rewardPoints: 2,
   },
   {
     id: 'm5_luzes_abaixo',
-    depth: 388,
+    depth: 460,
     title: 'Luzes Abaixo',
-    goal: 'Tem outra voz nas Cavernas de Cristal. E a Pagina 01 do caderno, a 374 m.',
+    goal: 'Tem outra voz nas Cavernas de Cristal. E a Pagina 01 do caderno, a 400 m.',
     requires: ['npc_vilma', 'clue_pagina_01'],
     onDone: 'Tres pulsos longos, dois curtos. John ouviu isso primeiro.',
-    rewardMoney: 600,
+    porque:
+      'Tres pulsos longos, dois curtos. E o sinal do caderno do seu pai, e ele esta sendo repetido por alguem que ainda esta vivo la embaixo.',
+    rewardMoney: 1000,
     rewardPoints: 1,
   },
   {
@@ -167,6 +177,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'A Rainha Escavadora bloqueia a passagem aos 497 m. Abra o caminho.',
     requires: ['boss_automato_enferrujado', 'gate_minerals'],
     onDone: 'Uma rota comercial, fechada por dentro. Por quem vive do outro lado.',
+    porque:
+      'Uma rota comercial fechada POR DENTRO. Quem fecha uma porta por dentro esta do outro lado — e seu pai foi para o outro lado.',
     rewardMoney: 1800,
     rewardPoints: 2,
   },
@@ -177,7 +189,9 @@ export const MISSIONS: MissionDef[] = [
     goal: 'Nas Profundezas Minerais tem mais um preso e a Pagina 02, a 560 m.',
     requires: ['npc_teo', 'clue_pagina_02'],
     onDone: 'Teo vendeu corda e polvora para o OUTRO. Santiago passou depois.',
-    rewardMoney: 1200,
+    porque:
+      'Teo vendeu corda e polvora para alguem, onze dias antes. Santiago passou DEPOIS. Voce esta seguindo duas pessoas, nao uma.',
+    rewardMoney: 1900,
     rewardPoints: 2,
   },
   {
@@ -187,6 +201,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'O Escaravelho Colossal guarda os 894 m. Passe por ele.',
     requires: ['boss_fundidor_incandescente', 'gate_magma'],
     onDone: 'Daqui para baixo, a parede deixa de ser escavada.',
+    porque:
+      'Daqui para baixo a parede deixa de ser escavada e passa a ser construida. Seu pai viu isso e continuou descendo.',
     rewardMoney: 3200,
     rewardPoints: 3,
   },
@@ -197,7 +213,9 @@ export const MISSIONS: MissionDef[] = [
     goal: 'Na Zona de Magma tem alguem chamando, e a Pagina 04 a 940 m.',
     requires: ['npc_ozias', 'clue_pagina_04'],
     onDone: 'Ele nao desceu COM o John. Desceu ATRAS dele.',
-    rewardMoney: 2400,
+    porque:
+      'A Pagina 04 fala de John. Seu pai nao desceu atras de minerio: ele desceu atras de alguem.',
+    rewardMoney: 3400,
     rewardPoints: 2,
   },
   {
@@ -207,6 +225,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'O Colosso Prismatico fecha os 1294 m. Derrube e desca.',
     requires: ['boss_escriba_selado', 'gate_ruins'],
     onDone: 'Abaixo daqui nao ha mais cidade nenhuma para colocar guardiao.',
+    porque:
+      'Ultima. Depois deste selo nao ha mais nada feito por gente — e Santiago passou por ele.',
     rewardMoney: 5200,
     rewardPoints: 3,
   },
@@ -217,7 +237,9 @@ export const MISSIONS: MissionDef[] = [
     goal: 'Nas Ruinas Antigas tem um batedor preso, e a Pagina 07 a 1340 m.',
     requires: ['npc_braga', 'clue_pagina_07'],
     onDone: 'Marcas na altura do joelho. Quem as fez estava arrastando uma perna.',
-    rewardMoney: 4000,
+    porque:
+      'Um batedor preso nas Ruinas Antigas. Ele desceu com alguem, e nao foi sozinho que ele ficou para tras.',
+    rewardMoney: 5500,
     rewardPoints: 3,
   },
   {
@@ -227,6 +249,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'O Eco do Portal guarda os 1694 m. O que houver depois dele, Santiago ja viu.',
     requires: ['boss_eco_portal', 'gate_abyss'],
     onDone: 'A mina acabou. A historia nao.',
+    porque:
+      'O que houver depois dele, Santiago ja viu. Esta e a ultima porta entre voce e a resposta.',
     rewardMoney: 9000,
     rewardPoints: 5,
   },
@@ -237,7 +261,9 @@ export const MISSIONS: MissionDef[] = [
     goal: 'No Abismo alguem ainda responde. E a Pagina 10 esta a 1740 m.',
     requires: ['npc_ultima_luz', 'clue_pagina_10'],
     onDone: 'Um carregou o outro para cima. Depois voltou sozinho.',
-    rewardMoney: 6500,
+    porque:
+      'Alguem ainda responde no Abismo. Depois de quatorze anos, alguem ainda responde.',
+    rewardMoney: 9500,
     rewardPoints: 4,
   },
 ];

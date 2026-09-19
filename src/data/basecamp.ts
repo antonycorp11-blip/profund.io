@@ -271,7 +271,19 @@ export const BASE_CAMPS: BaseCampDef[] = [
     id: 'base_cristal',
     nome: 'Base do Cristal',
     layer: 'crystal',
-    depth: 236,
+    /*
+     * 396 m, e nao 236.
+     *
+     * Ela dizia `layer: 'crystal'` e morava a 236 m — que e Camada de Pedra.
+     * Uma base batizada com o nome de uma camada, fisicamente na camada
+     * anterior, e atras do selo errado: o jogador chegava nela antes de
+     * derrubar a Matriarca, e a missao que manda erguer o deposito anunciava
+     * 377 m para uma obra que estava a 236.
+     *
+     * As outras quatro bases ficam todas em `inicio da camada + 36`. Esta
+     * ficou para tras num remapeamento de profundidade. 360 + 36 = 396.
+     */
+    depth: 396,
     col: 30,
     largura: 38,
     altura: 9,
