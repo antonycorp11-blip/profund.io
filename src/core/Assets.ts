@@ -201,6 +201,13 @@ class AssetsImpl {
       }
     }
 
+    for (const key of manifest.lugarKeys) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}${manifest.bgDir}${key}.png`).then((img) => {
+          if (img) this.images.set('bg:' + key, img);
+        })
+      );
+    }
     for (const key of manifest.skyKeys) {
       jobs.push(
         this.loadImage(`${manifest.basePath}${manifest.bgDir}${key}.png`).then((img) => {

@@ -13,7 +13,11 @@
  * mesma função que ESCULPE a cidade — se um terraço se mexer, a mobília dele
  * se mexe junto.
  *
- * `nivel`: 0 = piso da praça, 1..4 = terraços de baixo para cima.
+ * `nivel`:
+ *   0      = o piso da praça (três patamares em alturas diferentes)
+ *   1..5   = terraços da TORRE OESTE, de baixo para cima
+ *   6..10  = terraços da TORRE LESTE
+ *   11     = a ponte que liga as duas no alto
  * `offset`: colunas a partir da borda esquerda daquele nível.
  *
  * O tamanho de cada peça não está aqui: vem medido de
@@ -93,7 +97,7 @@ export const BLOCKIA_PROPS: BlockiaProp[] = [
   { id: 'barraca_tecidos', nivel: 0, offset: 78, fundo: true },
   { id: 'panelas', nivel: 0, offset: 85 },
 
-  // ------------------------------------------- terraço 1 — a Dra. Irene ----
+  // ------------------------------- torre oeste, 1º terraço — a Dra. Irene ---
   /*
    * "Todo mundo acha que cidade subterrânea vive de pedra. Vive de água."
    * A fala dela é a única coisa do jogo que explica por que a cidade existe
@@ -105,33 +109,43 @@ export const BLOCKIA_PROPS: BlockiaProp[] = [
   { id: 'cano', nivel: 1, offset: 9, fundo: true },
   { id: 'ervas_penduradas', nivel: 1, offset: 11, fundo: true },
 
-  // ------------------------------------------------ terraço 2 — o Lio ------
-  { id: 'cama', nivel: 2, offset: 1, fundo: true },
-  { id: 'varal', nivel: 2, offset: 4, fundo: true },
-  { id: 'mesa', nivel: 2, offset: 7 },
-  { id: 'balde', nivel: 2, offset: 10 },
+  // ------------------------------------ torre leste, 1º terraço — o Lio ----
+  { id: 'cama', nivel: 6, offset: 1, fundo: true },
+  { id: 'varal', nivel: 6, offset: 4, fundo: true },
+  { id: 'mesa', nivel: 6, offset: 7 },
+  { id: 'balde', nivel: 6, offset: 10 },
 
-  // --------------------------------------------- terraço 3 — o Breno -------
+  // ------------------------------------ torre leste, 4º terraço — o Breno --
   /*
    * "Elevador parado é ofensa pessoal." O poço já existe escavado desde o
    * `carveBlockia`; o que faltava era a máquina em volta dele.
    */
-  { id: 'sarilho', nivel: 3, offset: 1, fundo: true },
-  { id: 'cabine', nivel: 3, offset: 5, fundo: true },
+  { id: 'sarilho', nivel: 8, offset: 1, fundo: true },
+  { id: 'cabine', nivel: 8, offset: 5, fundo: true },
   /* Só três peças: o terraço tem 14 colunas (LARGURA_DECK) e o sarilho mais a
    * cabine já comem nove. Um quarto objeto passaria da ponta do deck e ficaria
    * pendurado no ar. */
-  { id: 'caixa_ferramenta', nivel: 3, offset: 10 },
+  { id: 'caixa_ferramenta', nivel: 8, offset: 10 },
 
-  // -------------------------------------------- terraço 4 — o Afonso -------
+  // ------------------------------- torre oeste, 5º terraço — o Afonso ------
   /*
    * O arquivista. Estante, escrivaninha e vela: o lugar onde está guardada a
    * página que a mãe do Elias nunca viu.
    */
-  { id: 'prateleira', nivel: 4, offset: 1, fundo: true },
-  { id: 'escrivaninha', nivel: 4, offset: 4 },
-  { id: 'vasos', nivel: 4, offset: 7 },
-  { id: 'cestos', nivel: 4, offset: 9, espelhado: true },
+  { id: 'prateleira', nivel: 5, offset: 1, fundo: true },
+  { id: 'escrivaninha', nivel: 5, offset: 4 },
+  { id: 'vasos', nivel: 5, offset: 7 },
+  { id: 'cestos', nivel: 5, offset: 9, espelhado: true },
+
+  // ------------------------------------------------ a ponte (nível 11) -----
+  /*
+   * Só luz, e é o bastante. A ponte atravessa o átrio a quarenta tiles do
+   * chão: o que ela tem a oferecer é a vista da praça inteira embaixo, e
+   * qualquer móvel ali competiria com isso. Os dois postes existem porque uma
+   * travessia no escuro sobre um vão não convida ninguém a atravessar.
+   */
+  { id: 'poste_lanterna', nivel: 11, offset: 6, fundo: true },
+  { id: 'poste_lanterna', nivel: 11, offset: 48, fundo: true, espelhado: true },
 ];
 
 export const BLOCKIA_HORTA: { id: string; offset: number }[] = [

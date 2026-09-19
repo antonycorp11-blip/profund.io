@@ -96,17 +96,34 @@ terra, peça pendurada além da ponta do terraço. A primeira leva de posições
 eu escrevi tinha **seis sobreposições** e nenhuma delas quebrava nada — arte não
 tem colisão, então elas ficariam ali até alguém andar até lá e ver.
 
-### O que ainda falta (nesta ordem)
+### Feito desde então
 
-1. **Textura de bloco do lampião.** O bloco `lamp` de Blockia não tem arte e
-   aparece como um quadrado amarelo chapado (`#ffdc83`) — dá para ver em
-   qualquer print da cidade. É 1 tile, e é o defeito visual mais visível da
-   cidade agora. **Pedido novo: 1 imagem 1024², um lampião de parede aceso,
-   preenchendo o quadro, sem moldura** (mesmas regras do PEDIDO 1).
-2. **Ligar o fundo.** `blockia.png` está cortado e não é desenhado por ninguém:
-   o `Background` precisa saber que dentro da cidade o céu é outro.
-3. **A porta.** As 4 peças existem; hoje a porta da cidade é um tile de tábua.
-   Precisa virar estado (fechada → aberta quando você diz seu nome à Mara).
+1. ~~Textura do lampião~~ — `npm run lampiao` compõe `lamp_0.png` da arte que o
+   projeto já tinha (a cabeça do lampião da entrada da mina, assentada na pedra
+   com halo quente). Os quadrados amarelos acabaram. Se um dia vier uma textura
+   desenhada de propósito, ela sobrescreve o arquivo e nada mais muda.
+2. ~~O fundo~~ — `blockia.png` é desenhado como **fundo de lugar**, não de
+   profundidade: inteiro, sem ladrilhar, com parallax curto. A troca acontece
+   12 tiles antes da parede, então a vista já está lá quando você cruza a porta.
+3. ~~A porta~~ — tem dois estados **e fecha de verdade**. A passagem nasce
+   selada; bater nela abre a conversa ("Elias. Elias Ramires." / "Ramires.") e
+   só então os tiles viram ar.
+
+### A planta da cidade foi refeita
+
+Era uma escada só: quatro terraços de largura igual, na mesma parede, subindo
+sempre para o mesmo lado, sobre um piso chapado de 100 colunas. Agora:
+
+| | antes | agora |
+|---|---|---|
+| superfícies andáveis | 5 | **14** |
+| torres | 1 | **2**, subindo uma contra a outra |
+| larguras de terraço | 1 | **7** |
+| piso da praça | plano | **3 patamares** com rampas de 1 tile |
+| volta | não | **ponte** sobre o átrio, no alto |
+
+`npm run cidade` percorre a cidade **a pé** — anda, sobe 1 tile, cai, e agora
+também sobe escada — e reprova qualquer nível que vire ilha.
 
 ## O que era meu depois que a arte chegar
 

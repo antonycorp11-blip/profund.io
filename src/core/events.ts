@@ -86,6 +86,8 @@ export interface GameEvents {
   'base:deposit': { base: string; resource: string; amount: number };
   'journal:written': { title: string; novo: boolean };
   'city:met': { id: string; name: string; city: string; trust: number };
+  /** A porta da cidade se abriu: o jogador bateu e alguem atendeu. */
+  'cidade:porta': { city: string };
   'rep:changed': { city: string; axis: string; value: number };
   /**
    * A cidade passou a confiar e liberou a descida.

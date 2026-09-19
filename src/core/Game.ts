@@ -56,13 +56,15 @@ import { Equipment } from '../systems/Equipment';
 import { ActiveSkills } from '../systems/ActiveSkills';
 import { WeaponSystem } from '../systems/WeaponSystem';
 import { Progression } from '../systems/Progression';
-import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef } from '../data/gates';
+import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef, insideBlockia } from '../data/gates';
 import { StoryGates } from '../systems/StoryGates';
 import { storyGateAtRow } from '../data/storyGates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
 import { BlockiaRenderer } from '../world/BlockiaRenderer';
+import { PortaBlockia } from '../entities/PortaBlockia';
+import { abrirPortaBlockia } from '../world/Blockia';
 import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
@@ -204,6 +206,7 @@ export class Game {
   private selAviso = 0;
 
   private interactables: Interactable[] = [];
+  private portaBlockia!: PortaBlockia;
   private clueObjects: ClueObject[] = [];
   private scrollObjects: ScrollObject[] = [];
   private npcs: RescueNpc[] = [];
@@ -609,6 +612,12 @@ export class Game {
     // A mobilia da cidade: arte por cima da geometria, sem tocar na colisao.
     this.blockiaRenderer = new BlockiaRenderer(this.world);
     /*
+     * A porta abre quando a Mara abre — a MESMA flag que a missao "As
+     * Lanternas Azuis" exige. Sem isto o desenho da porta e o objetivo do
+     * jogador poderiam discordar, e discordariam no primeiro ajuste de missao.
+     */
+    this.blockiaRenderer.portaAberta = () => this.skills.hasStoryFlag('porta_blockia');
+    /*
      * As bases sao lugares, nao segredos — mas so depois que existem para o
      * jogador.
      *
@@ -933,9 +942,12 @@ export class Game {
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
     }
     this.scrollObjects = SCROLLS.map((sc) => new ScrollObject(sc, this.world.surfaceRow));
+    // A porta da cidade: fechada de verdade ate alguem atender.
+    this.portaBlockia = new PortaBlockia(this.world.surfaceRow);
     this.interactables = [
       depot,
       workshop,
+      this.portaBlockia,
       ...this.clueObjects,
       ...this.scrollObjects,
       ...this.npcs,
@@ -1085,6 +1097,29 @@ export class Game {
     Events.on('city:met', (p) => {
       this.skills.setStoryFlag(p.id);
       this.refreshObjective();
+      this.save();
+    });
+
+    Events.on('cidade:porta', () => {
+      /*
+       * A porta some dos TILES, e nao so do desenho.
+       *
+       * Foi por isso que ela nasceu selada: enquanto era um vao com uma folha
+       * pintada por cima, o jogador atravessava a porta trancada andando. Aqui
+       * a passagem vira ar de verdade, uma vez so, e a flag garante que ela
+       * continue assim no proximo carregamento.
+       */
+      abrirPortaBlockia(this.world, this.world.surfaceRow);
+      this.tileRenderer.invalidateAll();
+      this.skills.setStoryFlag('porta_blockia');
+      this.camera.addShake(3);
+      this.hud.celebrate(
+        'BLOCKIA',
+        'A porta abriu',
+        'Catorze anos de "nao ha ninguem la embaixo", e ha alguem atras desta porta.',
+        'progress',
+        4
+      );
       this.save();
     });
 
@@ -1596,6 +1631,16 @@ export class Game {
     for (const npc of this.npcs) {
       const state = data.npcs?.[npc.id];
       if (state) npc.setState(state as never);
+    }
+
+    /*
+     * O mundo nasce sempre com a porta fechada (a geracao e deterministica e
+     * nao conhece save). Quem ja bateu nela reabre no carregamento — a mesma
+     * logica dos selos de bioma em `reopenSavedGates`.
+     */
+    if (this.skills.hasStoryFlag('porta_blockia')) {
+      abrirPortaBlockia(this.world, this.world.surfaceRow);
+      this.portaBlockia.aberta = true;
     }
 
     this.player.setPosition(data.player.x, data.player.y);
@@ -2323,7 +2368,24 @@ export class Game {
         this.cssW,
         this.cssH,
         this.dpr,
-        this.clock.skyWeights()
+        this.clock.skyWeights(),
+        /*
+         * A MARGEM E GENEROSA de proposito.
+         *
+         * `insideBlockia` com margem zero trocaria o fundo exatamente na
+         * parede da caverna, e a troca apareceria como um corte seco no meio
+         * do corredor de entrada. Com doze tiles de folga a vista da cidade ja
+         * esta no lugar quando o jogador cruza a porta — ele vira a esquina e
+         * a cidade JA esta la, que e como chegar num lugar funciona.
+         */
+        insideBlockia(
+          Math.floor(this.player.cx / CONFIG.tileSize),
+          Math.floor(this.player.cy / CONFIG.tileSize),
+          this.world.surfaceRow,
+          12
+        )
+          ? 'blockia'
+          : null
       )
     ) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);

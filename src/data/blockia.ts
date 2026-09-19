@@ -17,12 +17,20 @@ export interface CityNpcDef {
   /** Funcao, exibida embaixo do nome. */
   role: string;
   /**
-   * Em que nivel ele mora: 0 = piso da praca, 1..4 = terracos de baixo para
-   * cima.
+   * Em que nivel ele mora.
+   *
+   *   0      = o piso da praca (tres patamares em alturas diferentes)
+   *   1..5   = terracos da TORRE OESTE, de baixo para cima
+   *   6..10  = terracos da TORRE LESTE, de baixo para cima
+   *   11     = a ponte que liga as duas no alto
    *
    * Antes era coluna e profundidade absolutas, escritas a mao. Os sete
    * nasceram dentro da pedra por causa disso. Nivel + deslocamento e
    * impossivel de errar: a geometria vem de `blockiaLayout`.
+   *
+   * Os sete estao espalhados pelos DOIS lados de proposito. Com todos numa
+   * torre so, metade da cidade seria cenario — o jogador subiria um lado,
+   * falaria com todo mundo e nunca teria motivo para atravessar a ponte.
    */
   nivel: number;
   /** Colunas a partir da borda esquerda daquele nivel. */
@@ -115,7 +123,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'breno_torga',
     name: 'Breno Torga',
     role: 'Mestre dos Elevadores',
-    nivel: 3,
+    nivel: 8,
     offset: 4,
     color: '#8cbef0',
     trust: 1,
@@ -151,8 +159,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'afonso_greda',
     name: 'Afonso Greda',
     role: 'Arquivista',
-    nivel: 4,
-    offset: 7,
+    nivel: 5,
+    offset: 6,
     color: '#d3b47d',
     trust: 2,
     lines: [
@@ -174,8 +182,8 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'lio',
     name: 'Lio',
     role: '11 anos',
-    nivel: 2,
-    offset: 9,
+    nivel: 6,
+    offset: 5,
     color: '#8c5ce0',
     trust: 1,
     lines: [

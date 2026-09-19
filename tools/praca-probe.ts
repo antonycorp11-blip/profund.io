@@ -26,7 +26,7 @@ import {
   HORTA_COL1,
 } from '../src/data/blockiaProps';
 import { BLOCKIA_NPCS } from '../src/data/blockia';
-import { LARGURA_DECK } from '../src/world/Blockia';
+import { blockiaLayout } from '../src/world/Blockia';
 
 let falhas = 0;
 const ok = (cond: boolean, titulo: string, detalhe = ''): boolean => {
@@ -128,18 +128,35 @@ console.log('\nAS PECAS DO PISO NAO INVADEM A HORTA');
 
 console.log('\nO TERRACO CABE NO TERRACO');
 /*
- * Cada passarela tem 14 colunas (LARGURA_DECK, em /world/Blockia.ts). Peca que
- * passa da ponta fica pendurada no ar — e como o desenho nao colide com nada,
+ * Cada terraco tem a largura DELE — nao ha mais um numero unico.
+ *
+ * Esta checagem comparava tudo contra uma constante `LARGURA_DECK`, que fazia
+ * sentido quando os quatro terracos eram iguais. Agora sao dez, de sete
+ * larguras diferentes, e a largura igual era justamente o que fazia a cidade
+ * ler como prateleira. A pergunta continua a mesma; a resposta e que passou a
+ * vir da planta.
+ *
+ * Peca que passa da ponta fica pendurada no ar — e como desenho nao colide,
  * ela fica pendurada em silencio.
  */
 {
+  const planta = blockiaLayout(CONFIG.world.surfaceRow);
+  const niveis = [...planta.decks, ...(planta.ponte ? [planta.ponte] : [])];
   const fora: string[] = [];
   for (const p of BLOCKIA_PROPS) {
     if (p.nivel === 0) continue;
+    const d = niveis[p.nivel - 1];
+    if (!d) {
+      fora.push(`${p.id} aponta para o nivel ${p.nivel}, que nao existe`);
+      continue;
+    }
+    const largura = d.col1 - d.col0;
     const b = p.offset + larguraDe(p.id);
-    if (b > LARGURA_DECK) fora.push(`${p.id} termina em ${b.toFixed(1)} no nivel ${p.nivel}`);
+    if (b > largura) {
+      fora.push(`${p.id} termina em ${b.toFixed(1)} num terraco de ${largura} colunas`);
+    }
   }
-  ok(fora.length === 0, `tudo cabe nas ${LARGURA_DECK} colunas de cada terraco`, fora.join(' · '));
+  ok(fora.length === 0, `tudo cabe na largura do proprio terraco`, fora.join(' · '));
 }
 
 console.log('\nA PRACA CABE NA CAVERNA');

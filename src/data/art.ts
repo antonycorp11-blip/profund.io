@@ -174,6 +174,15 @@ export const ART = {
   bgDir: 'bg/',
   /** Ceus do ciclo dia/noite (dia, entardecer, noite). */
   skyKeys: ['sky_day', 'sky_dusk', 'sky_night'],
+  /*
+   * Fundos de LUGAR, e nao de profundidade.
+   *
+   * A lista `backgrounds` escolhe pela fundura e repete a imagem em ladrilho —
+   * serve para caverna, que e igual em todo canto. Blockia nao e: ela e um
+   * lugar so, com uma vista propria, e a pintura dela tem comeco e fim. Por
+   * isso entra por aqui e e desenhada inteira, sem repetir.
+   */
+  lugarKeys: ['blockia'],
 
   backgrounds: [
     { key: 'sky', minDepth: -Infinity, parallax: 0.25, blend: 0 },

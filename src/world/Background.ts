@@ -21,8 +21,38 @@ export class Background {
     cssH: number,
     dpr: number,
     /** Pesos [dia, entardecer, noite] vindos do relogio. */
-    skyWeights?: [number, number, number]
+    skyWeights?: [number, number, number],
+    /**
+     * Um LUGAR com vista propria, se o jogador estiver dentro de um.
+     *
+     * Quem decide isto e o Game, que sabe geografia; o fundo so obedece. Sem
+     * isto eu teria que importar os limites de Blockia aqui dentro, e entao
+     * cada lugar novo do jogo passaria a mexer neste arquivo.
+     */
+    lugar?: string | null
   ): boolean {
+    /*
+     * A VISTA DA CIDADE VEM ANTES DE TUDO.
+     *
+     * A escolha por profundidade continua valendo em toda a mina, mas dentro
+     * de Blockia ela esta simplesmente errada: aos 600 m o fundo e "caverna
+     * funda", uma textura de pedra repetida em ladrilho, e a cidade fica
+     * pendurada num vazio marrom. A pintura da cidade e uma so, tem enquadramento
+     * proprio e nao se repete — entao ela e desenhada inteira, cobrindo a tela.
+     */
+    if (lugar) {
+      const img = Assets.background(lugar);
+      if (img) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        this.drawCobrindo(ctx, img, camera, cssW, cssH);
+        // Veu mais leve que o da caverna: a cidade e o unico lugar iluminado
+        // em 600 m de mina, e escurecer o fundo dela mata justamente o que
+        // faz a chegada valer a pena.
+        ctx.fillStyle = 'rgba(6,5,10,0.18)';
+        ctx.fillRect(0, 0, cssW, cssH);
+        return true;
+      }
+    }
     const layers = ART.backgrounds;
     let index = 0;
     for (let i = 0; i < layers.length; i++) {
@@ -82,6 +112,35 @@ export class Background {
         if (nextImg) this.drawLayer(ctx, nextImg, camera, next.parallax, cssW, cssH, t);
       }
     }
+  }
+
+  /**
+   * Desenha a imagem INTEIRA cobrindo a tela, sem repetir.
+   *
+   * `drawLayer` ladrilha, que e o certo para textura de caverna e o errado
+   * para uma pintura: a torre da cidade apareceria tres vezes lado a lado.
+   * Aqui a imagem cobre a tela pelo maior lado e desliza devagar com a camera
+   * — parallax curto, porque a cidade esta logo ali atras e nao no horizonte.
+   */
+  private drawCobrindo(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    camera: Camera,
+    cssW: number,
+    cssH: number
+  ): void {
+    const escala = Math.max(cssW / img.width, cssH / img.height) * 1.12;
+    const w = img.width * escala;
+    const h = img.height * escala;
+    // A folga e o que sobra da imagem para fora da tela; o deslize nunca pode
+    // passar dela, senao aparece borda preta na lateral.
+    const folgaX = Math.max(0, (w - cssW) / 2);
+    const folgaY = Math.max(0, (h - cssH) / 2);
+    const desX = clamp(-camera.left * 0.06 * camera.scale, -folgaX, folgaX);
+    const desY = clamp(-camera.top * 0.04 * camera.scale, -folgaY, folgaY);
+    ctx.globalAlpha = 1;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, (cssW - w) / 2 + desX, (cssH - h) / 2 + desY, w, h);
   }
 
   private drawLayer(
