@@ -1,4 +1,5 @@
 import './style.css';
+import './ui/expedition.css';
 import { Assets } from './core/Assets';
 import { Game } from './core/Game';
 import { esperarLiberacao } from './ui/Portao';

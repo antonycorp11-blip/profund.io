@@ -1615,16 +1615,7 @@ body:has(.hud-map-slot.folded) .toasts {
   font-size: 11.2px;
 }
 
-/*
- * Habilidades EM VOLTA do MINERAR.
- *
- * As posicoes vem do JS (`TouchControls.ARCO`), nao daqui: elas dependem de
- * QUANTAS habilidades estao desbloqueadas, e CSS nao sabe contar irmaos
- * visiveis de um jeito que sobreviva a um `hidden`.
- *
- * Aqui fica so a ancora, no canto inferior direito — o mesmo referencial que o
- * solver usou para calcular o arco.
- */
+/* O posicionamento fixo do cinto e definido em ui/expedition.css. */
 .touch-skills {
   position: absolute;
   right: 0;
@@ -8671,10 +8662,10 @@ body:has(.hud-map-slot.folded) .toasts {
   z-index: 1;
 }
 
-.panel-wrap[data-fundo='oficina']::after { background-image: url('art/bg/tela/oficina.png'); }
-.panel-wrap[data-fundo='cristal']::after { background-image: url('art/bg/tela/cristal.png'); }
-.panel-wrap[data-fundo='mesa']::after { background-image: url('art/bg/tela/mesa.png'); }
-.panel-wrap[data-fundo='trilhos']::after { background-image: url('art/bg/tela/trilhos.png'); }
+.panel-wrap[data-fundo='oficina']::after { background-image: url('/art/bg/tela/oficina.png'); }
+.panel-wrap[data-fundo='cristal']::after { background-image: url('/art/bg/tela/cristal.png'); }
+.panel-wrap[data-fundo='mesa']::after { background-image: url('/art/bg/tela/mesa.png'); }
+.panel-wrap[data-fundo='trilhos']::after { background-image: url('/art/bg/tela/trilhos.png'); }
 
 
 /* =========================================================================

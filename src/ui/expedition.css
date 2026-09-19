@@ -1,0 +1,209 @@
+/* Acabamento compartilhado. Geometria das telas permanece em style.css;
+   controles de toque ficam aqui, sem recalcular posicoes a cada quadro. */
+:root {
+  --exp-metal: #14232b;
+  --exp-edge: #527077;
+  --exp-copper: #d6a76a;
+  --doc-fundo: #12212a;
+  --doc-fundo-alto: #21343d;
+  --doc-fundo-baixo: #0d1921;
+  --doc-tinta: #efe8d8;
+  --doc-tinta-fraca: #aabcc0;
+  --doc-luz: #f4c583;
+  --doc-regua: #40545a;
+  --doc-regua-forte: #758076;
+  --doc-pauta: rgba(144, 179, 186, 0.025);
+}
+
+body .panel-wrap {
+  background: rgba(4, 10, 15, 0.76);
+}
+
+body .ui-escala .panel-wrap > :is(.skill-screen, .tech-screen, .map-screen, .camp-panel, .panel),
+body .panel-wrap > :is(.skill-screen, .tech-screen, .map-screen, .camp-panel, .panel) {
+  border: 1px solid var(--exp-edge);
+  border-top: 2px solid var(--exp-copper);
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 15% 0, rgba(103, 157, 163, 0.16), transparent 55%),
+    linear-gradient(145deg, #1c3039, #101d26 65%, #15242b);
+  box-shadow: 0 22px 64px #000a, 0 0 0 4px #091319, inset 0 0 0 4px #ffffff04;
+}
+
+body .casca-cab {
+  padding: 7px 14px;
+  gap: 12px;
+  border-bottom: 1px solid #b68b5355;
+  background: linear-gradient(110deg, #36484b, #1a2a32 55%, #17232b);
+  box-shadow: inset 0 1px #ffffff15;
+}
+
+body .casca-titulo b {
+  color: #f5e4c5;
+  font-size: 17px;
+  letter-spacing: 0.055em;
+}
+
+body .casca-titulo span {
+  margin-top: 4px;
+  color: #bcc9c9;
+  font-size: 10px;
+  letter-spacing: 0.055em;
+  opacity: 1;
+}
+
+body :is(.casca-fechar, .casca-cab-btn) {
+  border-radius: 9px;
+  border: 1px solid #87938b66;
+  background: linear-gradient(#33454b, #182b34);
+  color: #f1dfbd;
+  box-shadow: inset 0 1px #ffffff12, 0 2px 3px #0004;
+}
+
+body .casca-trilho {
+  padding: 10px 6px;
+  gap: 5px;
+  background: linear-gradient(90deg, #0c1820, #14232a);
+  border-right-color: #7e9b9e33;
+}
+
+body .casca-secao {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #b8c8c9;
+  letter-spacing: 0.025em;
+}
+
+body .casca-secao.ativa {
+  color: #ffe0a8;
+  border-color: #d6a76a66;
+  background: linear-gradient(90deg, #785d344d, #b68b5310);
+  box-shadow: inset 3px 0 #e6b773;
+}
+
+body :is(.tech-card, .up-card, .skl-card, .eq-card, .map-item) {
+  border-radius: 9px;
+  border-color: #66838a55;
+  box-shadow: inset 0 1px #ffffff08, 0 3px 8px #0002;
+}
+
+body :is(.panel, .tech-screen, .skill-screen, .camp-panel, .map-screen) .btn {
+  border-radius: 7px;
+  box-shadow: inset 0 1px #fff2, 0 3px 0 #0003;
+}
+
+body button:focus-visible {
+  outline: 2px solid #b4ecf2;
+  outline-offset: 3px;
+}
+
+.game-hud .money-card {
+  border-color: #c59b6377;
+  border-radius: 10px;
+  background: linear-gradient(115deg, #24363bed, #10202aeb);
+  box-shadow: inset 0 1px #ffffff18, 0 4px 14px #0005;
+}
+
+.game-hud .money-copy strong {
+  color: #ffe1a2;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 5px #edb55c30;
+}
+
+.game-hud .money-copy small { color: #b7c8ca; opacity: 1; }
+.game-hud .level-num { color: #a3e0e8; }
+.game-hud :is(.slim-bar, .level-bar) { background-color: #050f16; }
+.game-hud .level-bar i { background: linear-gradient(90deg, #4a9cae, #b7ece9); }
+
+.game-hud :is(.icon-btn, .hud-mao, .hud-fold) {
+  border: 1px solid #7a959b88;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #30464be8, #10212be8);
+  box-shadow: inset 0 1px #fff2, 0 3px 8px #0005;
+}
+
+.game-hud .quota {
+  border-radius: 8px;
+  border-left: 2px solid #dab074;
+  background: linear-gradient(100deg, #142730ee, #10202bd9);
+  box-shadow: 0 3px 12px #0003;
+}
+
+.game-hud .quota-puxador { padding: 5px 9px; }
+.game-hud .chip { border-color: #8ca3a34d; background: #11232bd9; }
+.game-hud .minimap { border-color: #b9986466; border-radius: 9px; background: #0c1b24e8; }
+.game-hud .minimap-label { color: #bdcfd0; }
+.game-hud .minimap-label strong { color: #f5d6a0; }
+
+/* Quatro lugares estaveis: liberar uma skill nao desloca as outras. */
+body .touch-skills {
+  right: calc(var(--safe-r) + 14px);
+  bottom: calc(var(--safe-b) + 110px);
+  width: 216px;
+  height: 48px;
+}
+
+body .touch-skills .touch-btn.skill {
+  right: calc(var(--slot) * 56px);
+  bottom: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  border-color: #8cc0cf88;
+  box-shadow: inset 0 0 0 3px #10232bd9, 0 3px 10px #0006;
+}
+
+body .touch-skills .touch-btn.skill.ready {
+  border-color: #a7e1e8;
+  box-shadow: inset 0 0 0 3px #10232b, 0 0 9px #8cd5e52e;
+}
+
+body .touch-fold {
+  right: calc(var(--safe-r) + 238px);
+  bottom: calc(var(--safe-b) + 116px);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border-color: #73959c88;
+  background: #142730dc;
+}
+
+body .touch-btn.big {
+  width: 84px;
+  height: 84px;
+  border: 2px solid #e5ba77;
+  background: radial-gradient(circle at 35% 20%, #ad8554eb, #725236ed 55%, #302c29f2);
+  box-shadow: inset 0 0 0 4px #231d244f, inset 0 2px #fff3, 0 4px 14px #0006;
+  color: #fff2d9;
+}
+
+body .touch-btn.medium {
+  background: linear-gradient(145deg, #40585de8, #152a35e8);
+  border-color: #91b8c099;
+  box-shadow: inset 0 0 0 3px #12263166, 0 3px 10px #0005;
+}
+
+body .touch-btn.active { transform: scale(0.94); filter: brightness(1.25); }
+
+body .map-viewport { box-shadow: inset 0 0 40px #0008; }
+body .map-list { background: #101e27; border-color: #7b969955; }
+body .map-layer.atual { border-color: #e9b874; background: #b18b3622; }
+
+.map-cartouche {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  pointer-events: none;
+  padding: 10px 14px;
+  border-left: 2px solid #cfab72;
+  background: #10222be8;
+  color: #dbc9a7;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.map-cartouche span { display: block; margin-top: 5px; color: #a9bfc2; letter-spacing: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  body .touch-btn.skill { animation: none; }
+  body .touch-btn { transition: none; }
+}

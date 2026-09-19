@@ -94,6 +94,7 @@ export class HUD {
     private onActiveSkills: () => void = () => {}
   ) {
     this.root = document.createElement('div');
+    this.root.className = 'game-hud';
     this.root.style.position = 'absolute';
     this.root.style.inset = '0';
     this.root.style.pointerEvents = 'none';

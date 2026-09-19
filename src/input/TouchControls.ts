@@ -91,6 +91,7 @@ export class TouchControls {
           `<span class="pad-icon">${spec.label}</span>` +
           '<span class="pad-badge" data-charges hidden></span>';
         el.hidden = true;
+        el.style.setProperty('--slot', String(this.skillBtns.length));
         this.skillBtns.push(el);
         // Habilidades vao para a propria coluna: no grid dos botoes elas
         // caiam todas na mesma celula e uma tapava a outra — so a ultima
@@ -115,82 +116,6 @@ export class TouchControls {
       () => this.setVisible(true),
       { once: true, passive: true }
     );
-  }
-
-  /**
-   * Um botao por habilidade ativa, na ordem em que elas existem.
-   *
-   * Habilidade nao aprendida nao ocupa espaco no pad: o polegar do celular nao
-   * tem lugar para botao que nao faz nada.
-   */
-  /**
-   * Posicoes do arco, por quantidade de habilidade DESBLOQUEADA.
-   *
-   * Sao coordenadas (right, bottom) em px, medidas a partir do canto inferior
-   * direito. Nao foram escolhidas no olho: um solver testou raio, angulo
-   * inicial e passo procurando o arranjo mais PERTO do polegar em que nenhum
-   * botao encosta no MINERAR, no PULAR, em outro botao ou na borda da tela.
-   *
-   * Cinco botoes de 50px simplesmente NAO cabem num anel so em volta de um
-   * MINERAR de 92px num celular — por isso 4 e 5 abrem um segundo anel. Foi o
-   * solver que disse isso, depois de eu tentar tres vezes no olho e o
-   * resultado ficar espalhado pela tela.
-   */
-  /**
-   * O LEQUE de habilidades, acima do par MINERAR + PULAR.
-   *
-   * Sao coordenadas (right, bottom) em px a partir do canto inferior direito.
-   *
-   * Ja tentei anel em volta do MINERAR duas vezes. Nao funciona num celular: o
-   * anel que nao encosta em nada fica irregular, e irregular nao se le — o
-   * jogador precisa de RITMO para achar o botao sem olhar. Leque simetrico
-   * acima das duas teclas de acao e o que quase todo jogo de toque faz, e e
-   * por isso.
-   *
-   * Simetrico em torno do centro: com uma habilidade ela fica no meio, com
-   * cinco o leque abre para os dois lados. Calculado por solver, conferindo
-   * distancia ao MINERAR, ao PULAR, entre os proprios botoes e a borda.
-   */
-  private static readonly ARCO: Record<number, [number, number][]> = {
-    1: [[150, 120]],
-    2: [[122, 118], [178, 118]],
-    3: [[94, 133], [150, 140], [206, 133]],
-    // Quatro: mesmo passo de 56 px e mesma simetria em torno de 150, com o
-    // par de dentro sete pixels mais alto — a mesma curva do leque de tres.
-    4: [[66, 126], [122, 140], [178, 140], [234, 126]],
-  };
-
-  /**
-   * Espalha as habilidades desbloqueadas no arco.
-   *
-   * A posicao depende de QUANTAS estao visiveis, e nao do indice fixo de cada
-   * uma: com duas habilidades elas ficam coladas no polegar, com cinco o arco
-   * abre. Posicao fixa por habilidade deixaria buracos no arco enquanto o
-   * jogador nao comprou tudo.
-   */
-  private posicionarArco(estados: ({ unlocked: boolean } | undefined)[]): void {
-    const visiveis: HTMLButtonElement[] = [];
-    for (let i = 0; i < this.skillBtns.length; i++) {
-      if (estados[i]?.unlocked) visiveis.push(this.skillBtns[i]);
-    }
-    /*
-     * Presa ao MAIOR leque que existe, e nao a um numero escrito a mao.
-     *
-     * Estava preso em cinco enquanto a tabela ia so ate tres: com quatro
-     * habilidades desbloqueadas `ARCO[4]` vinha indefinido, a funcao voltava
-     * antes de posicionar nada e os botoes ficavam empilhados no canto. Assim
-     * um leque novo entra so acrescentando a linha na tabela.
-     */
-    const maior = Math.max(...Object.keys(TouchControls.ARCO).map(Number));
-    const chave = Math.min(maior, visiveis.length);
-    const pontos = TouchControls.ARCO[chave];
-    if (!pontos) return;
-    visiveis.forEach((el, i) => {
-      const p = pontos[i];
-      if (!p) return;
-      el.style.right = `${p[0] - 25}px`;
-      el.style.bottom = `${p[1] - 25}px`;
-    });
   }
 
   /**
@@ -245,7 +170,6 @@ export class TouchControls {
       };
       img.src = `art/skills/${id}.png`;
     }
-    this.posicionarArco(estados);
     for (let i = 0; i < this.skillBtns.length; i++) {
       const el = this.skillBtns[i];
       const st = estados[i];

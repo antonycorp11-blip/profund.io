@@ -59,7 +59,7 @@ export class MapScreen {
         <header class="casca-cab">
           <span class="casca-titulo">
             <b>Mapa da Mina</b>
-            <span>Onde voce ja esteve</span>
+            <span>Seu caminho nas profundezas</span>
           </span>
           <div class="map-info casca-conta"></div>
           <button class="casca-fechar map-tp" data-tp title="Ir direto para Blockia (teste)">🏙</button>
@@ -67,7 +67,7 @@ export class MapScreen {
           <button class="casca-fechar" data-close>✕</button>
         </header>
         <div class="map-body">
-          <div class="map-viewport"><canvas></canvas></div>
+          <div class="map-viewport"><canvas></canvas><div class="map-cartouche" aria-hidden="true"><b>LEVANTAMENTO DA MINA</b><span>Arraste para explorar · aproxime para ver detalhes</span></div></div>
           <aside class="map-list"></aside>
         </div>
       </div>`;
