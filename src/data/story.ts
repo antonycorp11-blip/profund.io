@@ -129,6 +129,32 @@ export const CLUES: ClueDef[] = [
     layer: 'stone',
   },
   {
+    /*
+     * O LAMPIAO ABASTECIDO.
+     *
+     * A BIBLIA cita em M3 ("lampiao recentemente abastecido e trilho
+     * reparado") e o jogo so tinha o trilho. Sem ele, o trecho entre o Rui e a
+     * Rainha Escavadora — quase duzentos metros — nao tinha nada para achar.
+     *
+     * E a pista mais barata de entender do jogo inteiro: oleo fresco num
+     * lampiao prova presenca HOJE, sem precisar de uma linha de dialogo.
+     */
+    id: 'clue_lampiao',
+    title: 'Lampiao abastecido',
+    col: 62,
+    row: 18 + 340,
+    roomW: 11,
+    roomH: 5,
+    prompt: 'Examinar lampiao',
+    lines: [
+      { speaker: 'Elias', text: 'Oleo fresco. O pavio nem criou crosta.' },
+      { speaker: 'Elias', text: 'Alguem acendeu isto esta semana.' },
+      { speaker: 'Elias', text: 'A companhia jura que nao ha ninguem abaixo dos duzentos.' },
+    ],
+    logEntry: 'Pista registrada: Lampiao abastecido (340 m)',
+    layer: 'crystal',
+  },
+  {
     id: 'clue_trilhos',
     title: 'Trilhos reparados',
     col: 88,
@@ -149,7 +175,7 @@ export const CLUES: ClueDef[] = [
     id: 'clue_pagina_01',
     title: 'Pagina 01 — O padrao',
     col: 50,
-    row: 18 + 400,
+    row: 18 + 120,
     roomW: 8,
     roomH: 5,
     prompt: 'Ler pagina',
@@ -353,7 +379,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
     id: 'npc_teo',
     name: 'Teo',
     col: 82,
-    row: 18 + 600,
+    row: 18 + 700,
     roomW: 5,
     roomH: 4,
     freeRadius: 1,

@@ -48,6 +48,35 @@ export const STORY_GATES: StoryGateDef[] = [
     titulo: 'A ROCHA NAO ABRE',
     aviso: 'Tem alguem gritando acima deste ponto. Ninguem passa por cima disso.',
   },
+  /*
+   * AS DUAS FAIXAS QUE ERAM DE CHEFE.
+   *
+   * Aos 180 e aos 360 havia guardiao. A BIBLIA nao poe nenhum antes dos 420 m,
+   * e por um motivo que nao e de ritmo: guardiao existe porque uma CIDADE o
+   * colocou para nao ser encontrada. Acima de Blockia nao ha cidade nenhuma —
+   * aqueles dois guardavam portas que ninguem trancou.
+   *
+   * As faixas ficam. O que muda e a chave: passa quem ACHOU o que havia para
+   * achar naquele trecho, e nao quem matou o que estava na frente.
+   */
+  {
+    id: 'sg_trilhos',
+    depth: 180,
+    requires: 'clue_trilhos',
+    titulo: 'A ROCHA NAO ABRE',
+    aviso:
+      'Ha trilho remendado com solda nova nesta faixa, numa mina fechada ha ' +
+      'quatorze anos. Ache antes de passar por cima.',
+  },
+  {
+    id: 'sg_rui',
+    depth: 360,
+    requires: 'rui_cabeca',
+    titulo: 'A ROCHA NAO ABRE',
+    aviso:
+      'Alguem mantem estes trilhos. Encontre quem mora no fim da linha antes ' +
+      'de descer mais.',
+  },
 ];
 
 /** Linhas da faixa selada, do mesmo jeito que o selo de bioma calcula a dele. */

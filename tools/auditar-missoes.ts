@@ -81,6 +81,17 @@ for (const s of SCROLLS) {
 for (const b of BASE_CAMPS) {
   origem.set(`${b.id}:deposito`, { onde: `obra em ${b.nome}`, depth: b.depth });
 }
+/*
+ * Os moradores de Blockia: falar com cada um deixa uma flag com o id dele
+ * (ver o `city:met` no Game). Sao elas que as missoes da cidade exigem.
+ */
+for (const n of BLOCKIA_NPCS) {
+  origem.set(n.id, { onde: `conversa com ${n.name}`, depth: CITIES[0].depth });
+}
+/* A passagem: a cidade entrega a picareta quando a confianca chega ao limiar. */
+for (const c of CITIES) {
+  origem.set(`passagem_${c.id}`, { onde: `confianca de ${c.name}`, depth: c.depth });
+}
 // Flags que o jogo emite por acao, sem lugar no mundo.
 for (const [id, onde, depth] of [
   ['quota_paga', 'entrega da cota', 0],
@@ -311,19 +322,52 @@ let acumulado = 0;
 for (let i = 0; i < MISSIONS.length; i++) {
   const m = MISSIONS[i];
   const desdeAnterior = i === 0 ? m.depth : m.depth - MISSIONS[i - 1].depth;
-  // Chefe cobra a luta e as tentativas; resgate cobra procurar.
+  /*
+   * Quando a missao declara `minutos`, ela manda.
+   *
+   * A conta por profundidade tem um ponto cego: as missoes dentro de uma
+   * cidade ficam a dois metros uma da outra e ganhavam dois minutos cada. O
+   * trabalho de cidade — consertar elevador, tirar caixa de galeria alagada —
+   * nao tem metro nenhum, e era justamente a metade do arco que sumia da
+   * conta.
+   */
   const ehChefe = m.requires.some((f) => f.startsWith('boss_'));
   const extra = ehChefe ? 240 : 90;
-  const seg = desdeAnterior * segPorMetro + extra;
+  const seg = m.minutos !== undefined
+    ? m.minutos * 60 + desdeAnterior * segPorMetro
+    : desdeAnterior * segPorMetro + extra;
   acumulado += seg;
   const mm = Math.round(seg / 60);
-  const hh = Math.floor(acumulado / 3600);
-  const rest = Math.round((acumulado % 3600) / 60);
+  // Arredondar os minutos DEPOIS de tirar as horas imprime "4h60". Arredonda-se
+  // o total em minutos primeiro, e as horas saem dele.
+  const totalMin = Math.round(acumulado / 60);
+  const hh = Math.floor(totalMin / 60);
+  const rest = totalMin % 60;
   console.log(
     `  ${String(m.depth).padStart(5)} m  ${m.title.padEnd(24)} +${String(mm).padStart(3)} min` +
       `   acumulado ${hh}h${String(rest).padStart(2, '0')}`
   );
 }
+/*
+ * O ARCO ATE BLOCKIA e a prioridade declarada, entao ele tem conta propria.
+ * A BIBLIA (secao 8) pede 0h45 + 1h15 + 1h00 + 2h30 = 5h30 ate sair da
+ * cidade; o alvo combinado foi "umas boas 4 horas".
+ */
+let ateBlockia = 0;
+for (let i = 0; i < MISSIONS.length; i++) {
+  const m = MISSIONS[i];
+  if (m.depth > 610) break;
+  const d = i === 0 ? m.depth : m.depth - MISSIONS[i - 1].depth;
+  const chefe = m.requires.some((f) => f.startsWith('boss_'));
+  ateBlockia += m.minutos !== undefined
+    ? m.minutos * 60 + d * segPorMetro
+    : d * segPorMetro + (chefe ? 240 : 90);
+}
+console.log(
+  `\n  ARCO SUPERFICIE -> FIM DE BLOCKIA: ${(ateBlockia / 3600).toFixed(1)} h` +
+    `   (alvo combinado: 4 h; BIBLIA secao 8 pede 5,5 h)`
+);
+
 const horas = acumulado / 3600;
 console.log(`\n  PISO ESTIMADO ATE O FIM DA CAMPANHA: ${horas.toFixed(1)} h de jogo puro.`);
 console.log('  (sem contar morte, volta a base, melhoria, leitura e se perder)');

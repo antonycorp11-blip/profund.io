@@ -16,9 +16,25 @@ import { LAYERS, type LayerDef } from './layers';
  * A superficie nao tem selo (e o ponto de partida); o Portal tambem nao
  * (`generated: false` — ainda nao existe geracao para ele).
  */
+/*
+ * PEDRA E CRISTAL SAIRAM DAQUI.
+ *
+ * A BIBLIA poe o primeiro chefe em 420-500 m — a Rainha Escavadora bloqueando
+ * a rota comercial para Blockia — e nao poe nenhum antes. O jogo tinha DOIS
+ * antes disso, aos 180 e aos 360, e o efeito era exatamente o relatado:
+ * "primeiro boss muito cedo, pouco desenvolvimento".
+ *
+ * Nao e so ritmo, e sentido. Um guardiao existe porque uma CIDADE o colocou
+ * ali para impedir que a encontrassem (BIBLIA 2.2). Acima de Blockia nao ha
+ * cidade nenhuma para ter colocado guardiao — os dois primeiros guardavam
+ * portas que ninguem trancou.
+ *
+ * As duas faixas continuam existindo e continuam trancando: viraram SELOS DE
+ * HISTORIA (/data/storyGates.ts), que abrem por ter achado e nao por ter
+ * matado. A primeira metade do jogo passa a ser sobre procurar, que e o que
+ * ela sempre quis ser.
+ */
 export const GATE_LAYERS: string[] = [
-  'stone',
-  'crystal',
   'minerals',
   'magma',
   'ruins',
