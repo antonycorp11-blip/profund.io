@@ -22,6 +22,8 @@ export interface PanelHost {
     hurtPlayer?(amount: number): void;
     /** Enche a cartucheira: serve para testar o tiro sem ir a base. */
     darMunicao?(n: number): void;
+    /** Credita moeda de teste no saldo da base. */
+    darMoedas?(n: number): void;
   };
   /** Dados do registro/estatisticas para a aba de ajustes. */
   progressInfo(): {
@@ -407,6 +409,35 @@ export class PanelUI {
       devGrid.appendChild(b);
     }
     this.corpo.appendChild(devGrid);
+
+    /*
+     * MOEDA DE TESTE, agora como botao.
+     *
+     * Ela existia so como `?moedas=N` no endereco, e isso nao serve para quem
+     * joga: o jogo esta instalado como aplicativo na tela inicial do celular,
+     * onde nao ha barra de endereco para digitar nada. Recurso de teste que so
+     * funciona no navegador nao testa o jogo que as pessoas usam.
+     *
+     * Fica aqui embaixo, na mesma secao dos outros botoes de desenvolvimento,
+     * com o nome dizendo o que e. Nao esta escondida atras de sequencia
+     * secreta nem de nome disfarcado: um botao escondido continua ao alcance
+     * de qualquer um que abra Ajustes e role a tela, e disfarcar daria a
+     * impressao falsa de que protege alguma coisa.
+     */
+    this.corpo.appendChild(sectionTitle('Desenvolvimento — moeda de teste'));
+    const moedaGrid = document.createElement('div');
+    moedaGrid.className = 'dev-grid';
+    for (const n of [3000, 50000, 1000000]) {
+      const b = document.createElement('button');
+      b.className = 'btn dev';
+      b.textContent = `+${n.toLocaleString('pt-BR')}`;
+      b.addEventListener('click', () => {
+        this.host.dev.darMoedas?.(n);
+        Haptics.ui();
+      });
+      moedaGrid.appendChild(b);
+    }
+    this.corpo.appendChild(moedaGrid);
 
     this.corpo.appendChild(sectionTitle('Desenvolvimento — save'));
     const reset = document.createElement('button');

@@ -367,6 +367,16 @@ export class Game {
           this.municao += n;
           Events.emit('ui:toast', { text: `+${n} de municao.`, tone: 'good' });
         },
+        darMoedas: (n) => {
+          // Grava na hora: quem clica aqui costuma fechar o jogo em seguida
+          // para testar o turno da noite, e o autosave e de doze em doze.
+          this.stock.money += n;
+          this.save();
+          Events.emit('ui:toast', {
+            text: `+${n.toLocaleString('pt-BR')} moedas de teste.`,
+            tone: 'good',
+          });
+        },
       },
       onResetSave: () => this.resetSave(),
       onToggleTouch: () => {
