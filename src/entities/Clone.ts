@@ -1,6 +1,14 @@
 import { blockDef, type BlockDef } from '../data/blocks';
 import { CONFIG } from '../data/config';
-import { Events } from '../core/events';
+/*
+ * A copia deixou de FALAR.
+ *
+ * Nao sobrou nenhum `Events.emit` aqui, e isso e a mudanca, nao um efeito
+ * colateral dela: os dois avisos que existiam — "reposicionada" e "procurando
+ * trabalho novo" — eram estado interno dos caes de guarda deste arquivo. Quem
+ * anuncia agora e o CloneManager, e so o que o jogador provocou apertando um
+ * botao.
+ */
 import { RESOURCES, type ResourceId } from '../data/resources';
 import { botDef, type BotDef, type BotId } from '../data/bots';
 import { Assets } from '../core/Assets';
@@ -442,9 +450,91 @@ export class Clone {
     if (this.stuckTimer < STUCK_LIMIT) return;
     this.stuckTimer = 0;
     this.target = null;
+    /*
+     * AQUI ESTAVA O BURACO NA BARREIRA.
+     *
+     * Este desentalar e um TELEPORTE: joga a copia no posto de trabalho dela.
+     * Enquanto o posto ficava por perto, tudo bem. So que `relocate` e
+     * `digDeeper` mexem no posto sem perguntar se da para CHEGAR nele — e
+     * `digDeeper` existe justamente para mandar a copia mais fundo.
+     *
+     * A sequencia que o dono viu: a copia nao alcanca nada, o cao de guarda
+     * manda o posto para baixo, a copia anda ate a parede selada e para, e
+     * entao este desentalar a teleporta para o posto, que esta do outro lado.
+     * Nenhuma linha "atravessa a parede" — a parede foi contornada por
+     * teletransporte, que e pior, porque nao aparece em nenhuma checagem de
+     * colisao.
+     *
+     * Um selo separa o mundo em dois e nada que anda pode trocar de lado.
+     */
+    if (this.separadoDe(this.homeY)) {
+      this.homeX = this.x;
+      this.homeY = this.y;
+      return;
+    }
     this.x = this.homeX;
     this.y = this.homeY;
-    Events.emit('ui:toast', { text: `Copia ${this.index + 1} reposicionada.`, tone: 'info' });
+  }
+
+  /**
+   * Ha parede intransponivel entre a copia e esta altura?
+   *
+   * Olha a coluna da COPIA, e isso basta: selo de bioma e selo de historia sao
+   * faixas de ponta a ponta do mundo (WorldGen varre `col = 1` ate
+   * `width - 1`), entao uma linha selada em qualquer coluna esta selada em
+   * todas. Se um dia houver barreira parcial, esta conta continua correta —
+   * ela so passa a ser conservadora, que e o lado certo para errar.
+   */
+  private separadoDe(py: number): boolean {
+    const ts = this.world.tileSize;
+    const r0 = Math.floor(this.y / ts);
+    const r1 = Math.floor(py / ts);
+    if (r0 === r1) return false;
+    /*
+     * TRES COLUNAS, e nao so a da copia.
+     *
+     * A da copia sozinha quase bastava — selo de bioma e de historia sao
+     * faixas de ponta a ponta. Quase: a faixa de cada selo de bioma tem nove
+     * colunas que NAO sao selo, a porta murada da arena do chefe, feita de
+     * tijolo comum. Tijolo comum cede a copia, que cava com nivel 3. Medido:
+     * posta em cima da porta, ela entrava na faixa em tres minutos.
+     *
+     * As bordas do mundo nunca sao porta — a arena nasce na coluna do poco,
+     * no meio. Entao perguntar tambem a elas identifica a faixa mesmo quando a
+     * copia esta bem em cima do unico ponto mole dela.
+     *
+     * E isto continua sendo uma pergunta ao MUNDO, e nao a uma tabela: quando
+     * o selo abre, a faixa inteira vira ar e as tres colunas passam a deixar
+     * passar. Um selo vencido para de separar sozinho, sem ninguem avisar a
+     * copia.
+     */
+    const colunas = [Math.floor(this.x / ts), 1, this.world.width - 2];
+    const passo = r1 > r0 ? 1 : -1;
+    for (let r = r0 + passo; r !== r1 + passo; r += passo) {
+      /*
+       * TODAS as colunas, e nao qualquer uma.
+       *
+       * Escrevi "qualquer uma" primeiro e a sonda do turno da noite caiu no
+       * mesmo minuto: o Bot Profundo, que trabalha a 395 m, parou de achar
+       * servico em duas das seis colunas medidas. A 396 m fica a Base do
+       * Cristal, e a parede dela e indestrutivel — a copia passou a se achar
+       * cercada por um muro que dava para CONTORNAR andando de lado.
+       *
+       * A diferenca entre um muro e uma cerca e essa: o selo tranca a linha
+       * INTEIRA, de ponta a ponta do mundo. Se sobrou coluna aberta, nao e
+       * cerca, e obstaculo — e obstaculo se contorna.
+       */
+      let trancada = true;
+      for (const col of colunas) {
+        const def = this.world.getDef(col, r);
+        if (!def.indestructible || !def.solid) {
+          trancada = false;
+          break;
+        }
+      }
+      if (trancada) return true;
+    }
+    return false;
   }
 
   /**
@@ -464,11 +554,18 @@ export class Clone {
     this.target = null;
     this.sendTimer = 0;
     this.stuckTimer = 0;
+    /*
+     * EM SILENCIO, de propósito.
+     *
+     * Isto avisava "Copia N procurando trabalho novo" toda vez. O relato do
+     * dono: "essa mensagem de copia procurando servico e coisas assim tira,
+     * nao precisamos disso". Ele esta certo, e com 50 camaras fica pior — era
+     * um aviso de ESTADO INTERNO do meu codigo, disparado por um cao de
+     * guarda que existe justamente para o jogador nao precisar saber que algo
+     * deu errado. Conserto que se anuncia deixa de ser conserto e vira
+     * interrupcao.
+     */
     if (!this.relocate(true) && !this.relocate(false)) this.digDeeper();
-    Events.emit('ui:toast', {
-      text: `Copia ${this.index + 1} procurando trabalho novo.`,
-      tone: 'info',
-    });
   }
 
   /** Zera o cao de guarda: houve trabalho de verdade. */
@@ -508,6 +605,9 @@ export class Clone {
       }
     }
     if (!best) return false;
+    // Posto do outro lado de um selo e posto que ela nunca alcanca — e, pior,
+    // e para onde o desentalar a teleportaria.
+    if (this.separadoDe(best.row * ts + ts / 2)) return false;
     this.homeX = best.col * ts + ts / 2;
     this.homeY = best.row * ts + ts / 2;
     return true;
@@ -538,10 +638,20 @@ export class Clone {
   /** Nada por perto: puxa o posto para baixo e vai abrindo caminho. */
   private digDeeper(): void {
     const ts = this.world.tileSize;
-    const alvo = Math.min(
+    let alvo = Math.min(
       (this.world.height - 4) * ts,
       this.y + CONFIG.clones.digDownStep * ts
     );
+    /*
+     * Desce ate o selo, e nao alem dele.
+     *
+     * Sem isto, "procurar trabalho mais fundo" era literalmente a instrucao
+     * que mandava a copia para o outro lado da barreira. O passo encolhe ate
+     * caber no compartimento em que ela esta; se nem um tile couber, ela fica
+     * onde esta e o cao de guarda tenta outra coisa no proximo ciclo.
+     */
+    while (alvo > this.y && this.separadoDe(alvo)) alvo -= ts;
+    if (alvo <= this.y) return;
     this.homeY = alvo;
     this.homeX = this.x;
   }
