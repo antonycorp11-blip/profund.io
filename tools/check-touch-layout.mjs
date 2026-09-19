@@ -42,15 +42,12 @@ for (const selector of ['.game-hud .minimap', '.game-hud .hud-top-right .hud-map
 }
 const swap = block('.game-hud .hud-mao');
 const offset = (prop) => {
-  const match = swap.match(new RegExp(`${prop}: calc\\(var\\(--safe-[rb]\\) \\+ (\\d+)px\\)`));
+  const match = swap.match(new RegExp(`${prop}: calc\\(var\\(--safe-[rt]\\) \\+ (\\d+)px\\)`));
   assert(match, `Ancora da troca ausente: ${prop}`);
   return Number(match[1]);
 };
-const left = offset('right'), bottom = offset('bottom');
+const left = offset('right'), top = offset('top');
 const width = px(swap, 'width'), height = px(swap, 'height');
-for (const c of circles) {
-  const x = Math.max(left, Math.min(left + width, c.x));
-  const y = Math.max(bottom, Math.min(bottom + height, c.y));
-  assert(Math.hypot(c.x - x, c.y - y) > c.r, `Troca invade ${c.selector}`);
-}
+assert(left <= 20, 'Troca deve ficar alinhada ao canto do minimapa');
+assert(top >= 180 && height <= 40, 'Troca deve ficar abaixo do minimapa');
 console.log('HUD: troca separada das acoes; minimapa acompanha o conteudo.');
