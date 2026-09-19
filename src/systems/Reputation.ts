@@ -1,4 +1,5 @@
 import { Events } from '../core/events';
+import { CITIES } from '../data/cities';
 
 export type CityId = 'blockia' | 'ferruria' | 'lumora' | 'vespera';
 
@@ -49,12 +50,54 @@ export class Reputation {
     const r = this.get(city);
     r[axis] += amount;
     Events.emit('rep:changed', { city, axis, value: r[axis] });
+    if (axis === 'trust') this.conferirPassagem(city);
+  }
+
+  /**
+   * A CIDADE ENTREGA A PICARETA quando passa a confiar.
+   *
+   * E o momento em que a porta abre, e ele precisa ser um ACONTECIMENTO: nao
+   * uma ferramenta que aparece no inventario, mas uma cidade decidindo que
+   * voce pode descer. Por isso o evento e proprio, e nao um `ui:toast`.
+   *
+   * Uma vez so por cidade: confianca continua subindo depois, e a picareta nao
+   * pode ser entregue de novo a cada ponto.
+   */
+  private entregues = new Set<CityId>();
+  private conferirPassagem(city: CityId): void {
+    if (this.entregues.has(city)) return;
+    const def = CITIES.find((c) => c.id === city);
+    if (!def) return;
+    if (this.get(city).trust < def.trustToPass) return;
+    this.entregues.add(city);
+    Events.emit('city:passage', {
+      city,
+      name: def.name,
+      pickaxeKey: def.pickaxeId,
+      pickaxeName: def.pickaxeName,
+    });
+  }
+
+  /** Ja recebeu a ferramenta daquela cidade? Usado pelo save e pela ficha. */
+  temPassagem(city: CityId): boolean {
+    return this.entregues.has(city);
   }
 
   toJSON(): ReputationSave {
     const out: ReputationSave = {};
     for (const [id, r] of this.cities) out[id] = { ...r };
     return out;
+  }
+
+  /*
+   * A entrega e reconstituida do proprio dado ao carregar: quem ja tem
+   * confianca suficiente ja recebeu. Assim o save nao precisa de campo novo, e
+   * um save antigo com confianca alta nao recebe a picareta duas vezes.
+   */
+  restaurarEntregas(): void {
+    for (const c of CITIES) {
+      if (this.get(c.id).trust >= c.trustToPass) this.entregues.add(c.id);
+    }
   }
 
   fromJSON(data: ReputationSave | undefined): void {

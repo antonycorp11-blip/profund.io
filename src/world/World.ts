@@ -2,6 +2,7 @@ import { BLOCK_IDS, blockDef, type BlockDef } from '../data/blocks';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { layerAt } from '../data/layers';
+import { toolFloorAt } from '../data/cities';
 
 export interface DamageResult {
   applied: boolean;
@@ -309,7 +310,20 @@ export class World {
     if (def.indestructible || def.type === 'ar') {
       return { applied: false, broken: false, def, progress: 0, blockedBy: 'indestructible' };
     }
-    if (toolTier < def.minTool) {
+    /*
+     * O PISO DA CIDADE, e nao so o do bloco.
+     *
+     * Abaixo de cada cidade a rocha exige a ferramenta DAQUELA cidade, por
+     * mais mole que a rocha seja (ver /data/cities.ts). Ninguem sabe por que a
+     * regra existe; as cidades herdaram e transformaram em politica.
+     *
+     * A checagem mora aqui, no unico lugar por onde todo dano de bloco passa —
+     * habilidade, broca, choque e martelada comum caem todos neste `if`. Se
+     * ela morasse na interface, a primeira habilidade nova furaria a porteira
+     * sem ninguem perceber.
+     */
+    const exigido = Math.max(def.minTool, toolFloorAt(this.depthOfRow(row)));
+    if (toolTier < exigido) {
       return { applied: false, broken: false, def, progress: 0, blockedBy: 'tool' };
     }
     const hp = this.effectiveHp(col, row);

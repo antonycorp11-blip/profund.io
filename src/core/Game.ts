@@ -1,6 +1,6 @@
 import { CONFIG } from '../data/config';
 import { ART } from '../data/art';
-import { TOOLS } from '../data/tools';
+import { TOOLS, toolByKey } from '../data/tools';
 import { RESOURCES } from '../data/resources';
 import { activeSkillMeta } from '../data/activeSkills';
 import { blockDef, type BlockDef } from '../data/blocks';
@@ -1091,6 +1091,27 @@ export class Game {
      * diferentes: ou o guardiao ainda esta vivo em algum lugar da faixa, ou
      * ele ja caiu e o que segura sao missoes deixadas para tras.
      */
+    /*
+     * A CIDADE ABRE A DESCIDA, e isso e um acontecimento.
+     *
+     * A picareta nao "aparece no inventario": uma cidade decidiu que voce pode
+     * descer. Por isso vem com cartaz, e nao com aviso de canto — e o segundo
+     * maior momento do jogo depois de derrubar um guardiao.
+     */
+    Events.on('city:passage', (p) => {
+      const def = toolByKey(p.pickaxeKey);
+      if (def && def.index > this.stats.toolIndex) this.stats.setTool(def.index);
+      this.skills.setStoryFlag(`passagem_${p.city}`);
+      this.hud.celebrate(
+        `${p.name.toUpperCase()} CONFIA EM VOCE`,
+        p.pickaxeName,
+        'Abaixo daqui, a pedra so cede a esta ferramenta. Seu pai carregou uma igual.',
+        'progress',
+        4
+      );
+      this.refreshObjective();
+    });
+
     Events.on('boss:engaged', () => {
       this.emLutaDeChefe = true;
     });
@@ -1459,6 +1480,10 @@ export class Game {
     this.skills.fromJSON(data.skills);
     this.exploration.fromJSON(data.exploration);
     this.reputation.fromJSON(data.reputation);
+    // Quem ja tinha confianca suficiente ja recebeu a picareta: reconstitui
+    // isso do proprio dado, para o save nao precisar de campo novo e para
+    // ninguem receber a mesma ferramenta duas vezes.
+    this.reputation.restaurarEntregas();
     this.journal.fromJSON(data.journal);
     this.camps.fromJSON(data.camps);
     this.activeSkills.equippedFromJSON(data.equipped as never);

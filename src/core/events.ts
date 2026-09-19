@@ -87,6 +87,13 @@ export interface GameEvents {
   'journal:written': { title: string; novo: boolean };
   'city:met': { id: string; name: string; city: string; trust: number };
   'rep:changed': { city: string; axis: string; value: number };
+  /**
+   * A cidade passou a confiar e liberou a descida.
+   *
+   * E o acontecimento que abre a metade de baixo do jogo: a picareta dela e a
+   * unica que abre a pedra abaixo dali.
+   */
+  'city:passage': { city: string; name: string; pickaxeKey: string; pickaxeName: string };
   'mission:done': {
     id: string;
     title: string;

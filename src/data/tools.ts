@@ -6,6 +6,14 @@ export interface ToolDef {
   index: number;
   key: string;
   name: string;
+  /**
+   * Sai de uma CIDADE, e nao da oficina.
+   *
+   * Sem esta marca a oficina venderia as quatro por nada — elas tem `cost`
+   * vazio, e "custa nada" e indistinguivel de "posso pagar". Seria um furo
+   * direto na regra que sustenta a metade de baixo do jogo.
+   */
+  daCidade?: boolean;
   /** Tier: define quais blocos podem ser quebrados (BlockDef.minTool). */
   tier: number;
   /** Dano por golpe. */
@@ -95,12 +103,90 @@ export const TOOLS: ToolDef[] = [
     color: '#a88bd8',
     description: 'Feita para o que existe la embaixo. Precisa de ouro refinado.',
   },
+  /*
+   * AS PICARETAS DAS CIDADES.
+   *
+   * Nao se compram. Cada uma sai da confianca de uma cidade, e abaixo dela a
+   * rocha nao cede a mais nada (ver /data/cities.ts). Por isso `cost` esta
+   * vazio: dinheiro nao resolve, e a loja nao pode ofere-las nem por engano.
+   *
+   * Elas sao a razao de as cidades serem porteiras, e a razao de as cidades
+   * mais fundas existirem — quem nao foi aceito continuou descendo e fundou a
+   * propria. Santiago passou por todas.
+   */
+  {
+    index: 5,
+    key: 'pick_fundadores',
+    daCidade: true,
+    name: 'Picareta dos Fundadores',
+    tier: 4,
+    miningPower: 96,
+    miningSpeed: 1.85,
+    rangeBonus: 22,
+    cost: {},
+    color: '#d8a35a',
+    description: 'De Blockia. Abaixo dos 600 m, nenhuma outra abre a pedra.',
+  },
+  {
+    index: 6,
+    key: 'pick_ferruria',
+    daCidade: true,
+    name: 'Marreta de Ferruria',
+    tier: 5,
+    miningPower: 130,
+    miningSpeed: 1.95,
+    rangeBonus: 24,
+    cost: {},
+    color: '#c46a3a',
+    description: 'De Ferruria. Abaixo dos 980 m, nenhuma outra abre a pedra.',
+  },
+  {
+    index: 7,
+    key: 'pick_lumora',
+    daCidade: true,
+    name: 'Diapasao de Lumora',
+    tier: 6,
+    miningPower: 168,
+    miningSpeed: 2.05,
+    rangeBonus: 26,
+    cost: {},
+    color: '#6fc6d8',
+    description: 'De Lumora. Abaixo dos 1.380 m, nenhuma outra abre a pedra.',
+  },
+  {
+    index: 8,
+    key: 'pick_vespera',
+    daCidade: true,
+    name: 'Chave de Vespera',
+    tier: 7,
+    miningPower: 210,
+    miningSpeed: 2.15,
+    rangeBonus: 28,
+    cost: {},
+    color: '#b9a7e8',
+    description: 'De Vespera. Abaixo dos 1.720 m, nenhuma outra abre a pedra.',
+  },
 ];
 
 export function toolAt(index: number): ToolDef {
   return TOOLS[Math.max(0, Math.min(TOOLS.length - 1, index))];
 }
 
+/**
+ * A proxima picareta COMPRAVEL.
+ *
+ * Pula as das cidades: elas nao tem preco porque nao tem venda. Antes disto a
+ * oficina oferecia a Picareta dos Fundadores por zero moedas, e a porteira que
+ * segura a metade de baixo do jogo caia no primeiro clique.
+ */
 export function nextTool(index: number): ToolDef | null {
-  return TOOLS[index + 1] ?? null;
+  for (let i = index + 1; i < TOOLS.length; i++) {
+    if (!TOOLS[i].daCidade) return TOOLS[i];
+  }
+  return null;
+}
+
+/** Procura uma picareta pela chave. Usado por quem CONCEDE, nao por quem vende. */
+export function toolByKey(key: string): ToolDef | undefined {
+  return TOOLS.find((t) => t.key === key);
 }

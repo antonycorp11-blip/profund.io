@@ -1,4 +1,5 @@
 import { Assets } from '../core/Assets';
+import { cityGatingAt } from '../data/cities';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { randInt } from '../core/math';
@@ -269,11 +270,28 @@ export class MiningSystem {
         if (this.toolWarnCooldown <= 0) {
           this.toolWarnCooldown = 1.4;
           Events.emit('block:blocked', { reason: 'tool', requiredTool: def.minTool });
+          /*
+           * A RECUSA TEM QUE DIZER O PORQUE.
+           *
+           * "Precisa de uma picareta melhor" manda o jogador para a loja — e
+           * abaixo de uma cidade nao ha picareta melhor a venda: ha uma
+           * picareta QUE SO AQUELA CIDADE DA, e so para quem ela aceita. Sem
+           * essa frase, a porteira parece um bug de balanceamento em vez da
+           * regra que move a metade de baixo do jogo.
+           */
+          const dona = cityGatingAt(this.world.depthOfRow(row));
+          const precisaDaCidade = dona !== null && dona.toolTier > def.minTool;
           Events.emit('ui:toast', {
-            text: `${def.name}: precisa de uma picareta melhor`,
+            text: precisaDaCidade ? dona!.wallLine : `${def.name}: precisa de uma picareta melhor`,
             tone: 'warn',
           });
-          this.floating.push(cx, cy - 10, 'Ferramenta fraca', '#ff9a5c', 10);
+          this.floating.push(
+            cx,
+            cy - 10,
+            precisaDaCidade ? dona!.name.toUpperCase() : 'Ferramenta fraca',
+            '#ff9a5c',
+            10
+          );
         }
       }
       this.hasTarget = false;

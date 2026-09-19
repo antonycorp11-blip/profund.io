@@ -27,12 +27,19 @@ import { bossForLayer, CREATURES } from '../src/data/creatures';
 import { CONFIG } from '../src/data/config';
 import { SCROLLS } from '../src/data/scrolls';
 import { BASE_CAMPS } from '../src/data/basecamp';
+import { CITIES } from '../src/data/cities';
+import { BLOCKIA_NPCS } from '../src/data/blockia';
 
 let erros = 0;
 let avisos = 0;
 const falha = (m: string) => {
   erros++;
   console.log(`  ERRO   ${m}`);
+};
+/** Afirmacao com veredito: passa ou vira erro, e diz o porque quando falha. */
+const ok = (cond: boolean, titulo: string, detalhe = '') => {
+  if (cond) console.log(`  ok     ${titulo}`);
+  else falha(`${titulo}${detalhe ? ` — ${detalhe}` : ''}`);
 };
 const aviso = (m: string) => {
   avisos++;
@@ -209,6 +216,31 @@ for (const b of BASE_CAMPS) {
   }
 }
 if (erros === 0) console.log('  ok  toda base esta na camada que ela declara.');
+
+console.log('\n=== 4c. TODA PORTEIRA TEM CHAVE? ===');
+/*
+ * A regra que me impediu de trancar o jogo hoje.
+ *
+ * Abaixo de cada cidade a rocha so cede a picareta DELA. Isso e a espinha do
+ * jogo — e tambem a forma mais facil de deixar a campanha impossivel: basta
+ * uma cidade trancar uma profundidade sem existir para entregar a ferramenta.
+ *
+ * Aqui cada porteira tem que provar que ha como abri-la: a cidade existe no
+ * mundo, e ha confianca suficiente disponivel nela para atingir o limiar.
+ */
+for (const c of CITIES) {
+  if (!c.implementada) {
+    console.log(`  ·    ${c.name} (${c.depth} m): planejada, ainda nao tranca nada.`);
+    continue;
+  }
+  const moradores = c.id === 'blockia' ? BLOCKIA_NPCS : [];
+  const disponivel = moradores.reduce((n, m) => n + (m.trust ?? 0), 0);
+  ok(
+    disponivel >= c.trustToPass,
+    `${c.name}: da para juntar a confianca que ela pede`,
+    `pede ${c.trustToPass}, a cidade inteira oferece ${disponivel}`
+  );
+}
 
 console.log('\n=== 5. O PORQUE ESTA ESCRITO? ===');
 for (const m of MISSIONS) {
