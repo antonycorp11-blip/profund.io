@@ -10744,3 +10744,240 @@ html.dev-hud .debug {
 .tech-body.aside-esquerda .tech-aside {
   align-content: start;
 }
+
+/* ============================================================
+   O CARTAZ DA MISSAO
+   ============================================================
+   Missao nova era uma troca silenciosa de texto num card de
+   canto; concluir era um toast de tres segundos que nao dizia o
+   que se ganhou. As duas coisas mais importantes que o jogo tem
+   a contar eram as duas mais discretas.
+   ============================================================ */
+
+.missao-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(6, 5, 4, 0.66);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
+  pointer-events: none;
+}
+
+.missao-wrap.on {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.missao-cartaz {
+  width: min(430px, 88%);
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 16px 18px 14px;
+  text-align: center;
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 21px, var(--doc-pauta) 21px 22px),
+    linear-gradient(180deg, var(--doc-fundo-alto), var(--doc-fundo));
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.8);
+  animation: missao-entra 0.26s cubic-bezier(0.2, 1.1, 0.4, 1);
+}
+
+@keyframes missao-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
+.missao-selo {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  color: var(--doc-luz);
+}
+
+.missao-cartaz.feita .missao-selo {
+  color: #7ddc9a;
+}
+
+.missao-titulo {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--doc-tinta);
+}
+
+/* O OBJETIVO: o que fazer. Grande o bastante para ler de longe. */
+.missao-objetivo {
+  margin: 0;
+  max-width: 34em;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--doc-tinta);
+}
+
+/*
+ * O PORQUE: em italico e mais quente, separado por uma regua.
+ *
+ * Nao e enfeite nem repeticao do objetivo. Objetivo e tarefa; porque e o que
+ * esta em jogo. O jogo inteiro e sobre um pai que desceu, e cada coisa que
+ * fecha a descida esta entre o filho e ele — se isso nao estiver dito na
+ * tela, nao esta dito em lugar nenhum.
+ */
+.missao-porque {
+  margin: 2px 0 0;
+  padding-top: 8px;
+  max-width: 32em;
+  border-top: 1px solid rgba(198, 216, 228, 0.12);
+  font-size: 11.5px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--accent);
+  opacity: 0.92;
+}
+
+.missao-premios {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.missao-premio {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.missao-premio i {
+  font-style: normal;
+  color: var(--doc-luz);
+  font-size: 13px;
+}
+
+.missao-premio b {
+  font-size: 16px;
+  color: var(--doc-tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.missao-premio small {
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--doc-tinta-fraca);
+}
+
+.missao-rodape {
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.7;
+}
+
+/* O botao e GRANDE: e a unica coisa para fazer nesta tela, e o polegar
+   nao mira num celular deitado. */
+.missao-ok {
+  margin-top: 6px;
+  min-width: 128px;
+  min-height: 34px;
+  border: 1px solid rgba(255, 196, 83, 0.5);
+  border-radius: 3px;
+  background: rgba(255, 196, 83, 0.14);
+  color: var(--doc-luz);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+}
+
+.missao-ok:hover {
+  background: rgba(255, 196, 83, 0.22);
+}
+
+/* ---- o card de objetivo recolhe ---- */
+
+/*
+ * Aberto ele media 210x159: 10% de uma tela de 393 px, permanente, dizendo a
+ * mesma frase o tempo todo. Recolhido vira uma aba fina com o titulo; um
+ * toque abre, e ele se abre sozinho quando o objetivo MUDA — a unica hora em
+ * que tem noticia nova.
+ */
+.quota-puxador {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 7px;
+  border: none;
+  background: none;
+  color: var(--ink-dim);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.quota-puxador i {
+  font-style: normal;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.quota-puxador span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.quota-puxador u {
+  text-decoration: none;
+  opacity: 0.5;
+  font-size: 9px;
+  transition: transform 0.18s ease;
+}
+
+.quota.recolhido .quota-puxador u {
+  transform: rotate(-90deg);
+}
+
+/* Recolhido: some TUDO menos a aba. O `::before` e o rotulo "MISSAO" do
+   card, que recolhido viraria uma segunda palavra dizendo o mesmo. */
+.quota.recolhido > *:not(.quota-puxador) {
+  display: none;
+}
+
+.quota.recolhido::before {
+  content: none;
+}
+
+.quota.recolhido {
+  padding: 0;
+  min-height: 0;
+}
+
+/* O card inteiro aceita toque: recolhido, a aba ocupa ele todo. */
+.quota {
+  pointer-events: auto;
+}

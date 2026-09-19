@@ -87,7 +87,21 @@ export interface GameEvents {
   'journal:written': { title: string; novo: boolean };
   'city:met': { id: string; name: string; city: string; trust: number };
   'rep:changed': { city: string; axis: string; value: number };
-  'mission:done': { id: string; title: string; text: string };
+  'mission:done': {
+    id: string;
+    title: string;
+    text: string;
+    money: number;
+    points: number;
+  };
+  /** A missao atual mudou: chegou objetivo novo. */
+  'mission:nova': {
+    id: string;
+    title: string;
+    goal: string;
+    porque: string;
+    depth: number;
+  };
   /** Uma tela cheia abriu ou fechou. Quem coordena e /ui/Telas.ts. */
   'tela:aberta': { nome: string };
   'tela:fechada': { nome: string };

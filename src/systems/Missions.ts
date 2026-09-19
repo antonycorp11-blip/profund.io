@@ -82,7 +82,46 @@ export class Missions {
       this.announced.add(m.id);
       if (silent) continue;
       pay(m.rewardMoney, m.rewardPoints, m);
-      Events.emit('mission:done', { id: m.id, title: m.title, text: m.onDone });
+      Events.emit('mission:done', {
+        id: m.id,
+        title: m.title,
+        text: m.onDone,
+        money: m.rewardMoney,
+        points: m.rewardPoints,
+      });
     }
+    this.anunciarAtual(silent);
+  }
+
+  /**
+   * Avisa quando a missao ATUAL muda.
+   *
+   * Nao havia aviso nenhum de missao NOVA: o card do HUD simplesmente trocava
+   * de texto, e trocar texto num canto e o jeito mais discreto possivel de
+   * contar uma coisa importante. Quem estava minerando nao via.
+   *
+   * O aviso e emitido uma vez por missao, e `silent` cobre o carregamento do
+   * save — abrir o jogo nao pode parecer que a missao acabou de chegar.
+   */
+  private atualAvisada: string | null = null;
+  private anunciarAtual(silent: boolean): void {
+    const m = this.current();
+    if (!m) return;
+    if (this.atualAvisada === m.id) return;
+    const primeiraVez = this.atualAvisada !== null;
+    this.atualAvisada = m.id;
+    if (silent || !primeiraVez) return;
+    Events.emit('mission:nova', {
+      id: m.id,
+      title: m.title,
+      goal: m.goal,
+      porque: m.porque ?? '',
+      depth: m.depth,
+    });
+  }
+
+  /** Usado ao carregar: fixa a missao atual sem anunciar nada. */
+  silenciarAtual(): void {
+    this.atualAvisada = this.current()?.id ?? null;
   }
 }

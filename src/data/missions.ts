@@ -34,6 +34,20 @@ export interface MissionDef {
   requires: string[];
   /** Linha dita ao concluir (toast). */
   onDone: string;
+  /**
+   * POR QUE isto importa para o Elias — nao o que fazer, mas o que esta em
+   * jogo.
+   *
+   * O relato do dono: "o jogo nao esta puxando o jogador para baixo
+   * simplesmente por puxar. Nao tem incentivo nenhum descer." E ele tinha
+   * razao: todo objetivo aqui era uma TAREFA ("derrube a Mae dos Esporos"),
+   * nunca um MOTIVO. Tarefa e recado de chefia; motivo e o que faz alguem
+   * descer.
+   *
+   * O motivo e sempre o mesmo e por isso pode ser dito toda vez: Santiago
+   * desceu. Cada coisa que fecha a descida e uma coisa entre o Elias e o pai.
+   */
+  porque?: string;
   rewardMoney: number;
   rewardPoints: number;
   /**
@@ -55,6 +69,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'A mina so reabriu porque voce prometeu a cota da semana. Minere, entregue no deposito e feche o quadro.',
     requires: ['quota_paga'],
     onDone: 'Cota paga. A mina continua aberta por mais uma semana.',
+    porque:
+      'A mina fechou quando seu pai sumiu. Ela so reabriu porque voce assinou por ela. Perder a cota e perder o direito de descer.',
     rewardMoney: 150,
     rewardPoints: 1,
   },
@@ -65,6 +81,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'O caderno de Santiago da uma unica profundidade com marca: 26 m. Desca e veja o que tem la.',
     requires: ['clue_marca_do_pai'],
     onDone: 'A marca aponta para baixo. Ele nao estava marcando a volta.',
+    porque:
+      'Santiago marcou uma profundidade so no caderno inteiro. Ele nao anotava por onde tinha passado: anotava para onde ia.',
     rewardMoney: 200,
     rewardPoints: 1,
   },
@@ -75,6 +93,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'Tem alguem gritando abaixo da marca. Siga o som e tire essa pessoa de la.',
     requires: ['npc_jonas'],
     onDone: 'Jonas subiu — e deixou as toupeiras dele com voce.',
+    porque:
+      'Quem esta preso la embaixo estava aqui quando a mina fechou. Quem estava aqui viu o que aconteceu com o seu pai.',
     rewardMoney: 250,
     rewardPoints: 1,
   },
@@ -85,6 +105,8 @@ export const MISSIONS: MissionDef[] = [
     goal: 'A parede que Jonas descreveu tem guarda. Derrube a Mae dos Esporos.',
     requires: ['boss_golem_escombros', 'gate_stone'],
     onDone: 'A parede cedeu junto com ela. Alguem colocou aquilo ali de proposito.',
+    porque:
+      'Alguem fechou esta parede A MAO e deixou um bicho na frente dela. Seu pai desceu por aqui antes disso. Enquanto ela estiver de pe voce nao desce mais um metro — e e para baixo que ele foi.',
     rewardMoney: 350,
     rewardPoints: 1,
   },

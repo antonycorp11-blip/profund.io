@@ -1,6 +1,7 @@
 import { ART } from '../data/art';
 import { Assets } from '../core/Assets';
 import { Events } from '../core/events';
+import { Haptics } from '../fx/Haptics';
 import { RESOURCES, RESOURCE_ORDER, type ResourceId } from '../data/resources';
 import type { Inventory } from '../systems/Inventory';
 import type { BaseStock } from '../systems/BaseStock';
@@ -305,8 +306,29 @@ export class HUD {
     // A cota vira "Objetivo Atual" e fecha a coluna da esquerda, logo abaixo do
     // retrato: e onde o olho ja esta quando o jogador pergunta "e agora?".
     this.quotaEl = document.createElement('div');
-    this.quotaEl.className = 'quota objective';
+    /*
+     * O CARD NASCE RECOLHIDO.
+     *
+     * Aberto ele media 210x159 — 10% da tela, permanente, num celular de 393 px
+     * de altura. E o que ele diz e a mesma frase o tempo todo: quem ja leu o
+     * objetivo nao precisa dele na cara enquanto minera.
+     *
+     * Recolhido vira uma aba fina com o titulo. Um toque abre, outro fecha, e
+     * ele se abre sozinho quando o objetivo MUDA — que e a unica hora em que
+     * ele tem noticia nova.
+     */
+    this.quotaEl.className = 'quota objective recolhido';
     this.buildQuota();
+    // A aba de abrir/fechar, sempre visivel.
+    const puxador = document.createElement('button');
+    puxador.className = 'quota-puxador';
+    puxador.innerHTML = '<i>◈</i><span data-puxador-txt>Objetivo</span><u>▾</u>';
+    puxador.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      this.quotaEl.classList.toggle('recolhido');
+      Haptics.ui();
+    });
+    this.quotaEl.appendChild(puxador);
     left.appendChild(this.quotaEl);
 
     this.root.appendChild(left);
@@ -442,6 +464,13 @@ export class HUD {
    * frase dizendo o que fazer agora.
    */
   setMissionObjective(text: string | null): void {
+    // O puxador mostra o TITULO da missao: recolhido, e a unica coisa que se
+    // le, entao tem que ser a que identifica o objetivo.
+    const puxadorTxt = this.quotaEl.querySelector('[data-puxador-txt]') as HTMLElement | null;
+    if (puxadorTxt) {
+      const titulo = text ? text.split(':')[0] : 'Objetivo';
+      if (puxadorTxt.textContent !== titulo) puxadorTxt.textContent = titulo;
+    }
     const line = this.quotaEl.querySelector('.quota-mission') as HTMLElement | null;
     const quotaBody = this.quotaEl.querySelectorAll('.quota-line, .quota-detail, .quota-days');
     if (!text) {
@@ -485,11 +514,20 @@ export class HUD {
    * toque. Agora o objetivo novo chega aberto, fica oito segundos e recolhe;
    * o toque continua valendo para reabrir quando quiser.
    */
+  /**
+   * Abre o card sozinho quando a noticia e nova, e recolhe depois.
+   *
+   * O card nasce recolhido para nao comer a tela, mas objetivo NOVO e a unica
+   * coisa que ele tem a dizer que o jogador ainda nao sabe — e essa vale
+   * interromper. Passados oito segundos ele volta a ser uma aba.
+   */
   private abrirObjetivo(): void {
     this.quotaEl.classList.add('aberto');
+    this.quotaEl.classList.remove('recolhido');
     window.clearTimeout(this.objetivoTimer);
     this.objetivoTimer = window.setTimeout(() => {
       this.quotaEl.classList.remove('aberto');
+      this.quotaEl.classList.add('recolhido');
     }, 8000);
   }
 

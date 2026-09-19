@@ -42,6 +42,7 @@ import { ActiveSkillsUI } from '../ui/ActiveSkillsUI';
 import { SkillTreeUI } from '../ui/SkillTreeUI';
 import { PlayerSprite } from '../player/PlayerSprite';
 import { equipDef } from '../data/equipment';
+import type { MissionDef } from '../data/missions';
 import { QuotaSystem } from '../systems/QuotaSystem';
 import { RescueNpc } from '../entities/RescueNpc';
 import { SaveSystem } from '../systems/SaveSystem';
@@ -66,6 +67,7 @@ import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
 import { BossBar } from '../ui/BossBar';
 import { Telas } from '../ui/Telas';
+import { MissaoUI } from '../ui/MissaoUI';
 import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
@@ -204,6 +206,8 @@ export class Game {
   private voices = new VoiceEcho();
   /** Moldura da luta de chefe. Escuta eventos sozinha; o Game so a desliga. */
   private bossBar!: BossBar;
+  /** Cartaz de missao. Escuta eventos sozinho; o Game so o cria. */
+  private missaoUI!: MissaoUI;
   /**
    * O dono das telas cheias: garante no maximo uma aberta por vez.
    *
@@ -406,6 +410,8 @@ export class Game {
 
     // A moldura da luta de chefe: nome, vida e o limiar da furia marcado.
     this.bossBar = new BossBar(uiRoot);
+    // O cartaz de missao: chegada com o porque, conclusao com o premio.
+    this.missaoUI = new MissaoUI(uiRoot);
 
     this.activeUI = new ActiveSkillsUI(uiRoot, {
       tree: this.skills,
@@ -1342,6 +1348,8 @@ export class Game {
   private loadOrStart(): void {
     // Mundo trocando: se havia luta em curso, ela nao existe mais.
     this.bossBar.esconder();
+    // E nenhum cartaz de missao herdado da partida anterior.
+    this.missaoUI.fechar();
     const data = SaveSystem.load();
     if (!data) {
       this.player.setPosition(this.worldInfo.spawnX, this.worldInfo.spawnY);
@@ -1350,6 +1358,9 @@ export class Game {
       // Jogo novo: nenhum selo foi aberto, nenhum chefe morreu — spawna os 6.
       this.biomeGate.spawnBosses(this.creatures);
       this.settleMissions();
+      // Jogo novo: a primeira missao ja esta em curso, entao ela nao "chega".
+      // Quem apresenta O Acordo e o prologo, logo abaixo.
+      this.missions.silenciarAtual();
       // Prologo: quem e o pai, por que a mina reabriu e o que a cota custa.
       // Antes disso o jogo comecava sem dizer que alguem tinha desaparecido.
       Events.emit('dialog:open', { lines: PROLOGUE });
@@ -1442,6 +1453,8 @@ export class Game {
     this.biomeGate.reopenSavedGates();
     this.biomeGate.spawnBosses(this.creatures);
     this.settleMissions();
+    // Save carregado: a missao em curso ja era a de ontem, nao chegou agora.
+    this.missions.silenciarAtual();
     this.vitals.fromJSON(data.vitals);
     this.activeSkills.fromJSON(data.activeSkills);
     this.progression.fromJSON(data.progression);
@@ -2513,6 +2526,32 @@ export class Game {
     // ela tambem e um prazo.
     const m = this.missions.current();
     this.hud.setMissionObjective(m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.');
+    this.revelarAlvoDaMissao(m);
+  }
+
+  /**
+   * ACENDE NO MAPA O QUE A MISSAO ATUAL PEDE.
+   *
+   * O relato do dono, e ele esta certo: "falou que la no metro 26 tinha um
+   * negocio. Fui la no metro 26, eu ja sabia que era para a esquerda. Como que
+   * o jogador normal vai saber?"
+   *
+   * Ele nao vai. As pistas tinham marcador no mapa, mas com `alwaysVisible:
+   * false` — so apareciam DEPOIS de encontradas. Isso e circular: o jogo manda
+   * procurar e esconde onde, e so revela quando ja nao adianta.
+   *
+   * O dado ja tinha a ligacao e eu nao estava usando: o `requires` da missao E
+   * o id do marcador (`clue_marca_do_pai`, `npc_jonas`). Entao a missao ativa
+   * acende exatamente o que ela pede, e nada mais — as outras pistas continuam
+   * escondidas, para achar sozinho continuar valendo alguma coisa.
+   */
+  private revelarAlvoDaMissao(m: MissionDef | null): void {
+    if (!m) return;
+    for (const req of m.requires) {
+      // Flags que nao sao lugar (gate_stone, quota_paga) simplesmente nao
+      // casam com marcador nenhum, e o metodo ignora em silencio.
+      this.exploration.discoverMarker(req);
+    }
   }
 
   save(): void {
