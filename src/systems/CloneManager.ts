@@ -87,8 +87,25 @@ export class CloneManager {
      * quinto Simples fica caro o bastante para voce pensar em subir de tipo,
      * sem fingir que ele virou outra maquina.
      */
+    /*
+     * 1,15, e nao 1,25 — porque o teto virou 50 e 1,25 nao deixa chegar la.
+     *
+     * A sonda de lotacao mediu: com 1,25, o 50o Bot Simples custa 44,8
+     * MILHOES. As cinquenta camaras que o dono pediu existiriam no papel e
+     * nenhuma partida alcancaria a vigesima — o teto seria enfeite e o preco
+     * continuaria sendo o limite de verdade, so que escondido.
+     *
+     * Abrir vaga e prometer que da para ocupar. Com 1,15 o 50o sai por 866
+     * mil e a frota inteira por 6,6 milhoes: caro de doer, alcancavel no fim.
+     * A toupeira, que cresce 1,1, chega na 50a por 26 mil — e assim as duas
+     * curvas terminam na mesma ideia, cada uma na escala do seu preco.
+     *
+     * Esta e a unica decisao deste commit que o dono nao pediu, e ela e de
+     * balanceamento: se 50 bots deixarem o dinheiro sem sentido, o numero para
+     * mexer e este.
+     */
     const doTipo = indexOverride ?? this.clones.filter((c) => c.config.bot === tipo).length;
-    return Math.round(botDef(tipo).cost * Math.pow(1.25, doTipo));
+    return Math.round(botDef(tipo).cost * Math.pow(1.15, doTipo));
   }
 
   canAfford(tipo: BotId = 'bot_simples'): boolean {

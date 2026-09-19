@@ -347,7 +347,7 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
    * as camaras da copiadora (COPIADORA em /data/bots.ts), que se
    * constroem. Isto aqui e so o piso delas.
    */
-  cloneSlots: { id: 'cloneSlots', name: 'Camaras da copiadora', base: 3, format: 'flat', live: true },
+  cloneSlots: { id: 'cloneSlots', name: 'Camaras da copiadora', base: 50, format: 'flat', live: true },
   cloneMiningPower: { id: 'cloneMiningPower', name: 'Poder das copias', base: 9, format: 'flat', live: true },
   cloneMiningSpeed: { id: 'cloneMiningSpeed', name: 'Velocidade das copias', base: 1, format: 'multiplier', live: true },
   cloneMoveSpeed: { id: 'cloneMoveSpeed', name: 'Movimento das copias', base: 95, format: 'flat', live: true },

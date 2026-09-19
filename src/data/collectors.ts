@@ -42,7 +42,16 @@ export const COLLECTOR_CONFIG = {
    * poucas; cada DEPOSITO de base construido abre mais vagas, porque passa a
    * existir mais um lugar onde elas descarregam sem subir a mina inteira.
    */
-  maxUnits: 6,
+  /*
+   * CINQUENTA, e nao 6. Pedido do dono: "50 bot e 50 toupeiras na primeira
+   * camada". As duas frotas passam a comecar iguais, e o teto deixa de ser o
+   * freio — quem freia e o preco, que cresce 1,1 por unidade.
+   *
+   * O 6 vinha de quando cada toupeira era um bicho caro de simular. Ver
+   * tools/lotacao-probe.ts: ele mede o custo de quadro com as duas frotas
+   * cheias, porque teto alto so e generoso enquanto o jogo roda.
+   */
+  maxUnits: 50,
   /** Vagas que cada deposito de base construido acrescenta. */
   unitsPerDepot: 5,
   /** Vagas extras quando aquele deposito e MELHORADO (galpao maior). */

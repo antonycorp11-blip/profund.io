@@ -67,7 +67,16 @@ export interface BotDef {
  * precisa de onde ser IMPRESSO (camara). As duas vagas se conquistam
  * construindo, e nao esperando dinheiro acumular.
  *
- * A conta no fim do jogo: 23 bots contra 61 toupeiras. O barato e o comum.
+ * DEPOIS: o dono pediu 50 de cada ja na primeira camada. E a chamada dele, e
+ * ela muda o papel do teto — deixa de ser o freio e passa a ser so o limite
+ * de seguranca. Quem freia vira o PRECO, que cresce 1,25 a cada bot do mesmo
+ * tipo: o 20o Bot Simples ja custa 57 mil, o 30o passa de meio milhao. Na
+ * pratica ninguem chega nas 50 camaras pagando; chega quem quiser muito.
+ *
+ * O que continua valendo e a progressao por construcao: montar e melhorar
+ * base ainda abre camara e vaga por cima das 50. Ver tools/lotacao-probe.ts,
+ * que mede o custo de quadro com a frota cheia — teto alto so e generoso se
+ * o jogo continuar rodando.
  */
 export const COPIADORA = {
   /** Camaras da copiadora recem-pesquisada, sem base nenhuma montada. */
