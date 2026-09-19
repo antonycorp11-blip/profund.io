@@ -340,7 +340,14 @@ export const ATTRIBUTES: Record<AttrId, AttrMeta> = {
   collectorBreak: { id: 'collectorBreak', name: 'Dentes das toupeiras', base: 0, format: 'percent', live: true },
   collectorRange: { id: 'collectorRange', name: 'Faro das toupeiras', base: 1, format: 'multiplier', live: true },
 
-  cloneSlots: { id: 'cloneSlots', name: 'Copias simultaneas', base: 99, format: 'flat', max: 99, live: true },
+  /*
+   * `base: 99, max: 99` era um atributo DECORATIVO: nada no jogo podia
+   * mudar um numero que ja nascia no proprio teto, e a tela mostrava
+   * "8/99" como se 99 fosse uma conquista. O limite de verdade agora sao
+   * as camaras da copiadora (COPIADORA em /data/bots.ts), que se
+   * constroem. Isto aqui e so o piso delas.
+   */
+  cloneSlots: { id: 'cloneSlots', name: 'Camaras da copiadora', base: 3, format: 'flat', live: true },
   cloneMiningPower: { id: 'cloneMiningPower', name: 'Poder das copias', base: 9, format: 'flat', live: true },
   cloneMiningSpeed: { id: 'cloneMiningSpeed', name: 'Velocidade das copias', base: 1, format: 'multiplier', live: true },
   cloneMoveSpeed: { id: 'cloneMoveSpeed', name: 'Movimento das copias', base: 95, format: 'flat', live: true },

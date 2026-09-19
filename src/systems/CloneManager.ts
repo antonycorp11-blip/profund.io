@@ -2,7 +2,7 @@ import type { Camera } from '../core/camera';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
 import { Clone, type CloneConfig } from '../entities/Clone';
-import { botDef, type BotId } from '../data/bots';
+import { botDef, COPIADORA, type BotId } from '../data/bots';
 import type { Attributes } from './Attributes';
 import type { BaseStock } from './BaseStock';
 import type { DropManager } from '../entities/DropManager';
@@ -42,8 +42,24 @@ export class CloneManager {
     private onDelivered?: (r: ResourceId, n: number) => void
   ) {}
 
+  /** Quantos depositos de base estao de pe. Cada um abre camaras. */
+  depositosProntos?: () => number;
+  /** Quantos desses depositos ja foram MELHORADOS. */
+  depositosMelhorados?: () => number;
+
+  /**
+   * Camaras da copiadora — o teto de bots vivos.
+   *
+   * Irma da conta das toupeiras (`CollectorManager.max`), e de proposito: as
+   * duas sao "ajudante precisa de lugar, e lugar se constroi". A toupeira
+   * precisa de onde entregar, o bot de onde ser impresso.
+   */
   get slots(): number {
-    return this.attrs.getInt('cloneSlots');
+    return (
+      this.attrs.getInt('cloneSlots') +
+      COPIADORA.camarasPorDeposito * (this.depositosProntos?.() ?? 0) +
+      COPIADORA.camarasPorDepositoMelhorado * (this.depositosMelhorados?.() ?? 0)
+    );
   }
 
   get canCreate(): boolean {
@@ -82,7 +98,18 @@ export class CloneManager {
   /** @param tipo Qual bot sai da oficina. O tipo e a decisao da compra. */
   create(x: number, y: number, tipo: BotId = 'bot_simples'): Clone | null {
     if (!this.canCreate) {
-      Events.emit('ui:toast', { text: 'Sem camara livre na copiadora.', tone: 'warn' });
+      /*
+       * Diz o que DESTRAVA, igual a mensagem das toupeiras.
+       *
+       * "Sem camara livre na copiadora" e um nao sem porta de saida: o jogador
+       * fica com a moeda na mao sem saber o que fazer. Pior ainda, esta
+       * mensagem passou levas inteiras sem poder aparecer, porque o teto era
+       * 99 — era um aviso para um caso impossivel.
+       */
+      Events.emit('ui:toast', {
+        text: `As ${this.slots} camaras estao ocupadas. Construa o Deposito Bruto de outra base para abrir mais.`,
+        tone: 'warn',
+      });
       return null;
     }
     const cost = this.costFor(tipo);

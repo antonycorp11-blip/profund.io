@@ -42,6 +42,42 @@ export interface BotDef {
   tint: string;
 }
 
+/**
+ * CAMARAS DA COPIADORA: quantos bots cabem de pe ao mesmo tempo.
+ *
+ * ISTO ESTEVE QUEBRADO E O ERRO FOI MEU, no mesmo commit em que eu construi o
+ * sistema de vagas das toupeiras (e21f589). O limite de copia era `base: 1,
+ * max: 6` — exatamente os numeros das toupeiras — e eu troquei por `99/99`
+ * com o comentario "a camara nao limita mais, o freio e o preco".
+ *
+ * Duas coisas deram errado nessa troca:
+ *
+ *  1. O freio que eu prometi afrouxou depois. O preco crescia 1,6 sobre a
+ *     FROTA inteira; virou 1,25 sobre cada TIPO. O unico limite que restava
+ *     ficou tres vezes mais fraco, e ninguem voltou para reconferir o 99.
+ *  2. Ficou de cabeca para baixo. A toupeira custa 250 e cabiam 6; o bot custa
+ *     800 e cabiam 99. O ajudante BARATO era o raro, e o caro era o
+ *     ilimitado — o oposto do que qualquer economia faz.
+ *
+ * E mais: `create()` ainda dizia "Sem camara livre na copiadora" para um
+ * limite que nao podia disparar. Mensagem de erro para um caso impossivel.
+ *
+ * A regra agora e irma da das toupeiras, e pela mesma razao concreta: ajudante
+ * precisa de lugar. A toupeira precisa de onde ENTREGAR (deposito); o bot
+ * precisa de onde ser IMPRESSO (camara). As duas vagas se conquistam
+ * construindo, e nao esperando dinheiro acumular.
+ *
+ * A conta no fim do jogo: 23 bots contra 61 toupeiras. O barato e o comum.
+ */
+export const COPIADORA = {
+  /** Camaras da copiadora recem-pesquisada, sem base nenhuma montada. */
+  camarasBase: 3,
+  /** Cada deposito de base construido abre estas camaras. */
+  camarasPorDeposito: 2,
+  /** E cada deposito MELHORADO abre mais estas. */
+  camarasPorDepositoMelhorado: 2,
+} as const;
+
 export const BOTS: BotDef[] = [
   {
     id: 'bot_simples',

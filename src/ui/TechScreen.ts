@@ -615,7 +615,23 @@ export class TechScreen {
           <span class="auto-col-icone"><img src="art/auto/copia_aco.png" alt=""></span>
           <div class="auto-col-txt">
             <h4>Bots ativos <i>(${clones.clones.length}/${clones.slots})</i></h4>
-            <p>Mineram, coletam e entregam automaticamente.</p>
+            <p>${
+              /*
+               * O CASO ACIMA DO LIMITE PRECISA SE EXPLICAR.
+               *
+               * As camaras da copiadora eram 99 — na pratica, sem limite. Quem
+               * jogou naquela epoca tem save com mais bots do que o teto de
+               * hoje, e a ficha passa a mostrar "8/3", que se le como defeito.
+               *
+               * Nenhum bot e destruido: quem foi impresso continua trabalhando.
+               * O que muda e so nao poder imprimir mais ate abrir camara. Isso
+               * precisa estar ESCRITO onde o numero estranho aparece, e nao num
+               * comentario que so eu leio.
+               */
+              clones.clones.length > clones.slots
+                ? `Acima das ${clones.slots} camaras: nenhum bot foi perdido, mas so da para imprimir de novo abrindo camara.`
+                : 'Mineram, coletam e entregam automaticamente.'
+            }</p>
           </div>
           <button class="btn primary" data-newclone ${
             clones.canAfford(melhor.id) ? '' : 'disabled'

@@ -37,6 +37,9 @@ import { BLOCKIA_NPCS } from '../src/data/blockia';
 import { POSTO_NOVE, OUTPOST_NPCS } from '../src/data/outpost';
 import { PROLOGUE, MINE_CLOSED } from '../src/data/prologue';
 import { TOOLS } from '../src/data/tools';
+import { ATTRIBUTES } from '../src/data/attributes';
+import { BOTS, COPIADORA } from '../src/data/bots';
+import { COLLECTOR_CONFIG } from '../src/data/collectors';
 
 const SUP = CONFIG.world.surfaceRow;
 
@@ -494,6 +497,74 @@ console.log('\n=== J. CHEFE SEM LUGAR NO MUNDO ===');
     );
   }
   secao(antes, 'todo chefe existente tem onde acontecer.');
+}
+
+/* ===================================================================== */
+console.log('\n=== L. ATRIBUTO QUE NASCE NO PROPRIO TETO ===');
+/*
+ * Um atributo com `base >= max` e DECORATIVO: nenhuma pesquisa, habilidade ou
+ * equipamento consegue mover um numero que ja chegou. Ele aparece na ficha
+ * como se fosse progressao e nao e.
+ *
+ * `cloneSlots` viveu levas assim, com `base: 99, max: 99`, e o estrago nao foi
+ * so cosmetico: era o teto de bots do jogo. A tela mostrava "8/99" como se 99
+ * fosse conquista, e o ajudante de 800 moedas ficou ilimitado enquanto o de
+ * 250 tinha seis vagas. Quem viu foi o dono, jogando: "por que somente 6
+ * toupeiras sendo que pode 99 bot".
+ */
+{
+  const antes = erros;
+  for (const a of Object.values(ATTRIBUTES)) {
+    if (a.max === undefined) continue;
+    if (a.base < a.max) continue;
+    falha(
+      `atributo "${a.id}" (${a.name}) nasce em ${a.base} com teto ${a.max}: ` +
+        `nada no jogo pode melhora-lo, e a ficha mostra isso como se fosse progressao.`
+    );
+  }
+  secao(antes, 'todo atributo com teto tem para onde crescer.');
+}
+
+/* ===================================================================== */
+console.log('\n=== M. AJUDANTE CARO NAO PODE SER MAIS COMUM QUE O BARATO ===');
+/*
+ * A regra que faltava, e que o dono enxergou de primeira: o teto de cada
+ * ajudante tem de andar na ordem INVERSA do preco dele. Bot custa 800 e
+ * toupeira 250; se cabem mais bots que toupeiras, a economia esta de cabeca
+ * para baixo e nenhuma outra conta do jogo conserta isso.
+ *
+ * Os dois tetos sao calculados aqui do mesmo jeito que os sistemas calculam,
+ * no comeco (sem base montada) e no fim (cinco bases construidas e
+ * melhoradas).
+ */
+{
+  const antes = erros;
+  const bases = BASE_CAMPS.length;
+  const cenarios: [string, number, number][] = [
+    ['no comeco, sem base montada', 0, 0],
+    ['no fim, com todas as bases montadas e melhoradas', bases, bases],
+  ];
+  for (const [quando, prontos, melhorados] of cenarios) {
+    const camaras =
+      ATTRIBUTES.cloneSlots.base +
+      COPIADORA.camarasPorDeposito * prontos +
+      COPIADORA.camarasPorDepositoMelhorado * melhorados;
+    const vagas =
+      COLLECTOR_CONFIG.maxUnits +
+      COLLECTOR_CONFIG.unitsPerDepot * prontos +
+      COLLECTOR_CONFIG.unitsPerDepotUpgrade * melhorados;
+    const precoBot = BOTS[0].cost;
+    const precoToupeira = COLLECTOR_CONFIG.cost;
+    if (precoBot > precoToupeira && camaras > vagas) {
+      falha(
+        `${quando}: cabem ${camaras} bots (${precoBot} moedas cada) e so ${vagas} toupeiras ` +
+          `(${precoToupeira}). O ajudante caro esta mais disponivel que o barato.`
+      );
+    } else {
+      passou(`${quando}: ${camaras} bots contra ${vagas} toupeiras.`);
+    }
+  }
+  secao(antes, 'o ajudante barato e o mais comum, nos dois extremos do jogo.');
 }
 
 /* ===================================================================== */

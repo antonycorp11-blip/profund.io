@@ -800,6 +800,10 @@ export class Game {
     };
     this.collectors.depositosProntos = () => this.camps.depotsBuilt();
     this.collectors.depositosMelhorados = () => this.camps.depotsUpgraded();
+    // As camaras da copiadora saem do mesmo lugar que as vagas das toupeiras:
+    // base montada e base melhorada. Ver COPIADORA em /data/bots.ts.
+    this.cloneManager.depositosProntos = () => this.camps.depotsBuilt();
+    this.cloneManager.depositosMelhorados = () => this.camps.depotsUpgraded();
 
     this.buildMode = new BuildMode(uiRoot, {
       automation: this.automation,
