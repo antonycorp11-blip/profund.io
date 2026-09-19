@@ -1,4 +1,3 @@
-import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
 import { COLLECTOR_UPGRADES } from '../data/collectors';
 import { Events } from '../core/events';
@@ -813,18 +812,16 @@ export class TechScreen {
 
     this.tituloEl.textContent = 'Equipamento';
     this.subtituloEl.textContent = 'Prepare-se para cavar mais fundo.';
-    this.mainEl.innerHTML = `
-      <div class="eq-filtros">
-        ${slots
-          .map(
-            (sl) => `
-              <button class="seg-btn ${sl.id === aberto ? 'on' : ''}" data-slot="${sl.id}">
-                ${sl.icon} ${sl.name}
-              </button>`
-          )
-          .join('')}
-      </div>
-      <div class="eq-grid">${itens}</div>`;
+    /*
+     * A fileira de filtros SAIU.
+     *
+     * Ela repetia, em botao de texto, os mesmos quatro encaixes que ja estao
+     * desenhados no boneco ao lado — duas maneiras de fazer a mesma coisa, e
+     * a de texto era a pior das duas. Pior ainda: ela parecia um filtro e nao
+     * filtrava nada (a lista continuava mostrando os quatro grupos), entao
+     * ensinava uma promessa falsa logo no primeiro toque.
+     */
+    this.mainEl.innerHTML = `<div class="eq-grid">${itens}</div>`;
 
     /*
      * O BONECO, como no conceito: o mineiro no meio e os encaixes em volta,
@@ -843,32 +840,48 @@ export class TechScreen {
       // no conceito. O rotulo diz onde e o encaixe e nunca muda; a plaquinha
       // diz o que esta la e muda o tempo todo — em cima, o que se le primeiro
       // era justamente a palavra que nunca traz noticia.
+      /*
+       * UM rotulo, nao dois.
+       *
+       * O encaixe trazia o nome do slot EM CIMA e o nome da peca embaixo. Com
+       * o slot vazio, os dois diziam a mesma palavra — "Cabeca" sobre
+       * "Cabeca" — e mesmo cheio, a palavra de cima nunca traz noticia: ela
+       * nao muda nunca.
+       */
       return `
         <button class="boneco-slot ${pos} ${def ? 'on' : ''} ${sl.id === aberto ? 'foco' : ''}"
                 data-slot="${sl.id}" title="${sl.name}">
-          <span class="boneco-rotulo"><i>${sl.name}</i></span>
           <span class="boneco-arte">${
-            def
-              ? this.equipArte(def.id, def.icon)
-              : /* Encaixe vazio mostra o SIMBOLO do slot, e nao a palavra
-                   "vazio": quatro quadrados escritos "vazio" e o oposto de
-                   informacao, e deixavam a coluna sem tinta nenhuma. */
-                `<span class="boneco-vazio">${sl.icon}</span>`
+            def ? this.equipArte(def.id, def.icon) : `<span class="boneco-vazio">${sl.icon}</span>`
           }</span>
           <span class="boneco-peca">${def ? def.name : sl.name}</span>
         </button>`;
     };
-    const [c0, c1, c2, c3] = slots;
+    /*
+     * O HEROI E A TELA, e ele aparece VESTIDO.
+     *
+     * A versao anterior punha quatro molduras vazias em volta de um boneco de
+     * 30 px: uma tela sobre vestir em que nao se via o que estava vestido. O
+     * rotulo do encaixe ainda aparecia duas vezes, em cima e embaixo.
+     *
+     * Agora o palco mostra a tira de `parado` DO TRAJE EQUIPADO, animada — o
+     * mesmo corpo que vai aparecer na mina. Trocar de traje aqui e ver a
+     * troca acontecer, que e a unica coisa que essa tela precisava fazer e
+     * nao fazia.
+     *
+     * A animacao e CSS puro (`steps`), sem canvas e sem quadro a quadro em
+     * JavaScript: e uma tira de oito quadros deslizando atras de uma janela.
+     */
+    const corpo = eq.equippedIn('corpo');
+    const arteCorpo = corpo ? equipDef(corpo)?.arte : null;
+    const tira = arteCorpo ? `art/trajes/${arteCorpo}/idle.png` : 'art/character/idle.png';
 
     this.asideEl.innerHTML = `
-      <div class="boneco">
-        ${encaixe(c0, 'ne')}
-        <div class="boneco-palco">
-          <img class="boneco-heroi" src="${this.heroiUrl()}" alt="">
-        </div>
-        ${encaixe(c1, 'nd')}
-        ${encaixe(c2, 'se')}
-        ${encaixe(c3, 'sd')}
+      <div class="veste-palco">
+        <span class="veste-heroi" style="background-image:url('${tira}')"></span>
+      </div>
+      <div class="veste-encaixes">
+        ${slots.map((sl) => encaixe(sl, '')).join('')}
       </div>
       <h5 class="det-sub">Seus atributos com equipamento</h5>
       <div class="boneco-stats">
@@ -905,23 +918,7 @@ export class TechScreen {
    * A mesma arte que anda pela mina — nao pede desenho novo, e garante que o
    * bonequinho da tela de equipamento seja a MESMA pessoa que esta la embaixo.
    */
-  private heroiCache: string | null = null;
 
-  private heroiUrl(): string {
-    if (this.heroiCache) return this.heroiCache;
-    const tira = Assets.characterStrip('idle') ?? Assets.character();
-    if (!tira || !tira.width) return '';
-    const lado = tira.height;
-    const c = document.createElement('canvas');
-    c.width = lado;
-    c.height = lado;
-    const ctx = c.getContext('2d');
-    if (!ctx) return '';
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(tira, 0, 0, lado, lado, 0, 0, lado, lado);
-    this.heroiCache = c.toDataURL();
-    return this.heroiCache;
-  }
 
   /**
    * A arte da pesquisa.

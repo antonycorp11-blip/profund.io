@@ -3325,7 +3325,26 @@ body:has(.hud-map-slot.folded) .toasts {
   padding-left: 0;
   padding-right: 12px;
   display: grid;
-  grid-template-rows: 1fr auto auto;
+  /*
+   * A FOLGA VAI PARA O FIM, nao para o comeco.
+   *
+   * Era `1fr auto auto`, desenhado para tres filhos com o boneco esticando na
+   * primeira linha. Com o palco novo sao quatro, e a primeira linha continuava
+   * engolindo o excedente: a linha do palco media 296 px para um palco de 84,
+   * e sobravam 85 px de vao morto entre ele e os encaixes.
+   *
+   * Com a linha flexivel no fim, tudo encosta no topo e a sobra fica embaixo,
+   * onde nao separa nada.
+   */
+  /*
+   * NENHUMA linha estica.
+   *
+   * Poe-se o `1fr` no fim e o problema anda de lugar: a sobra foi para o
+   * bloco de atributos e as quatro pilulas incharam. Com `align-content:
+   * start` ja ancorando tudo no topo, nenhuma linha precisa crescer — a
+   * sobra fica sendo espaco vazio embaixo, que e o que ela e.
+   */
+  grid-template-rows: auto auto auto auto;
   align-content: stretch;
   gap: 6px;
 }
@@ -10573,4 +10592,155 @@ html.dev-hud .debug {
 .casca-secao i img {
   width: 17px;
   height: 17px;
+}
+
+/* ============================================================
+   EQUIPAMENTO: O HEROI E A TELA
+   ============================================================
+   A versao anterior era uma tela sobre VESTIR em que nao se via
+   o que estava vestido: quatro molduras douradas vazias em volta
+   de um boneco de 30 px, com o rotulo do encaixe repetido em
+   cima e embaixo, e uma fileira de botoes de filtro que nao
+   filtrava nada.
+
+   Agora o palco mostra a tira de "parado" DO TRAJE EQUIPADO,
+   animada. Trocar de traje aqui e ver a troca acontecer.
+   ============================================================ */
+
+.veste-palco {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 150px;
+  margin-bottom: 8px;
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background:
+    radial-gradient(ellipse at 50% 88%, rgba(255, 196, 83, 0.10), transparent 62%),
+    linear-gradient(180deg, rgba(12, 14, 16, 0.9), rgba(20, 23, 26, 0.9));
+  overflow: hidden;
+}
+
+/*
+ * A TIRA DESLIZA ATRAS DE UMA JANELA.
+ *
+ * Sao oito quadros de 128 px numa imagem de 1024. A janela tem a largura de
+ * UM quadro e a imagem e esticada para 800%.
+ *
+ * O CUIDADO QUE CUSTOU UMA RODADA: porcentagem em `background-position` NAO
+ * e "um quadro por 100%". Ela se calcula sobre (largura da caixa - largura da
+ * imagem), que aqui vale 128 - 1024 = -896 px. Eu tinha animado de 0% a
+ * -800% imaginando oito saltos de um quadro, e isso joga a imagem inteira
+ * para fora da janela: o palco ficava VAZIO.
+ *
+ * Com a conta certa, o quadro `i` fica em i/7 * 100%, entao o intervalo e de
+ * 0% a 100%. E `jump-none` e o que da os OITO pontos incluindo as duas
+ * pontas; `steps(8)` comum descartaria uma delas e a tira pularia um quadro.
+ *
+ * `steps` tambem e o que faz parecer animacao de jogo e nao borrao: sem ele o
+ * navegador interpola e o boneco escorrega de lado. `pixelated` mantem a arte
+ * nitida ao ampliar.
+ */
+.veste-heroi {
+  display: block;
+  width: 128px;
+  height: 128px;
+  transform: scale(1.05);
+  background-repeat: no-repeat;
+  background-size: 800% 100%;
+  background-position: 0 0;
+  image-rendering: pixelated;
+  animation: veste-parado 1.35s steps(8, jump-none) infinite;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.55));
+}
+
+@keyframes veste-parado {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: 100%;
+  }
+}
+
+/* Os quatro encaixes numa FILEIRA, nao nos cantos de um palco.
+   Em linha eles se comparam de relance e sobra altura para o heroi. */
+.veste-encaixes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 9px;
+}
+
+.veste-encaixes .boneco-slot {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 3px;
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  min-height: 56px;
+}
+
+/* Encaixe com peca: ganha a barra de cobre, como "feito" nos cartoes. */
+.veste-encaixes .boneco-slot.on {
+  border-color: rgba(78, 122, 114, 0.45);
+  box-shadow: inset 0 2px 0 var(--doc-oxido);
+}
+
+/* Encaixe escolhido: e ele que a lista ao lado esta mostrando. */
+.veste-encaixes .boneco-slot.foco {
+  border-color: rgba(255, 196, 83, 0.5);
+  background: rgba(255, 196, 83, 0.09);
+}
+
+.veste-encaixes .boneco-arte {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+}
+
+.veste-encaixes .boneco-arte img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.veste-encaixes .boneco-vazio {
+  font-size: 15px;
+  opacity: 0.35;
+}
+
+.veste-encaixes .boneco-peca {
+  font-size: 7.5px;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--doc-tinta-fraca);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.veste-encaixes .boneco-slot.on .boneco-peca {
+  color: var(--doc-tinta);
+}
+
+/*
+ * As linhas da coluna do boneco encostam no TOPO.
+ *
+ * `.tech-aside` e um grid, e linha implicita em grid estica para preencher a
+ * altura disponivel. O palco, sendo a primeira, herdava o excedente: ficavam
+ * 85 px de vao morto entre ele e os encaixes, com apenas 8 px de margem
+ * declarada — o tipo de coisa que se procura no CSS errado por meia hora, e
+ * que a medicao entrega em dois segundos.
+ */
+.tech-body.aside-esquerda .tech-aside {
+  align-content: start;
 }
