@@ -1,8 +1,17 @@
+import { EQUIPMENT } from '../data/equipment';
 import { ART, type ArtManifest } from '../data/art';
 import { CREATURES } from '../data/creatures';
 import { RESOURCES } from '../data/resources';
 
 /** Nomes gravados por tools/slice-assets.mjs em public/art/skills. */
+/**
+ * As seis animacoes que um traje pode trazer.
+ *
+ * `tiro` so existe em alguns: o zip veio com trajes de cinco e de seis, e o
+ * carregador nao pode exigir o que pode nao existir.
+ */
+const TRAJE_ANIMS = ['idle', 'walk', 'mine', 'jump', 'climb', 'tiro'] as const;
+
 const SKILL_ICON_NAMES = [
   'power', 'speed', 'hardstone', 'ore_target', 'crit', 'crit_mult', 'fracture', 'charged',
   'cat_mining', 'pickup', 'magnet', 'radius', 'yield', 'luck', 'jackpot', 'backpack',
@@ -29,6 +38,8 @@ class AssetsImpl {
   readonly characterStrips = new Set<string>();
   /** Animacoes de bot que existem em arquivo. Vazio = cai no heroi tingido. */
   readonly botStrips = new Set<string>();
+  /** Chaves "<traje>:<anim>" que existem em arquivo. */
+  readonly trajeStrips = new Set<string>();
   /** Quais criaturas tem arte carregada. */
   readonly creatureArts = new Set<string>();
   hasCrackArt = false;
@@ -75,6 +86,26 @@ class AssetsImpl {
           this.characterStrips.add(name);
         })
       );
+    }
+
+    /*
+     * Trajes: um conjunto de tiras por traje, que SUBSTITUI o corpo do heroi.
+     *
+     * Vem do manifesto de equipamento e nao de uma lista aqui, para que
+     * acrescentar um traje seja so acrescentar o item — sem tocar no
+     * carregador.
+     */
+    for (const eq of EQUIPMENT) {
+      if (!eq.arte) continue;
+      for (const anim of TRAJE_ANIMS) {
+        jobs.push(
+          this.loadImage(`${manifest.basePath}trajes/${eq.arte}/${anim}.png`).then((img) => {
+            if (!img) return;
+            this.images.set(`traje:${eq.arte}:${anim}`, img);
+            this.trajeStrips.add(`${eq.arte}:${anim}`);
+          })
+        );
+      }
     }
 
     // Bots da Copiadora: corpo proprio, nao mais o heroi tingido.
@@ -393,6 +424,17 @@ class AssetsImpl {
   /** Quadro de animacao de uma criatura, ou null quando nao ha arte. */
   creature(art: string, anim: string): HTMLImageElement | null {
     return this.images.get(`creature:${art}:${anim}`) ?? null;
+  }
+
+  /**
+   * Tira de uma animacao de TRAJE, ou null.
+   *
+   * Null nao e erro: um traje pode nao ter todas as seis animacoes, e nesse
+   * caso aquela volta a ser a do heroi base. E o que permite testar um traje
+   * incompleto sem o jogo piscar um boneco invisivel.
+   */
+  trajeStrip(traje: string, anim: string): HTMLImageElement | null {
+    return this.images.get(`traje:${traje}:${anim}`) ?? null;
   }
 
   /** Tira de uma animacao do BOT, ou null quando aquele arquivo nao existe. */

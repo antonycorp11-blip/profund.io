@@ -17,6 +17,14 @@ export class PlayerSprite {
   private walkDist = 0;
   private climbDist = 0;
 
+  /**
+   * O TRAJE VESTIDO, ou null para o corpo padrao.
+   *
+   * Vem de fora (o Game liga no sistema de equipamento) porque o desenho nao
+   * decide o que o jogador esta vestindo — ele so obedece.
+   */
+  traje: string | null = null;
+
   /** Estado externo que influencia a pose. */
   heavy = false;
   /**
@@ -508,8 +516,17 @@ export class PlayerSprite {
     const art = ART.character;
     const strip = this.stripFrame(player);
 
-    // Formato novo (uma tira por animacao) tem prioridade; sem ele, a folha 4x4.
-    let sheet: CanvasImageSource | null = strip ? Assets.characterStrip(strip.name) : null;
+    /*
+     * O TRAJE VEM PRIMEIRO, depois a tira padrao, depois a folha 4x4.
+     *
+     * Por animacao, e nao por traje inteiro: um traje que so tem quatro das
+     * seis animacoes veste o que tem e usa o corpo padrao no resto. Exigir as
+     * seis faria o heroi sumir no meio de um pulo.
+     */
+    const doTraje =
+      strip && this.traje ? Assets.trajeStrip(this.traje, strip.name) : null;
+    let sheet: CanvasImageSource | null =
+      doTraje ?? (strip ? Assets.characterStrip(strip.name) : null);
     let frameW = art.stripFrame;
     let frameH = art.stripFrame;
     let sx: number;

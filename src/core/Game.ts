@@ -41,6 +41,7 @@ import { SkillTree } from '../systems/SkillTree';
 import { ActiveSkillsUI } from '../ui/ActiveSkillsUI';
 import { SkillTreeUI } from '../ui/SkillTreeUI';
 import { PlayerSprite } from '../player/PlayerSprite';
+import { equipDef } from '../data/equipment';
 import { QuotaSystem } from '../systems/QuotaSystem';
 import { RescueNpc } from '../entities/RescueNpc';
 import { SaveSystem } from '../systems/SaveSystem';
@@ -1570,6 +1571,16 @@ export class Game {
     this.player.wallJumpUnlocked = this.attrs.has('wallJump');
     this.player.glideUnlocked = this.attrs.has('glide');
     this.player.jetUnlocked = this.attrs.has('jetpack');
+    /*
+     * O corpo do heroi segue o que ele esta VESTINDO.
+     *
+     * Ate aqui o slot `corpo` so mexia em numeros — defesa, carga, velocidade
+     * — e o boneco na tela era sempre o mesmo. Comprar um traje era uma linha
+     * de planilha, nao uma mudanca.
+     */
+    const corpo = this.equipment.equippedIn('corpo');
+    this.playerSprite.traje = corpo ? equipDef(corpo)?.arte ?? null : null;
+
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     // A pose do braco e a arma na mao seguem a MAO ATUAL e a mira.
     this.playerSprite.aiming = this.mao === 'arma';

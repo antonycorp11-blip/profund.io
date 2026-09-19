@@ -38,9 +38,77 @@ export interface EquipDef {
   requiredDepth: number;
   modifiers: Modifier[];
   icon: string;
+  /**
+   * Pasta das tiras deste traje em public/art/trajes/.
+   *
+   * So o slot `corpo` usa. Quando existe, o heroi VESTE: as tiras deste
+   * diretorio substituem as do personagem base, animacao por animacao. O que
+   * faltar cai na arte padrao, entao um traje com quatro animacoes funciona
+   * sem ter as seis.
+   */
+  arte?: string;
 }
 
+/**
+ * OS TRAJES NOVOS, por enquanto SO PARA VESTIR.
+ *
+ * O pedido foi explicito: "por enquanto nao precisa ter atributo, nem nivel
+ * neles, nem up, mas so a aplicacao para eu ver como vai ficar no jogo".
+ * Entao eles nao mexem em nenhum numero — custam pouco, aparecem cedo, e a
+ * unica coisa que fazem e trocar o corpo do heroi.
+ *
+ * Os nomes sao provisorios e descrevem o que se ve, porque o zip nao trouxe
+ * nome nenhum. Trocar por nome de verdade e editar esta linha.
+ */
+const TRAJES_DE_TESTE: EquipDef[] = [
+  {
+    id: 'eq_traje_t1',
+    slot: 'corpo',
+    name: 'Couro de Campo',
+    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    cost: 1,
+    requiredDepth: 0,
+    modifiers: [],
+    icon: '🦺',
+    arte: 'traje1',
+  },
+  {
+    id: 'eq_traje_t2',
+    slot: 'corpo',
+    name: 'Placa Noturna',
+    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    cost: 1,
+    requiredDepth: 0,
+    modifiers: [],
+    icon: '🦺',
+    arte: 'traje2',
+  },
+  {
+    id: 'eq_traje_t3',
+    slot: 'corpo',
+    name: 'Placa Clara',
+    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    cost: 1,
+    requiredDepth: 0,
+    modifiers: [],
+    icon: '🦺',
+    arte: 'traje3',
+  },
+  {
+    id: 'eq_traje_t4',
+    slot: 'corpo',
+    name: 'Couro Pesado',
+    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    cost: 1,
+    requiredDepth: 0,
+    modifiers: [],
+    icon: '🦺',
+    arte: 'traje4',
+  },
+];
+
 export const EQUIPMENT: EquipDef[] = [
+  ...TRAJES_DE_TESTE,
   // ------------------------------------------------------------- cabeca ---
   {
     id: 'eq_lanterna',
