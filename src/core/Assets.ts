@@ -27,6 +27,8 @@ class AssetsImpl {
   hasCharacterArt = false;
   /** Quais tiras de animacao do heroi existem de fato. */
   readonly characterStrips = new Set<string>();
+  /** Animacoes de bot que existem em arquivo. Vazio = cai no heroi tingido. */
+  readonly botStrips = new Set<string>();
   /** Quais criaturas tem arte carregada. */
   readonly creatureArts = new Set<string>();
   hasCrackArt = false;
@@ -71,6 +73,17 @@ class AssetsImpl {
           this.images.set('char:' + name, img);
           this.hasCharacterArt = true;
           this.characterStrips.add(name);
+        })
+      );
+    }
+
+    // Bots da Copiadora: corpo proprio, nao mais o heroi tingido.
+    for (const [name, strip] of Object.entries(manifest.bots.strips)) {
+      jobs.push(
+        this.loadImage(manifest.basePath + manifest.bots.dir + strip.file).then((img) => {
+          if (!img) return;
+          this.images.set('bot:' + name, img);
+          this.botStrips.add(name);
         })
       );
     }
@@ -382,6 +395,11 @@ class AssetsImpl {
     return this.images.get(`creature:${art}:${anim}`) ?? null;
   }
 
+  /** Tira de uma animacao do BOT, ou null quando aquele arquivo nao existe. */
+  botStrip(name: string): HTMLImageElement | null {
+    return this.images.get('bot:' + name) ?? null;
+  }
+
   /** Tira de uma animacao do heroi, ou null quando aquele arquivo nao existe. */
   characterStrip(name: string): HTMLImageElement | null {
     return this.images.get('char:' + name) ?? null;
@@ -422,6 +440,24 @@ class AssetsImpl {
     const cached = this.tinted.get(key);
     if (cached) return cached;
     const src = this.images.get('char:' + name);
+    if (!src) return null;
+    const made = this.tintImage(src, src.width, src.height, color, strength);
+    this.tinted.set(key, made);
+    return made;
+  }
+
+  /**
+   * Tira de bot tingida.
+   *
+   * Separada de `tintedStrip` porque busca noutra prateleira ('bot:' e nao
+   * 'char:') — e porque a forca da tintura aqui e outra: no heroi ela
+   * precisava disfarcar o protagonista, no bot ela so distingue aco de cobre.
+   */
+  tintedBotStrip(name: string, color: string, strength: number): HTMLCanvasElement | null {
+    const key = `bot|${name}|${color}|${strength}`;
+    const cached = this.tinted.get(key);
+    if (cached) return cached;
+    const src = this.images.get('bot:' + name);
     if (!src) return null;
     const made = this.tintImage(src, src.width, src.height, color, strength);
     this.tinted.set(key, made);

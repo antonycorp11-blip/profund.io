@@ -593,12 +593,24 @@ export class Clone {
   render(ctx: CanvasRenderingContext2D, sheetIndex: number): void {
     const art = ART.character;
 
-    // A copia e o proprio protagonista: ela usa a mesma arte, so recolorida.
-    // Por isso tenta as tiras novas antes de cair na folha 4x4.
+    /*
+     * O BOT TEM CORPO PROPRIO, e ele vem primeiro.
+     *
+     * Antes a copia era o proprio Elias recolorido — mesma silhueta, mesma
+     * picareta, um filtro de cor por cima. A Copiadora imprime MAQUINA, nao
+     * clone de gente, e o jogador via um segundo protagonista azul cavando ao
+     * lado dele.
+     *
+     * Se a arte do bot nao estiver em disco, tudo continua funcionando pelo
+     * caminho antigo: o remendo vira reserva em vez de desaparecer.
+     */
+    const botName = this.botStripName();
+    const botImg = botName ? Assets.botStrip(botName) : null;
+
     const stripName = this.stripName();
     const stripImg = stripName ? Assets.characterStrip(stripName) : null;
 
-    const sheet = stripImg ?? Assets.character();
+    const sheet = botImg ?? stripImg ?? Assets.character();
     if (!sheet) {
       ctx.fillStyle = this.tint;
       ctx.fillRect(this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
@@ -612,7 +624,27 @@ export class Clone {
     let sy = 0;
     let h: number;
 
-    if (stripImg && stripName) {
+    if (botImg && botName) {
+      /*
+       * A TINTURA MUDA DE PAPEL.
+       *
+       * No heroi recolorido ela era forte (0,55), porque precisava disfarcar
+       * que aquilo era o protagonista. O bot ja e outro corpo: aqui a cor so
+       * distingue os NIVEIS — aco, cobre, roxo — e uma tintura forte apagaria
+       * o latao e os rebites que a arte tem.
+       */
+      const cacheKey = 'bot:' + botName;
+      let tinted = this.stripTints.get(cacheKey);
+      if (tinted === undefined) {
+        tinted = Assets.tintedBotStrip(botName, this.tint, 0.22) ?? null;
+        this.stripTints.set(cacheKey, tinted);
+      }
+      src = tinted ?? botImg;
+      frameW = ART.bots.frame;
+      frameH = ART.bots.frame;
+      sx = this.botStripIndex(botName) * frameW;
+      h = ART.bots.drawHeight;
+    } else if (stripImg && stripName) {
       const cacheKey = 'strip:' + stripName;
       let tinted = this.stripTints.get(cacheKey);
       if (tinted === undefined) {
@@ -674,6 +706,32 @@ export class Clone {
   }
 
   /** Qual tira usar agora, ou null quando aquele arquivo nao existe. */
+  /**
+   * Qual animacao de BOT usar agora.
+   *
+   * `broca` entra quando a maquina esta trabalhando mas nao esta batendo —
+   * carregando, entregando, esperando. E o estado que o heroi nao tem, e e o
+   * que faz o bot parecer uma maquina ligada em vez de um boneco parado.
+   */
+  private botStripName(): string | null {
+    const tem = (n: string): boolean => Assets.botStrips.has(n);
+    if (this.state === 'minerando' && tem('mine')) return 'mine';
+    // Andando: procurando veio ou levando carga ate o deposito.
+    if ((this.state === 'procurando' || this.state === 'entregando') && tem('walk')) return 'walk';
+    // Ligada mas sem bater: a broca gira. E o estado que o heroi nao tem.
+    if ((this.state === 'coletando' || this.state === 'enviando') && tem('broca')) return 'broca';
+    return tem('idle') ? 'idle' : null;
+  }
+
+  private botStripIndex(name: string): number {
+    const def = ART.bots.strips[name];
+    if (!def) return 0;
+    if (name === 'mine') {
+      return Math.min(def.frames - 1, Math.round((1 - this.swing) * (def.frames - 1)));
+    }
+    return Math.floor(this.walkPhase) % def.frames;
+  }
+
   private stripName(): string | null {
     const has = (n: string): boolean => Assets.characterStrips.has(n);
     if (this.state === 'minerando' && has('mine')) return 'mine';

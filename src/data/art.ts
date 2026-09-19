@@ -346,6 +346,29 @@ export const ART = {
       carry: { frames: [14], fps: 1, loop: false },
     },
   } as CharacterArt,
+
+  /**
+   * OS BOTS TEM CORPO PROPRIO.
+   *
+   * Ate aqui a copia era o proprio Elias RECOLORIDO: mesma silhueta, mesma
+   * picareta, so com um filtro de cor por cima. Funcionava como remendo e
+   * dizia a coisa errada — a Copiadora imprime MAQUINA, nao clone de gente.
+   *
+   * Quatro tiras de seis quadros, recortadas por tools/slice-bots.mjs de uma
+   * folha unica. `broca` e o giro parado das maos, que nao existe no heroi: e
+   * o que mostra a maquina trabalhando sem estar batendo em nada.
+   */
+  bots: {
+    dir: 'bots/',
+    frame: 128,
+    drawHeight: 46,
+    strips: {
+      idle: { file: 'idle.png', frames: 6, fps: 6 },
+      walk: { file: 'walk.png', frames: 6, fps: 11 },
+      mine: { file: 'mine.png', frames: 6, fps: 12 },
+      broca: { file: 'broca.png', frames: 6, fps: 16 },
+    } as Record<string, { file: string; frames: number; fps: number }>,
+  },
 };
 
 export type ArtManifest = typeof ART;
