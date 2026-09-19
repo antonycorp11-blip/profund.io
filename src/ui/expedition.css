@@ -97,92 +97,174 @@ body button:focus-visible {
   outline-offset: 3px;
 }
 
+/* HUD sem painel agregador: cada indicador ocupa apenas o proprio conteudo. */
+.game-hud .hud-top-left { max-width: 240px; gap: 5px; }
 .game-hud .money-card {
-  border-color: #c59b6377;
-  border-radius: 10px;
-  background: linear-gradient(115deg, #24363bed, #10202aeb);
-  box-shadow: inset 0 1px #ffffff18, 0 4px 14px #0005;
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 2px 3px #000);
 }
-
+.game-hud .money-copy { gap: 0; }
+.game-hud .money-copy small { display: none; }
 .game-hud .money-copy strong {
   color: #ffe1a2;
+  font-size: 18px;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 1px 5px #edb55c30;
 }
+.game-hud .money-coin { width: 20px; height: 20px; min-width: 20px; font-size: 10px; }
+.game-hud .level-inline { margin: 0 0 0 4px; padding: 0; border: 0; background: none; gap: 4px; }
+.game-hud .level-num { color: #acc9cc; font-size: 10px; }
+.game-hud .level-bar { width: 26px; height: 3px; background: #06121c; }
+.game-hud .level-bar i { background: #96d9e0; }
 
-.game-hud .money-copy small { color: #b7c8ca; opacity: 1; }
-.game-hud .level-num { color: #a3e0e8; }
-.game-hud :is(.slim-bar, .level-bar) { background-color: #050f16; }
-.game-hud .level-bar i { background: linear-gradient(90deg, #4a9cae, #b7ece9); }
-
-.game-hud :is(.icon-btn, .hud-mao, .hud-fold) {
-  border: 1px solid #7a959b88;
-  border-radius: 9px;
-  background: linear-gradient(145deg, #30464be8, #10212be8);
-  box-shadow: inset 0 1px #fff2, 0 3px 8px #0005;
+.game-hud .hud-bars {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: auto;
+  max-width: 226px;
+  gap: 5px;
+  align-items: center;
 }
-
+.game-hud .hud-bars[hidden], .game-hud .slim[hidden] { display: none; }
+.game-hud .bag {
+  pointer-events: auto;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 3px 8px;
+  border: 1px solid #78949655;
+  border-radius: 16px;
+  background: #11232bc9;
+  width: auto;
+  flex: none;
+}
+.game-hud .bag .slim-bar { display: none; }
+.game-hud .bag .slim-num { font-size: 10px; }
+.game-hud .bag[aria-expanded='true'] { border-color: #e4b875; }
+.game-hud .vitals { order: 4; width: 125px; flex: none; }
+.game-hud .vitals .slim-bar { width: 70px; height: 4px; }
+.game-hud .vitals .slim-num { font-size: 10px; }
+.game-hud .hud-mao {
+  display: flex;
+  width: 36px;
+  height: 32px;
+  min-height: 32px;
+  padding: 3px;
+  justify-content: center;
+  border: 1px solid #78949666;
+  border-radius: 10px;
+  background: #11232bc9;
+  box-shadow: none;
+}
+.game-hud .hud-mao-txt, .game-hud .hud-mao-troca { display: none; }
+.game-hud .hud-mao-icone { width: 23px; height: 23px; font-size: 20px; }
+.game-hud .hud-mao.arma { border-color: #e4b875; }
 .game-hud .quota {
-  border-radius: 8px;
+  width: 205px;
+  max-width: 100%;
+  border: 0;
   border-left: 2px solid #dab074;
-  background: linear-gradient(100deg, #142730ee, #10202bd9);
-  box-shadow: 0 3px 12px #0003;
+  border-radius: 0 6px 6px 0;
+  background: linear-gradient(90deg, #10202bc9, #10202b35);
+  box-shadow: none;
 }
-
-.game-hud .quota-puxador { padding: 5px 9px; }
-.game-hud .chip { border-color: #8ca3a34d; background: #11232bd9; }
-.game-hud .minimap { border-color: #b9986466; border-radius: 9px; background: #0c1b24e8; }
-.game-hud .minimap-label { color: #bdcfd0; }
-.game-hud .minimap-label strong { color: #f5d6a0; }
-
-/* Quatro lugares estaveis: liberar uma skill nao desloca as outras. */
-body .touch-skills {
-  right: calc(var(--safe-r) + 14px);
-  bottom: calc(var(--safe-b) + 110px);
-  width: 216px;
-  height: 48px;
+.game-hud .quota-puxador { padding: 3px 7px; font-size: 9px; letter-spacing: 0.07em; }
+.game-hud .hud-top-center {
+  top: calc(var(--safe-t) + 130px);
+  left: calc(var(--safe-l) + 10px);
+  right: auto;
+  width: 210px;
+  max-height: calc(100vh - 245px);
+  overflow-y: auto;
 }
+.game-hud.resources-open .hud-top-center { pointer-events: auto; }
+.game-hud .chips { justify-content: flex-start; flex-wrap: wrap; gap: 4px; }
+.game-hud .chip { padding: 3px 7px; border: 0; background: #11232be8; font-size: 12px; }
+.game-hud .chip[hidden] { display: none; }
+.game-hud .chip-icon { width: 18px; height: 18px; }
 
+.game-hud .hud-top-right { width: auto; gap: 5px; }
+.game-hud .hud-buttons { gap: 6px; }
+.game-hud .icon-btn.labeled {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 3px;
+  border: 1px solid #85999266;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 20%, #405358d9, #10212be6);
+  box-shadow: inset 0 -2px #0005, 0 2px 5px #0004;
+}
+.game-hud .ib-label { display: none; }
+.game-hud .ib-icon, .game-hud .ib-img { width: 24px; height: 24px; font-size: 21px; }
+.game-hud .ib-badge { font-size: 9px; min-width: 14px; height: 14px; }
+.game-hud .hud-fold { border-radius: 50%; background: #10212bd9; border: 1px solid #78949655; }
+.game-hud .hud-top-right .hud-map-slot { width: 112px; height: 112px; }
+.game-hud .minimap { width: 112px; height: 112px; border-color: #b9986466; border-radius: 9px; background: #0c1b24e8; }
+
+/* Arco fixo em torno da acao, com espaco proprio para o pulo. */
+body .touch-skills { right: var(--safe-r); bottom: var(--safe-b); width: 0; height: 0; }
 body .touch-skills .touch-btn.skill {
-  right: calc(var(--slot) * 56px);
-  bottom: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 13px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   border-color: #8cc0cf88;
   box-shadow: inset 0 0 0 3px #10232bd9, 0 3px 10px #0006;
 }
-
+body #btn-skill1 { right: 16px; bottom: 147px; }
+body #btn-skill2 { right: 74px; bottom: 145px; }
+body #btn-skill3 { right: 128px; bottom: 122px; }
+body #btn-skill4 { right: 176px; bottom: 86px; }
 body .touch-skills .touch-btn.skill.ready {
   border-color: #a7e1e8;
   box-shadow: inset 0 0 0 3px #10232b, 0 0 9px #8cd5e52e;
 }
-
 body .touch-fold {
-  right: calc(var(--safe-r) + 238px);
-  bottom: calc(var(--safe-b) + 116px);
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border-color: #73959c88;
-  background: #142730dc;
+  right: calc(var(--safe-r) + 232px);
+  bottom: calc(var(--safe-b) + 92px);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border-color: #73959c66;
+  background: #142730b0;
 }
-
+body .touch-buttons { right: var(--safe-r); bottom: var(--safe-b); width: 0; height: 0; }
 body .touch-btn.big {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
   width: 84px;
   height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
   border: 2px solid #e5ba77;
-  background: radial-gradient(circle at 35% 20%, #ad8554eb, #725236ed 55%, #302c29f2);
-  box-shadow: inset 0 0 0 4px #231d244f, inset 0 2px #fff3, 0 4px 14px #0006;
+  background: radial-gradient(circle at 35% 20%, #947346cc, #4b3c2acc 65%, #18272cdd);
+  box-shadow: inset 0 0 0 4px #171d244f, inset 0 2px #fff3, 0 4px 14px #0006;
   color: #fff2d9;
 }
-
 body .touch-btn.medium {
-  background: linear-gradient(145deg, #40585de8, #152a35e8);
+  right: 124px;
+  bottom: 10px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(145deg, #40585dcc, #152a35cc);
   border-color: #91b8c099;
   box-shadow: inset 0 0 0 3px #12263166, 0 3px 10px #0005;
 }
-
+body .action-symbol { font-size: 34px; line-height: 1; }
+body .action-label { font-size: 9px; letter-spacing: 0.06em; }
 body .touch-btn.active { transform: scale(0.94); filter: brightness(1.25); }
 
 body .map-viewport { box-shadow: inset 0 0 40px #0008; }

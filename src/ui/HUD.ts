@@ -10,6 +10,9 @@ import type { QuotaSystem } from '../systems/QuotaSystem';
 /** HUD principal em DOM (fica fora do canvas: responsivo e facil de reestilizar). */
 export class HUD {
   private root: HTMLDivElement;
+  private resourcesOpen = false;
+  private resourceUntil = new Map<ResourceId, number>();
+  private resourceGain = new Map<ResourceId, number>();
   private chipEls = new Map<ResourceId, { el: HTMLElement; value: HTMLElement }>();
   private bagEl: HTMLDivElement;
   private bagFill: HTMLElement;
@@ -171,7 +174,7 @@ export class HUD {
       chip.appendChild(dot);
       chip.appendChild(value);
       chip.title = RESOURCES[id].name;
-      chip.hidden = !RESOURCES[id].showInHud;
+      chip.hidden = true;
       chips.appendChild(chip);
       this.chipEls.set(id, { el: chip, value });
     }
@@ -184,6 +187,23 @@ export class HUD {
       <span class="slim-icon">🎒</span>
       <span class="slim-bar"><i></i></span>
       <span class="slim-num" data-bag-count>0</span>`;
+    this.bagEl.setAttribute('role', 'button');
+    this.bagEl.tabIndex = 0;
+    this.bagEl.title = 'Abrir recursos da mochila';
+    this.bagEl.setAttribute('aria-label', 'Abrir recursos da mochila');
+    this.bagEl.setAttribute('aria-expanded', 'false');
+    const toggleResources = (): void => {
+      this.resourcesOpen = !this.resourcesOpen;
+      this.bagEl.setAttribute('aria-expanded', String(this.resourcesOpen));
+      this.root.classList.toggle('resources-open', this.resourcesOpen);
+    };
+    this.bagEl.addEventListener('click', toggleResources);
+    this.bagEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleResources();
+      }
+    });
     this.bagFill = this.bagEl.querySelector('.slim-bar > i') as HTMLElement;
     this.bagLabel = this.bagEl.querySelector('[data-bag-count]') as HTMLElement;
     // Vida ao lado da mochila: as duas contam a mesma historia (quanto ainda da
@@ -285,9 +305,9 @@ export class HUD {
      */
     this.maoEl.hidden = false;
     bars.hidden = escondeAoInicio;
-    this.moneyEl.appendChild(bars);
-    this.moneyEl.appendChild(this.climbEl);
-    this.moneyEl.appendChild(this.jetEl);
+    left.appendChild(bars);
+    left.appendChild(this.climbEl);
+    left.appendChild(this.jetEl);
 
     // Minimapa fecha a coluna da esquerda. E o unico canto fora das duas zonas
     // de toque: o joystick fica no rodape esquerdo e os botoes no rodape
@@ -626,6 +646,7 @@ export class HUD {
     const btn = document.createElement('button');
     btn.className = 'icon-btn labeled';
     btn.title = label;
+    btn.setAttribute('aria-label', label);
     btn.innerHTML = `<span class="ib-icon">${icon}</span><span class="ib-label">${label}</span>`;
     if (arte) {
       const alvo = btn.querySelector('.ib-icon') as HTMLElement;
@@ -659,19 +680,23 @@ export class HUD {
       this.skillBadge.hidden = skillPoints <= 0;
     }
 
+    const now = performance.now();
     for (const [id, refs] of this.chipEls) {
       const v = this.inventory.count(id);
-      if (this.lastValues.get(id) === v) continue;
-      const prev = this.lastValues.get(id) ?? 0;
-      this.lastValues.set(id, v);
-      refs.value.textContent = String(v);
-      // Aparece no instante em que o primeiro pedaco entra na mochila.
-      refs.el.hidden = v <= 0 && !RESOURCES[id].showInHud;
-      if (v > prev) {
-        refs.el.classList.remove('gain');
-        void refs.el.offsetWidth;
-        refs.el.classList.add('gain');
+      const prev = this.lastValues.get(id);
+      if (prev !== v) {
+        this.lastValues.set(id, v);
+        // Carregar um save nao e coletar: so anuncia ganhos durante a partida.
+        if (prev !== undefined && v > prev) {
+          const recent = (this.resourceUntil.get(id) ?? 0) > now;
+          this.resourceGain.set(id, (recent ? this.resourceGain.get(id) ?? 0 : 0) + v - prev);
+          this.resourceUntil.set(id, now + 1800);
+        }
       }
+      const visible = this.resourcesOpen ? v > 0 : (this.resourceUntil.get(id) ?? 0) > now;
+      refs.el.hidden = !visible;
+      const label = this.resourcesOpen ? String(v) : `+${this.resourceGain.get(id) ?? 0}`;
+      if (refs.value.textContent !== label) refs.value.textContent = label;
     }
 
     const used = this.inventory.used;
@@ -684,7 +709,7 @@ export class HUD {
       this.bagEl.classList.toggle('full', used >= cap);
       // Some enquanto ha espaco de sobra: barra cheia o tempo todo vira ruido.
       // Aparece a 80% — antes disso nao ha decisao a tomar, depois disso ha.
-      const showBag = this.sempreVisiveis || ratio >= 0.8;
+      const showBag = true;
       if (this.bagEl.hidden !== !showBag) this.bagEl.hidden = !showBag;
       this.syncBarsRow();
     }
@@ -848,6 +873,8 @@ export class HUD {
     icone.textContent = mao === 'arma' ? '🔫' : '⛏';
     this.maoLabel.textContent = mao === 'arma' ? nomeDaArma : 'Picareta';
     this.maoEl.classList.toggle('arma', mao === 'arma');
+    this.maoEl.setAttribute('aria-label', `${this.maoLabel.textContent}. Trocar ferramenta`);
+    this.maoEl.title = `${this.maoLabel.textContent} — trocar ferramenta`;
     // Contador de bala com a picareta na mao e ruido: ele nao responde nada
     // enquanto voce esta cavando.
     this.ammoEl.hidden = mao !== 'arma';

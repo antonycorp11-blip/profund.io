@@ -75,9 +75,6 @@ export class TouchControls {
       { id: 'btn-skill3', label: '', button: 'skill3', cls: 'skill', locked: false },
       { id: 'btn-skill4', label: '', button: 'skill4', cls: 'skill', locked: false },
       { id: 'btn-jump', label: 'PULAR', button: 'jump', cls: 'medium' },
-      // TROCAR a mao. O botao grande faz o que a mao atual faz — ele so muda
-      // de rotulo — entao o que precisa de tecla propria e a troca.
-      { id: 'btn-swap', label: 'TROCAR', button: 'swap', cls: 'medium fogo' },
       { id: 'btn-mine', label: 'MINERAR', button: 'mine', cls: 'big' },
     ];
     for (const spec of specs) {
@@ -91,13 +88,13 @@ export class TouchControls {
           `<span class="pad-icon">${spec.label}</span>` +
           '<span class="pad-badge" data-charges hidden></span>';
         el.hidden = true;
-        el.style.setProperty('--slot', String(this.skillBtns.length));
         this.skillBtns.push(el);
         // Habilidades vao para a propria coluna: no grid dos botoes elas
         // caiam todas na mesma celula e uma tapava a outra — so a ultima
         // recebia o toque, e nao dava para escolher qual usar.
         skillCol.appendChild(el);
       } else {
+        el.innerHTML = `<span class="action-symbol" aria-hidden="true">${spec.button === 'jump' ? '↟' : '⛏'}</span><span class="action-label">${spec.label}</span>`;
         buttons.appendChild(el);
       }
       if (spec.locked) {
@@ -128,8 +125,11 @@ export class TouchControls {
   setRotuloAcao(texto: string): void {
     const el = document.getElementById('btn-mine');
     if (!el) return;
-    if (el.textContent === texto) return;
-    el.textContent = texto;
+    const label = el.querySelector('.action-label');
+    if (!label || label.textContent === texto) return;
+    label.textContent = texto;
+    const symbol = el.querySelector('.action-symbol');
+    if (symbol) symbol.textContent = texto.toUpperCase().includes('ATIR') ? '⌖' : '⛏';
     el.setAttribute('aria-label', texto);
   }
 
