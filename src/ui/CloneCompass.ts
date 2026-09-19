@@ -89,7 +89,18 @@ export class CloneCompass {
       // Etiqueta sempre na horizontal, deslocada para dentro da tela.
       const lx = px - Math.cos(ang) * cfg.labelOffset;
       const ly = py - Math.sin(ang) * cfg.labelOffset;
-      const texto = `${clone.label}${clone.index + 1} · ${prof}m`;
+      /*
+       * Indice negativo = nao e um ajudante numerado.
+       *
+       * A bussola nasceu so para as copias, entao ela sempre escrevia o
+       * numero da copia. Com o OBJETIVO entrando na mesma lista, a seta saiu
+       * marcada "0 · 26m" — e "0" nao quer dizer nada ali. Quem nao tem
+       * numero mostra so o simbolo e a distancia.
+       */
+      const texto =
+        clone.index < 0
+          ? `${clone.label} ${prof}m`
+          : `${clone.label}${clone.index + 1} · ${prof}m`;
       const w = ctx.measureText(texto).width + 10;
       ctx.globalAlpha = 0.8;
       ctx.fillStyle = 'rgba(10,8,7,0.75)';

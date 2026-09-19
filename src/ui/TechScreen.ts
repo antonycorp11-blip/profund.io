@@ -654,6 +654,21 @@ export class TechScreen {
             CONTRATAR ✦${custoMole.toLocaleString('pt-BR')}
           </button>
         </header>
+        ${
+          /*
+           * AS MELHORIAS FICAM ONDE AS TOUPEIRAS ESTAO.
+           *
+           * Eu tinha movido isto para a aba Pesquisa, argumentando que a
+           * Automacao e "onde o jogador ve a equipe trabalhando, nao onde mexe
+           * nela". O argumento era bonito e estava errado: o relato foi "nao
+           * consigo upar toupeiras", de alguem que foi exatamente onde as
+           * toupeiras estao e nao achou nada para melhorar.
+           *
+           * A pergunta "como deixo minhas toupeiras melhores?" se faz olhando
+           * para elas. E ali que ela tem que ser respondida.
+           */
+          this.moleUpgradesResumo()
+        }
         <div class="auto-list">
           ${
             moles.units.length === 0
@@ -997,6 +1012,32 @@ export class TechScreen {
       this.render();
     });
 
+    /*
+     * COMPRAR BOT NUNCA FOI LIGADO.
+     *
+     * O botao existia com `data-newclone`, desenhado, habilitado, com preco —
+     * e sem ouvinte nenhum. Clicar nele nao fazia absolutamente nada, e o
+     * jogador ficava achando que faltava dinheiro ou requisito. Contratar
+     * toupeira funcionava, entao o defeito parecia "as vezes nao da", que e a
+     * forma mais dificil de relatar e de acreditar.
+     *
+     * Havia um `[data-create]` com a acao certa, mas ligado noutro painel: o
+     * botao da aba tinha outro nome e ficou orfao. Aqui os dois nomes levam a
+     * mesma acao, e quem acrescentar um terceiro botao amanha acha este
+     * comentario antes de criar o quarto nome.
+     */
+    for (const b of Array.from(this.bodyEl.querySelectorAll('[data-newclone], [data-create]'))) {
+      b.addEventListener('click', () => {
+        const p = this.host.spawnPoint();
+        // O tipo e o melhor que a profundidade ja liberou — o mesmo que o
+        // botao anuncia.
+        if (this.host.clones.create(p.x, p.y, melhorBotAte(this.host.deepest()).id)) {
+          Haptics.ui();
+          this.render();
+        }
+      });
+    }
+
     const hire = this.bodyEl.querySelector('[data-hire]');
     hire?.addEventListener('click', () => {
       const p = this.host.spawnPoint();
@@ -1030,6 +1071,37 @@ export class TechScreen {
    * mesmo que nao existir: o jogador chegava a dezesseis toupeiras sem nunca
    * ter comprado Patas Rapidas, que custa 120 e vale para todas elas.
    */
+  /**
+   * As melhorias na coluna das toupeiras: compactas, mas presentes.
+   *
+   * Nao e a grade inteira da aba de pesquisa — a coluna tem 300 px. E uma
+   * linha por melhoria, com nome, nivel e preco: o bastante para decidir e
+   * comprar sem sair de onde se esta.
+   */
+  private moleUpgradesResumo(): string {
+    const mgr = this.host.collectors;
+    const money = Math.floor(this.host.stock.money);
+    const linhas = COLLECTOR_UPGRADES.map((u) => {
+      const nivel = mgr.levelOf(u.id);
+      const cheio = nivel >= u.maxLevel;
+      const preco = mgr.upgradeCost(u.id);
+      return `
+        <div class="mup-linha ${cheio ? 'cheio' : ''}">
+          <span class="mup-icone">${u.icon}</span>
+          <b class="mup-nome">${u.name}</b>
+          <span class="mup-nivel">${nivel}/${u.maxLevel}</span>
+          ${
+            cheio
+              ? '<span class="mup-max">MAX</span>'
+              : `<button class="btn mup-btn" data-colup="${u.id}" ${
+                  money >= preco ? '' : 'disabled'
+                }>✦ ${preco.toLocaleString('pt-BR')}</button>`
+          }
+        </div>`;
+    }).join('');
+    return `<div class="mup"><span class="mup-titulo">Melhorias — valem para todas</span>${linhas}</div>`;
+  }
+
   private moleUpgrades(): string {
     const mgr = this.host.collectors;
     const money = Math.floor(this.host.stock.money);

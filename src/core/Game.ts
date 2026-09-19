@@ -735,8 +735,21 @@ export class Game {
       (r, n) => this.quota.registerDelivery(r, n)
     );
 
-    // Bussola aponta para tudo que trabalha longe: copias e toupeiras.
+    /*
+     * A BUSSOLA APONTA PARA O OBJETIVO, nao so para os ajudantes.
+     *
+     * "Nao estou sendo guiado, nem nas pistas." O marcador da pista JA era
+     * revelado no mapa quando a missao ficava ativa — conferi, ele esta la. O
+     * problema e que ele so existe no MAPA, e o jogador esta jogando, nao
+     * olhando o mapa. Entre cavar e abrir a tela de mapa, ninguem abre a tela
+     * de mapa.
+     *
+     * A bussola ja existia para as copias: uma seta na borda com a distancia.
+     * O objetivo entra nela em primeiro lugar, em ambar — a mesma cor que o
+     * jogo usa em toda parte para dizer "e isto que da para fazer agora".
+     */
     this.compass = new CloneCompass(this.world, () => [
+      ...this.alvosDoObjetivo(),
       ...this.cloneManager.clones.map((c) => ({
         x: c.x,
         y: c.y,
@@ -2577,6 +2590,32 @@ export class Game {
     const m = this.missions.current();
     this.hud.setMissionObjective(m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.');
     this.revelarAlvoDaMissao(m);
+  }
+
+  /**
+   * Onde esta o que a missao atual pede, para a bussola apontar.
+   *
+   * Sai dos mesmos marcadores que a missao acende: se o alvo nao tem lugar no
+   * mundo (a cota, uma flag de selo), simplesmente nao ha seta — e nao ha o
+   * que apontar mesmo.
+   */
+  private alvosDoObjetivo(): { x: number; y: number; tint: string; index: number; label: string }[] {
+    const m = this.missions.current();
+    if (!m) return [];
+    const ts = CONFIG.tileSize;
+    const out: { x: number; y: number; tint: string; index: number; label: string }[] = [];
+    for (const req of m.requires) {
+      const marca = this.exploration.markers.find((x) => x.id === req);
+      if (!marca || marca.done) continue;
+      out.push({
+        x: marca.col * ts + ts / 2,
+        y: marca.row * ts + ts / 2,
+        tint: '#ffc453',
+        index: -1,
+        label: '◈',
+      });
+    }
+    return out;
   }
 
   /**

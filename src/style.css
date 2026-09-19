@@ -11181,3 +11181,176 @@ html.dev-hud .debug {
   padding: 2px 0;
   font-size: 11px;
 }
+
+/* ---- melhorias das toupeiras, na coluna delas ---- */
+
+.mup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 7px;
+  padding: 6px 7px;
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.mup-titulo {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+
+.mup-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(198, 216, 228, 0.07);
+}
+
+.mup-linha:last-child {
+  border-bottom: none;
+}
+
+.mup-icone {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.mup-nome {
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
+  color: var(--doc-tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mup-nivel {
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: var(--doc-tinta-fraca);
+}
+
+.mup-max {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--doc-oxido);
+}
+
+/* O botao e o alvo: ele tem que caber no polegar. */
+.mup-btn {
+  min-height: 26px;
+  padding: 0 9px;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.mup-linha.cheio {
+  opacity: 0.6;
+}
+
+/* ============================================================
+   ALVO DE TOQUE
+   ============================================================
+   Medido com npm run medir-toque: 103 de 177 alvos abaixo de
+   30 px. O botao de FECHAR tinha 15x15 — metade do minimo — e
+   "APRENDER 900" tinha 16 px de altura.
+
+   Dois enganos escondiam isso de mim:
+
+   1. as telas vivem num espaco virtual reduzido por `zoom`,
+      entao um botao declarado com 26 px chega na tela com 15;
+   2. no monitor o ponteiro acerta 15 px sem esforco. O polegar
+      nao acerta.
+
+   `--toque` ja desconta o zoom: declarar `min-height: var(--toque)`
+   dentro de uma tela entrega 30 px REAIS, independente da escala.
+   ============================================================ */
+
+:root {
+  /*
+   * 30 px reais, e nao os 44 das diretrizes.
+   *
+   * Nao finjo que 44 cabe: num painel de 338 px de altura, 44 px reais dariam
+   * seis botoes e mais nada. 30 e o maior alvo que esta tela comporta sem
+   * virar outra tela — e ja e o dobro do que havia.
+   */
+  --toque: calc(30px / var(--ui-zoom));
+}
+
+/* ---- dentro das telas (espaco virtual) ---- */
+
+.casca-fechar,
+.casca-cab-btn {
+  min-width: var(--toque);
+  min-height: var(--toque);
+}
+
+.casca-fechar {
+  width: var(--toque);
+  height: var(--toque);
+  flex: 0 0 var(--toque);
+  font-size: 15px;
+}
+
+.casca-cab {
+  height: auto;
+  min-height: calc(var(--toque) + 8px);
+}
+
+.casca-secao {
+  min-height: var(--toque);
+}
+
+.panel .btn,
+.camp-panel .btn,
+.tech-screen .btn,
+.skill-screen .btn,
+.map-screen .btn,
+.up-card .btn,
+.tech-card .btn,
+.mup-btn,
+.seg-btn,
+.switch,
+.map-item,
+.eq-card button,
+.skl-card,
+.tech-card {
+  min-height: var(--toque);
+}
+
+/* Botao de linha: largura TAMBEM, senao vira um fio.
+   Os de preco ficavam com 29 px de largura por 30 de altura — a medicao usa o
+   lado menor, e o polegar tambem. */
+.switch,
+.seg-btn,
+.mup-btn,
+.tech-card .btn {
+  min-width: calc(var(--toque) * 1.6);
+}
+
+/* ---- no HUD (fora do zoom: pixel e pixel) ---- */
+
+.hud-fold {
+  min-width: 34px;
+  min-height: 30px;
+}
+
+.quota-puxador {
+  min-height: 30px;
+}
+
+.hud-mao {
+  min-height: 34px;
+}
+
+.icon-btn.labeled {
+  min-height: 38px;
+}
