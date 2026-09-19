@@ -266,7 +266,23 @@ export class HUD {
     this.bagEl.hidden = escondeAoInicio;
     this.healthEl.hidden = escondeAoInicio;
     this.ammoEl.hidden = escondeAoInicio;
-    this.maoEl.hidden = escondeAoInicio;
+    /*
+     * O BOTAO DA MAO NUNCA SE ESCONDE.
+     *
+     * As barras somem no celular porque so interessam quando mudam: vida
+     * quando se leva dano, mochila quando enche. O botao da mao NAO e uma
+     * barra — ele e duas coisas ao mesmo tempo, e as duas precisam estar
+     * sempre na tela:
+     *
+     *  1. o ESTADO: picareta ou revolver. Quem nao sabe o que tem na mao nao
+     *     sabe o que o proximo toque vai fazer.
+     *  2. o CONTROLE que troca. Escondido, trocar de arma era um segredo.
+     *
+     * Em 852 de largura `sempreVisiveis` e falso, ou seja: no alvo do jogo, um
+     * celular deitado, o unico jeito de descobrir que da para sacar a arma era
+     * apertar Q num teclado que nao existe.
+     */
+    this.maoEl.hidden = false;
     bars.hidden = escondeAoInicio;
     this.moneyEl.appendChild(bars);
     this.moneyEl.appendChild(this.climbEl);
@@ -850,9 +866,15 @@ export class HUD {
     this.syncBarsRow();
   }
 
-  /** A linha some junto quando as duas barras estao escondidas. */
+  /**
+   * A linha some quando NADA dentro dela precisa aparecer.
+   *
+   * Contava so a mochila e a vida, e escondia a fileira inteira junto — o que
+   * levava o botao da mao embora mesmo depois de eu manda-lo ficar. A regra e
+   * a mesma de antes, so que agora ela olha todos os moradores da fileira.
+   */
   private syncBarsRow(): void {
-    const empty = this.bagEl.hidden && this.healthEl.hidden;
+    const empty = this.bagEl.hidden && this.healthEl.hidden && this.maoEl.hidden;
     if (this.barsRow.hidden !== empty) this.barsRow.hidden = empty;
   }
 

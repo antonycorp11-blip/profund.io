@@ -49,6 +49,8 @@ type PanelKind = 'workshop' | 'settings';
 export class PanelUI {
   private wrap: HTMLDivElement;
   private panel: HTMLDivElement;
+  /** Area rolavel abaixo do cabecalho fixo. */
+  private corpo!: HTMLDivElement;
   private kind: PanelKind = 'workshop';
 
   constructor(parent: HTMLElement, private host: PanelHost) {
@@ -167,6 +169,21 @@ export class PanelUI {
     header.appendChild(close);
     this.panel.appendChild(header);
 
+    /*
+     * O CONTEUDO PRECISA DE UM CORPO PROPRIO, senao nao rola.
+     *
+     * Bug meu, da casca: eu tornei o painel um flex com `overflow: hidden` e
+     * cabecalho fixo, mas deixei o conteudo como IRMAO do cabecalho. Resultado
+     * — nada rolava, e o botao de apagar o save, que fica no fim da lista,
+     * virou inalcancavel. Quem quisesse comecar o jogo do zero nao conseguia.
+     *
+     * Com um corpo proprio, o cabecalho fica parado e so o conteudo desliza.
+     */
+    const corpo = document.createElement('div');
+    corpo.className = 'panel-corpo';
+    this.panel.appendChild(corpo);
+    this.corpo = corpo;
+
     if (this.kind === 'workshop') this.renderWorkshop();
     else this.renderSettings();
   }
@@ -175,8 +192,8 @@ export class PanelUI {
     const { stats, stock, upgrades } = this.host;
     const current = stats.tool;
 
-    this.panel.appendChild(sectionTitle('Equipada'));
-    this.panel.appendChild(
+    this.corpo.appendChild(sectionTitle('Equipada'));
+    this.corpo.appendChild(
       toolCard(current.color, current.name, current.description, [
         `Poder ${current.miningPower}`,
         `Velocidade ${current.miningSpeed.toFixed(2)}x`,
@@ -185,14 +202,14 @@ export class PanelUI {
     );
 
     const next = upgrades.next;
-    this.panel.appendChild(sectionTitle('Proxima melhoria'));
+    this.corpo.appendChild(sectionTitle('Proxima melhoria'));
     if (!next) {
       const p = document.createElement('div');
       p.className = 'log-list';
       p.textContent = 'Voce ja tem a melhor picareta do prototipo.';
-      this.panel.appendChild(p);
+      this.corpo.appendChild(p);
     } else {
-      this.panel.appendChild(
+      this.corpo.appendChild(
         toolCard(next.color, next.name, next.description, [
           `Poder ${current.miningPower} → ${next.miningPower}`,
           `Velocidade ${current.miningSpeed.toFixed(2)}x → ${next.miningSpeed.toFixed(2)}x`,
@@ -210,7 +227,7 @@ export class PanelUI {
         span.textContent = `${RESOURCES[rid].name}: ${have}/${qty}`;
         cost.appendChild(span);
       }
-      this.panel.appendChild(cost);
+      this.corpo.appendChild(cost);
 
       const btn = document.createElement('button');
       btn.className = 'btn primary';
@@ -222,10 +239,10 @@ export class PanelUI {
           this.render();
         }
       });
-      this.panel.appendChild(btn);
+      this.corpo.appendChild(btn);
     }
 
-    this.panel.appendChild(sectionTitle('Estoque da base'));
+    this.corpo.appendChild(sectionTitle('Estoque da base'));
     const grid = document.createElement('div');
     grid.className = 'stock-grid';
     const entries = stock.entries().filter(([, qty]) => qty > 0);
@@ -233,7 +250,7 @@ export class PanelUI {
       const empty = document.createElement('div');
       empty.className = 'log-list';
       empty.textContent = 'Nada entregue ainda. Minere e leve ate o deposito.';
-      this.panel.appendChild(empty);
+      this.corpo.appendChild(empty);
     } else {
       for (const [id, qty] of entries) {
         const item = document.createElement('div');
@@ -241,13 +258,13 @@ export class PanelUI {
         item.innerHTML = `<span class="dot" style="width:10px;height:10px;border-radius:3px;background:${RESOURCES[id].color}"></span> ${RESOURCES[id].name}: <b>${qty}</b>`;
         grid.appendChild(item);
       }
-      this.panel.appendChild(grid);
+      this.corpo.appendChild(grid);
     }
 
     const money = document.createElement('div');
     money.className = 'row';
     money.innerHTML = `<span>Moedas</span><b>${stock.money}</b>`;
-    this.panel.appendChild(money);
+    this.corpo.appendChild(money);
   }
 
   /**
@@ -291,7 +308,7 @@ export class PanelUI {
   private renderSettings(): void {
     const info = this.host.progressInfo();
 
-    this.panel.appendChild(sectionTitle('Registro do pai'));
+    this.corpo.appendChild(sectionTitle('Registro do pai'));
     const list = document.createElement('ul');
     list.className = 'log-list';
     if (info.clues.length === 0 && info.npcs.length === 0) {
@@ -309,38 +326,38 @@ export class PanelUI {
       li.textContent = `• ${n} resgatado`;
       list.appendChild(li);
     }
-    this.panel.appendChild(list);
+    this.corpo.appendChild(list);
 
-    this.panel.appendChild(sectionTitle('Expedicao'));
-    this.panel.appendChild(row('Blocos minerados', String(info.blocksMined)));
-    this.panel.appendChild(row('Profundidade maxima', `${Math.round(info.deepest)} m`));
-    this.panel.appendChild(row('Tempo de jogo', formatTime(info.playTime)));
+    this.corpo.appendChild(sectionTitle('Expedicao'));
+    this.corpo.appendChild(row('Blocos minerados', String(info.blocksMined)));
+    this.corpo.appendChild(row('Profundidade maxima', `${Math.round(info.deepest)} m`));
+    this.corpo.appendChild(row('Tempo de jogo', formatTime(info.playTime)));
 
-    this.panel.appendChild(sectionTitle('Opcoes'));
-    this.panel.appendChild(
+    this.corpo.appendChild(sectionTitle('Opcoes'));
+    this.corpo.appendChild(
       switchRow('Som', AudioSystem.enabled, (on) => {
         AudioSystem.enabled = on;
         if (on) AudioSystem.unlock();
       })
     );
-    this.panel.appendChild(
+    this.corpo.appendChild(
       switchRow('Vibracao', Haptics.enabled, (on) => {
         Haptics.enabled = on;
         if (on) Haptics.ui();
       })
     );
-    this.panel.appendChild(
+    this.corpo.appendChild(
       switchRow('Controles na tela', this.host.isTouchVisible(), () => this.host.onToggleTouch())
     );
-    this.panel.appendChild(
+    this.corpo.appendChild(
       switchRow('Mostrar FPS', CONFIG.debug.showFps, (on) => {
         CONFIG.debug.showFps = on;
       })
     );
     // Tremor de tela incomoda gente diferente de jeitos diferentes; e um ajuste,
     // nao um numero fixo escondido no codigo.
-    this.panel.appendChild(this.qualidadeRow());
-    this.panel.appendChild(this.shakeRow());
+    this.corpo.appendChild(this.qualidadeRow());
+    this.corpo.appendChild(this.shakeRow());
 
     /*
      * QUAL VERSAO ESTA RODANDO — e o botao de forcar a troca.
@@ -350,9 +367,9 @@ export class PanelUI {
      * versao velha ou se a mudanca e que nao presta. Com o carimbo na tela, a
      * pergunta vira conferir um numero.
      */
-    this.panel.appendChild(sectionTitle('Versao'));
+    this.corpo.appendChild(sectionTitle('Versao'));
     const carimbo = typeof __VERSAO__ === 'string' ? __VERSAO__ : 'dev';
-    this.panel.appendChild(row('Build', carimbo));
+    this.corpo.appendChild(row('Build', carimbo));
     const forcar = document.createElement('button');
     forcar.className = 'btn';
     forcar.textContent = 'Buscar atualizacao agora';
@@ -360,9 +377,9 @@ export class PanelUI {
       Haptics.ui();
       void this.forcarAtualizacao(forcar);
     });
-    this.panel.appendChild(forcar);
+    this.corpo.appendChild(forcar);
 
-    this.panel.appendChild(sectionTitle('Desenvolvimento — habilidades'));
+    this.corpo.appendChild(sectionTitle('Desenvolvimento — habilidades'));
     const devGrid = document.createElement('div');
     devGrid.className = 'dev-grid';
     // "Desbloquear tudo" saiu: com tudo ligado de uma vez o jogo nao tem mais
@@ -389,9 +406,9 @@ export class PanelUI {
       });
       devGrid.appendChild(b);
     }
-    this.panel.appendChild(devGrid);
+    this.corpo.appendChild(devGrid);
 
-    this.panel.appendChild(sectionTitle('Desenvolvimento — save'));
+    this.corpo.appendChild(sectionTitle('Desenvolvimento — save'));
     const reset = document.createElement('button');
     reset.className = 'btn danger';
     reset.textContent = 'APAGAR SAVE E RECOMECAR';
@@ -409,14 +426,14 @@ export class PanelUI {
       this.close();
       this.host.onResetSave();
     });
-    this.panel.appendChild(reset);
+    this.corpo.appendChild(reset);
 
     const hint = document.createElement('div');
     hint.className = 'log-list';
     hint.style.marginTop = '10px';
     hint.innerHTML =
       'Teclado: <b>A/D</b> mover · <b>W/S</b> mirar · <b>Espaco</b> pular · <b>J</b> ou clique minerar · <b>E</b> interagir';
-    this.panel.appendChild(hint);
+    this.corpo.appendChild(hint);
   }
 }
 

@@ -68,6 +68,7 @@ import { JournalUI } from '../ui/JournalUI';
 import { BossBar } from '../ui/BossBar';
 import { Telas } from '../ui/Telas';
 import { MissaoUI } from '../ui/MissaoUI';
+import { Tutorial } from '../ui/Tutorial';
 import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
@@ -208,6 +209,8 @@ export class Game {
   private bossBar!: BossBar;
   /** Cartaz de missao. Escuta eventos sozinho; o Game so o cria. */
   private missaoUI!: MissaoUI;
+  /** Tutorial guiado dos primeiros minutos. */
+  private tutorial!: Tutorial;
   /**
    * O dono das telas cheias: garante no maximo uma aberta por vez.
    *
@@ -412,6 +415,18 @@ export class Game {
     this.bossBar = new BossBar(uiRoot);
     // O cartaz de missao: chegada com o porque, conclusao com o premio.
     this.missaoUI = new MissaoUI(uiRoot);
+    /*
+     * O tutorial usa as FLAGS DE HISTORIA para lembrar o que ja foi ensinado.
+     *
+     * Podia ser localStorage, mas ai apagar o save nao limparia o tutorial — e
+     * quem apaga o save esta justamente querendo ver o jogo do comeco, que e o
+     * caso de uso de quem testa.
+     */
+    this.tutorial = new Tutorial(
+      uiRoot,
+      (id) => this.skills.setStoryFlag(id),
+      (id) => this.skills.hasStoryFlag(id)
+    );
 
     this.activeUI = new ActiveSkillsUI(uiRoot, {
       tree: this.skills,
@@ -1350,6 +1365,7 @@ export class Game {
     this.bossBar.esconder();
     // E nenhum cartaz de missao herdado da partida anterior.
     this.missaoUI.fechar();
+    this.tutorial.fechar();
     const data = SaveSystem.load();
     if (!data) {
       this.player.setPosition(this.worldInfo.spawnX, this.worldInfo.spawnY);
@@ -1363,7 +1379,16 @@ export class Game {
       this.missions.silenciarAtual();
       // Prologo: quem e o pai, por que a mina reabriu e o que a cota custa.
       // Antes disso o jogo comecava sem dizer que alguem tinha desaparecido.
-      Events.emit('dialog:open', { lines: PROLOGUE });
+      /*
+       * O TUTORIAL COMECA DEPOIS DO PROLOGO.
+       *
+       * Durante o dialogo o jogo esta PAUSADO: um holofote mandando andar
+       * enquanto nada responde ao toque ensinaria que o jogo nao funciona.
+       */
+      Events.emit('dialog:open', {
+        lines: PROLOGUE,
+        onClose: () => this.tutorial.comecar(),
+      });
       return;
     }
 
@@ -1561,7 +1586,9 @@ export class Game {
     this.clock.update(dt);
     this.dialog.update(dt);
 
-    const uiBlocking = this.dialog.isOpen || this.telas.algumaAberta;
+    this.tutorial.update(this.player.cx, this.player.onGround);
+    const uiBlocking =
+      this.dialog.isOpen || this.telas.algumaAberta || this.tutorial.bloqueando;
     // No modo construir o toque no mundo constroi, entao a mineracao para.
     const building = this.buildMode.isActive;
     if (uiBlocking || this.vitals.dead) {
@@ -1905,6 +1932,7 @@ export class Game {
     // seria a mesma confusao que a troca existe para evitar.
     this.mining.cancelar();
     Haptics.ui();
+    Events.emit('mao:trocada', { mao: this.mao });
     Events.emit('ui:toast', {
       text: this.mao === 'arma' ? `${this.weapons.def.name} na mao.` : 'Picareta na mao.',
       tone: 'info',

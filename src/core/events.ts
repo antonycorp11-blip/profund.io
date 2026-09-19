@@ -138,6 +138,8 @@ export interface GameEvents {
   };
   /** Um tiro saiu: a HUD pisca o contador e o audio toca o estampido. */
   'weapon:fired': { id: string; x: number; y: number };
+  /** O jogador trocou o que tem na mao. O tutorial escuta isto. */
+  'mao:trocada': { mao: 'picareta' | 'arma' };
   /** Municao fabricada na base. */
   'ammo:crafted': { amount: number };
   'xp:gained': { amount: number; level: number; ratio: number };

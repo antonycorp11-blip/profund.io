@@ -10197,10 +10197,19 @@ html.dev-hud .debug {
   margin-right: 12px;
 }
 
-/* Tudo que nao e o cabecalho rola junto, dentro de um respiro. */
-.panel-wrap > .panel > .casca-cab ~ * {
-  flex: 0 0 auto;
-}
+/*
+ * (Aqui havia `.panel-wrap > .panel > .casca-cab ~ * { flex: 0 0 auto }`.)
+ *
+ * Ela servia a uma versao em que o conteudo dos Ajustes era IRMAO do
+ * cabecalho. Quando o conteudo ganhou um corpo proprio para poder rolar, esta
+ * regra continuou valendo — com peso 300 contra os 100 de `.panel-corpo` — e
+ * congelava o corpo em `flex: 0 0 auto`. Ele crescia ate 704 px dentro de um
+ * painel de 602 e o resto era cortado: o botao de apagar o save continuava
+ * inalcancavel, agora por outro motivo.
+ *
+ * Terceira vez neste arquivo que uma regra minha antiga derrota uma minha
+ * nova. Deixo o registro no lugar dela.
+ */
 
 /* A base tambem empilha: cabecalho fixo, corpo rolando. */
 .panel-wrap > .camp-panel {
@@ -10980,4 +10989,195 @@ html.dev-hud .debug {
 /* O card inteiro aceita toque: recolhido, a aba ocupa ele todo. */
 .quota {
   pointer-events: auto;
+}
+
+/* ============================================================
+   O TUTORIAL GUIADO
+   ============================================================
+   Havia dicas em toast: texto num canto por tres segundos, no
+   meio de outros cinco. Isso nao e ensinar, e avisar — e quem
+   nunca viu o jogo nao sabe nem onde olhar.
+
+   Aqui a tela escurece e o que tem que ser tocado fica ACESO no
+   buraco do escuro. O passo so termina quando o jogador faz a
+   coisa: ler "aperte para pular" e diferente de ter pulado.
+   ============================================================ */
+
+.tut-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.24s ease, visibility 0.24s;
+  /* Sem alvo, o escuro nao intercepta o toque: o jogador precisa poder
+     andar, pular e picaretar com o tutorial na tela. */
+  pointer-events: none;
+}
+
+.tut-wrap.on {
+  opacity: 1;
+  visibility: visible;
+}
+
+/*
+ * O BURACO NO ESCURO.
+ *
+ * Nao e um recorte de verdade: e um retangulo transparente com uma sombra
+ * gigante em volta. A sombra pinta TODO o resto da tela, e o retangulo fica
+ * sendo a unica coisa iluminada. Vale mais que qualquer seta.
+ */
+.tut-buraco {
+  position: absolute;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 9999px rgba(6, 5, 4, 0.76),
+    0 0 0 2px var(--doc-luz),
+    0 0 18px 3px rgba(255, 196, 83, 0.4);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  animation: tut-pulsa 1.5s ease-in-out infinite;
+}
+
+@keyframes tut-pulsa {
+  50% {
+    box-shadow:
+      0 0 0 9999px rgba(6, 5, 4, 0.76),
+      0 0 0 2px var(--doc-luz),
+      0 0 26px 6px rgba(255, 196, 83, 0.6);
+  }
+}
+
+/* Sem alvo, o escuro cobre a tela inteira por outro caminho. */
+.tut-wrap:not(.com-alvo)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 5, 4, 0.7);
+}
+
+.tut-cartao {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  width: min(400px, 88%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 16px 11px;
+  text-align: center;
+  border: 1px solid var(--doc-regua);
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 21px, var(--doc-pauta) 21px 22px),
+    linear-gradient(180deg, var(--doc-fundo-alto), var(--doc-fundo));
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.8);
+  pointer-events: auto;
+}
+
+/* O cartao FOGE do alvo: por cima dele, esconderia o que manda tocar. */
+.tut-cartao.embaixo {
+  top: auto;
+  bottom: 14px;
+}
+
+.tut-passo {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.7;
+}
+
+.tut-titulo {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--doc-luz);
+  line-height: 1.1;
+}
+
+.tut-texto {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--doc-tinta);
+}
+
+.tut-ok {
+  margin-top: 5px;
+  min-width: 112px;
+  min-height: 30px;
+  border: 1px solid rgba(255, 196, 83, 0.5);
+  border-radius: 3px;
+  background: rgba(255, 196, 83, 0.14);
+  color: var(--doc-luz);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+}
+
+.tut-ok[hidden] {
+  display: none;
+}
+
+/* ---- Ajustes: o corpo rola, e as linhas apertam ---- */
+
+/*
+ * O cabecalho fica parado, o conteudo desliza.
+ *
+ * Sem isto o painel tinha `overflow: hidden` e nada rolava: o botao de apagar
+ * o save, la no fim da lista, era inalcancavel. Quem quisesse recomecar o
+ * jogo simplesmente nao conseguia.
+ */
+.panel-wrap > .panel > .casca-cab {
+  flex: 0 0 auto;
+}
+
+.panel-corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 12px 12px;
+}
+
+/*
+ * DENSIDADE: cabe mais em menos.
+ *
+ * "Muitas linhas sobrando espaco vazio." Cada linha gastava 8 px em cima e 8
+ * embaixo para mostrar um rotulo e um valor — numa tela de 338 px isso limita
+ * a nove linhas, e a tela tem quase vinte. Com 5 px de respiro e a regua
+ * separando, cabe o dobro sem ficar apertado de ler.
+ */
+.panel .row,
+.panel-wrap > .panel .row {
+  padding: 5px 2px;
+  min-height: 0;
+  gap: 8px;
+}
+
+.panel h5 {
+  margin: 10px 0 2px;
+}
+
+.panel h5:first-child {
+  margin-top: 0;
+}
+
+/* O primeiro bloco (registro do pai) costuma ser uma lista curta: ela nao
+   precisa da mesma altura de linha de um ajuste com botao. */
+.panel-corpo ul,
+.panel-corpo li {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.panel-corpo li {
+  padding: 2px 0;
+  font-size: 11px;
 }
