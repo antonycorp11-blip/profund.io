@@ -42,7 +42,7 @@ import { ActiveSkillsUI } from '../ui/ActiveSkillsUI';
 import { SkillTreeUI } from '../ui/SkillTreeUI';
 import { PlayerSprite } from '../player/PlayerSprite';
 import { equipDef } from '../data/equipment';
-import type { MissionDef } from '../data/missions';
+import { MISSIONS, type MissionDef } from '../data/missions';
 import { QuotaSystem } from '../systems/QuotaSystem';
 import { RescueNpc } from '../entities/RescueNpc';
 import { SaveSystem } from '../systems/SaveSystem';
@@ -73,7 +73,7 @@ import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
 import { Missions } from '../systems/Missions';
-import { Reputation } from '../systems/Reputation';
+import { Reputation, type CityId } from '../systems/Reputation';
 import { CityNpc } from '../entities/CityNpc';
 import { BLOCKIA_NPCS } from '../data/blockia';
 import { OUTPOST_NPCS } from '../data/outpost';
@@ -456,6 +456,8 @@ export class Game {
     // depois de o mundo existir (e antes de o save restaurar quem ja morreu).
     this.creatures = new CreatureManager(this.world, this.drops, this.exploration);
     this.creatures.buildGuardPosts();
+    // Os covis: encontros opcionais, longe do poco. Ver /data/encounters.ts.
+    this.creatures.buildLairs();
     this.hud.onTrocarMao = () => this.trocarMao();
     // O coice da pose vem do TIRO que aconteceu, nao de um palpite do desenho.
     Events.on('weapon:fired', () => {
@@ -1067,6 +1069,23 @@ export class Game {
     Events.on('mission:done', (p) => {
       // Fechar uma missao pode ser a ultima condicao de um selo.
       this.biomeGate.recheck();
+      /*
+       * TRABALHO VIRA CONFIANCA.
+       *
+       * Era a peca que faltava para a cidade-porteira funcionar. Toda a
+       * confianca de Blockia vinha da primeira conversa com cada morador —
+       * dizer bom dia para tres pessoas entregava a Picareta dos Fundadores, e
+       * as tres missoes de trabalho que sao o argumento inteiro da cidade
+       * aconteciam DEPOIS de a porta ja ter aberto.
+       *
+       * Agora a apresentacao vale pouco e a obra vale o resto. A ultima das
+       * tres e a que cruza o limiar, entao a porta abre no momento exato em
+       * que a cidade termina de ser servida.
+       */
+      const ficha = MISSIONS.find((m) => m.id === p.id);
+      if (ficha?.trust) {
+        this.reputation.add(ficha.trust.city as CityId, 'trust', ficha.trust.amount);
+      }
       this.hud.celebrate('MISSAO CONCLUIDA', p.title, p.text, 'progress', 3);
     });
 

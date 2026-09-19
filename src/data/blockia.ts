@@ -33,7 +33,19 @@ export interface CityNpcDef {
   lines: DialogLine[];
   /** Depois da primeira, alterna entre estas. */
   idleLines: string[];
-  /** Ganho de confianca na primeira conversa. */
+  /**
+   * Ganho de confianca na primeira conversa.
+   *
+   * DE PROPOSITO PEQUENO. Conhecer alguem nao e servir a cidade: a soma das
+   * sete apresentacoes tem de ficar abaixo do limiar da passagem, senao a
+   * Picareta dos Fundadores sai por dizer bom dia e as missoes de trabalho
+   * viram enfeite. Quem paga o grosso sao as missoes (`trust` em MissionDef).
+   *
+   * A conta atual: 9 de conversa (2+1+1+1+1+2+1) contra 15 de limiar. O
+   * caminho obrigatorio — Mara, Afonso, Breno e Irene, mais as tres obras —
+   * fecha em 15 exatos. Silas, Nina e Lio somam 3 por cima: sao conversa, nao
+   * pedagio.
+   */
   trust: number;
 }
 
@@ -45,7 +57,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 0,
     offset: 30,
     color: '#ffc453',
-    trust: 5,
+    trust: 2,
     lines: [
       { speaker: 'Mara', text: 'Antes que pergunte: sim, sabemos onde fica a superficie. Nao, nao estamos presos.' },
       { speaker: 'Elias', text: 'Eu nao ia...' },
@@ -69,7 +81,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 0,
     offset: 8,
     color: '#c0713a',
-    trust: 3,
+    trust: 1,
     lines: [
       { speaker: 'Silas', text: 'Deixa eu ver essa picareta.' },
       { speaker: 'Silas', text: '(vira nas maos) Boa liga. Cabo errado pro seu braco.' },
@@ -88,7 +100,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 0,
     offset: 46,
     color: '#9affd8',
-    trust: 3,
+    trust: 1,
     lines: [
       { speaker: 'Nina', text: 'Voce e o de cima. Ja sei seu nome antes de voce dizer.' },
       { speaker: 'Elias', text: 'Como?' },
@@ -106,7 +118,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 3,
     offset: 4,
     color: '#8cbef0',
-    trust: 3,
+    trust: 1,
     lines: [
       { speaker: 'Breno', text: 'Nao encosta nesse cabo.' },
       { speaker: 'Elias', text: 'Nao encostei.' },
@@ -124,7 +136,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 1,
     offset: 4,
     color: '#ffffff',
-    trust: 3,
+    trust: 1,
     lines: [
       { speaker: 'Irene', text: 'Senta. Deixa eu ver essas maos.' },
       { speaker: 'Elias', text: 'Estou bem.' },
@@ -142,7 +154,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 4,
     offset: 7,
     color: '#d3b47d',
-    trust: 4,
+    trust: 2,
     lines: [
       { speaker: 'Afonso', text: 'Ramires. Eu esperava voce ha uns dez anos.' },
       { speaker: 'Elias', text: 'Voce guardou alguma coisa dele?' },
@@ -165,7 +177,7 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     nivel: 2,
     offset: 9,
     color: '#8c5ce0',
-    trust: 2,
+    trust: 1,
     lines: [
       { speaker: 'Lio', text: 'E verdade que o ceu nao tem teto?' },
       { speaker: 'Elias', text: 'Tecnicamente, tem. So fica muito longe.' },

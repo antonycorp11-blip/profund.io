@@ -23,7 +23,20 @@ import { Creature } from '../src/entities/Creature';
 import { blockDef } from '../src/data/blocks';
 
 const TS = CONFIG.tileSize;
-const def0 = bossForLayer('stone');
+
+/*
+ * A CAMADA SONDADA VEM DA LISTA, e nao de mim.
+ *
+ * Esta sonda tinha 'stone' escrito em cinco lugares, porque quando ela nasceu
+ * a Camada de Pedra era o primeiro selo do jogo. No dia em que o primeiro
+ * chefe passou a ser a Rainha Escavadora, a sonda nao acusou o problema novo:
+ * acusou a propria premissa velha, com "nao existe selo para a primeira camada trancada".
+ *
+ * Sonda com nome de camada escrito a mao so funciona ate a progressao mudar —
+ * e progressao muda. Esta pergunta "qual e o primeiro selo?" para quem sabe.
+ */
+const PRIMEIRA = GATE_LAYERS[0];
+const def0 = bossForLayer(PRIMEIRA);
 let falhas = 0;
 
 function ok(cond: boolean, titulo: string, detalhe = ''): void {
@@ -39,13 +52,13 @@ function ok(cond: boolean, titulo: string, detalhe = ''): void {
 console.log('\nARENA (mundo gerado de verdade)');
 const world = new World();
 const info = generateWorld(world);
-const porta = info.gates.find((g) => g.layerId === 'stone');
+const porta = info.gates.find((g) => g.layerId === PRIMEIRA);
 
 if (!porta) {
-  console.log('  FALHA nao existe selo para a camada stone');
+  console.log('  FALHA nao existe selo para a primeira camada trancada');
   falhas++;
 } else {
-  const layer = gateLayerDef('stone');
+  const layer = gateLayerDef(PRIMEIRA);
   const { row0, row1 } = gateBandRows(world.surfaceRow, layer);
 
   ok(!world.isSolid(porta.col, porta.row), 'o ponto do chefe e ar', `tile ${blockDef(world.getTile(porta.col, porta.row)).name}`);
@@ -98,9 +111,9 @@ if (!porta) {
 
 // ------------------------------------------------------------- o combate ---
 console.log('\nCOMBATE (Creature de verdade, 60 fps simulados)');
-const def = bossForLayer('stone');
+const def = bossForLayer(PRIMEIRA);
 if (!def || !def.boss) {
-  console.log('  FALHA a camada stone nao tem chefe com mecanica');
+  console.log('  FALHA a primeira camada trancada nao tem chefe com mecanica');
   falhas++;
 } else if (porta) {
   const chao = (porta.row + 1) * TS;
@@ -112,6 +125,26 @@ if (!def || !def.boss) {
     danoRecebido += d;
   };
 
+  /*
+   * O TIRO SAI DA VIDA DO CHEFE, e nao de um numero fixo.
+   *
+   * A sonda dava 3 de dano a cada meio segundo durante 40 s: 240 no total.
+   * Isso matava o chefe de 190 hp que existia quando ela foi escrita. Quando o
+   * primeiro selo passou a ser a Rainha Escavadora, de 1150 hp, os mesmos 240
+   * viraram um quinto da barra — e a sonda reprovou o jogo dizendo "a luta nao
+   * termina" e "a furia nao virou". Nenhuma das duas era verdade: ela e que
+   * estava atirando com a arma do chefe antigo.
+   *
+   * Aqui o alvo e sempre o mesmo em TEMPO, nao em dano: 120 tiros derrubam
+   * qualquer chefe, entao a luta simulada dura 60 s e a furia cai no meio dela
+   * qualquer que seja a barra. Isto e uma bancada de prova de MECANICA — a
+   * furia virou? a investida saiu? o chefe morre? — e nao uma opiniao sobre o
+   * balanceamento, que se mede jogando.
+   */
+  const TIROS_ATE_MORRER = 120;
+  const danoPorTiro = def.health / TIROS_ATE_MORRER;
+  const segundos = Math.ceil((TIROS_ATE_MORRER + 20) * 0.5);
+
   const dt = 1 / 60;
   let viuWindup = false;
   let viuCharge = false;
@@ -119,7 +152,7 @@ if (!def || !def.boss) {
   let pediuLacaio = false;
   let t = 0;
 
-  for (let i = 0; i < 60 * 40; i++) {
+  for (let i = 0; i < 60 * segundos; i++) {
     t += dt;
     boss.update(dt, world, player, hit);
     if (boss.windup > 0) viuWindup = true;
@@ -137,7 +170,7 @@ if (!def || !def.boss) {
      * assim levava o chefe a -50 de vida e continuava chamando de vivo — e
      * teria passado batido por qualquer bug no proprio momento da morte.
      */
-    if (i % 30 === 0 && boss.alive) boss.hurt(3, player.x);
+    if (i % 30 === 0 && boss.alive) boss.hurt(danoPorTiro, player.x);
     if (!boss.alive) break;
   }
 
@@ -207,7 +240,7 @@ if (def?.boss && porta) {
 // ------------------------------------------- a passagem depois da morte ---
 console.log('\nPASSAGEM (o selo cai e da para descer)');
 if (porta) {
-  const layer = gateLayerDef('stone');
+  const layer = gateLayerDef(PRIMEIRA);
   const { row0, row1 } = gateBandRows(world.surfaceRow, layer);
 
   /*

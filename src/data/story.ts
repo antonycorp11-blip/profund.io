@@ -16,8 +16,12 @@
  * esta mais fundo. Para ir mais fundo o jogador precisa evoluir. O vicio nasce
  * dai — a curiosidade puxa a economia, e nao o contrario.
  *
- * Cada mineiro pertence a uma CAMADA (`layer`). O BiomeGate exige TODOS os
- * mineiros daquela camada resgatados, mais o chefe morto, para abrir o selo.
+ * Cada mineiro pertence a uma CAMADA (`layer`). Isso e etiqueta de organizacao
+ * e do contador do Guia — quem manda no selo e a profundidade, nao este campo:
+ * o BiomeGate exige o chefe morto E nenhuma missao em aberto acima da faixa
+ * (ver Game.missingMissions). Este comentario ja afirmou o contrario por
+ * varias levas, e se fosse verdade o selo dos 500 m dependeria do Teo, que
+ * mora aos 700 — do lado de la da propria parede.
  */
 
 import { BLOCKIA_NPCS } from './blockia';
@@ -125,8 +129,8 @@ export const CLUES: ClueDef[] = [
       { speaker: 'Elias', text: 'Ele marcava a volta. Sempre dizia para marcar a volta.' },
       { speaker: 'Elias', text: 'Entao por que a proxima marca aponta para baixo?' },
     ],
-    logEntry: 'Pista registrada: A marca do pai (62 m)',
-    layer: 'stone',
+    logEntry: 'Pista registrada: A marca do pai (26 m)',
+    layer: 'surface',
   },
   {
     /*
@@ -152,7 +156,7 @@ export const CLUES: ClueDef[] = [
       { speaker: 'Elias', text: 'A companhia jura que nao ha ninguem abaixo dos duzentos.' },
     ],
     logEntry: 'Pista registrada: Lampiao abastecido (340 m)',
-    layer: 'crystal',
+    layer: 'stone',
   },
   {
     id: 'clue_trilhos',
@@ -168,7 +172,7 @@ export const CLUES: ClueDef[] = [
       { speaker: 'Elias', text: 'A companhia fechou tudo isto ha quatorze anos.' },
       { speaker: 'Elias', text: 'Entao quem consertou?' },
     ],
-    logEntry: 'Pista registrada: Trilhos reparados (112 m)',
+    logEntry: 'Pista registrada: Trilhos reparados (216 m)',
     layer: 'stone',
   },
   {
@@ -185,8 +189,8 @@ export const CLUES: ClueDef[] = [
       { speaker: 'Elias', text: 'John? O caderno ja falou dele tres vezes.' },
       { speaker: 'Elias', text: 'Minha mae disse que os dois sumiram juntos.' },
     ],
-    logEntry: 'Pagina 01 do caderno recuperada (230 m)',
-    layer: 'crystal',
+    logEntry: 'Pagina 01 do caderno recuperada (120 m)',
+    layer: 'surface',
   },
   {
     id: 'clue_pagina_02',
@@ -315,10 +319,24 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Jonas', text: 'Elas recolhem o que voce larga no chao quando a mochila enche.' },
       { speaker: 'Jonas', text: 'Atravessam a rocha. Nao pergunta como. Olha no botao COPIAS.' },
       { speaker: 'Elias', text: 'Entao eu sigo por onde ele foi.' },
-      { speaker: 'Jonas', text: 'Segue nada. Mais uns metros e tem uma parede que picareta nao arranha.' },
+      /*
+       * ELE MANDAVA MATAR UM BICHO QUE NAO EXISTE MAIS.
+       *
+       * Estas quatro falas descreviam o guardiao de 168 m — o chefe precoce
+       * que saiu do jogo porque a BIBLIA nao poe nenhum antes dos 420. A fala
+       * ficou para tras e passou a ensinar a regra errada: o jogador chegava
+       * na parede procurando o que matar, e a parede abre por ter achado.
+       *
+       * Quem foi tirado de debaixo da pedra e a pessoa certa para dizer a
+       * regra do lugar, e a regra agora e outra: a mina cobra atencao, nao
+       * luta.
+       */
+      { speaker: 'Jonas', text: 'Segue nada. Mais uns metros e tem parede que picareta nao arranha.' },
       { speaker: 'Elias', text: 'Uma parede?' },
-      { speaker: 'Jonas', text: 'E tem coisa viva guardando ela. Foi o que me deixou preso aqui.' },
-      { speaker: 'Jonas', text: 'Derruba o bicho e a parede cede. Nao me pergunta por que. Vou esperar na base.' },
+      { speaker: 'Jonas', text: 'Eu tentei na forca quatro dias. Foi o que me deixou preso aqui.' },
+      { speaker: 'Jonas', text: 'Essas paredes nao cedem a golpe. Cedem quando voce acha o que tem para achar no trecho.' },
+      { speaker: 'Elias', text: 'Isso nao faz sentido nenhum.' },
+      { speaker: 'Jonas', text: 'Nao faz. Mas e assim, e quem entendeu isso primeiro foi o seu pai. Vou esperar na base.' },
     ],
     walkToOffsetCols: -2,
     worksAt: {
@@ -331,7 +349,7 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       ],
     },
     teaches: { titulo: 'TOUPEIRAS', texto: 'Jonas deixou as toupeiras dele com voce. Elas recolhem sozinhas o minerio que voce largou no chao. Abra COPIAS para contratar e melhorar.' },
-    layer: 'stone',
+    layer: 'surface',
   },
   {
     id: 'npc_vilma',

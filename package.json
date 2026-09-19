@@ -38,7 +38,10 @@
     "slice-trajes": "node tools/slice-trajes.mjs",
     "medir-toque": "node tools/medir-toque.mjs",
     "slice-ruinas": "node tools/slice-ruinas.mjs",
-    "auditar-missoes": "esbuild tools/auditar-missoes.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/audit.cjs --log-level=warning && node node_modules/.cache/audit.cjs"
+    "auditar-missoes": "esbuild tools/auditar-missoes.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/audit.cjs --log-level=warning && node node_modules/.cache/audit.cjs",
+    "auditar-tudo": "esbuild tools/auditar-tudo.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/auditar-tudo.cjs --log-level=warning && node node_modules/.cache/auditar-tudo.cjs",
+    "auditar": "npm run auditar-missoes && npm run auditar-tudo",
+    "covil": "esbuild tools/covil-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/covil-probe.cjs --log-level=warning && node node_modules/.cache/covil-probe.cjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

@@ -244,12 +244,31 @@ for (const c of CITIES) {
     console.log(`  ·    ${c.name} (${c.depth} m): planejada, ainda nao tranca nada.`);
     continue;
   }
+  /*
+   * A CONVERSA NAO CONTA SOZINHA — foi o que esta checagem errou.
+   *
+   * Ela somava so a confianca dos moradores e dizia "ok, da para juntar". Dava
+   * mesmo: dava DEMAIS. Falar com tres pessoas ja passava do limiar, e a
+   * cidade entregava a picareta antes das missoes de trabalho, que sao o
+   * argumento inteiro dela. A checagem aprovava exatamente o bug.
+   *
+   * O que precisa ser somado e o CAMINHO OBRIGATORIO: os moradores que alguma
+   * missao exige, mais a confianca que as obras pagam.
+   */
   const moradores = c.id === 'blockia' ? BLOCKIA_NPCS : [];
-  const disponivel = moradores.reduce((n, m) => n + (m.trust ?? 0), 0);
+  const exigidos = new Set(MISSIONS.flatMap((m) => m.requires));
+  const porConversa = moradores
+    .filter((m) => exigidos.has(m.id))
+    .reduce((n, m) => n + (m.trust ?? 0), 0);
+  const porObra = MISSIONS.filter((m) => m.trust?.city === c.id).reduce(
+    (n, m) => n + (m.trust?.amount ?? 0),
+    0
+  );
   ok(
-    disponivel >= c.trustToPass,
-    `${c.name}: da para juntar a confianca que ela pede`,
-    `pede ${c.trustToPass}, a cidade inteira oferece ${disponivel}`
+    porConversa + porObra >= c.trustToPass,
+    `${c.name}: quem faz o que ela pede junta a confianca dela`,
+    `pede ${c.trustToPass}, o caminho obrigatorio da ${porConversa + porObra} ` +
+      `(${porConversa} de conversa + ${porObra} de obra)`
   );
 }
 

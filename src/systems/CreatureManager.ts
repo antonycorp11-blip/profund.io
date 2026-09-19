@@ -6,7 +6,9 @@ import { Events } from '../core/events';
 import { layerAt } from '../data/layers';
 import { baseCampAt } from '../data/basecamp';
 import type { Camera } from '../core/camera';
-import { insideBlockia } from '../data/gates';
+import { gateArenaCol, gateBandRows, gateLayerDef, GATE_LAYERS, insideBlockia } from '../data/gates';
+import { storyGateAtRow } from '../data/storyGates';
+import { ENCOUNTERS } from '../data/encounters';
 import { randInt } from '../core/math';
 import type { DropManager } from '../entities/DropManager';
 import type { Exploration } from './Exploration';
@@ -22,6 +24,17 @@ interface GuardPost {
   row: number;
   creatureId: string;
   dead: boolean;
+  /**
+   * A ninhada que acorda junto, se este posto for um covil.
+   *
+   * Um bicho grande sozinho numa sala e um chefe sem arena. O que faz um covil
+   * parecer covil e o resto morando ali — e e tambem a "area super populosa"
+   * que o jogo nao tinha em lugar nenhum.
+   */
+  ninhada?: { creatureId: string; quantos: number };
+  /** Nome do LUGAR (o covil), quando houver. Vai para o marcador do mapa. */
+  lugar?: string;
+  aviso?: string;
 }
 
 /**
@@ -97,6 +110,72 @@ export class CreatureManager {
     }
   }
 
+  /**
+   * Coloca os covis: os encontros opcionais do mapa.
+   *
+   * Nao e a mesma coisa que `buildGuardPosts`. Aquele procura RIQUEZA — onde
+   * ha veio bom, poe alguem para defender. Este procura DISTANCIA: o covil so
+   * cumpre o contrato dele (opcional) se quem cava reto para baixo nunca cair
+   * dentro. Por isso a primeira condicao aqui e estar longe do poco, e nao
+   * estar perto de alguma coisa.
+   *
+   * A varredura e deterministica e comeca larga, fechando em direcao ao poco:
+   * assim o covil nasce o mais longe que o mundo permitir, e dois mundos com
+   * a mesma semente poem ele no mesmo lugar.
+   */
+  buildLairs(): void {
+    const poco = gateArenaCol();
+    for (const enc of ENCOUNTERS) {
+      let escolhido: { col: number; row: number } | null = null;
+      // De fora para dentro: prefere o canto mais distante que sirva.
+      for (let dist = 46; dist >= enc.longeDoPocoCols && !escolhido; dist -= 4) {
+        for (const lado of [-1, 1]) {
+          const col = poco + lado * dist;
+          if (col < 8 || col > this.world.width - 8) continue;
+          for (let d = enc.minDepth; d <= enc.maxDepth; d += 6) {
+            const row = this.world.surfaceRow + d;
+            if (!this.lugarLivre(col, row)) continue;
+            const spot = this.findAir(col, row);
+            if (!spot) continue;
+            escolhido = spot;
+            break;
+          }
+          if (escolhido) break;
+        }
+      }
+      if (!escolhido) continue;
+      this.posts.push({
+        id: enc.id,
+        col: escolhido.col,
+        row: escolhido.row,
+        creatureId: enc.creatureId,
+        dead: false,
+        ninhada: enc.ninhada,
+        lugar: enc.lugar,
+        aviso: enc.aviso,
+      });
+    }
+  }
+
+  /**
+   * Da para um covil nascer aqui?
+   *
+   * As tres coisas que o proibem sao as tres que ja quebraram alguma coisa
+   * neste projeto: rocha selada (o chefe ja nasceu emparedado uma vez), zona
+   * de base e a cidade. Cidade e base sao lugares onde o jogador larga o
+   * controle — e um ninho encostado neles tira exatamente isso.
+   */
+  private lugarLivre(col: number, row: number): boolean {
+    if (storyGateAtRow(this.world.surfaceRow, row)) return false;
+    for (const layerId of GATE_LAYERS) {
+      const { row0, row1 } = gateBandRows(this.world.surfaceRow, gateLayerDef(layerId));
+      if (row >= row0 - 4 && row <= row1 + 4) return false;
+    }
+    const ts = this.world.tileSize;
+    if (this.zonaSegura(col * ts, row * ts)) return false;
+    return true;
+  }
+
   /** Quantos postos a geracao criou (debug / HUD de desenvolvimento). */
   get guardPostCount(): number {
     return this.posts.length;
@@ -112,6 +191,52 @@ export class CreatureManager {
       }
     }
     return null;
+  }
+
+  /**
+   * A ninhada do covil: bicho comum espalhado em volta do grande.
+   *
+   * Nasce COMO AMBIENTE de proposito — sem `summonedBy` e sem marca de
+   * guardiao. Isso significa que some pelo despawn normal se o jogador der
+   * meia volta, que e o unico jeito de um encontro opcional continuar
+   * opcional: sair de perto tem que bastar.
+   */
+  private spawnNinhada(post: GuardPost): void {
+    const n = post.ninhada;
+    if (!n) return;
+    const def = creatureDef(n.creatureId);
+    if (!def) return;
+    const ts = this.world.tileSize;
+    /*
+     * PROCURA VAO, em vez de confiar num deslocamento fixo.
+     *
+     * A primeira versao punha os bichos em leque, dois tiles de cada lado. A
+     * sonda mostrou o resultado: seis pedidos, DOIS nascidos — o resto caia em
+     * pedra e era descartado em silencio. Um ninho com dois bichos nao e uma
+     * area populosa, e o jogador nunca saberia que faltaram quatro.
+     *
+     * A camara do covil e um vao natural, de tamanho imprevisivel. Entao a
+     * busca e em espiral a partir do chefe, do mais perto para o mais longe, e
+     * pega o primeiro chao livre que aparecer.
+     */
+    const usados = new Set<string>();
+    let postos = 0;
+    for (let raio = 2; raio <= 9 && postos < n.quantos; raio++) {
+      for (let dx = -raio; dx <= raio && postos < n.quantos; dx++) {
+        for (let dy = -2; dy <= 2 && postos < n.quantos; dy++) {
+          if (Math.abs(dx) < raio) continue; // so a casca nova do anel
+          const col = post.col + dx;
+          const row = post.row + dy;
+          const chave = `${col},${row}`;
+          if (usados.has(chave)) continue;
+          if (this.world.isSolid(col, row)) continue;
+          if (!this.world.isSolid(col, row + 1)) continue; // precisa de chao
+          usados.add(chave);
+          this.creatures.push(new Creature(def, col * ts + ts / 2, row * ts + ts / 2));
+          postos++;
+        }
+      }
+    }
   }
 
   /**
@@ -163,11 +288,18 @@ export class CreatureManager {
             kind: 'boss',
             col: post.col,
             row: post.row,
-            label: def.name,
+            // O covil entra no mapa pelo NOME DO LUGAR, nao pelo do bicho.
+            // Um ponto escrito "Mae dos Esporos" conta o fim antes de o
+            // jogador chegar; "Ninho de Esporos" conta que ha algo ali.
+            label: post.lugar ?? def.name,
             alwaysVisible: false,
           });
           this.exploration.discoverMarker(post.id);
-          Events.emit('ui:toast', { text: `${def.name}: ${def.tagline}`, tone: 'warn' });
+          if (post.ninhada) this.spawnNinhada(post);
+          Events.emit('ui:toast', {
+            text: post.aviso ?? `${def.name}: ${def.tagline}`,
+            tone: 'warn',
+          });
         }
       }
     }

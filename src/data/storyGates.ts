@@ -60,13 +60,24 @@ export const STORY_GATES: StoryGateDef[] = [
    * achar naquele trecho, e nao quem matou o que estava na frente.
    */
   {
+    /*
+     * 240, e nao 180.
+     *
+     * Esta parede nasceu aos 180 porque era ali que ficava o selo do chefe que
+     * ela substituiu. So que a chave dela — o trilho remendado — esta aos 216,
+     * ou seja, DO OUTRO LADO. O jogador chegava aos 180, batia numa rocha que
+     * so abre com uma coisa que so existe abaixo dela, e acabava o jogo ali.
+     *
+     * Herdei a profundidade do que estava antes em vez de perguntar onde
+     * estava a chave. Uma parede se posiciona depois da chave, nunca antes.
+     */
     id: 'sg_trilhos',
-    depth: 180,
+    depth: 240,
     requires: 'clue_trilhos',
     titulo: 'A ROCHA NAO ABRE',
     aviso:
-      'Ha trilho remendado com solda nova nesta faixa, numa mina fechada ha ' +
-      'quatorze anos. Ache antes de passar por cima.',
+      'Ha trilho remendado com solda nova acima deste ponto, numa mina fechada ' +
+      'ha quatorze anos. Ache antes de descer mais.',
   },
   {
     id: 'sg_rui',

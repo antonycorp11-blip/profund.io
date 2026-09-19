@@ -37,6 +37,11 @@ export interface CityDef {
   pickaxeName: string;
   /** Quanta confianca a cidade pede antes de entregar a ferramenta. */
   trustToPass: number;
+  /**
+   * Fundo da cidade: e DAQUI para baixo que a rocha dela cobra a ferramenta
+   * dela. Sem este campo o corte cai no meio da cidade (ver `cityFloorDepth`).
+   */
+  fundo?: number;
   /** O que o jogador le quando a rocha nao cede. */
   wallLine: string;
   /**
@@ -62,15 +67,27 @@ export const CITIES: CityDef[] = [
     pickaxeId: 'pick_fundadores',
     pickaxeName: 'Picareta dos Fundadores',
     /*
-     * DOZE de vinte e tres.
+     * QUINZE, e a conta fecha exata.
      *
-     * Blockia da 23 de confianca no total, espalhados pelos sete moradores. Um
-     * limiar de 3 era uma conversa — falar com a Mara e descer. Doze obriga a
-     * atravessar a cidade, achar gente, e (quando as missoes da cidade
-     * existirem) fazer o que elas pedem. E o que transforma "passei por
-     * Blockia" em "Blockia me aceitou".
+     * Antes eram 12 contra 23 de conversa: dava para falar com tres moradores
+     * e sair com a picareta sem ter feito NADA pela cidade. As tres missoes de
+     * trabalho — o arquivo alagado, a ponte, as cisternas — aconteciam depois
+     * do premio delas, quando o unico argumento da cidade e que ela cobra
+     * antes de deixar passar.
+     *
+     * A conta de hoje:
+     *   conversa com os sete .............  9   (teto, se falar com todos)
+     *   Mara + Afonso + Breno + Irene ....  6   (os quatro que as missoes exigem)
+     *   arquivo (2) + ponte (3) + cisternas (4)  9
+     *   caminho obrigatorio ..............  6 + 9 = 15
+     *
+     * 9 < 15 garante que conversa nenhuma abre a porta. 15 = 15 garante que
+     * quem fez as tres obras passa sem depender de falar com o ferreiro, a
+     * vendedora e o menino — esses tres somam 3 por cima, de graca.
      */
-    trustToPass: 12,
+    trustToPass: 15,
+    // A caverna vai de 560 a 668 (CONFIG.blockia). A regra comeca depois dela.
+    fundo: 668,
     wallLine: 'Abaixo de Blockia a pedra so cede a Picareta dos Fundadores.',
     implementada: true,
   },
@@ -121,9 +138,25 @@ export function toolFloorAt(depth: number): number {
     // Cidade que ainda nao existe nao tranca nada: ela nao teria como
     // destrancar.
     if (!c.implementada) continue;
-    if (depth > c.depth) piso = Math.max(piso, c.toolTier);
+    if (depth > cityFloorDepth(c)) piso = Math.max(piso, c.toolTier);
   }
   return piso;
+}
+
+/**
+ * A profundidade a partir da qual a regra da cidade vale: o FUNDO dela.
+ *
+ * `depth` e onde a cidade fica no mapa — o meio da caverna. Usar esse numero
+ * como corte fazia a regra comecar dentro da propria cidade: Blockia mora de
+ * 560 a 668, e a partir de 601 nada cedia a picareta que o jogador ainda nao
+ * tinha. As tres missoes de trabalho acontecem entre 602 e 608, ou seja, do
+ * lado de dentro do proprio bloqueio — a cidade proibia o trabalho que ela
+ * mesma estava cobrando.
+ *
+ * "Abaixo de Blockia" e abaixo de Blockia, nao no meio dela.
+ */
+export function cityFloorDepth(c: CityDef): number {
+  return c.fundo ?? c.depth;
 }
 
 /** A cidade que manda naquela profundidade, ou null acima da primeira. */
@@ -131,7 +164,7 @@ export function cityGatingAt(depth: number): CityDef | null {
   let dona: CityDef | null = null;
   for (const c of CITIES) {
     if (!c.implementada) continue;
-    if (depth > c.depth) dona = c;
+    if (depth > cityFloorDepth(c)) dona = c;
   }
   return dona;
 }

@@ -339,10 +339,15 @@ export const CREATURES: CreatureDef[] = [
 
   // ------------------------------------------------- chefes de bioma ------
   /*
-   * Um por camada gerada (exceto a superficie). Nascem fixos na arena que o
-   * WorldGen esculpe dentro do selo daquela camada — nunca como spawn
-   * ambiente. Ver /systems/BiomeGate.ts: matar o chefe + resgatar todos os
-   * mineiros da mesma camada e a UNICA forma de abrir o selo e descer.
+   * Quatro deles trancam camada (`bossOfLayer`) e nascem fixos na arena que o
+   * WorldGen esculpe dentro do selo — nunca como spawn ambiente. Ver
+   * /systems/BiomeGate.ts: matar o chefe E nao ter deixado missao em aberto
+   * acima da faixa e a UNICA forma de abrir o selo e descer.
+   *
+   * Os outros dois — Mae dos Esporos e Matriarca de Cristal — nao trancam
+   * nada. Foram chefes de selo ate a BIBLIA cobrar que o primeiro guardiao so
+   * aparece aos 420 m, e hoje moram em covis opcionais (/data/encounters.ts).
+   * Mesma mecanica, contrato oposto: estao do LADO do caminho, nao dentro.
    *
    * A progressao deles conta uma historia por baixo da mecanica: a mina nao
    * e so geologia. Alguem — ou algo — construiu isto, e vinha reagindo a cada
@@ -385,8 +390,22 @@ export const CREATURES: CreatureDef[] = [
       summonCount: 1,
       summonMax: 2,
     },
-    bossOfLayer: 'stone',
-    tagline: 'Blockia semeou os esporos na fronteira. Nada pessoal: ninguem sobe.',
+    /*
+     * SEM `bossOfLayer`: ela nao tranca mais nada.
+     *
+     * Era a guardia do selo dos 180 m — o primeiro chefe do jogo, e cedo
+     * demais: a BIBLIA nao poe nenhum antes dos 420, porque guardiao existe
+     * quando uma CIDADE o coloca, e acima de Blockia nao ha cidade.
+     *
+     * Ela nao foi apagada, mudou de contrato: virou covil (ver
+     * /data/encounters.ts). O bicho e o mesmo, a luta e a mesma, e a diferenca
+     * e que ninguem e obrigado a entrar.
+     *
+     * A tagline dizia que Blockia semeou os esporos "na fronteira". Nao ha
+     * fronteira nenhuma aqui — e a cidade nao tinha motivo para plantar guarda
+     * a quatrocentos metros de casa, num trecho por onde ela nem passa.
+     */
+    tagline: 'Ninguem plantou isto aqui. Ela cresceu, e a galeria cresceu em volta.',
   },
   {
     id: 'boss_arauto_quartzo',
@@ -425,8 +444,10 @@ export const CREATURES: CreatureDef[] = [
       summonCount: 2,
       summonMax: 3,
     },
-    bossOfLayer: 'crystal',
-    tagline: 'As teias sao antigas. Quem as plantou queria a rota fechada.',
+    /* Mesmo caso da Mae dos Esporos: deixou de trancar o selo dos 360 m e
+     * virou covil. 'Quem as plantou queria a rota fechada' era verdade quando
+     * ela guardava uma porta; hoje ela so mora aqui, e a teia e dela. */
+    tagline: 'A teia e velha demais para uma aranha so, e nova demais para estar abandonada.',
   },
   {
     id: 'boss_automato_enferrujado',

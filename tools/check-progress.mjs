@@ -40,6 +40,7 @@ import { SKILLS } from '../src/data/skills';
 const ACTIVE_IDS = new Set(SKILLS.filter((k) => k.category === 'active').map((k) => k.id));
 import { ATTRIBUTES, FLAG_IDS } from '../src/data/attributes';
 import { GATE_LAYERS, gateLayerDef } from '../src/data/gates';
+import { CITIES } from '../src/data/cities';
 import { CONFIG } from '../src/data/config';
 import { LAYERS } from '../src/data/layers';
 import { TOOLS } from '../src/data/tools';
@@ -60,6 +61,10 @@ const origens = new Set<string>([
   ...CREATURES.filter((c) => c.bossOfLayer).map((c) => c.id),
   ...GATE_LAYERS.map((l) => 'gate_' + l),
   ...BASE_CAMPS.flatMap((b) => b.slots.map((s) => b.id + ':' + s.kind)),
+  // A cidade emite passagem_<id> quando a confianca chega ao limiar
+  // (Reputation.conferirPassagem -> Game, evento city:passage). Sem crase:
+  // este arquivo carrega a fonte TS dentro de um template literal.
+  ...CITIES.map((c) => 'passagem_' + c.id),
 ]);
 for (const m of MISSIONS) {
   for (const f of m.requires) {

@@ -39,6 +39,19 @@ export interface ScrollDef {
    * onze dias acontecer sozinha, sem ninguem explicar.
    */
   cron: number;
+  /**
+   * Escrito FORA da descida — antes de entrar, ou em casa.
+   *
+   * Sem isto, a unica regra fisica que a cronologia tem ("quem desce nao sobe
+   * para escrever a proxima pagina") acusaria a carta do Santiago, que e cron
+   * 1 e mora aos 92 m. Ela nao foi escrita aos 92: foi escrita na cozinha e
+   * largada onde ele parou para amarrar a bota.
+   *
+   * A excecao fica DECLARADA no dado, e nao tolerada na auditoria. Excecao que
+   * o dado nao declara e bug, e tolerancia em auditoria e como se deixa de
+   * pegar o proximo.
+   */
+  foraDaDescida?: boolean;
 }
 
 export const SCROLLS: ScrollDef[] = [
@@ -67,11 +80,11 @@ export const SCROLLS: ScrollDef[] = [
       'Anoto aqui porque amanha eu vou querer ter certeza de que nao inventei: ha mais alguem nesta mina, e ele esta preso.',
     ],
   },
-  // ---------------------------------------------------------- pedra (50+) --
+  // --------------------------------------------------------- pedra (180+) --
   {
     // 'pedra' no id e heranca: a Camada de Pedra comecava aos 50 m. Hoje
-    // comeca aos 90, entao estes dois caem no primeiro bioma. O id fica —
-    // renomear quebraria a flag de quem ja achou.
+    // comeca aos 180, entao os cinco primeiros caem no Solo Superficial. O id
+    // fica — renomear quebraria a flag de quem ja achou.
     id: 'scr_pedra_1', cron: 12, layer: 'surface', depth: 58, col: 38,
     title: 'Sobre descer com pressa', author: 'Santiago',
     text: [
@@ -81,7 +94,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_pedra_2', cron: 2, layer: 'stone', depth: 74, col: 96,
+    id: 'scr_pedra_2', cron: 2, layer: 'surface', depth: 74, col: 96,
     title: 'O primeiro registro do som', author: 'John',
     text: [
       'Santiago acha que e pressao nas galerias. Eu tambem achava, ate cronometrar.',
@@ -90,7 +103,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_pedra_3', cron: 1, layer: 'stone', depth: 92, col: 52,
+    id: 'scr_pedra_3', cron: 1, foraDaDescida: true, layer: 'surface', depth: 92, col: 52,
     title: 'Carta que nao mandei', author: 'Santiago',
     text: [
       'Helena, se isto chegar antes de mim, o que e improvavel, e porque eu fiz besteira.',
@@ -99,7 +112,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_pedra_4', cron: 13, layer: 'stone', depth: 128, col: 100,
+    id: 'scr_pedra_4', cron: 13, layer: 'stone', depth: 196, col: 100,
     title: 'Oleo fresco', author: 'Santiago',
     text: [
       'Achei um lampiao pendurado numa viga. Reservatorio pela metade, pavio queimado ate a metade.',
@@ -108,7 +121,7 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_pedra_5', cron: 5, layer: 'stone', depth: 172, col: 46,
+    id: 'scr_pedra_5', cron: 3, layer: 'stone', depth: 290, col: 46,
     title: 'Sobre pedir licenca', author: 'John',
     text: [
       'O sujeito do posto me mandou embora tres vezes antes de me deixar encher o cantil.',
@@ -117,9 +130,9 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
 
-  // -------------------------------------------------------- cristal (200+) --
+  // -------------------------------------------------------- cristal (360+) --
   {
-    id: 'scr_cristal_1', cron: 3, layer: 'crystal', depth: 212, col: 44,
+    id: 'scr_cristal_1', cron: 4, layer: 'crystal', depth: 386, col: 44,
     title: 'O cristal responde', author: 'John',
     text: [
       'Bati na parede tres vezes. Contei ate dez. A parede bateu de volta duas.',
@@ -128,16 +141,16 @@ export const SCROLLS: ScrollDef[] = [
     ],
   },
   {
-    id: 'scr_cristal_2', cron: 14, layer: 'crystal', depth: 246, col: 104,
+    id: 'scr_cristal_2', cron: 14, layer: 'crystal', depth: 430, col: 104,
     title: 'Lanternas azuis', author: 'Santiago',
     text: [
-      'Vi luz la embaixo que nao era minha. Azul, parada, a uns duzentos metros de desnivel.',
+      'Vi luz la embaixo que nao era minha. Azul, parada, bem abaixo do ponto onde os mapas da companhia acabam.',
       'Apaguei a minha e esperei uma hora. Ela nao se mexeu e nao apagou.',
       'Ou tem gente morando aqui, ou tem uma coisa que aprendeu a imitar gente. Nao sei qual das duas me da mais vontade de continuar.',
     ],
   },
   {
-    id: 'scr_cristal_3', cron: 4, layer: 'crystal', depth: 278, col: 66,
+    id: 'scr_cristal_3', cron: 5, layer: 'crystal', depth: 470, col: 66,
     title: 'Inventario, dia dezenove', author: 'John',
     text: [
       'Corda: metade. Polvora: tres cargas. Filtros: dois, e um ja esta puxando.',

@@ -73,6 +73,21 @@ export interface MissionDef {
    * jogo; ate la, ele diz para onde a missao esta sendo construida.
    */
   minutos?: number;
+  /**
+   * Confianca que esta missao entrega a uma cidade, e a qual.
+   *
+   * Existe porque a cidade-porteira estava se vendendo por uma conversa. Toda
+   * a confianca de Blockia vinha de falar com os moradores pela primeira vez:
+   * somavam 23, e a passagem pedia 12. Dava para dizer bom dia para tres
+   * pessoas e sair com a Picareta dos Fundadores — e as tres missoes de
+   * trabalho, que sao o argumento inteiro da cidade, viravam enfeite que o
+   * jogador fazia DEPOIS de ja ter recebido o premio delas.
+   *
+   * Agora a conversa vale pouco (e so apresentacao) e o trabalho vale o resto.
+   * A auditoria confere as duas pontas: a soma das conversas tem de ficar
+   * ABAIXO do limiar, e o caminho obrigatorio tem de alcanca-lo exatamente.
+   */
+  trust?: { city: string; amount: number };
 }
 
 export const MISSIONS: MissionDef[] = [
@@ -190,7 +205,7 @@ export const MISSIONS: MissionDef[] = [
     id: 'm4b_a_base_do_cristal',
     depth: 396,
     title: 'A Base do Cristal',
-    goal: 'Ha uma camara abandonada a 396 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 377 metros e passam a entregar ali.',
+    goal: 'Ha uma camara abandonada a 396 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 396 metros e passam a entregar ali.',
     requires: ['base_cristal:deposito'],
     onDone: 'A base respira. Daqui para baixo, o minerio nao sobe mais nas costas de ninguem.',
     porque:
@@ -255,6 +270,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm7_arquivo_das_lanternas',
+    trust: { city: 'blockia', amount: 2 },
     depth: 602,
     title: 'O Arquivo das Lanternas',
     goal: 'Afonso guarda uma pagina do caderno do seu pai. Ele so entrega depois que voce tirar as caixas da galeria alagada.',
@@ -268,6 +284,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm8_ponte_quebrada',
+    trust: { city: 'blockia', amount: 3 },
     depth: 604,
     title: 'A Ponte Quebrada',
     goal: 'O elevador leste esta parado e a ponte caiu. Breno precisa de maos, nao de opiniao.',
@@ -281,6 +298,7 @@ export const MISSIONS: MissionDef[] = [
   },
   {
     id: 'm9_conselho_das_lanternas',
+    trust: { city: 'blockia', amount: 4 },
     depth: 606,
     title: 'Conselho das Lanternas',
     goal: 'Ha bicho nas cisternas. O Conselho deixa voce resolver — sem estragar a reserva de agua.',
