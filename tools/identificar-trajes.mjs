@@ -174,86 +174,92 @@ const fichas = arquivos.map((f) => {
 });
 
 /*
- * Corte de confianca.
+ * AGRUPAR POR SILHUETA, e so depois nomear.
  *
- * Nao e um numero inventado: e a maior distancia observada ENTRE gabaritos
- * diferentes do mesmo traje, que e o pior caso de "parecido mas nao igual".
- * Acima disso, a folha nao e nenhuma das cinco conhecidas — e e assim que a
- * animacao de tiro se revela sozinha, sem eu precisar descrever como ela e.
+ * As duas tentativas anteriores erraram a ordem. Eu classificava cada folha
+ * contra os gabaritos uma por uma e depois tentava agrupar por cor — e a
+ * classificacao individual e justamente a parte fraca, porque climb e idle
+ * dao distancias quase iguais.
+ *
+ * Mas havia um sinal na propria saida que eu ignorei: varias folhas tinham
+ * distancia IDENTICA ate a quarta casa. Isso nao e coincidencia, e a mesma
+ * animacao desenhada em trajes diferentes — a roupa muda a cor, nao a pose.
+ *
+ * Entao: agrupa por silhueta primeiro. Cada grupo E uma animacao, e o tamanho
+ * dele diz quantos trajes existem. Nomear o grupo inteiro contra os gabaritos
+ * e muito mais robusto que nomear folha por folha, porque a decisao usa a
+ * mediana do grupo em vez de um exemplar solitario.
+ *
+ * E o teste sai de graca: se os grupos vierem todos do MESMO tamanho, o
+ * conjunto e regular e a leitura esta certa. Se vierem tortos, eu fico
+ * sabendo em vez de fatiar 30 arquivos em cima de um palpite.
  */
-let corte = 0;
-for (const a of gabaritos) {
-  for (const b of gabaritos) {
-    if (a === b) continue;
-    corte = Math.max(corte, 0);
+
+// --- 1. agrupa as folhas por silhueta ---
+const LIMIAR_SILHUETA = 0.012;
+const animGrupos = [];
+for (const f of fichas) {
+  let alvo = null;
+  for (const g of animGrupos) {
+    if (distancia(f.sig, g.itens[0].sig) < LIMIAR_SILHUETA) { alvo = g; break; }
   }
+  if (!alvo) { alvo = { itens: [] }; animGrupos.push(alvo); }
+  alvo.itens.push(f);
 }
-const distanciasIguais = fichas.map((f) => f.melhor.d).sort((a, b) => a - b);
-const mediana = distanciasIguais[Math.floor(distanciasIguais.length / 2)];
-corte = mediana * 2.2;
+
+// --- 2. nomeia cada grupo pela MEDIANA da distancia aos gabaritos ---
+for (const g of animGrupos) {
+  const notas = gabaritos.map((gab) => {
+    const ds = g.itens.map((f) => distancia(f.sig, gab.sig)).sort((a, b) => a - b);
+    return { nome: gab.nome, d: ds[Math.floor(ds.length / 2)] };
+  });
+  notas.sort((a, b) => a.d - b.d);
+  g.melhor = notas[0];
+  g.segundo = notas[1];
+}
 
 /*
- * Agrupamento por cor: aglomerativo, com o corte tirado DOS DADOS.
+ * O corte vem dos DADOS, nao de um numero escolhido.
  *
- * A primeira versao usava "primeiro grupo a menos de 0,34" com um numero que
- * eu inventei, e jogou 27 das 30 folhas num grupo so. Dois erros: o limiar
- * era chute, e comparar contra a cor do PRIMEIRO item faz o grupo derivar
- * conforme ele cresce.
- *
- * Agora as distancias entre todos os pares sao ordenadas e o corte cai no
- * maior salto da metade de baixo — o vao natural entre "mesma roupa" e
- * "roupa diferente". Se os trajes forem mesmo distintos, esse vao existe; se
- * nao existir, o relatorio mostra um grupo so e eu fico sabendo.
+ * Os grupos que sao mesmo uma das cinco animacoes conhecidas ficam todos
+ * proximos; o que for outra coisa fica isolado la em cima. O corte cai no
+ * maior salto da lista ordenada — e e assim que a animacao de TIRO se revela
+ * sozinha, sem eu precisar descrever como ela e.
  */
-const pares = [];
-for (let i = 0; i < fichas.length; i++) {
-  for (let j = i + 1; j < fichas.length; j++) {
-    pares.push(distCor(fichas[i].cor, fichas[j].cor));
-  }
-}
-pares.sort((a, b) => a - b);
-let corteCor = 0.2;
+const notasOrdenadas = animGrupos.map((g) => g.melhor.d).sort((a, b) => a - b);
+let corte = Infinity;
 let maiorSalto = 0;
-for (let i = 1; i < Math.floor(pares.length * 0.7); i++) {
-  const salto = pares[i] - pares[i - 1];
+for (let i = 1; i < notasOrdenadas.length; i++) {
+  const salto = notasOrdenadas[i] - notasOrdenadas[i - 1];
   if (salto > maiorSalto) {
     maiorSalto = salto;
-    corteCor = (pares[i] + pares[i - 1]) / 2;
+    corte = (notasOrdenadas[i] + notasOrdenadas[i - 1]) / 2;
   }
 }
 
-// Aglomerativo simples: junta enquanto houver par abaixo do corte.
-const grupos = fichas.map((f) => ({ itens: [f] }));
-let juntou = true;
-while (juntou) {
-  juntou = false;
-  busca: for (let i = 0; i < grupos.length; i++) {
-    for (let j = i + 1; j < grupos.length; j++) {
-      // Ligacao COMPLETA: so junta se TODOS os pares estiverem perto. Ligacao
-      // simples encadearia trajes distintos por um intermediario.
-      const todos = grupos[i].itens.every((a) =>
-        grupos[j].itens.every((b) => distCor(a.cor, b.cor) <= corteCor)
-      );
-      if (!todos) continue;
-      grupos[i].itens.push(...grupos[j].itens);
-      grupos.splice(j, 1);
-      juntou = true;
-      break busca;
-    }
-  }
+// Nomes repetidos nao podem existir: cada gabarito serve a UM grupo, o mais
+// proximo dele. Sem isso duas animacoes parecidas roubam o mesmo rotulo.
+const usados = new Map();
+for (const g of [...animGrupos].sort((a, b) => a.melhor.d - b.melhor.d)) {
+  if (g.melhor.d > corte) { g.rotulo = null; continue; }
+  if (usados.has(g.melhor.nome)) { g.rotulo = null; continue; }
+  usados.set(g.melhor.nome, g);
+  g.rotulo = g.melhor.nome;
 }
-console.log(`corte de cor: ${corteCor.toFixed(4)} (maior salto ${maiorSalto.toFixed(4)})`);
 
-console.log(`corte de confianca: ${corte.toFixed(4)} (mediana ${mediana.toFixed(4)})\n`);
-grupos.forEach((g, i) => {
-  console.log(`TRAJE ${i + 1}  (${g.itens.length} folhas)`);
-  for (const f of g.itens.sort((a, b) => a.melhor.d - b.melhor.d)) {
-    const certo = f.melhor.d <= corte;
-    const rot = certo ? f.melhor.nome.toUpperCase() : 'DESCONHECIDA';
-    console.log(
-      `   ${f.arquivo.slice(0, 8)}  ${rot.padEnd(12)} d=${f.melhor.d.toFixed(4)}` +
-        (certo ? `  (2o: ${f.segundo.nome} ${f.segundo.d.toFixed(4)})` : '  <- nao bate com nenhum gabarito')
-    );
-  }
+console.log(`corte automatico: ${corte.toFixed(4)} (maior salto ${maiorSalto.toFixed(4)})`);
+console.log(`${animGrupos.length} grupos de silhueta, tamanhos: ${animGrupos.map((g) => g.itens.length).join(', ')}\n`);
+
+const tamanhos = new Set(animGrupos.map((g) => g.itens.length));
+if (tamanhos.size === 1) {
+  console.log(`CONJUNTO REGULAR: ${animGrupos.length} animacoes x ${[...tamanhos][0]} trajes.\n`);
+} else {
+  console.log('AVISO: grupos de tamanhos diferentes — o conjunto nao e regular.\n');
+}
+
+for (const g of animGrupos) {
+  const nome = g.rotulo ? g.rotulo.toUpperCase() : 'NOVA (provavel TIRO)';
+  console.log(`${nome}   d=${g.melhor.d.toFixed(4)} para ${g.melhor.nome}  (2o: ${g.segundo.nome} ${g.segundo.d.toFixed(4)})`);
+  for (const f of g.itens) console.log(`     ${f.arquivo}`);
   console.log('');
-});
+}

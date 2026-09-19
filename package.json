@@ -34,7 +34,8 @@
     "foto-chefe": "node tools/fotografar-chefe.mjs",
     "quem-ganha": "node tools/quem-ganha.mjs",
     "slice-bots": "node tools/slice-bots.mjs",
-    "identificar-trajes": "node tools/identificar-trajes.mjs"
+    "identificar-trajes": "node tools/identificar-trajes.mjs",
+    "slice-trajes": "node tools/slice-trajes.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
