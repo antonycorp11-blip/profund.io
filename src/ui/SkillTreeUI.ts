@@ -119,6 +119,17 @@ export class SkillTreeUI {
   private svg: SVGSVGElement;
 
   /** Camara em foco: serve ao painel lateral e ao destaque da aba. */
+  /**
+   * Onde o jogador esta: escolhendo o CAMINHO, ou dentro de um.
+   *
+   * A tela abria direto na camara de mineracao, com o trilho de categorias do
+   * lado. Isso responde "o que tem aqui dentro" antes de "que caminhos
+   * existem" — e a segunda pergunta e a primeira que alguem faz diante de uma
+   * arvore. O hub e essa pergunta: cinco bolinhas, uma por caminho, e a arvore
+   * so abre depois de escolher uma.
+   */
+  private vista: 'hub' | 'camara' = 'hub';
+  private hubEl!: HTMLElement;
   private category: SkillCategory = 'mining';
   private selected: string | null = null;
   private nodes = new Map<string, HTMLButtonElement>();
@@ -144,6 +155,7 @@ export class SkillTreeUI {
             <b>Atributos</b>
             <span>Evolua seu explorador</span>
           </span>
+          <button class="casca-cab-btn" data-voltar hidden>‹ CAMINHOS</button>
           <button class="casca-cab-btn" data-tudo>VER O NINHO</button>
           <div class="casca-conta skill-points">
             <img src="art/hud/ponto.png" alt="">
@@ -155,6 +167,7 @@ export class SkillTreeUI {
         <div class="casca-corpo">
           <nav class="casca-trilho skill-tabs"></nav>
           <div class="skill-body">
+            <div class="skill-hub"></div>
             <div class="skill-viewport">
               <div class="skill-canvas">
                 <svg class="skill-links"></svg>
@@ -167,6 +180,7 @@ export class SkillTreeUI {
     parent.appendChild(this.wrap);
 
     this.tabsEl = this.wrap.querySelector('.skill-tabs') as HTMLDivElement;
+    this.hubEl = this.wrap.querySelector('.skill-hub') as HTMLElement;
     this.viewport = this.wrap.querySelector('.skill-viewport') as HTMLDivElement;
     this.canvasEl = this.wrap.querySelector('.skill-canvas') as HTMLDivElement;
     this.detailEl = this.wrap.querySelector('.skill-detail') as HTMLDivElement;
@@ -183,6 +197,13 @@ export class SkillTreeUI {
      */
     (this.wrap.querySelector('[data-tudo]') as HTMLElement).addEventListener('click', () => {
       this.enquadrarTudo();
+      Haptics.ui();
+    });
+
+    (this.wrap.querySelector('[data-voltar]') as HTMLElement).addEventListener('click', () => {
+      this.vista = 'hub';
+      this.buildHub();
+      this.aplicarVista();
       Haptics.ui();
     });
 
@@ -206,6 +227,10 @@ export class SkillTreeUI {
 
   open(): void {
     this.wrap.classList.add('open');
+    // Sempre pelo hub: a primeira pergunta e "que caminhos existem".
+    this.vista = 'hub';
+    this.buildHub();
+    this.aplicarVista();
     this.buildTabs();
     this.buildNodes();
     // Abre onde o jogador parou de olhar. Na primeira vez, na camara de
@@ -250,6 +275,109 @@ export class SkillTreeUI {
    * Clicar leva a vista ate a camara daquela categoria; nada some da tela. A
    * marcada e so a camara que esta em foco agora.
    */
+  /**
+   * O HUB: um circulo por caminho, e so isso.
+   *
+   * O pedido, repetido mais de uma vez: "ter as quatro principais bolinhas no
+   * meio, que sao os quatro principais caminhos. Ai quando eu abro ele, ai
+   * mostra o que esta atras dele."
+   *
+   * A revelacao progressiva ja existia DENTRO de cada camara — o que faltava
+   * era o degrau de cima. Abrindo direto na camara de mineracao, a tela
+   * respondia "o que tem aqui dentro" antes de "que caminhos existem", e o
+   * jogador nunca chegava a escolher um caminho: ele caia num.
+   *
+   * Cada circulo diz so o que ajuda a escolher — o nome, quantos pontos ja
+   * foram para ali e quantas camaras existem. O conteudo fica para depois de
+   * entrar, que e o ponto.
+   */
+  private buildHub(): void {
+    this.hubEl.innerHTML = '';
+    const pontos = this.host.tree.points;
+    const cats = Object.values(CATEGORIES).filter((c) => {
+      if (c.id === 'active') return false;
+      if (!this.host.tree.isCategoryVisible(c.id)) return false;
+      return nosDoNinho((x) => this.host.tree.isCategoryVisible(x)).some(
+        (sk) => sk.category === c.id
+      );
+    });
+
+    const topo = document.createElement('div');
+    topo.className = 'hub-topo';
+    topo.innerHTML =
+      pontos > 0
+        ? `<b>${pontos}</b><span>ponto${pontos > 1 ? 's' : ''} para gastar</span>`
+        : '<span class="hub-sem">Cave mais fundo para ganhar pontos</span>';
+    this.hubEl.appendChild(topo);
+
+    const roda = document.createElement('div');
+    roda.className = 'hub-roda';
+    for (const cat of cats) {
+      const daCat = SKILLS.filter((sk) => sk.category === cat.id);
+      const gastos = daCat.reduce((n, sk) => n + this.host.tree.levelOf(sk.id), 0);
+      const abertos = daCat.filter((sk) => this.host.tree.visibility(sk.id) === 'aberto').length;
+      const podeAgora = pontos > 0 && daCat.some((sk) => this.host.tree.canLearn(sk.id, this.host.currentDepth()).ok);
+
+      /*
+       * "0 ABERTAS" nao e resposta, e um beco.
+       *
+       * Na primeira versao tres dos quatro caminhos diziam isso, e um caminho
+       * que anuncia zero parece morto — o jogador conclui que aquilo nao
+       * existe para ele e nunca mais olha. Mas eles nao estao mortos: estao
+       * esperando profundidade.
+       *
+       * Entao, quando nao ha nada aberto, o circulo diz o que FALTA: a
+       * profundidade mais rasa que acende a primeira camara dali. Vira um
+       * destino em vez de uma porta fechada.
+       */
+      const profundidades = daCat.map((sk) => sk.requiredDepth).filter((d) => d > 0);
+      const primeiraProf = profundidades.length ? Math.min(...profundidades) : 0;
+      let conta: string;
+      if (gastos > 0) conta = `${gastos} ponto${gastos > 1 ? 's' : ''}`;
+      else if (abertos > 0) conta = `${abertos} aberta${abertos === 1 ? '' : 's'}`;
+      else if (primeiraProf > 0) conta = `a partir de ${primeiraProf} m`;
+      else conta = 'fechado';
+
+      const b = document.createElement('button');
+      // A luz do lampiao so no caminho onde ha o que fazer AGORA.
+      b.className = `hub-caminho${gastos > 0 ? ' andado' : ''}${podeAgora ? ' pode' : ''}${
+        abertos === 0 && gastos === 0 ? ' dormindo' : ''
+      }`;
+      b.style.setProperty('--cat', cat.color);
+      b.innerHTML = `
+        <span class="hub-disco">${iconMarkup(CATEGORY_ART[cat.id], cat.icon)}</span>
+        <span class="hub-nome">${cat.name}</span>
+        <span class="hub-conta">${conta}</span>`;
+      b.addEventListener('click', () => {
+        this.vista = 'camara';
+        this.aplicarVista();
+        this.irParaCamara(cat.id, false);
+        this.buildTabs();
+        Haptics.ui();
+      });
+      roda.appendChild(b);
+    }
+    this.hubEl.appendChild(roda);
+  }
+
+  /** Mostra o hub ou a camara, e acerta o cabecalho junto. */
+  private aplicarVista(): void {
+    const hub = this.vista === 'hub';
+    this.wrap.classList.toggle('no-hub', hub);
+    this.hubEl.hidden = !hub;
+    const titulo = this.wrap.querySelector('.casca-titulo span') as HTMLElement | null;
+    if (titulo) {
+      titulo.textContent = hub
+        ? 'Escolha um caminho'
+        : CATEGORIES[this.category]?.name ?? 'Evolua seu explorador';
+    }
+    const voltar = this.wrap.querySelector('[data-voltar]') as HTMLElement | null;
+    if (voltar) voltar.hidden = hub;
+    // "Ver o ninho" enquadra as camaras: no hub nao ha ninho para enquadrar.
+    const ninho = this.wrap.querySelector('[data-tudo]') as HTMLElement | null;
+    if (ninho) ninho.hidden = hub;
+  }
+
   private buildTabs(): void {
     this.tabsEl.innerHTML = '';
     for (const cat of Object.values(CATEGORIES)) {
@@ -534,6 +662,10 @@ export class SkillTreeUI {
   private refresh(): void {
     if (!this.isOpen) return;
     this.pointsEl.textContent = String(this.host.tree.points);
+    // O hub conta pontos e camaras abertas: aprender uma habilidade muda os
+    // dois, e um hub desatualizado convida o jogador a entrar no caminho
+    // errado.
+    if (this.vista === 'hub') this.buildHub();
 
     const depth = this.host.currentDepth();
     for (const [id, btn] of this.nodes) {

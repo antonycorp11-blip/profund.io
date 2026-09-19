@@ -629,7 +629,13 @@ export class TechScreen {
         <div class="auto-list">
           ${
             clones.clones.length === 0
-              ? '<p class="map-empty">Nenhum bot ainda.</p>'
+              ? this.vazioComAcao(
+                  'Nenhum bot ainda.',
+                  `${melhor.name} custa ✦${clones.costFor(melhor.id).toLocaleString('pt-BR')}`,
+                  clones.canAfford(melhor.id),
+                  'newclone',
+                  `COMPRAR ${melhor.name.toUpperCase()}`
+                )
               : clones.clones.map((c: Clone) => this.cloneCard(c)).join('')
           }
         </div>
@@ -652,7 +658,13 @@ export class TechScreen {
         <div class="auto-list">
           ${
             moles.units.length === 0
-              ? '<p class="map-empty">Nenhuma toupeira ainda.</p>'
+              ? this.vazioComAcao(
+                  'Nenhuma toupeira ainda.',
+                  `Contratar custa ✦${custoMole.toLocaleString('pt-BR')}`,
+                  moles.units.length < moles.max && moles.canAfford(),
+                  'hire',
+                  'CONTRATAR TOUPEIRA'
+                )
               : moles.units.map((u) => this.moleCard(u)).join('')
           }
         </div>
@@ -1110,6 +1122,41 @@ export class TechScreen {
           <b data-live-cload="${u.id}">${u.carried}/${u.capacity}</b>
           <i data-live-ctotal="${u.id}">${u.delivered}</i>
         </span>
+      </div>`;
+  }
+
+  /**
+   * O VAZIO E O MELHOR LUGAR PARA A CHAMADA.
+   *
+   * O relato foi direto: "nao encontrei na tela de automacao onde comprar as
+   * copias nem as toupeiras". Os botoes existiam — no cabecalho de cada
+   * coluna, e `disabled` porque no comeco ninguem tem dinheiro. Cinza, no
+   * canto, ao lado de um titulo: dois retangulos apagados que ninguem le como
+   * "comprar".
+   *
+   * Enquanto isso o centro da coluna, que e para onde o olho vai, dizia
+   * apenas "Nenhum bot ainda." — constatava o problema e nao oferecia a
+   * saida.
+   *
+   * Agora o vazio E a chamada: diz o preco e traz o botao. E quando nao da
+   * para pagar, ele fala o preco em vez de so apagar, porque botao apagado
+   * sem motivo e um beco.
+   */
+  private vazioComAcao(
+    titulo: string,
+    preco: string,
+    pode: boolean,
+    acao: string,
+    rotulo: string
+  ): string {
+    return `
+      <div class="auto-vazio">
+        <p class="auto-vazio-txt">${titulo}</p>
+        <p class="auto-vazio-preco">${preco}</p>
+        <button class="btn primary auto-vazio-btn" data-${acao} ${pode ? '' : 'disabled'}>
+          ${rotulo}
+        </button>
+        ${pode ? '' : '<p class="auto-vazio-nota">Entregue minerio no deposito para juntar moedas.</p>'}
       </div>`;
   }
 

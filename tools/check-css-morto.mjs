@@ -53,6 +53,29 @@ for (const m of semMedia.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
   }
 }
 
+/*
+ * LIMITE CONHECIDO: este verificador e ESTATICO, e por isso exagera.
+ *
+ * Ele acusa qualquer regra `b` mais especifica que termine no mesmo seletor
+ * de `a`. Isso pega o caso real que ele veio pegar — uma regra somada no fim
+ * do arquivo que perde para outra de dois niveis — mas tambem pega o par
+ * legitimo BASE + ESTADO:
+ *
+ *   .hub-conta            { color: fraca }   <- vale para os normais
+ *   .hub-caminho.pode .hub-conta { color: luz }  <- so para os acesos
+ *
+ * Aqui a base NAO e morta: ela pinta todos os que nao estao no estado. Um
+ * aviso desses e falso, e consertar CSS correto por causa dele piora o
+ * arquivo.
+ *
+ * A regra para quem ler um aviso daqui: se o seletor mais forte adiciona um
+ * ESTADO (uma classe que entra e sai: .ativa, .pode, .dormindo, .on,
+ * :disabled), o aviso e falso. Se ele so adiciona CONTEXTO fixo (um ancestral
+ * que sempre existe), o aviso e verdadeiro.
+ *
+ * Para saber ao certo num caso especifico, pergunte ao vivo:
+ *   npm run quem-ganha "<seletor>" <propriedade>
+ */
 const mortas = [];
 for (const a of regras) {
   for (const b of regras) {

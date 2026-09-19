@@ -10307,3 +10307,270 @@ html.dev-hud .debug {
   border-top: 1px solid var(--doc-regua);
   color: var(--doc-tinta-fraca);
 }
+
+/* ============================================================
+   O HUB DOS CAMINHOS
+   ============================================================
+   A arvore abria direto numa camara, com o trilho de categorias
+   do lado. Isso responde "o que tem aqui dentro" antes de "que
+   caminhos existem" — e a segunda e a primeira pergunta que
+   alguem faz diante de uma arvore.
+
+   Aqui sao bolinhas grandes no meio da tela. Alem de responder
+   a pergunta certa, elas resolvem o alvo de toque: uma linha de
+   trilho tem 24 px de altura, um disco destes tem 76 — e no
+   celular deitado o polegar nao mira, ele encosta.
+   ============================================================ */
+
+.skill-hub {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 21px, var(--doc-pauta) 21px 22px),
+    linear-gradient(180deg, var(--doc-fundo-alto), var(--doc-fundo));
+}
+
+.skill-hub[hidden] {
+  display: none;
+}
+
+/* Enquanto o hub esta aberto o trilho lateral some: escolher o caminho pelo
+   trilho e pela bolinha ao mesmo tempo sao duas respostas para a mesma
+   pergunta, e uma delas e pequena demais para o polegar. */
+.skilltree.no-hub .casca-trilho {
+  display: none;
+}
+
+.hub-topo {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--doc-tinta-fraca);
+}
+
+.hub-topo b {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--doc-luz);
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-sem {
+  opacity: 0.6;
+}
+
+.hub-roda {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  max-width: 92%;
+}
+
+.hub-caminho {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 96px;
+  padding: 6px 2px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/*
+ * O disco: 76 px de alvo, com a cor do caminho so no anel.
+ *
+ * Preencher o disco inteiro com a cor da categoria faria os cinco brigarem
+ * entre si e nenhum venceria. No anel, a cor identifica sem gritar.
+ */
+.hub-disco {
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--doc-regua);
+  background: radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.45));
+  font-size: 28px;
+  transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.hub-disco img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+/* Caminho ja andado: o anel ganha a cor da categoria. */
+.hub-caminho.andado .hub-disco {
+  border-color: var(--cat, var(--doc-regua-forte));
+}
+
+/*
+ * A luz do lampiao, outra vez: so onde HA o que fazer agora.
+ *
+ * Sem isso o jogador com um ponto na mao precisa entrar em cada caminho para
+ * descobrir em qual da para gastar — cinco toques para uma pergunta que a
+ * tela pode responder sozinha.
+ */
+.hub-caminho.pode .hub-disco {
+  border-color: var(--doc-luz);
+  box-shadow: 0 0 0 3px rgba(255, 196, 83, 0.14), 0 0 18px rgba(255, 196, 83, 0.25);
+}
+
+.hub-caminho:hover .hub-disco,
+.hub-caminho:active .hub-disco {
+  transform: translateY(-2px);
+}
+
+.hub-nome {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--doc-tinta);
+  text-align: center;
+  line-height: 1.15;
+}
+
+.hub-conta {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-caminho.pode .hub-conta {
+  color: var(--doc-luz);
+  opacity: 1;
+}
+
+/* Caminho que ainda dorme: presente, mas sem promessa falsa de acao. */
+.hub-caminho.dormindo .hub-disco {
+  opacity: 0.45;
+  filter: grayscale(0.5);
+}
+
+.hub-caminho.dormindo .hub-nome {
+  color: var(--doc-tinta-fraca);
+}
+
+/* ---- o vazio da automacao vira a chamada de compra ---- */
+
+.auto-vazio {
+  /*
+   * Ocupa a coluna INTEIRA.
+   *
+   * `align-items: center` sozinho nao centraliza nada se a caixa tem a
+   * largura do proprio conteudo: a chamada saiu encostada na esquerda, que e
+   * quase tao dificil de achar quanto o botao cinza do cabecalho que ela veio
+   * substituir.
+   */
+  width: 100%;
+  height: 100%;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 18px 12px;
+  text-align: center;
+}
+
+/*
+ * A lista e um GRID (`.auto-col .auto-list`, peso 200), nao um flex.
+ *
+ * Eu tinha escrito `.auto-list { display: flex }` com peso 100 e perdido em
+ * silencio — a chamada caiu numa unica coluna estreita do grid e ficou
+ * encostada na esquerda, quase tao escondida quanto o botao cinza que ela
+ * veio substituir. Quem apontou foi o npm run quem-ganha.
+ *
+ * A correcao nao e brigar com o grid: e atravessa-lo.
+ */
+.auto-col .auto-list > .auto-vazio {
+  grid-column: 1 / -1;
+  align-self: stretch;
+}
+
+.auto-vazio-txt {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.7;
+}
+
+.auto-vazio-preco {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--doc-tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * O botao do vazio e GRANDE.
+ *
+ * Ele e a unica coisa que a coluna pede para fazer, e num celular deitado o
+ * polegar nao mira — encosta. O botao do cabecalho continua la para quem ja
+ * sabe onde e; este e para quem ainda nao sabe.
+ */
+.auto-vazio-btn {
+  min-height: 34px;
+  padding: 0 16px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.auto-vazio-nota {
+  margin: 0;
+  max-width: 200px;
+  font-size: 8.5px;
+  line-height: 1.35;
+  letter-spacing: 0.06em;
+  color: var(--doc-tinta-fraca);
+  opacity: 0.6;
+}
+
+/*
+ * ALVO DE TOQUE NO TRILHO.
+ *
+ * O relato: "no mobile as opcoes da sidebar nao estao muito faceis de
+ * clicar". Media 24 px de altura — abaixo dos 44 px que qualquer guia de
+ * toque recomenda, e no espaco virtual isso encolhe ainda mais na tela real.
+ *
+ * Nao da para transformar todo trilho em disco sem perder o indice, mas da
+ * para engordar a linha: 38 px de altura util, icone maior, e a area de
+ * toque cobrindo a largura inteira.
+ */
+.casca-secao {
+  min-height: 38px;
+  padding: 9px 9px;
+}
+
+.casca-secao i {
+  font-size: 15px;
+}
+
+.casca-secao i img {
+  width: 17px;
+  height: 17px;
+}
