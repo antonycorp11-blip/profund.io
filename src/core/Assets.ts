@@ -219,6 +219,13 @@ class AssetsImpl {
         })
       );
     }
+    for (const id of manifest.blockia) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}${manifest.blockiaDir}${id}.png`).then((img) => {
+          if (img) this.images.set('blockia:' + id, img);
+        })
+      );
+    }
     for (const [key, prop] of Object.entries(manifest.props)) {
       jobs.push(
         this.loadImage(`${manifest.basePath}${manifest.propsDir}${prop.file}`).then((img) => {
@@ -517,6 +524,11 @@ class AssetsImpl {
   }
 
   /** Sprite de cenario da base, ou null. */
+  /** Uma peca de mobilia de Blockia, ou null enquanto nao carregou. */
+  blockia(id: string): HTMLImageElement | null {
+    return this.images.get('blockia:' + id) ?? null;
+  }
+
   prop(key: string): HTMLImageElement | null {
     return this.images.get('prop:' + key) ?? null;
   }

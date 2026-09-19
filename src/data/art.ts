@@ -187,6 +187,66 @@ export const ART = {
    * Cenario da base (sprites soltos com alpha).
    * `w`/`h` em pixels de MUNDO; a ancora e o meio da base do sprite.
    */
+  /**
+   * As pecas de Blockia, cortadas por `npm run slice-blockia`.
+   *
+   * Ficam numa lista propria e nao em `props` porque o contrato e outro: prop
+   * comum e desenhado por quem o construiu (a base, a automacao), e estas sao
+   * MOBILIA DE CIDADE — quem decide onde cada uma fica e /data/blockiaProps.ts,
+   * e o tamanho em tiles vem medido de public/art/blockia/mapa.json. Misturar
+   * as duas faria o carregador de uma mexer no tamanho da outra.
+   */
+  blockiaDir: 'blockia/',
+  blockia: [
+    'arco',
+    'balde',
+    'banco',
+    'barraca_ferragem',
+    'barraca_horta',
+    'barraca_padaria',
+    'barraca_tecidos',
+    'barril_agua',
+    'barris',
+    'bica',
+    'bomba',
+    'cabine',
+    'caixa_ferramenta',
+    'calha',
+    'cama',
+    'cano',
+    'canteiro_erva',
+    'canteiro_folha',
+    'canteiro_raiz',
+    'cestos',
+    'cisterna',
+    'contrapeso',
+    'engradados',
+    'ervas_penduradas',
+    'escrivaninha',
+    'fonte',
+    'forja_bancada',
+    'forja_bigorna',
+    'forja_fogo',
+    'forja_fornalha',
+    'guincho_porta',
+    'leira',
+    'mesa',
+    'panelas',
+    'porta_aberta',
+    'porta_fechada',
+    'porta_poco',
+    'poste_lanterna',
+    'prateleira',
+    'queda',
+    'registro',
+    'reservatorio',
+    'sacos',
+    'sarilho',
+    'tanque',
+    'valvula',
+    'varal',
+    'vasos',
+  ],
   propsDir: 'props/',
   props: {
     shed: { file: 'shed.png', w: 224, h: 168 },

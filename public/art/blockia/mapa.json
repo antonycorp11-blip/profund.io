@@ -1,0 +1,194 @@
+{
+  "porta_fechada": {
+    "w": 7,
+    "h": 7.07
+  },
+  "porta_aberta": {
+    "w": 7,
+    "h": 7.07
+  },
+  "arco": {
+    "w": 7,
+    "h": 6.7
+  },
+  "guincho_porta": {
+    "w": 6,
+    "h": 5.77
+  },
+  "banco": {
+    "w": 2.2,
+    "h": 1.61
+  },
+  "mesa": {
+    "w": 2.4,
+    "h": 2.07
+  },
+  "engradados": {
+    "w": 2.6,
+    "h": 2.09
+  },
+  "varal": {
+    "w": 2.6,
+    "h": 2.55
+  },
+  "caixa_ferramenta": {
+    "w": 2.2,
+    "h": 1.96
+  },
+  "balde": {
+    "w": 2.2,
+    "h": 2.29
+  },
+  "sacos": {
+    "w": 2.4,
+    "h": 2.04
+  },
+  "cestos": {
+    "w": 2.4,
+    "h": 2.53
+  },
+  "poste_lanterna": {
+    "w": 2.2,
+    "h": 2.76
+  },
+  "barris": {
+    "w": 2.4,
+    "h": 2.2
+  },
+  "vasos": {
+    "w": 2,
+    "h": 2.09
+  },
+  "bica": {
+    "w": 2.4,
+    "h": 2.37
+  },
+  "prateleira": {
+    "w": 2.4,
+    "h": 2.61
+  },
+  "panelas": {
+    "w": 2.4,
+    "h": 1.86
+  },
+  "escrivaninha": {
+    "w": 2.4,
+    "h": 2.7
+  },
+  "cama": {
+    "w": 2.6,
+    "h": 2.74
+  },
+  "cisterna": {
+    "w": 2.6,
+    "h": 2.6
+  },
+  "barril_agua": {
+    "w": 2,
+    "h": 2.32
+  },
+  "fonte": {
+    "w": 2.4,
+    "h": 2.21
+  },
+  "calha": {
+    "w": 2.6,
+    "h": 2.08
+  },
+  "queda": {
+    "w": 2.6,
+    "h": 2.33
+  },
+  "bomba": {
+    "w": 1.8,
+    "h": 2.22
+  },
+  "valvula": {
+    "w": 2,
+    "h": 2.01
+  },
+  "cano": {
+    "w": 1.6,
+    "h": 3.95
+  },
+  "canteiro_folha": {
+    "w": 2.4,
+    "h": 2.37
+  },
+  "canteiro_erva": {
+    "w": 2.4,
+    "h": 2.59
+  },
+  "canteiro_raiz": {
+    "w": 2.4,
+    "h": 1.9
+  },
+  "leira": {
+    "w": 2.6,
+    "h": 2.68
+  },
+  "ervas_penduradas": {
+    "w": 2.4,
+    "h": 2.28
+  },
+  "registro": {
+    "w": 2.2,
+    "h": 2.06
+  },
+  "tanque": {
+    "w": 2.4,
+    "h": 1.92
+  },
+  "reservatorio": {
+    "w": 2.6,
+    "h": 2.38
+  },
+  "forja_fogo": {
+    "w": 5,
+    "h": 5.13
+  },
+  "forja_bigorna": {
+    "w": 5,
+    "h": 4.87
+  },
+  "forja_bancada": {
+    "w": 5,
+    "h": 4.66
+  },
+  "forja_fornalha": {
+    "w": 5,
+    "h": 4.77
+  },
+  "barraca_horta": {
+    "w": 6,
+    "h": 5.87
+  },
+  "barraca_ferragem": {
+    "w": 6,
+    "h": 5.89
+  },
+  "barraca_padaria": {
+    "w": 6,
+    "h": 5.8
+  },
+  "barraca_tecidos": {
+    "w": 6,
+    "h": 5.71
+  },
+  "cabine": {
+    "w": 4,
+    "h": 4.94
+  },
+  "sarilho": {
+    "w": 4,
+    "h": 3.09
+  },
+  "porta_poco": {
+    "w": 4,
+    "h": 3.97
+  },
+  "contrapeso": {
+    "w": 4,
+    "h": 4.2
+  }
+}

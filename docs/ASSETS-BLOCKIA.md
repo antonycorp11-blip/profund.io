@@ -73,7 +73,42 @@ Salvar em `arte-bruta/blockia/<nome>.png`.
 
 ---
 
-## O que é meu depois que a arte chegar
+---
+
+## CHEGOU — estado em 19/09
+
+Sete folhas entregues, **48 peças cortadas** por `npm run slice-blockia`, e a
+camada que faltava (`BlockiaRenderer` + `blockiaProps.ts`) está escrita. Blockia
+deixou de ser desenhada com a textura das ruínas genéricas.
+
+| folha | peças | onde ficou |
+|---|---|---|
+| `porta.png` | 4 | ainda **não posicionada** (a porta é um tile hoje) |
+| `vida.png` | 16 | praça e os quatro terraços |
+| `agua.png` | 16 | terraço da Dra. Irene + a horta da praça |
+| `elevador.png` | 4 | terraço do Breno |
+| `forja.png` | 4 | ferraria do Silas, ponta esquerda da praça |
+| `mercado.png` | 4 | Mercado da Ponte, em cima das barracas de tile |
+| `fundo.png` | 1 | `public/art/bg/blockia.png` — **ainda não ligado** |
+
+`npm run praca` confere o encaixe: sobreposição entre peças, canteiro fora da
+terra, peça pendurada além da ponta do terraço. A primeira leva de posições que
+eu escrevi tinha **seis sobreposições** e nenhuma delas quebrava nada — arte não
+tem colisão, então elas ficariam ali até alguém andar até lá e ver.
+
+### O que ainda falta (nesta ordem)
+
+1. **Textura de bloco do lampião.** O bloco `lamp` de Blockia não tem arte e
+   aparece como um quadrado amarelo chapado (`#ffdc83`) — dá para ver em
+   qualquer print da cidade. É 1 tile, e é o defeito visual mais visível da
+   cidade agora. **Pedido novo: 1 imagem 1024², um lampião de parede aceso,
+   preenchendo o quadro, sem moldura** (mesmas regras do PEDIDO 1).
+2. **Ligar o fundo.** `blockia.png` está cortado e não é desenhado por ninguém:
+   o `Background` precisa saber que dentro da cidade o céu é outro.
+3. **A porta.** As 4 peças existem; hoje a porta da cidade é um tile de tábua.
+   Precisa virar estado (fechada → aberta quando você diz seu nome à Mara).
+
+## O que era meu depois que a arte chegar
 
 Honestidade sobre o custo: **os pedidos 1 e 11 entram sozinhos** no que já existe —
 bloco é bloco, fundo é fundo, o pipeline já sabe.

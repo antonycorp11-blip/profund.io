@@ -62,6 +62,7 @@ import { storyGateAtRow } from '../data/storyGates';
 import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
+import { BlockiaRenderer } from '../world/BlockiaRenderer';
 import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
@@ -168,6 +169,7 @@ export class Game {
   private journal: Journal;
   private camps: BaseCamps;
   private campsRenderer!: BaseCampRenderer;
+  private blockiaRenderer!: BlockiaRenderer;
   private journalUI!: JournalUI;
   private campUI!: BaseCampUI;
   private vitals = new Vitals(this.attrs);
@@ -604,6 +606,8 @@ export class Game {
         );
     };
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
+    // A mobilia da cidade: arte por cima da geometria, sem tocar na colisao.
+    this.blockiaRenderer = new BlockiaRenderer(this.world);
     /*
      * As bases sao lugares, nao segredos — mas so depois que existem para o
      * jogador.
@@ -1825,6 +1829,7 @@ export class Game {
     this.tickConstrucao(dt);
     this.campUI.update(dt);
     this.campsRenderer.update(dt);
+    this.blockiaRenderer.update(dt);
     this.shock.update(dt);
     /*
      * O gatilho usa a MESMA mira da picareta.
@@ -2336,6 +2341,14 @@ export class Game {
 
     this.decor.render(ctx);
     this.tileRenderer.render(ctx, this.camera);
+    /*
+     * A CIDADE, logo depois dos tiles e antes de tudo que anda.
+     *
+     * Fachada, barraca, forja e elevador sao cenario: o jogador e os moradores
+     * passam NA FRENTE deles. Se isto viesse depois, o Silas ficaria atras da
+     * propria bigorna.
+     */
+    this.blockiaRenderer.renderFundo(ctx, this.camera);
     for (const e of this.interactables) e.render(ctx);
     this.structures.render(ctx, this.camera);
     this.drops.render(ctx, this.camera);
@@ -2346,6 +2359,9 @@ export class Game {
     // As estruturas da base ficam AQUI, antes do jogador: ele tem que passar
     // na frente delas. Os avisos delas continuam na camada pos-luz.
     this.campsRenderer.render(ctx, this.camera);
+    // A mobilia solta (banco, caixote, vaso) vem aqui, pelo mesmo motivo das
+    // estruturas de base: passar POR TRAS de um caixote parece defeito.
+    this.blockiaRenderer.renderFrente(ctx, this.camera);
     this.mining.render(ctx);
     // Sprite real quando a arte existe; senao o placeholder vetorial.
     if (!this.playerSprite.render(ctx, this.player)) {

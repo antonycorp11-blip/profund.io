@@ -40,7 +40,8 @@ const CORPO = 2;
 /** Quantos terracos a cidade tem, e o desnivel entre eles. */
 const NIVEIS = 4;
 const VAO_DECK = 8;
-const LARGURA_DECK = 14;
+/** Exportada para a sonda da praca conferir se a mobilia cabe no terraco. */
+export const LARGURA_DECK = 14;
 
 /** Poe um solido, a menos que ele feche a passagem de um piso. */
 function solido(world: World, col: number, row: number, id: number, pisoRow: number): void {
