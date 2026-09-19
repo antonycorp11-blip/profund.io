@@ -43,8 +43,8 @@ export class ActiveSkillsUI {
       <div class="tech-screen skl-tela">
         <header class="casca-cab">
           <span class="casca-titulo">
-            <b>Skills</b>
-            <span>Desbloqueie, melhore e equipe tres</span>
+            <b>Habilidades ativas</b>
+            <span>Monte seu cinto para a próxima descida</span>
           </span>
           <span class="casca-conta skl-pontos">
             <img src="art/hud/moeda.png" alt="">

@@ -152,8 +152,8 @@ export class SkillTreeUI {
       <div class="skill-screen">
         <header class="casca-cab">
           <span class="casca-titulo">
-            <b>Atributos</b>
-            <span>Evolua seu explorador</span>
+            <b>Caminhos de evolução</b>
+            <span>Escolha onde seu minério vira poder</span>
           </span>
           <button class="casca-cab-btn" data-voltar hidden>‹ CAMINHOS</button>
           <button class="casca-cab-btn" data-tudo>VER O NINHO</button>
