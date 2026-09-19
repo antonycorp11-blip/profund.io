@@ -1086,6 +1086,29 @@ export class Game {
       this.save();
     });
 
+    /*
+     * APRENDER JA COLOCA NO CINTO, quando ha vaga.
+     *
+     * O relato do dono foi sobre as habilidades de ARMA — "nao aparecem quando
+     * muda pro modo arma e nao sei se funcionam" — e esta e metade da causa: a
+     * habilidade nascia liberada e DESEQUIPADA. Ele pagava, o cartao dizia
+     * PRONTA, e no jogo nao havia botao. A outra metade era a tela mostrar o
+     * cinto da mao errada, consertada em ActiveSkillsUI.
+     *
+     * O aviso e importante: sem ele o jogador continua sem saber que a coisa
+     * entrou no cinto da OUTRA mao, e a surpresa so acontece quando ele trocar
+     * de ferramenta.
+     */
+    Events.on('skill:learned', () => {
+      for (const id of this.activeSkills.autoEquiparLiberadas()) {
+        const meta = activeSkillMeta(id);
+        this.hud.toast(
+          `${meta.name} entrou no cinto da ${meta.hand === 'arma' ? 'arma' : 'picareta'}.`,
+          'good'
+        );
+      }
+    });
+
     Events.on('cidade:porta', () => {
       /*
        * A porta some dos TILES, e nao so do desenho.

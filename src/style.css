@@ -5026,6 +5026,42 @@ body:has(.hud-map-slot.folded) .toasts {
   color: var(--accent);
 }
 
+/*
+ * AS DUAS ABAS DO CINTO.
+ *
+ * Existem porque a tela mostrava um cinto so e o jogo tem dois — um por mao.
+ * Quem estava com a picareta equipava uma habilidade de arma e nao via nada
+ * acontecer, porque a habilidade ia para o cinto certo e a tela desenhava o
+ * outro.
+ *
+ * Ficam logo abaixo do titulo, que agora diz de qual cinto se trata: as duas
+ * coisas juntas respondem "onde eu estou?" antes de o jogador clicar em nada.
+ */
+.cinto-abas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+
+.cinto-aba {
+  padding: 6px 4px;
+  border: 1px solid var(--doc-regua);
+  border-radius: 4px;
+  background: #0000003d;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+
+.cinto-aba.on {
+  border-color: var(--accent);
+  background: #ffc4531f;
+  color: var(--accent);
+}
+
 .cinto-sub {
   margin: 2px 0 0;
   font-family: var(--font-display);

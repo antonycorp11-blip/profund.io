@@ -1,7 +1,12 @@
 import { Assets } from '../core/Assets';
 import { CONFIG } from '../data/config';
 import { Events } from '../core/events';
-import { ACTIVE_SKILLS, type ActiveSkillMeta } from '../data/activeSkills';
+import {
+  ACTIVE_SKILLS,
+  activeSkillMeta,
+  type ActiveSkillMeta,
+  type SkillHand,
+} from '../data/activeSkills';
 import { ATTRIBUTES, type AttrId } from '../data/attributes';
 import { skillDef, type SkillDef } from '../data/skills';
 import { ActiveSkills } from '../systems/ActiveSkills';
@@ -135,8 +140,28 @@ export class ActiveSkillsUI {
    * placa de madeira no pe da coluna e o lembrete do conceito, e nao mais uma
    * linha cinza de texto de ajuda.
    */
+  /**
+   * De qual mao e o cinto que esta na tela.
+   *
+   * NAO e a mao que o jogador esta segurando — e a da habilidade selecionada.
+   *
+   * Era `active.equipped`, o cinto da mao atual, e esse era o bug que o dono
+   * relatou como "nao sei se funcionam": em modo picareta, a vitrine mostrava
+   * as oito habilidades misturadas, o jogador clicava em APRENDER na Rajada,
+   * ela ia corretamente para o cinto da ARMA — e a tela nao mudava nada,
+   * porque estava desenhando o cinto da picareta. Equipar sem retorno visual
+   * e indistinguivel de equipar quebrado.
+   *
+   * Seguindo a selecao, escolher uma habilidade de arma ja traz o cinto da
+   * arma para a tela, e o lugar acende na frente do jogador.
+   */
+  private get maoVista(): SkillHand {
+    return this.selecionada ? activeSkillMeta(this.selecionada as never).hand : this.host.active.mao;
+  }
+
   private renderCinto(metas: ActiveSkillMeta[]): void {
-    const cinto = this.host.active.equipped;
+    const mao = this.maoVista;
+    const cinto = this.host.active.cintoDe(mao);
     const lugares = Array.from({ length: ActiveSkills.SLOTS }, (_, i) => {
       const id = cinto[i];
       const meta = id ? metas.find((m) => m.id === id) : null;
@@ -152,10 +177,36 @@ export class ActiveSkillsUI {
         </button>`;
     }).join('');
 
+    /*
+     * O TITULO DIZ DE QUAL CINTO SE TRATA.
+     *
+     * "Skills ativas" nao dizia que existem DOIS cintos, e essa era metade da
+     * confusao: o jogador via tres lugares e supunha que eram os tres lugares
+     * do jogo. Sao tres por mao, e trocar de mao troca o cinto inteiro.
+     *
+     * As duas abas tambem servem de porta: da para montar o cinto da arma sem
+     * estar com a arma na mao, que e justamente o que nao dava antes.
+     */
+    const aba = (m: SkillHand, rotulo: string): string =>
+      `<button class="cinto-aba ${m === mao ? 'on' : ''}" data-mao="${m}">${rotulo}</button>`;
+
     this.cintoEl.innerHTML = `
-      <h4 class="cinto-titulo">Skills ativas</h4>
-      <p class="cinto-sub">Equipe ${ActiveSkills.SLOTS} habilidades</p>
+      <h4 class="cinto-titulo">Cinto da ${mao === 'arma' ? 'arma' : 'picareta'}</h4>
+      <div class="cinto-abas">${aba('picareta', 'PICARETA')}${aba('arma', 'ARMA')}</div>
+      <p class="cinto-sub">Equipe ${ActiveSkills.SLOTS} habilidades desta mão</p>
       <div class="cinto-lugares">${lugares}</div>`;
+
+    for (const b of Array.from(this.cintoEl.querySelectorAll('[data-mao]'))) {
+      const alvo = (b as HTMLElement).dataset.mao as SkillHand;
+      b.addEventListener('click', () => {
+        /* Trocar de aba troca a SELECAO para uma habilidade daquela mao: e a
+         * selecao que manda no cinto visto, entao mudar so a aba duraria um
+         * quadro. */
+        const primeira = metas.find((m) => m.hand === alvo);
+        if (primeira) this.selecionada = primeira.id;
+        this.render();
+      });
+    }
     /*
      * A placa "Cave / Explore / Evolua / Va mais fundo!" saiu.
      *
@@ -194,7 +245,17 @@ export class ActiveSkillsUI {
     const money = Math.floor(this.host.stock.money);
     const prof = this.host.currentDepth();
 
+    /*
+     * A VITRINE MOSTRA SO A MAO QUE ESTA NA TELA.
+     *
+     * Ela listava as oito de uma vez, sem dizer a qual mao cada uma pertence.
+     * Duas habilidades chamadas "Choque" e "Rajada" lado a lado, com o mesmo
+     * cartao e o mesmo botao, nao contam que uma so funciona com a picareta na
+     * mao e a outra so com a arma — e o jogador so descobre isso quando equipa
+     * e nao acontece nada.
+     */
     this.gradeEl.innerHTML = metas
+      .filter((meta) => meta.hand === this.maoVista)
       .map((meta) => {
         const def = skillDef(meta.skill)!;
         const nivel = tree.levelOf(def.id);

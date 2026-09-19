@@ -95,6 +95,35 @@ export class ActiveSkills {
    * mais util trocar direto do que receber um "cinto cheio" e ter que
    * desequipar antes.
    */
+  /**
+   * Quem acabou de ser liberada e tem lugar vago entra no cinto sozinha.
+   *
+   * O jogador gastava moeda, via "PRONTA" no cartao, voltava para o jogo e
+   * nao tinha botao nenhum — porque aprender e equipar eram dois passos e o
+   * segundo nao estava escrito em lugar nenhum. Com as habilidades de arma
+   * ficava pior ainda: elas so apareceriam depois de trocar de mao, entao a
+   * distancia entre pagar e ver era de duas telas e um gesto.
+   *
+   * So preenche VAGA. Se o cinto daquela mao ja esta cheio, a escolha volta a
+   * ser do jogador — trocar uma habilidade por outra e uma decisao, e decisao
+   * nao se toma sozinha por ele.
+   *
+   * Devolve o que entrou, para quem chamou poder avisar na tela.
+   */
+  autoEquiparLiberadas(): ActiveSkillId[] {
+    const novas: ActiveSkillId[] = [];
+    for (const meta of ACTIVE_SKILLS) {
+      if (!this.state(meta.id).unlocked) continue;
+      const cinto = this.cintos[meta.hand];
+      if (cinto.includes(meta.id)) continue;
+      const vaga = cinto.indexOf(null);
+      if (vaga < 0) continue;
+      cinto[vaga] = meta.id;
+      novas.push(meta.id);
+    }
+    return novas;
+  }
+
   toggleEquip(id: ActiveSkillId): void {
     const cinto = this.cintos[activeSkillMeta(id).hand];
     const i = cinto.indexOf(id);
