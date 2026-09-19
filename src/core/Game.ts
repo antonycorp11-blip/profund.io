@@ -1918,8 +1918,20 @@ export class Game {
     this.dialog.update(dt);
 
     this.tutorial.update(this.player.cx, this.player.onGround);
+    /*
+     * A CENA TAMBEM SEGURA O JOGO.
+     *
+     * O dialogo, as telas e o tutorial ja seguravam; a cutscene nasceu por
+     * fora e nao entrou na conta. O efeito e discreto e ruim: durante os
+     * quarenta segundos do prologo o jogador continua caindo, o relogio anda,
+     * e — pior — a barra de espaco que avanca a fala tambem manda o boneco
+     * pular atras da cortina. A cena termina e ele esta noutro lugar.
+     */
     const uiBlocking =
-      this.dialog.isOpen || this.telas.algumaAberta || this.tutorial.bloqueando;
+      this.dialog.isOpen ||
+      this.telas.algumaAberta ||
+      this.tutorial.bloqueando ||
+      this.cutscene.ativa;
     // No modo construir o toque no mundo constroi, entao a mineracao para.
     const building = this.buildMode.isActive;
     if (uiBlocking || this.vitals.dead) {

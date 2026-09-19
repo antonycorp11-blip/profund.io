@@ -37,6 +37,7 @@ export class Cutscene {
   private fala = -1;
   private aoFim: (() => void) | null = null;
 
+  private aoTeclado: ((e: KeyboardEvent) => void) | null = null;
   /** Timer da maquina de escrever, para poder ser cortado no toque. */
   private escrevendo: number | null = null;
   private falaCompleta = '';
@@ -73,11 +74,51 @@ export class Cutscene {
      * uma vez quer sair dela no primeiro toque. O botao fica no canto, fora do
      * caminho do dedo que avanca o texto.
      */
-    (this.wrap.querySelector('.cs-pular') as HTMLElement).addEventListener('click', (e) => {
+    /*
+     * `pointerdown`, e nao `click` — mas por conforto, e NAO porque era o bug.
+     *
+     * Vale registrar o diagnostico errado, porque ele custou tempo: quando a
+     * cena travou no celular eu culpei a diferenca entre clique e toque, troquei
+     * os ouvintes, e "confirmei" o conserto disparando eventos direto no
+     * elemento por JS. Isso pula o teste de acerto do navegador e portanto nao
+     * testa nada — nem no computador aquilo funcionava. A causa era uma linha
+     * de CSS que faltava (`pointer-events`, ver cutscene.css) e quem a achou
+     * foi a sonda que toca com o dedo.
+     *
+     * A troca fica, e por um motivo menor mas real: `pointerdown` dispara no
+     * dedo, sem esperar o navegador decidir se o gesto era rolagem ou duplo
+     * toque. Meio segundo entre o dedo e a fala e meio segundo de cena
+     * parecendo travada.
+     *
+     * O PULAR usa o mesmo caminho de proposito: se um dia o avanco quebrar de
+     * novo, a saida nao pode quebrar junto — travar numa cena sem saida foi o
+     * pior desta historia.
+     */
+    const pular = this.wrap.querySelector('.cs-pular') as HTMLElement;
+    pular.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
+      e.preventDefault();
       this.encerrar();
     });
-    this.wrap.addEventListener('click', () => this.avancar());
+    this.wrap.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.avancar();
+    });
+    /*
+     * Teclado tambem, para quem joga no navegador com as duas maos no teclado.
+     * Sem isto, a unica cena do jogo exigiria largar o teclado e pegar o mouse.
+     */
+    this.aoTeclado = (e: KeyboardEvent) => {
+      if (!this.ativa) return;
+      if (e.code === 'Escape') {
+        this.encerrar();
+        return;
+      }
+      if (e.code !== 'Space' && e.code !== 'Enter') return;
+      e.preventDefault();
+      this.avancar();
+    };
+    window.addEventListener('keydown', this.aoTeclado);
   }
 
   get ativa(): boolean {
@@ -85,6 +126,19 @@ export class Cutscene {
   }
 
   tocar(id: string, aoFim?: () => void): boolean {
+    /*
+     * UMA CENA DE CADA VEZ, e isto conserta um bug de verdade.
+     *
+     * Num jogo novo aberto com `?cena=prologo` o prologo tocava DUAS vezes: o
+     * arranque o chama, e o parametro da URL o chama de novo um instante
+     * depois. A segunda chamada reiniciava tudo — e, pior, sobrescrevia o
+     * `aoFim` da primeira. Aquele callback e quem comeca o tutorial: o
+     * jogador via a cena, a cena acabava, e o tutorial nunca comecava.
+     *
+     * Recusar a segunda e melhor do que enfileirar: quem pediu a cena que ja
+     * esta tocando quis ver aquela cena, e ela esta na tela.
+     */
+    if (this.ativa) return false;
     const def = cutsceneDef(id);
     if (!def || def.beats.length === 0) {
       aoFim?.();
