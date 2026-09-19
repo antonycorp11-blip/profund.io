@@ -560,13 +560,35 @@ export class Game {
     // o guardiao e a ULTIMA coisa, nao a unica — assim ninguem pula nada.
     this.biomeGate.missingMissions = (layerId) => {
       const layer = gateLayerDef(layerId);
-      // O corte e o TOPO da faixa do selo, nao o inicio da camada.
-      //
-      // Usando minDepth - 1 o selo exigia a propria missao dele: "O Segundo
-      // Selo" fica a 194 m, dentro da faixa, e ela so fecha quando o selo
-      // abre. O selo esperava a missao, a missao esperava o selo.
-      const topo = layer.minDepth - CONFIG.gate.bandThickness - 1;
-      return this.missions.missingBefore(topo);
+      /*
+       * UMA MISSAO NUNCA E CONDICAO PARA O SELO QUE ELA DESCREVE.
+       *
+       * Esta e a segunda vez que este bloqueio aparece, e a primeira correcao
+       * foi minha e foi errada: eu mexi na PROFUNDIDADE do corte (de minDepth
+       * para o topo da faixa) e achei que tinha resolvido. Tratei o sintoma.
+       *
+       * O relato de agora prova: "O guardiao caiu, mas ficou coisa para tras —
+       * A Primeira Barreira". A missao que falta E a do proprio selo. Ela esta
+       * a 168 m, dentro de qualquer corte razoavel, e exige a flag
+       * `gate_stone` — que so nasce quando o selo abre. O selo espera a missao,
+       * a missao espera o selo, e o jogador fica preso para sempre depois de
+       * ter feito tudo certo.
+       *
+       * Numero de profundidade nao resolve isso: qualquer corte que eu escolha
+       * um dia cai do lado errado de alguma missao. O que resolve e a regra —
+       * quem depende deste selo, ou do guardiao dele, esta FORA da lista de
+       * pendencias deste selo. E logico: sao consequencias da abertura, nao
+       * pre-requisitos dela.
+       */
+      const flagDoSelo = `gate_${layerId}`;
+      const guardiao = bossForLayer(layerId)?.id;
+      return this.missions
+        .missingBefore(layer.minDepth)
+        .filter(
+          (m) =>
+            !m.requires.includes(flagDoSelo) &&
+            !(guardiao !== undefined && m.requires.includes(guardiao))
+        );
     };
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
     /*

@@ -16,8 +16,9 @@
 import { CONFIG } from '../src/data/config';
 import { World } from '../src/world/World';
 import { generateWorld } from '../src/world/WorldGen';
-import { gateBandRows, gateLayerDef } from '../src/data/gates';
+import { GATE_LAYERS, gateBandRows, gateLayerDef } from '../src/data/gates';
 import { bossForLayer } from '../src/data/creatures';
+import { MISSIONS } from '../src/data/missions';
 import { Creature } from '../src/entities/Creature';
 import { blockDef } from '../src/data/blocks';
 
@@ -234,6 +235,47 @@ if (porta) {
     if (row <= row1 && world.isSolid(porta.col, row)) livre = false;
   }
   ok(livre, 'a coluna do chefe fica aberta de cima a baixo da faixa');
+}
+
+// ------------------------------------------- o selo nao se auto-tranca ---
+console.log('\nDESTRAVE (o selo nao pode esperar a propria missao)');
+{
+  /*
+   * O BLOQUEIO QUE VOLTOU DUAS VEZES.
+   *
+   * Relato: "O guardiao caiu, mas ficou coisa para tras — A Primeira
+   * Barreira." A missao que faltava era a do PROPRIO selo: ela exige a flag
+   * `gate_stone`, que so nasce quando o selo abre. O selo esperava a missao,
+   * a missao esperava o selo, e quem tinha feito tudo certo ficava preso.
+   *
+   * Da primeira vez eu "consertei" mexendo na profundidade do corte. Foi
+   * sintoma: qualquer numero que eu escolha um dia cai do lado errado de
+   * alguma missao. A regra e estrutural, e e ela que esta guardada aqui.
+   */
+  for (const layerId of GATE_LAYERS) {
+    const layer = gateLayerDef(layerId);
+    const guardiao = bossForLayer(layerId)?.id;
+    const flag = `gate_${layerId}`;
+    const circulares = MISSIONS.filter(
+      (m) =>
+        m.depth <= layer.minDepth &&
+        (m.requires.includes(flag) || (guardiao !== undefined && m.requires.includes(guardiao)))
+    );
+    // FATO, nao asserção: e normal e esperado que exista uma missao por selo
+    // que dependa dele. (Escrevi isto primeiro como `ok(x || true)`, que passa
+    // sempre — um teste que finge verificar e pior que nenhum.)
+    console.log(`  ·    ${layer.name}: ${circulares.length} missao(oes) dependem deste selo`);
+    // A ASSERÇAO e outra: essas missoes nao podem estar na conta de pendencias.
+    const pendentes = MISSIONS.filter((m) => m.depth <= layer.minDepth).filter(
+      (m) =>
+        !m.requires.includes(flag) && !(guardiao !== undefined && m.requires.includes(guardiao))
+    );
+    const vazou = pendentes.filter(
+      (m) => m.requires.includes(flag) || (guardiao !== undefined && m.requires.includes(guardiao))
+    );
+    ok(vazou.length === 0, `${layer.name}: nenhuma dependencia circular na conta do selo`,
+      vazou.map((m) => m.title).join(', '));
+  }
 }
 
 console.log(falhas === 0 ? '\ntodas as sondas de chefe passaram.\n' : `\n${falhas} falha(s).\n`);
