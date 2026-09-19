@@ -340,6 +340,24 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     }
 
     /*
+     * ESCADA DA SACADA ATE O CHAO.
+     *
+     * Sem ela, entrar na arena e um caminho de mao unica: o jogador desce seis
+     * tiles da sacada e, para sair, tem que escalar parede gastando vigor —
+     * depois de uma luta de chefe, provavelmente machucado. Perder por causa
+     * da SAIDA, e nao da briga, e a pior forma de perder.
+     *
+     * Ela fica encostada na parede da ponta, longe da pista da investida: nao
+     * e cobertura nem atalho no meio do combate, e so o jeito de ir e voltar.
+     */
+    {
+      const colEscada = arenaCol + ladoDaGaleria * (arenaHalf - 1);
+      for (let row = sacadaRow; row <= pisoArena; row++) {
+        if (row > 0) world.setTileRaw(colEscada, row, BLOCK_IDS.LADDER);
+      }
+    }
+
+    /*
      * E o TETO DA CAMARA vira tijolo.
      *
      * Nao para impedir que se cave por cima — impedir seria tirar do jogador a
@@ -457,6 +475,28 @@ export function generateWorld(world: World): GeneratedWorldInfo {
       for (let r = pisoRow - 1; r >= pisoRow - ALTURA_LIVRE; r--) {
         world.setTileRaw(col, r, BLOCK_IDS.AIR);
       }
+    }
+  }
+
+  /*
+   * ESCADA NO FIM DA GALERIA DA ENTRADA.
+   *
+   * A galeria da base desce em degraus e termina no meio da rocha. Dali para
+   * baixo a unica ferramenta era a picareta, e a volta era escalar.
+   *
+   * Uma escada curta no fim dela faz duas coisas: da o primeiro empurrao para
+   * baixo sem cavar, e APRESENTA o objeto. Quem viu uma escada funcionando nos
+   * dez primeiros metros entende o que ela e quando encontrar outra a cento e
+   * oitenta — e isso nao precisa de tutorial nenhum.
+   */
+  {
+    const colFim = shaftCol + CONFIG.base.shaftDepth * AVANCO;
+    const topo = baseFloorRow + CONFIG.base.shaftDepth;
+    for (let r = topo; r < topo + 10; r++) {
+      if (r >= height - 2) break;
+      // Abre o vao e desce a escada por ele.
+      world.setTileRaw(colFim, r, BLOCK_IDS.LADDER);
+      if (colFim + 1 < width - 1) world.setTileRaw(colFim + 1, r, BLOCK_IDS.AIR);
     }
   }
 

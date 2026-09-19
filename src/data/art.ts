@@ -120,6 +120,7 @@ export const ART = {
     'gold',
     'crystal',
     'ruin_brick',
+    'ladder',
     'plank',
     'bedrock',
   ],

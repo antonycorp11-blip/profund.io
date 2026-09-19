@@ -1,4 +1,5 @@
 import { CONFIG } from '../data/config';
+import { blockDef } from '../data/blocks';
 import { approach, clamp } from '../core/math';
 import type { InputManager } from '../input/InputManager';
 import type { World } from '../world/World';
@@ -121,6 +122,30 @@ export class Player {
     // e gratuito desde o inicio: a arvore melhora a velocidade e a resistencia.
     const climbCfg = CONFIG.player.climb;
     const climbSpeed = this.stats.climbSpeed;
+
+    /*
+     * ESCADA: sobe de graca, e manda em tudo o mais.
+     *
+     * Escalar parede e uma decisao que CUSTA — agarra, gasta vigor, cansa. A
+     * escada existe para o contrario: descer 180 m de poco e subir de volta
+     * nao pode ser prova de resistencia toda vez, senao vira imposto sobre
+     * jogar e o jogador aprende a nao voltar.
+     *
+     * Por isso ela vem ANTES da logica de agarre e sai fora dela: nao ha
+     * empurrar contra parede, nao ha vigor, nao ha cansaco. So subir e descer.
+     */
+    if (this.emEscada(world)) {
+      this.climbingWall = 0;
+      this.climbTired = false;
+      this.climbStamina = climbCfg.stamina;
+      const eixo = clamp(input.axisY, -1, 1);
+      // Parado na escada o jogador FICA: sem isto ele escorregaria ate o chao
+      // e a escada viraria enfeite.
+      this.vy = Math.abs(eixo) > 0.3 ? eixo * climbSpeed : 0;
+      this.onGround = false;
+      return this.moverNaEscada(dt, world, moveX);
+    }
+
     const sensed = this.wallAt(world);
     // Poco de 1 tile tem parede dos dois lados: da para escorar e subir sem
     // cansar. E o que garante que cavar reto para baixo nunca vire armadilha.
@@ -437,6 +462,49 @@ export class Player {
 
   private bothWalls(world: World): boolean {
     return this.wallSide(world, -1) && this.wallSide(world, 1);
+  }
+
+  /**
+   * O corpo esta dentro de uma escada?
+   *
+   * Mede no CENTRO do tronco, e nao nos pes: medindo nos pes o jogador
+   * "sairia" da escada ao chegar no ultimo degrau, justo quando precisa dela
+   * para nao cair. E medir no meio tambem impede agarrar uma escada que so
+   * encosta na ponta do pe.
+   */
+  private emEscada(world: World): boolean {
+    const cx = this.x + this.w / 2;
+    const ts = CONFIG.tileSize;
+    const col = Math.floor(cx / ts);
+    for (const y of [this.y + this.h * 0.35, this.y + this.h * 0.75]) {
+      const row = Math.floor(y / ts);
+      if (blockDef(world.getTile(col, row)).climbable) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Movimento preso a escada: sobe, desce e sai pelos lados.
+   *
+   * Nao reaproveita o movimento normal porque ali a gravidade manda, e numa
+   * escada ela nao pode mandar. Sair andando para o lado continua valendo — a
+   * escada nao e uma jaula.
+   */
+  private moverNaEscada(dt: number, world: World, moveX: number): void {
+    const ts = CONFIG.tileSize;
+    const nx = this.x + moveX * this.stats.moveSpeed * dt;
+    if (!world.rectCollides(nx, this.y, this.w, this.h)) this.x = nx;
+    const ny = this.y + this.vy * dt;
+    if (!world.rectCollides(this.x, ny, this.w, this.h)) {
+      this.y = ny;
+    } else if (this.vy > 0) {
+      // Chegou ao chao descendo: assenta em cima do tile, sem atravessar.
+      this.y = Math.floor((ny + this.h) / ts) * ts - this.h - 0.01;
+      this.vy = 0;
+      this.onGround = true;
+    } else {
+      this.vy = 0;
+    }
   }
 
   private wallAt(world: World): -1 | 0 | 1 {

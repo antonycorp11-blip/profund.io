@@ -72,6 +72,15 @@ export interface BlockDef {
   artFlipY?: boolean;
   /** Categoria de som (o AudioSystem decide o que tocar). */
   sfxMaterial: 'terra' | 'pedra' | 'metal' | 'cristal' | 'estrutura';
+  /**
+   * Da para SUBIR por dentro dele, sem gastar vigor?
+   *
+   * Escalar parede no jogo e uma decisao que custa: o Elias se agarra, gasta
+   * vigor e cansa. Uma escada e o contrario disso — ela existe justamente para
+   * a subida deixar de ser uma prova. Por isso e um campo proprio e nao uma
+   * etiqueta: subir por escada nao e escalar devagar, e outra coisa.
+   */
+  climbable?: boolean;
 }
 
 export const BLOCK_IDS = {
@@ -93,6 +102,7 @@ export const BLOCK_IDS = {
   VOIDSTONE: 15,
   SEAL: 16,
   LAMP: 17,
+  LADDER: 18,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -428,6 +438,41 @@ export const BLOCKS: BlockDef[] = [
     color: '#7a5533',
     shade: '#5d3f25',
     speckle: '#96683f',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    /*
+     * A ESCADA.
+     *
+     * Atravessavel (nao e solida) e escalavel de graca. Ela resolve o que a
+     * escalada por vigor nao resolve: descer 180 m de poco e subir de volta
+     * nao pode ser uma prova de resistencia toda vez — vira imposto sobre
+     * jogar, e o jogador aprende a nao voltar.
+     *
+     * Indestrutivel de proposito onde o jogo a coloca: uma escada quebrada por
+     * acidente no meio de um poco de cem metros e uma armadilha.
+     */
+    id: BLOCK_IDS.LADDER,
+    key: 'ladder',
+    name: 'Escada',
+    type: 'estrutura',
+    hp: 0,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['special', 'indestructible'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 99,
+    solid: false,
+    indestructible: true,
+    climbable: true,
+    color: '#8a6234',
+    shade: '#5d3f20',
+    speckle: '#b0834a',
     sfxMaterial: 'estrutura',
   },
   {

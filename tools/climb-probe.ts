@@ -10,6 +10,7 @@
  *   npm run climb
  */
 import { CONFIG } from '../src/data/config';
+import { BLOCK_IDS } from '../src/data/blocks';
 import { Player } from '../src/player/Player';
 
 const TS_ = CONFIG.tileSize;
@@ -26,6 +27,25 @@ class MapaTeste {
     if (c < 0 || c >= linha.length) return true;
     return linha[c] === '#';
   }
+  /**
+   * Tile numerico, para quem pergunta pelo bloco e nao pela solidez.
+   *
+   * A sonda so precisava de `isSolid` ate a escada existir. Quando o `Player`
+   * passou a consultar `getTile` para saber se esta numa escada, ela quebrou —
+   * e foi bom: e exatamente o tipo de mudanca de interface que passa batida
+   * num jogo e aparece como "o boneco nao sobe mais" uma semana depois.
+   *
+   * 'H' no mapa e escada. Assim da para escrever cenario com escada aqui.
+   */
+  getTile(c: number, r: number): number {
+    if (r < 0 || r >= this.linhas.length) return BLOCK_IDS.BEDROCK;
+    const linha = this.linhas[r];
+    if (c < 0 || c >= linha.length) return BLOCK_IDS.BEDROCK;
+    const ch = linha[c];
+    if (ch === 'H') return BLOCK_IDS.LADDER;
+    return ch === '#' ? BLOCK_IDS.STONE : BLOCK_IDS.AIR;
+  }
+
   isSolid(c: number, r: number): boolean {
     return this.solidoCel(c, r);
   }
@@ -298,6 +318,33 @@ const CENARIOS: Cenario[] = [
     comando: chamineDepoisSair(2.2),
     segundos: 8,
     esperaFalhar: true,
+  },
+  {
+    /*
+     * A ESCADA SOBE, e da para sair no topo.
+     *
+     * O caso que motivou o objeto: na arena o jogador cai seis tiles da sacada
+     * e, sem escada, so sai escalando parede com vigor — depois de uma luta de
+     * chefe, provavelmente machucado. Perder pela SAIDA e nao pela briga e a
+     * pior forma de perder.
+     *
+     * 'H' e escada. O comando e so segurar para cima e depois andar para o
+     * lado, que e o que o jogador faz sem pensar.
+     */
+    nome: 'escada: sobe sem vigor e sai pelo topo',
+    mapa: [
+      '#########',
+      '#.....G.#',
+      '#.H######',
+      '#.H######',
+      '#.H######',
+      '#.H######',
+      '#.H######',
+      '#PH######',
+      '#########',
+    ].join('\n'),
+    comando: (t: number) => (t < 2.2 ? { x: 0.4, y: -1 } : { x: 1, y: 0 }),
+    segundos: 7,
   },
   {
     nome: 'escada de degraus de 1 tile, andando',
