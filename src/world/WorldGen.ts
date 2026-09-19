@@ -22,7 +22,21 @@ export interface GeneratedWorldInfo {
   /** Coluna do deposito de entrega. */
   depotCol: number;
   /** Um por camada com selo: onde a arena do chefe ficou e quem guarda ela. */
-  gates: { layerId: string; bossId: string; col: number; row: number }[];
+  gates: {
+    layerId: string;
+    bossId: string;
+    col: number;
+    row: number;
+    /**
+     * A BOCA DA GALERIA que leva ate a camara.
+     *
+     * Existe porque o marcador do chefe apontava para dentro da sala — um
+     * ponto cercado de rocha, que no mapa se le como "cave aqui". Agora o mapa
+     * pode apontar para a ENTRADA, que e o lugar aonde de fato se vai.
+     */
+    entradaCol: number;
+    entradaRow: number;
+  }[];
 }
 
 /**
@@ -143,7 +157,7 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   // escavada no meio: a UNICA passagem e enfrentar o chefe. O selo inteiro
   // (nao so a arena) so vira ar quando o BiomeGate confirma chefe morto +
   // todos os mineiros daquela camada resgatados — ver World.openGateBand.
-  const gates: { layerId: string; bossId: string; col: number; row: number }[] = [];
+  const gates: GeneratedWorldInfo['gates'] = [];
   const arenaCol = gateArenaCol();
   const arenaHalf = Math.floor(CONFIG.gate.arenaWidth / 2);
   const entranceHalf = Math.floor(CONFIG.gate.entranceWidth / 2);
@@ -247,16 +261,108 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     }
 
 
-    // 5. Entrada pelo teto: rocha normal, para o jogador cavar e cair dentro.
-    for (let col = arenaCol - entranceHalf; col <= arenaCol + entranceHalf; col++) {
-      if (tetoArena - 1 > 0) world.setTileRaw(col, tetoArena - 1, rochaDaCamada);
+    /*
+     * 5. A GALERIA DE CHEGADA.
+     *
+     * Antes daqui, "entrada" era um pedaco de rocha comum no teto: o jogador
+     * cavava em qualquer lugar e CAIA em cima do bicho. O relato foi exato —
+     * "nao tem o caminho para chegar ate ele; o jogo tinha que me levar a um
+     * caminho, nao eu escavar e simplesmente cair em cima dele".
+     *
+     * Cair num chefe nao e chegar num chefe. Um encontro precisa de soleira:
+     * um lugar de onde se VE antes de entrar, para poder decidir entrar.
+     *
+     * A galeria desce em degraus desde a rocha da camada de cima e termina na
+     * SACADA que ja existe na ponta da camara. Ali o jogador chega em pe,
+     * acima do chao, olhando a arena inteira e o guardiao la embaixo — e a
+     * descida passa a ser escolha dele.
+     */
+    let bocaDaGaleria = { col: arenaCol, row: tetoArena - 2 };
+    const ladoDaGaleria = -1; // oeste: a mesma ponta em que a sacada comeca
+    const sacadaRow = pisoArena - 6;
+    const colSacada = arenaCol + ladoDaGaleria * (arenaHalf - 1);
+    const alturaGaleria = 14; // sobe o suficiente para nascer fora da camara
+    {
+      /*
+       * DUAS PASSADAS: primeiro todo o AR, depois o piso.
+       *
+       * Na primeira versao eu escavava e assentava o piso no mesmo laco, e o
+       * tijolo de um degrau caia em cima do ar de outro — o corredor ficava
+       * costurado de pedra e nao levava a lugar nenhum. A inundacao acusou: o
+       * vao subia 15 tiles em vez de atravessar.
+       *
+       * Escavando tudo primeiro, o piso so entra onde ainda ha pedra, e nunca
+       * fecha o caminho que ele existe para sustentar.
+       */
+      const caminho: { col: number; row: number }[] = [];
+      let col = colSacada;
+      let row = sacadaRow - 2;
+      for (let passo = 0; passo < alturaGaleria * 2; passo++) {
+        caminho.push({ col, row });
+        // Sobe em degrau, afastando-se da camara para nao virar poco reto.
+        if (passo % 2 === 1) col += ladoDaGaleria;
+        else row -= 1;
+        if (col <= 2 || col >= width - 3 || row <= 2) break;
+      }
+      // 1a passada: o vao, dois de altura.
+      for (const passo of caminho) {
+        for (let k = 0; k < 2; k++) {
+          const r = passo.row - k;
+          if (r > 0) world.setTileRaw(passo.col, r, BLOCK_IDS.AIR);
+        }
+      }
+      // 2a passada: piso de tijolo SO onde ainda ha pedra.
+      for (const passo of caminho) {
+        const r = passo.row + 1;
+        if (r > 0 && world.isSolid(passo.col, r)) {
+          world.setTileRaw(passo.col, r, BLOCK_IDS.RUIN_BRICK);
+        }
+      }
+      const fim = caminho[caminho.length - 1];
+      col = fim.col;
+      row = fim.row;
+      bocaDaGaleria = { col: fim.col, row: fim.row };
+      /*
+       * A boca da galeria fica ABERTA e marcada.
+       *
+       * Rocha comum ali devolveria o problema: quem nao souber que existe
+       * passa reto e volta a cavar por cima. Aberta, ela e um vao no meio da
+       * pedra — e um vao no meio da pedra e a unica coisa que um mineiro
+       * nunca ignora.
+       */
+      for (let k = 0; k < 3; k++) {
+        const r = row - k;
+        if (r > 0) world.setTileRaw(col, r, BLOCK_IDS.AIR);
+      }
+      for (const lado of [-1, 1]) {
+        if (row > 0) world.setTileRaw(col + lado, row, BLOCK_IDS.RUIN_BRICK);
+      }
     }
+
+    /*
+     * E o TETO DA CAMARA vira tijolo.
+     *
+     * Nao para impedir que se cave por cima — impedir seria tirar do jogador a
+     * ferramenta que o jogo inteiro ensinou. E para que cavar por cima CUSTE:
+     * tijolo antigo tem 120 de vida contra a rocha comum, entao descer pela
+     * galeria fica sendo o caminho obvio sem nunca ser o caminho obrigatorio.
+     *
+     * De quebra, o teto passa a dizer a mesma coisa que os pilares e a porta:
+     * isto aqui foi construido por alguem.
+     */
+    for (let col = arenaCol - arenaHalf; col <= arenaCol + arenaHalf; col++) {
+      if (tetoArena - 1 > 0) world.setTileRaw(col, tetoArena - 1, BLOCK_IDS.RUIN_BRICK);
+    }
+    void entranceHalf;
+    void rochaDaCamada;
 
     gates.push({
       layerId,
       bossId: boss.id,
       col: arenaCol,
       row: pisoArena, // em pe no chao da camara, entre o jogador e a porta
+      entradaCol: bocaDaGaleria.col,
+      entradaRow: bocaDaGaleria.row,
     });
   }
 

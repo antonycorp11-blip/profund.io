@@ -237,6 +237,63 @@ if (porta) {
   ok(livre, 'a coluna do chefe fica aberta de cima a baixo da faixa');
 }
 
+// --------------------------------------------- a galeria leva la dentro ---
+console.log('\nCHEGADA (existe caminho ate o chefe, sem cavar)');
+if (porta) {
+  /*
+   * "Parece conectada" nao e "da para andar".
+   *
+   * A galeria desce em degraus e, no desenho, encosta na sacada. Isso nao
+   * prova nada: um degrau alto demais, um tile de tijolo no lugar errado, e o
+   * caminho vira parede. A pergunta de verdade e se AR CHEGA de um ponto ao
+   * outro sem atravessar pedra — e isso se responde inundando.
+   *
+   * Nao e a mesma coisa que caminhabilidade (nao mede altura de pulo), mas e a
+   * condicao necessaria: sem ar continuo nao ha caminho nenhum, com ar
+   * continuo ha um caminho a conferir.
+   */
+  const visto = new Set<number>();
+  const fila: [number, number][] = [];
+  // Comeca no chao da arena, ao lado do chefe.
+  fila.push([porta.col, porta.row]);
+  visto.add(porta.row * world.width + porta.col);
+  let topoAlcancado = porta.row;
+  while (fila.length) {
+    const [c, r] = fila.shift()!;
+    topoAlcancado = Math.min(topoAlcancado, r);
+    for (const [dc, dr] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const nc = c + dc;
+      const nr = r + dr;
+      if (nc < 1 || nr < 1 || nc >= world.width - 1 || nr >= world.height - 1) continue;
+      const k = nr * world.width + nc;
+      if (visto.has(k)) continue;
+      if (world.isSolid(nc, nr)) continue;
+      visto.add(k);
+      fila.push([nc, nr]);
+    }
+  }
+  const subiu = porta.row - topoAlcancado;
+  ok(
+    subiu >= 16,
+    'ha ar continuo do chefe ate fora da camara',
+    `o vao so sobe ${subiu} tiles acima do chao da arena`
+  );
+
+  // E a boca da galeria tem que ficar FORA do teto da camara, senao ela e
+  // so mais um buraco dentro da propria sala.
+  const alturaCamara = CONFIG.gate.arenaHeight;
+  ok(
+    subiu > alturaCamara,
+    'a galeria sai da camara',
+    `subiu ${subiu}, e a camara tem ${alturaCamara} de altura`
+  );
+}
+
 // ------------------------------------------- o selo nao se auto-tranca ---
 console.log('\nDESTRAVE (o selo nao pode esperar a propria missao)');
 {

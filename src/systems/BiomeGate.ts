@@ -36,12 +36,21 @@ export class BiomeGate {
     for (const g of gates) {
       this.states.set(g.layerId, { bossDefeated: false, opened: false });
       const boss = bossForLayer(g.layerId);
+      /*
+       * O MARCADOR APONTA PARA A ENTRADA, nao para dentro da sala.
+       *
+       * Ele ficava em cima do chefe — um ponto cercado de rocha, que no mapa
+       * se le como "cave aqui". E era isso que o jogador fazia: cavava e caia
+       * em cima do bicho. Agora ele marca a boca da galeria, que e o lugar
+       * aonde de fato se vai; a descida ate o guardiao e o caminho, e o
+       * caminho existe.
+       */
       this.exploration.addMarker({
         id: this.markerId(g.layerId),
         kind: 'boss',
-        col: g.col,
-        row: g.row,
-        label: boss?.name ?? 'Guardiao do bioma',
+        col: g.entradaCol,
+        row: g.entradaRow,
+        label: boss ? `Descida para ${boss.name}` : 'Descida para o guardiao',
         alwaysVisible: false,
       });
     }
