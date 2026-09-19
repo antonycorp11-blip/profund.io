@@ -289,12 +289,12 @@ body .touch-skills .touch-btn.skill {
   border-color: #8cc0cf88;
   box-shadow: inset 0 0 0 3px #10232bd9, 0 3px 10px #0006;
 }
-/* Cada centro e medido a partir do centro do MINERAR (56px da borda).
+/* Centros em um mesmo raio do MINERAR (56,56): um arco, nao uma fileira.
    !important encerra regras antigas de skins do touch-pad. */
-body #btn-skill1 { right: 28px !important; bottom: 118px !important; }
-body #btn-skill2 { right: 80px !important; bottom: 139px !important; }
-body #btn-skill3 { right: 134px !important; bottom: 132px !important; }
-body #btn-skill4 { right: 184px !important; bottom: 104px !important; }
+body #btn-skill1 { right: 145px !important; bottom: 118px !important; }
+body #btn-skill2 { right: 100px !important; bottom: 159px !important; }
+body #btn-skill3 { right: 55px !important; bottom: 173px !important; }
+body #btn-skill4 { right: 5px !important; bottom: 170px !important; }
 body .touch-skills .touch-btn.skill.ready {
   border-color: #a7e1e8;
   box-shadow: inset 0 0 0 3px #10232b, 0 0 9px #8cd5e52e;

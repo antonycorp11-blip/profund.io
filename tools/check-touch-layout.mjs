@@ -27,6 +27,15 @@ const circles = controls.map(({ selector, shape, pos }) => {
   assert(right >= 0 && bottom >= 0, `${selector}: fora da tela`);
   return { selector, x: right + diameter / 2, y: bottom + diameter / 2, r: diameter / 2 };
 });
+const action = { x: 56, y: 56 };
+const skillRadii = circles.slice(0, selectors.length).map((c) =>
+  Math.hypot(c.x - action.x, c.y - action.y)
+);
+const meanRadius = skillRadii.reduce((sum, radius) => sum + radius, 0) / skillRadii.length;
+for (const radius of skillRadii) {
+  assert(Math.abs(radius - meanRadius) <= 8, 'Skills fora do mesmo arco do MINERAR');
+}
+assert(skillRadii.length === 4, 'Arco precisa reservar quatro slots');
 for (let i = 0; i < circles.length; i++) {
   for (let j = i + 1; j < circles.length; j++) {
     const a = circles[i], b = circles[j];
