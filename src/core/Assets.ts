@@ -17,6 +17,9 @@ const SKILL_ICON_NAMES = [
   'cat_mining', 'pickup', 'magnet', 'radius', 'yield', 'luck', 'jackpot', 'backpack',
   'organize', 'cat_collect', 'boots', 'weight', 'jump', 'aircontrol', 'lantern', 'eye',
   'reach', 'legacy_mark', 'veteran_hand',
+  // Skills de arma: icones proprios deixam claro que o efeito muda o tiro,
+  // em vez de parecerem apenas mais um atributo da picareta.
+  'weapon_burst', 'weapon_pierce', 'weapon_ricochet',
 ];
 
 /**
@@ -448,7 +451,16 @@ class AssetsImpl {
    * incompleto sem o jogo piscar um boneco invisivel.
    */
   trajeStrip(traje: string, anim: string): HTMLImageElement | null {
-    return this.images.get(`traje:${traje}:${anim}`) ?? null;
+    const direta = this.images.get(`traje:${traje}:${anim}`);
+    if (direta) return direta;
+    // Os trajes novos vieram com uma tira `tiro` (o corpo armado), enquanto
+    // o runtime trabalha com a pose semantica `aim`. Aceitar os dois nomes
+    // evita um personagem invisivel e permite que o mesmo traje caminhe com a
+    // arma na mao sem duplicar PNGs.
+    if (anim === 'aim' || anim === 'arma_anda' || anim === 'arma_baixa') {
+      return this.images.get(`traje:${traje}:tiro`) ?? null;
+    }
+    return null;
   }
 
   /** Tira de uma animacao do BOT, ou null quando aquele arquivo nao existe. */

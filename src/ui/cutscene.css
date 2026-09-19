@@ -1,0 +1,193 @@
+/*
+ * A CUTSCENE.
+ *
+ * Arquivo proprio de proposito: `style.css` tem dez mil linhas e uma regra
+ * antiga mais especifica ja venceu uma regra nova tres vezes neste projeto.
+ * Uma camada que nasce agora, com nomes proprios, nao tem com quem brigar.
+ *
+ * Tudo aqui e `transform`/`opacity` e cor — nada que force o navegador a
+ * recalcular layout durante a cena. Numa maquina fraca isso e a diferenca
+ * entre uma camera que desliza e uma que engasga.
+ */
+
+.cutscene {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  overflow: hidden;
+  background: #05070b;
+  opacity: 0;
+  transition: opacity 0.42s ease;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cutscene.on {
+  opacity: 1;
+}
+
+.cs-palco {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * Cada camada e ancorada pelo CENTRO.
+ *
+ * `left`/`top` marcam o ponto, e o translate de -50% poe o meio da imagem
+ * nele. Assim um enquadramento do roteiro diz "esta coisa fica AQUI", e nao
+ * "a borda esquerda dela fica aqui" — que e impossivel de escrever sem saber
+ * a largura de cada PNG.
+ */
+.cs-camada {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transform: translate(-50%, -50%);
+  transition-property: height, width, left, top, opacity;
+  transition-timing-function: cubic-bezier(0.33, 0, 0.2, 1);
+  image-rendering: pixelated;
+  will-change: transform, opacity;
+}
+
+/* Recorte de um quadro de tira: a largura da imagem e N vezes a da celula. */
+.cs-camada[data-quadros] {
+  background-size: auto 100%;
+  background-position: calc(var(--quadro) * -100%) center;
+}
+
+/*
+ * O VEU fica ENTRE os dois palcos.
+ *
+ * Ele existe para escurecer e tingir o LUGAR — e o que faz a noite parecer
+ * noite. Cobrindo tudo, ele apagava tambem o que a cena esta mostrando: no
+ * beat da caixa, a picareta e o revolver viraram dois vultos marrons sobre
+ * fundo marrom, e a fala "...e um revolver" acontecia numa tela sem revolver
+ * visivel. Objeto que a fala NOMEIA tem de estar aceso.
+ */
+.cs-veu {
+  position: absolute;
+  inset: 0;
+  transition: background 1.2s ease;
+  pointer-events: none;
+}
+
+.cs-palco-frente {
+  pointer-events: none;
+}
+
+/*
+ * AS TARJAS.
+ *
+ * Nao sao enfeite: elas sao o que avisa, sem texto, que o jogo parou e alguem
+ * vai contar uma coisa. Entram deslizando junto com a cena.
+ */
+.cs-tarja {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 11%;
+  background: #04060a;
+  transform: translateY(-100%);
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+.cs-tarja-baixo {
+  bottom: 0;
+  top: auto;
+  transform: translateY(100%);
+}
+
+.cutscene.on .cs-tarja {
+  transform: translateY(0);
+}
+
+.cs-pular {
+  position: absolute;
+  top: calc(11% + 10px);
+  right: calc(env(safe-area-inset-right, 0px) + 14px);
+  z-index: 3;
+  padding: 7px 14px;
+  border: 1px solid #ffffff2e;
+  border-radius: 4px;
+  background: #0b0f16a8;
+  color: #d8c7a6;
+  font: 600 10px/1 'Cinzel', Georgia, serif;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+}
+
+.cs-pular:hover {
+  border-color: #ffc45366;
+  color: #ffc453;
+}
+
+/*
+ * A CAIXA DE FALA fica ACIMA da tarja de baixo, e nao dentro dela.
+ *
+ * Dentro, o texto competiria com a borda preta e ficaria espremido; acima, a
+ * tarja vira a base sobre a qual ele se apoia.
+ */
+.cs-caixa {
+  position: absolute;
+  left: 50%;
+  bottom: calc(11% + 16px);
+  z-index: 2;
+  width: min(760px, 86vw);
+  transform: translateX(-50%);
+  padding: 12px 18px 14px;
+  border-left: 2px solid #ffc45366;
+  background: linear-gradient(90deg, #070b12e8, #070b1299 70%, transparent);
+}
+
+.cs-quem {
+  display: block;
+  margin: 0 0 4px;
+  color: #ffc453;
+  font: 700 11px/1 'Cinzel', Georgia, serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cs-texto {
+  margin: 0;
+  min-height: 2.6em;
+  color: #eadfcd;
+  font: 400 15px/1.45 Georgia, 'Times New Roman', serif;
+  text-shadow: 0 1px 3px #000;
+}
+
+/* A gravacao do pai nao e uma pessoa na sala: e uma voz vinda de uma fita. */
+.cs-caixa.cs-narrador .cs-texto {
+  font-style: italic;
+  color: #cfe3ea;
+}
+
+.cs-caixa.cs-narrador {
+  border-left-color: #8cd5e566;
+}
+
+.cs-avanco {
+  display: block;
+  margin: 6px 0 0;
+  color: #ffffff5c;
+  font: 500 9px/1 var(--font-display, Georgia), Georgia, serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  animation: cs-pisca 1.8s ease-in-out infinite;
+}
+
+@keyframes cs-pisca {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.8; }
+}
+
+/* Em tela baixa (celular deitado) a fonte encolhe: 15px numa altura de 393
+   come a cena inteira. */
+@media (max-height: 460px) {
+  .cs-texto { font-size: 13px; }
+  .cs-caixa { bottom: calc(11% + 10px); padding: 9px 14px 11px; }
+}

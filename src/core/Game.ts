@@ -59,10 +59,11 @@ import { Progression } from '../systems/Progression';
 import { GATE_LAYERS, gateArenaCol, gateBandRows, gateLayerDef, insideBlockia } from '../data/gates';
 import { StoryGates } from '../systems/StoryGates';
 import { storyGateAtRow } from '../data/storyGates';
-import { MINE_CLOSED, PROLOGUE } from '../data/prologue';
+import { MINE_CLOSED } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
 import { BlockiaRenderer } from '../world/BlockiaRenderer';
+import { Cutscene } from '../ui/Cutscene';
 import { PortaBlockia } from '../entities/PortaBlockia';
 import { abrirPortaBlockia } from '../world/Blockia';
 import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
@@ -172,6 +173,7 @@ export class Game {
   private camps: BaseCamps;
   private campsRenderer!: BaseCampRenderer;
   private blockiaRenderer!: BlockiaRenderer;
+  private cutscene!: Cutscene;
   private journalUI!: JournalUI;
   private campUI!: BaseCampUI;
   private vitals = new Vitals(this.attrs);
@@ -612,6 +614,8 @@ export class Game {
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
     // A mobilia da cidade: arte por cima da geometria, sem tocar na colisao.
     this.blockiaRenderer = new BlockiaRenderer(this.world);
+    // As cenas: camada propria, por cima de tudo, fora do laco de quadro.
+    this.cutscene = new Cutscene(uiRoot);
     /*
      * A porta abre quando a Mara abre — a MESMA flag que a missao "As
      * Lanternas Azuis" exige. Sem isto o desenho da porta e o objetivo do
@@ -867,6 +871,7 @@ export class Game {
     // Depois do load: a moeda de teste soma ao que ja existia, e nao e apagada
     // pelo `stock.fromJSON` do save.
     this.moedaDeTeste();
+    this.cenaDeTeste();
   }
 
   // -------------------------------------------------------------- setup ----
@@ -1526,10 +1531,21 @@ export class Game {
        * Durante o dialogo o jogo esta PAUSADO: um holofote mandando andar
        * enquanto nada responde ao toque ensinaria que o jogo nao funciona.
        */
-      Events.emit('dialog:open', {
-        lines: PROLOGUE,
-        onClose: () => this.tutorial.comecar(),
-      });
+      /*
+       * O PROLOGO VIROU CENA, e nao mais uma caixa de dialogo.
+       *
+       * As falas sao exatamente as mesmas — elas ja estavam escritas e boas. O
+       * que faltava era ONDE elas acontecem: a mina fechada de noite, o
+       * caderno abrindo, a caixa com a picareta e o revolver. Vinte e sete
+       * linhas de texto sobre um jogo pausado sao vinte e sete linhas que o
+       * jogador pula; as mesmas vinte e sete com a mina crescendo atras sao a
+       * abertura.
+       *
+       * Se a cena nao existir por qualquer motivo, `tocar` devolve false e
+       * chama o `aoFim` na hora — o tutorial comeca do mesmo jeito e o jogo
+       * nao fica preso numa cortina preta.
+       */
+      this.cutscene.tocar('prologo', () => this.tutorial.comecar());
       return;
     }
 
@@ -1659,6 +1675,36 @@ export class Game {
     this.hud.toast('Expedicao retomada.', 'info');
     // Por ultimo: o turno da noite precisa da frota ja carregada.
     this.aplicarOffline(data.savedAt);
+  }
+
+  /**
+   * REVER UMA CENA pela URL: `?cena=prologo`.
+   *
+   * Uma cutscene roda uma vez, no comeco de um jogo novo. Para conferir se ela
+   * ficou boa era preciso APAGAR O SAVE — preco absurdo por quinze segundos de
+   * tela, e que na pratica significa nunca mais olhar depois da primeira vez.
+   *
+   * Com isto da para rever qualquer cena a qualquer momento, no celular, sem
+   * perder nada. O parametro some do endereco depois, como o das moedas: nao
+   * fica colado no link que alguem compartilha.
+   */
+  private cenaDeTeste(): void {
+    let params: URLSearchParams;
+    try {
+      params = new URLSearchParams(window.location.search);
+    } catch {
+      return;
+    }
+    const id = params.get('cena');
+    if (!id) return;
+    params.delete('cena');
+    const busca = params.toString();
+    window.history.replaceState(
+      {},
+      '',
+      window.location.pathname + (busca ? `?${busca}` : '') + window.location.hash
+    );
+    this.cutscene.tocar(id);
   }
 
   /**

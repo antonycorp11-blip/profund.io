@@ -88,6 +88,10 @@ export interface GameEvents {
   'city:met': { id: string; name: string; city: string; trust: number };
   /** A porta da cidade se abriu: o jogador bateu e alguem atendeu. */
   'cidade:porta': { city: string };
+  /** Uma cutscene comecou: o jogo para e a tela e dela. */
+  'cutscene:inicio': { id: string };
+  /** A cutscene acabou (por ter terminado ou por ter sido pulada). */
+  'cutscene:fim': Record<string, never>;
   'rep:changed': { city: string; axis: string; value: number };
   /**
    * A cidade passou a confiar e liberou a descida.

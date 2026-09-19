@@ -8,6 +8,8 @@ import type { Attributes } from './Attributes';
 import type { Player } from '../player/Player';
 import type { World } from '../world/World';
 
+export type WeaponShotStyle = 'normal' | 'burst' | 'pierce' | 'ricochet' | 'combo';
+
 interface Bala {
   ativo: boolean;
   x: number;
@@ -24,6 +26,8 @@ interface Bala {
   quiques: number;
   raio: number;
   cor: string;
+  /** Assinatura visual da skill consumida neste disparo. */
+  estilo: WeaponShotStyle;
   /** Rastro: onde ela estava no quadro anterior, para desenhar a risca. */
   px: number;
   py: number;
@@ -92,7 +96,12 @@ export class WeaponSystem {
      * quantas vezes quicam. Quem responde e o cinto. Assim uma habilidade nova
      * nao mexe numa linha daqui.
      */
-    private efeitos: () => { balas: number; furos: number; quiques: number }
+    private efeitos: () => {
+      balas: number;
+      furos: number;
+      quiques: number;
+      estilo?: WeaponShotStyle;
+    }
   ) {
     for (let i = 0; i < MAX_FX; i++) {
       this.fx.push({ ativo: false, x: 0, y: 0, ang: 0, vida: 0, total: 1, tipo: 'fogo', tamanho: 16 });
@@ -111,6 +120,7 @@ export class WeaponSystem {
         quiques: 0,
         raio: 3,
         cor: '#fff',
+        estilo: 'normal',
         px: 0,
         py: 0,
       });
@@ -200,6 +210,7 @@ export class WeaponSystem {
       b.quiques = ef.quiques;
       b.raio = d.bulletSize;
       b.cor = d.color;
+      b.estilo = ef.estilo ?? 'normal';
     }
 
     // Recuo: empurra o jogador para TRAS da mira. E o que da peso ao tiro, e
@@ -326,6 +337,7 @@ export class WeaponSystem {
         const lb = b.raio * 4;
         ctx.drawImage(bala, -lb / 2, -lb / 2, lb, lb);
         ctx.restore();
+        this.desenharAssinatura(ctx, b, ang);
         continue;
       }
 
@@ -343,6 +355,7 @@ export class WeaponSystem {
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.raio, 0, Math.PI * 2);
       ctx.fill();
+      this.desenharAssinatura(ctx, b, ang);
     }
 
     // Estampidos e impactos, por cima das balas.
@@ -365,6 +378,51 @@ export class WeaponSystem {
 
     ctx.restore();
     void CONFIG;
+  }
+
+  /**
+   * Linguagem visual imediata das skills. O sprite base continua sendo usado
+   * quando existe, mas cada tiro ganha uma assinatura legivel sem depender de
+   * um PNG novo: rajada abre duas linhas, perfurante cria um nucleo cyan e
+   * ricochete carimba um losango violeta. Isso tambem funciona offline e em
+   * trajes ou armas futuras.
+   */
+  private desenharAssinatura(ctx: CanvasRenderingContext2D, b: Bala, ang: number): void {
+    if (b.estilo === 'normal') return;
+    const cores: Record<WeaponShotStyle, string> = {
+      normal: '#fff',
+      burst: '#ff9d45',
+      pierce: '#6fe7ff',
+      ricochet: '#c998ff',
+      combo: '#ffe38a',
+    };
+    const cor = cores[b.estilo];
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(ang);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = cor;
+    ctx.fillStyle = cor;
+    ctx.lineWidth = Math.max(1.2, b.raio * 0.65);
+    if (b.estilo === 'burst' || b.estilo === 'combo') {
+      for (const y of [-b.raio * 2.1, b.raio * 2.1]) {
+        ctx.beginPath();
+        ctx.moveTo(-b.raio * 3.8, y);
+        ctx.lineTo(-b.raio * 0.7, y * 0.55);
+        ctx.stroke();
+      }
+    }
+    if (b.estilo === 'pierce' || b.estilo === 'combo') {
+      ctx.beginPath();
+      ctx.arc(0, 0, b.raio * 2.1, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    if (b.estilo === 'ricochet' || b.estilo === 'combo') {
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-b.raio * 1.45, -b.raio * 1.45, b.raio * 2.9, b.raio * 2.9);
+    }
+    ctx.restore();
   }
 
   /** Quantas balas estao no ar — o teste headless le isto. */

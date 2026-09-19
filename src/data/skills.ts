@@ -398,6 +398,7 @@ export const SKILLS: SkillDef[] = [
     ],
     unlockEffect: 'Três balas por disparo, pelo preço de uma.',
     icon: '💨',
+    art: 'weapon_burst',
     position: { x: 0, y: 6 },
   },
   {
@@ -424,6 +425,7 @@ export const SKILLS: SkillDef[] = [
     ],
     unlockEffect: 'A bala atravessa e continua.',
     icon: '➶',
+    art: 'weapon_pierce',
     position: { x: 1, y: 6 },
   },
   {
@@ -449,6 +451,7 @@ export const SKILLS: SkillDef[] = [
     ],
     unlockEffect: 'A bala quica na rocha.',
     icon: '⤾',
+    art: 'weapon_ricochet',
     position: { x: 2, y: 6 },
   },
   {

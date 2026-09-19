@@ -9,3 +9,7 @@ dist/
 arte-bruta/
 .vercel
 .env*
+
+# Arquivo temporario que o Vite cria ao reler vite.config.ts; some sozinho e
+# nunca deve entrar num commit.
+vite.config.ts.timestamp-*

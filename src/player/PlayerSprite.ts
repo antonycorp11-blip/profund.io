@@ -25,6 +25,9 @@ export class PlayerSprite {
    */
   traje: string | null = null;
 
+  /** O traje atual foi desenhado sem ferramenta e aceita camadas encaixadas. */
+  equipamentoModular = false;
+
   /** Estado externo que influencia a pose. */
   heavy = false;
   /**
@@ -109,9 +112,6 @@ export class PlayerSprite {
    */
   private tiraDaArma = 'aim';
   private quadroDeMira = 0;
-
-  /** As tiras em que ele esta de arma na mao. */
-  private static readonly TIRAS_DE_ARMA = ['aim', 'arma_anda', 'arma_baixa'];
 
   /*
    * TRANSICOES.
@@ -207,6 +207,15 @@ export class PlayerSprite {
     const lado = aimX < 0 ? -1 : 1;
     const ang = aimY < -0.45 ? -Math.PI / 4 : aimY > 0.45 ? Math.PI / 4 : 0;
     return { x: Math.cos(ang) * lado, y: Math.sin(ang) };
+  }
+
+  /** A pose do braco e independente das pernas: o corpo pode caminhar e a
+   * arma continua presa ao mesmo punho, em vez de desaparecer a cada passo. */
+  private poseDaArma(): { tira: string; quadro: number } {
+    if (this.recoil > 0.02) return { tira: 'aim', quadro: this.recoil > 0.5 ? 6 : 7 };
+    if (this.aimY < -0.45) return { tira: 'aim', quadro: 2 };
+    if (this.aimY > 0.45) return { tira: 'aim', quadro: 4 };
+    return { tira: 'aim', quadro: this.atirando ? 0 : 1 };
   }
 
   update(dt: number, player: Player): void {
@@ -443,28 +452,17 @@ export class PlayerSprite {
        * Parado, o coice e o que se ve — nao ha perna competindo. Andando, e a
        * perna. Cada um ganha onde e visto.
        */
-      const paraOndeMira = (): { name: string; index: number } | null => {
-        if (this.aimY < -0.45 && has('aim')) return pick('aim', 2);
-        if (this.aimY > 0.45 && has('aim')) return pick('aim', 4);
-        return null;
-      };
+      /*
+       * A perna nao troca de animacao quando a mao troca de ferramenta.
+       * `arma_anda` e `arma_baixa` nunca foram entregues no pacote de arte;
+       * exigir esses arquivos fazia o personagem cair numa pose fixa. O
+       * corpo usa a caminhada real e o braco usa a pose `aim` separadamente
+       * durante o desenho da arma.
+       */
+      if (andando && has('walk')) return pick('walk', ciclo('walk'));
 
-      if (andando && has('arma_anda') && (this.atirando || this.recoil > 0.02)) {
-        return paraOndeMira() ?? pick('arma_anda', ciclo('arma_anda'));
-      }
-
-      // Parado: o coice tem os dois quadros so para ele.
-      if (this.recoil > 0.02 && has('aim')) {
-        return pick('aim', 6 + (this.recoil > 0.5 ? 0 : 1));
-      }
-
-      if (this.atirando) {
-        return paraOndeMira() ?? (has('aim') ? pick('aim', 0) : pick('arma_baixa', 0));
-      }
-
-      /* Sem gatilho, a arma fica BAIXADA — andando ou parado. */
-      if (has('arma_baixa')) return pick('arma_baixa', andando ? ciclo('arma_baixa') : 0);
-      if (has('aim')) return pick('aim', 0);
+      const pose = this.poseDaArma();
+      if (has(pose.tira)) return pick(pose.tira, pose.quadro);
     }
 
     if (player.swing > 0.02 && has('mine')) {
@@ -535,7 +533,11 @@ export class PlayerSprite {
     let drawH = art.drawHeight;
     let usingStrip = false;
     if (sheet && strip) {
-      sx = strip.index * frameW;
+      // `aim` tem dez quadros no corpo base; os trajes modulares entregam
+      // oito na tira `tiro`. Clamp evita ler pixels fora da folha quando um
+      // recuo escolhe os quadros 6/7.
+      const quadrosNaFolha = Math.max(1, Math.floor(sheet.width / frameW));
+      sx = Math.min(strip.index, quadrosNaFolha - 1) * frameW;
       drawH = art.stripDrawHeight;
       usingStrip = true;
     } else {
@@ -624,10 +626,12 @@ export class PlayerSprite {
      * Com isso `arma_baixa` passa a ser o que o nome diz — ele anda de mao
      * livre, pronto, e a arma so sai quando ele puxa.
      */
-    const sacada = this.atirando || this.recoil > 0.02;
-    if (this.aiming && sacada && strip && PlayerSprite.TIRAS_DE_ARMA.includes(strip.name)) {
-      this.tiraDaArma = strip.name;
-      this.quadroDeMira = strip.index;
+    if (this.aiming && this.weaponArt) {
+      const pose = this.poseDaArma();
+      this.tiraDaArma = pose.tira;
+      this.quadroDeMira = pose.quadro;
+      // A arma permanece na mao enquanto o jogador anda, pula ou procura um
+      // alvo. O recuo apenas troca o quadro do braco; nao remove o sprite.
       this.desenharArma(ctx, h, flipped);
     }
     ctx.drawImage(sheet, sx, sy, frameW, frameH, -w / 2, 0, w, h);
@@ -667,7 +671,10 @@ export class PlayerSprite {
     if (!this.aiming || !id || !arte || !arte.width) return null;
 
     const h = ART.character.stripDrawHeight;
-    const punho = encaixe(this.tiraDaArma, this.quadroDeMira, 'punho');
+    const pose = this.poseDaArma();
+    this.tiraDaArma = pose.tira;
+    this.quadroDeMira = pose.quadro;
+    const punho = encaixe(pose.tira, pose.quadro, 'punho');
     if (!punho) return null;
     const cabo = WEAPON_GRIPS[id] ?? { x: 0.2, y: 0.5 };
     const lado = player.facing < 0 ? -1 : 1;
@@ -747,10 +754,16 @@ export class PlayerSprite {
      *
      * Maos vazias e a postura padrao. A ferramenta aparece quando e usada.
      */
-    if (tira !== 'mine') return;
+    const carregando =
+      this.equipamentoModular && !this.aiming && (tira === 'idle' || tira === 'walk' || tira === 'jump');
+    if (tira !== 'mine' && !carregando) return;
     const id = this.picaretaArt;
     const arte = id ? Assets.tool(id) : null;
-    const ponto = encaixe(tira, quadro, 'punho');
+    // A tira idle nao tem punho medido: usa o primeiro quadro da caminhada,
+    // mantendo a picareta presa ao mesmo lado enquanto o heroi respira.
+    const tiraDaFerramenta = tira === 'idle' ? 'walk' : tira;
+    const quadroDaFerramenta = tira === 'idle' ? 0 : quadro;
+    const ponto = encaixe(tiraDaFerramenta, quadroDaFerramenta, 'punho');
     if (!id || !arte || !arte.width || !ponto) return;
     const cabo = TOOL_GRIPS[id] ?? { x: 0.22, y: 0.5 };
     this.prender(ctx, arte, ponto, h, PlayerSprite.TAMANHO.picareta, cabo, this.giroDaFerramenta(tira, ponto));

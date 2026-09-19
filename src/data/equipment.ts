@@ -47,6 +47,12 @@ export interface EquipDef {
    * sem ter as seis.
    */
   arte?: string;
+  /**
+   * Este traje foi desenhado como corpo limpo: ferramentas e armas entram
+   * como camadas presas aos encaixes do personagem. Trajes antigos continuam
+   * usando o corpo completo, sem ganhar uma segunda picareta por acidente.
+   */
+  modular?: boolean;
 }
 
 /**
@@ -71,6 +77,7 @@ const TRAJES_DE_TESTE: EquipDef[] = [
     modifiers: [],
     icon: '🦺',
     arte: 'traje1',
+    modular: true,
   },
   {
     id: 'eq_traje_t2',
@@ -82,6 +89,7 @@ const TRAJES_DE_TESTE: EquipDef[] = [
     modifiers: [],
     icon: '🦺',
     arte: 'traje2',
+    modular: true,
   },
   {
     id: 'eq_traje_t3',
@@ -93,6 +101,7 @@ const TRAJES_DE_TESTE: EquipDef[] = [
     modifiers: [],
     icon: '🦺',
     arte: 'traje3',
+    modular: true,
   },
   {
     id: 'eq_traje_t4',
@@ -104,6 +113,7 @@ const TRAJES_DE_TESTE: EquipDef[] = [
     modifiers: [],
     icon: '🦺',
     arte: 'traje4',
+    modular: true,
   },
 ];
 

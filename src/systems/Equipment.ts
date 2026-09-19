@@ -22,7 +22,16 @@ export class Equipment {
   constructor(
     private attrs: Attributes,
     private stock: BaseStock
-  ) {}
+  ) {
+    // Os trajes sao uma vitrine de personalizacao, nao uma compra escondida
+    // atras de um requisito. Eles ficam disponiveis desde o inicio para que o
+    // jogador possa vestir qualquer corpo e testar as camadas de ferramenta.
+    // O custo continua visivel na definicao para saves antigos e telas que o
+    // consultam, mas o traje ja nasce na mochila.
+    for (const def of EQUIPMENT) {
+      if (def.slot === 'corpo') this.owned.add(def.id);
+    }
+  }
 
   has(id: string): boolean {
     return this.owned.has(id);
@@ -87,6 +96,12 @@ export class Equipment {
   fromJSON(data: EquipmentSave | undefined): void {
     if (!data) return;
     this.owned = new Set(data.owned ?? []);
+    // Migra saves antigos: todos os corpos continuam selecionaveis depois da
+    // atualizacao, sem exigir que o jogador compre de novo uma arte que ja
+    // existia no projeto.
+    for (const def of EQUIPMENT) {
+      if (def.slot === 'corpo') this.owned.add(def.id);
+    }
     this.equipped = new Map(
       Object.entries(data.equipped ?? {}).filter(([, id]) => this.owned.has(id as string)) as [
         EquipSlot,

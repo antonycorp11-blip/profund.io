@@ -10,6 +10,12 @@ import type { DialogLine } from './story';
  * Roda uma vez, na primeira sessao, antes do primeiro golpe de picareta. Faz
  * tres coisas, nessa ordem, porque essa e a ordem em que elas importam:
  * quem e o pai, por que a mina reabriu, e o que acontece se a cota falhar.
+ *
+ * ESTAS FALAS AGORA MORAM NA CENA (/data/cutscenes.ts), palavra por palavra.
+ * A lista continua aqui como a fonte escrita — e o texto que a BIBLIA definiu
+ * e o lugar certo para mexer nele — mas quem a mostra e o diretor de cena, com
+ * a mina crescendo atras. Se um dia a cena sair, isto volta a ser um dialogo
+ * sem nada quebrar.
  */
 export const PROLOGUE: DialogLine[] = [
   { speaker: 'Santiago (gravacao)', text: '"Se esta ouvindo isso, provavelmente eu fiz exatamente o que todo mundo disse para eu nao fazer."' },
