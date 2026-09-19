@@ -537,6 +537,56 @@ export const CONFIG = {
     autosaveIntervalSec: 12,
   },
 
+  /**
+   * O TURNO DA NOITE: bot e toupeira trabalhando com o jogo fechado.
+   *
+   * A regra que decide tudo aqui: o offline NAO pode render mais do que o
+   * online. Se render, o melhor jeito de jogar passa a ser fechar o jogo, e um
+   * jogo que premia nao ser jogado esta se dizendo chato por conta propria.
+   *
+   * Por isso o rendimento nao e um numero inventado: ele sai das MESMAS
+   * constantes que o loop online usa (golpes por segundo, poder da copia, hp e
+   * valor do bloco daquela camada), e depois apanha do `eficiencia` abaixo.
+   * Ver /systems/Offline.ts e a sonda tools/offline-probe.ts, que roda a
+   * simulacao de verdade e compara com a conta.
+   */
+  offline: {
+    /**
+     * Teto de horas creditadas por vez.
+     *
+     * Oito, e nao vinte e quatro: e uma noite de sono, que e o intervalo real
+     * entre duas sessoes de um jogo de celular. Teto alto nao da mais jogo,
+     * da menos — some o motivo de voltar amanha e cria o de voltar semana que
+     * vem.
+     */
+    maxHoras: 8,
+    /**
+     * Fracao do rendimento online que o turno da noite paga.
+     *
+     * 0,6 porque o bot offline nao tem quem o desentale, quem o reposicione
+     * quando ele limpa o raio, nem quem recolha o que caiu fora do alcance
+     * dele. Trabalhando sozinho ele rende menos, e e assim mesmo.
+     */
+    eficiencia: 0.6,
+    /**
+     * Quanto cada toupeira acrescenta ao que os bots entregam, ate o teto.
+     *
+     * Toupeira nao minera — ela busca o que ficou no chao. Offline, o efeito
+     * dela e esse mesmo: menos coisa perdida no caminho entre o bot e o
+     * deposito. E um numero de projeto, nao uma medicao, e esta escrito aqui
+     * para ninguem o confundir com uma.
+     */
+    ganhoPorToupeira: 0.05,
+    tetoGanhoToupeira: 0.5,
+    /**
+     * Abaixo disto o turno nem e anunciado.
+     *
+     * Um relatorio de "voce ganhou 3 moedas em 40 segundos" toda vez que o
+     * jogador troca de aba transforma a melhor novidade do jogo em ruido.
+     */
+    minSegundos: 120,
+  },
+
   debug: {
     showColliders: false,
     /*

@@ -74,6 +74,7 @@ import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
 import { Missions } from '../systems/Missions';
 import { Reputation, type CityId } from '../systems/Reputation';
+import { calcularOffline, formatarDuracao } from '../systems/Offline';
 import { CityNpc } from '../entities/CityNpc';
 import { BLOCKIA_NPCS } from '../data/blockia';
 import { OUTPOST_NPCS } from '../data/outpost';
@@ -850,6 +851,9 @@ export class Game {
     window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 120));
 
     this.loadOrStart();
+    // Depois do load: a moeda de teste soma ao que ja existia, e nao e apagada
+    // pelo `stock.fromJSON` do save.
+    this.moedaDeTeste();
   }
 
   // -------------------------------------------------------------- setup ----
@@ -1581,6 +1585,121 @@ export class Game {
     this.camera.snapTo(this.player.cx, this.player.cy);
     this.tileRenderer.invalidateAll();
     this.hud.toast('Expedicao retomada.', 'info');
+    // Por ultimo: o turno da noite precisa da frota ja carregada.
+    this.aplicarOffline(data.savedAt);
+  }
+
+  /**
+   * MOEDA DE TESTE pela URL: `?moedas=3000`.
+   *
+   * Existe porque testar o turno da noite exige ter um bot, e um bot custa 800
+   * moedas que so aparecem depois de uma hora de picareta. Testar uma
+   * funcionalidade nao pode custar uma sessao inteira de jogo.
+   *
+   * O QUE ISTO E, dito sem eufemismo: uma porta. Qualquer pessoa com o link do
+   * jogo pode digitar `?moedas=999999` e se dar o que quiser. Nao ha como
+   * fechar isso num jogo que roda inteiro no navegador do jogador — o mesmo
+   * motivo pelo qual o portao de senha e cortina, e nao seguranca. Esta aqui
+   * porque foi pedido e porque e util; nao esta escondida atras de um nome
+   * obscuro porque esconder daria a impressao falsa de que protege.
+   *
+   * Some do endereco depois de aplicada, para recarregar a pagina nao pagar de
+   * novo — e para o valor nao ficar colado no link que alguem compartilha.
+   */
+  private moedaDeTeste(): void {
+    let params: URLSearchParams;
+    try {
+      params = new URLSearchParams(window.location.search);
+    } catch {
+      return;
+    }
+    const bruto = params.get('moedas');
+    if (bruto === null) return;
+    const valor = Math.floor(Number(bruto));
+    if (!Number.isFinite(valor) || valor <= 0) return;
+
+    this.stock.money += valor;
+    this.hud.celebrate(
+      'MOEDA DE TESTE',
+      `+${valor.toLocaleString('pt-BR')} moedas`,
+      'Veio do endereco (?moedas=). Isto e ferramenta de teste, nao recompensa do jogo.',
+      'progress',
+      4
+    );
+    params.delete('moedas');
+    const busca = params.toString();
+    window.history.replaceState(
+      {},
+      '',
+      window.location.pathname + (busca ? `?${busca}` : '') + window.location.hash
+    );
+    this.save();
+  }
+
+  /**
+   * O TURNO DA NOITE: paga o que a frota rendeu com o jogo fechado.
+   *
+   * Roda no fim do load, e nao no comeco, porque precisa das copias e das
+   * toupeiras ja restauradas — offline sem frota e zero, e uma conta feita
+   * antes do `fromJSON` daria exatamente isso todas as vezes.
+   *
+   * O relogio e lido AQUI e passado para `calcularOffline` como numero. A
+   * conta em si nao sabe que horas sao: e o que permite a sonda rodar ela com
+   * um tempo inventado e comparar com a simulacao de verdade.
+   */
+  private aplicarOffline(savedAt: number | undefined): void {
+    if (!savedAt) return;
+    const segundos = Math.max(0, (Date.now() - savedAt) / 1000);
+    if (segundos < CONFIG.offline.minSegundos) return;
+
+    const frota = this.cloneManager.clones.map((c) => ({
+      tipo: c.config.bot ?? ('bot_simples' as const),
+      depth: this.world.depthOfPixel(c.y),
+    }));
+    if (frota.length === 0 && this.collectors.units.length === 0) return;
+
+    const rel = calcularOffline(segundos, frota, this.collectors.units.length, {
+      poder: this.attrs.get('cloneMiningPower'),
+      velocidade: this.attrs.get('cloneMiningSpeed'),
+      valorEntrega: this.attrs.get('deliveryValue'),
+    });
+
+    /*
+     * QUEM PAGA E O DEPOSITO, com a mesma funcao da entrega do jogador.
+     *
+     * Escrever a conta de moeda aqui teria sido mais curto e teria criado uma
+     * segunda formula de preco — que divergiria da primeira no dia em que o
+     * bonus de entrega mudasse. O trabalho da copia ja paga por
+     * `stock.deliver` no loop online; o turno da noite passa pela mesma porta,
+     * entao a cota da semana tambem conta o que foi entregue dormindo.
+     */
+    const moedas = this.stock.deliver(rel.itens, this.attrs.get('deliveryValue'));
+    for (const [id, qtd] of rel.itens) this.quota.registerDelivery(id as never, qtd);
+    rel.moedas = moedas;
+
+    const impedido = rel.bots.find((b) => b.impedido);
+    if (moedas <= 0) {
+      // Silencio seria pior: o jogador deixou bot trabalhando e nao veio nada.
+      if (impedido) {
+        this.hud.toast(`Turno da noite: ${impedido.nome} parado — ${impedido.impedido}.`, 'warn');
+      }
+      return;
+    }
+
+    const linhas: string[] = [];
+    linhas.push(`${rel.bots.length} bot(s) e ${rel.toupeiras} toupeira(s) trabalharam.`);
+    if (rel.limitado) {
+      linhas.push(`Contei ${CONFIG.offline.maxHoras} h — e o maximo que um turno rende.`);
+    }
+    if (impedido) linhas.push(`${impedido.nome} ficou parado: ${impedido.impedido}.`);
+
+    this.hud.celebrate(
+      'TURNO DA NOITE',
+      `${moedas.toLocaleString('pt-BR')} moedas em ${formatarDuracao(rel.segundos)}`,
+      linhas.join(' '),
+      'progress',
+      4
+    );
   }
 
   // --------------------------------------------------------------- loop ----
