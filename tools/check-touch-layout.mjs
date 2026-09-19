@@ -35,3 +35,22 @@ for (let i = 0; i < circles.length; i++) {
   }
 }
 console.log(`HUD: ${circles.length} controles sem sobreposicao na geometria declarada.`);
+
+// A legenda cresce conforme o nome da camada. Altura fixa cortava o rodape.
+for (const selector of ['.game-hud .minimap', '.game-hud .hud-top-right .hud-map-slot']) {
+  assert(/height:\s*auto\s*;/.test(block(selector)), `${selector}: precisa acompanhar a legenda`);
+}
+const swap = block('.game-hud .hud-mao');
+const offset = (prop) => {
+  const match = swap.match(new RegExp(`${prop}: calc\\(var\\(--safe-[rb]\\) \\+ (\\d+)px\\)`));
+  assert(match, `Ancora da troca ausente: ${prop}`);
+  return Number(match[1]);
+};
+const left = offset('right'), bottom = offset('bottom');
+const width = px(swap, 'width'), height = px(swap, 'height');
+for (const c of circles) {
+  const x = Math.max(left, Math.min(left + width, c.x));
+  const y = Math.max(bottom, Math.min(bottom + height, c.y));
+  assert(Math.hypot(c.x - x, c.y - y) > c.r, `Troca invade ${c.selector}`);
+}
+console.log('HUD: troca separada das acoes; minimapa acompanha o conteudo.');

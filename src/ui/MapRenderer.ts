@@ -14,6 +14,7 @@ export interface MapDrawOptions {
   playerCol: number;
   playerRow: number;
   markers?: MapMarker[];
+  translucent?: boolean;
   /** Ajudantes (copias e toupeiras) para o jogador achar no mapa. */
   helpers?: { col: number; row: number; tint: string }[];
   /** Desenha a regua de profundidade a esquerda. */
@@ -48,8 +49,11 @@ export function drawMap(
   const h = o.tilesY * s;
 
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#09070c';
-  ctx.fillRect(0, 0, w, h);
+  if (!o.translucent) {
+    ctx.fillStyle = '#09070c';
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.globalAlpha = o.translucent ? 0.48 : 1;
 
   for (let ty = 0; ty < o.tilesY; ty++) {
     const row = o.originRow + ty;
@@ -90,6 +94,7 @@ export function drawMap(
     }
   }
 
+  ctx.globalAlpha = 1;
   if (o.ruler) drawRuler(ctx, world, o, h);
   if (o.markers) drawMarkers(ctx, o);
 
@@ -122,9 +127,16 @@ export function drawMap(
   // Jogador por ultimo, sempre por cima.
   const px = (o.playerCol - o.originCol) * s + s / 2;
   const py = (o.playerRow - o.originRow) * s + s / 2;
+  if (o.translucent) {
+    ctx.strokeStyle = '#9ae8f4';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(px, py, 7, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(px, py, Math.max(2.2, s * 0.9), 0, Math.PI * 2);
+  ctx.arc(px, py, Math.max(o.translucent ? 3.5 : 2.2, s * 0.9), 0, Math.PI * 2);
   ctx.fill();
   ctx.strokeStyle = 'rgba(0,0,0,0.8)';
   ctx.lineWidth = 1;

@@ -184,7 +184,7 @@ export class HUD {
     this.bagEl = document.createElement('div');
     this.bagEl.className = 'slim bag';
     this.bagEl.innerHTML = `
-      <span class="slim-icon">🎒</span>
+      <span class="slim-icon">🎒</span><span class="hud-hint">MOCHILA ▾</span>
       <span class="slim-bar"><i></i></span>
       <span class="slim-num" data-bag-count>0</span>`;
     this.bagEl.setAttribute('role', 'button');
@@ -195,6 +195,8 @@ export class HUD {
     const toggleResources = (): void => {
       this.resourcesOpen = !this.resourcesOpen;
       this.bagEl.setAttribute('aria-expanded', String(this.resourcesOpen));
+      const hint = this.bagEl.querySelector('.hud-hint');
+      if (hint) hint.textContent = this.resourcesOpen ? 'FECHAR' : 'MOCHILA ▾';
       this.root.classList.toggle('resources-open', this.resourcesOpen);
     };
     this.bagEl.addEventListener('click', toggleResources);
@@ -272,7 +274,7 @@ export class HUD {
     this.maoEl.innerHTML = `
       <span class="hud-mao-icone" data-mao-icone>⛏</span>
       <span class="hud-mao-txt" data-mao-nome>Picareta</span>
-      <span class="hud-mao-troca">trocar</span>`;
+      <span class="hud-mao-troca">TROCAR ⇄</span>`;
     this.maoLabel = this.maoEl.querySelector('[data-mao-nome]') as HTMLElement;
     this.maoEl.addEventListener('click', () => this.onTrocarMao?.());
 
@@ -281,7 +283,7 @@ export class HUD {
     bars.appendChild(this.bagEl);
     bars.appendChild(this.healthEl);
     bars.appendChild(this.ammoEl);
-    bars.appendChild(this.maoEl);
+    this.root.appendChild(this.maoEl);
     this.barsRow = bars;
     const escondeAoInicio = !this.sempreVisiveis;
     this.bagEl.hidden = escondeAoInicio;
@@ -359,7 +361,7 @@ export class HUD {
     // A aba de abrir/fechar, sempre visivel.
     const puxador = document.createElement('button');
     puxador.className = 'quota-puxador';
-    puxador.innerHTML = '<i>◈</i><span data-puxador-txt>Objetivo</span><u>▾</u>';
+    puxador.innerHTML = '<i>◈</i><span data-puxador-txt>Objetivo</span><u>VER ▾</u>';
     puxador.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       this.quotaEl.classList.toggle('recolhido');

@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Cinzel';
+  src: url('/fonts/cinzel.ttf') format('truetype');
+  font-weight: 400 900;
+  font-display: swap;
+}
+
 /* Acabamento compartilhado. Geometria das telas permanece em style.css;
    controles de toque ficam aqui, sem recalcular posicoes a cada quadro. */
 :root {
@@ -40,6 +47,7 @@ body .casca-cab {
 
 body .casca-titulo b {
   color: #f5e4c5;
+  font-family: 'Cinzel', Georgia, serif;
   font-size: 17px;
   letter-spacing: 0.055em;
 }
@@ -101,27 +109,40 @@ body button:focus-visible {
 .game-hud .hud-top-left { max-width: 240px; gap: 5px; }
 .game-hud .money-card {
   display: flex;
-  min-width: 0;
-  padding: 0;
-  gap: 6px;
+  width: 225px;
+  min-width: 225px;
+  height: 44px;
+  padding: 0 14px 0 53px;
+  gap: 5px;
   border: 0;
   border-radius: 0;
-  background: none;
+  background: url('/art/hud/saldo-expedicao-v1.png') center / 100% 100% no-repeat;
   box-shadow: none;
-  filter: drop-shadow(0 2px 3px #000);
+  filter: none;
 }
 .game-hud .money-copy { gap: 0; }
-.game-hud .money-copy small { display: none; }
+.game-hud .money-copy small, .game-hud .money-coin { display: none; }
 .game-hud .money-copy strong {
-  color: #ffe1a2;
-  font-size: 18px;
+  color: #ffe6ad;
+  font: 700 17px 'Cinzel', Georgia, serif;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 2px #000;
 }
-.game-hud .money-coin { width: 20px; height: 20px; min-width: 20px; font-size: 10px; }
-.game-hud .level-inline { margin: 0 0 0 4px; padding: 0; border: 0; background: none; gap: 4px; }
-.game-hud .level-num { color: #acc9cc; font-size: 10px; }
-.game-hud .level-bar { width: 26px; height: 3px; background: #06121c; }
+.game-hud .level-inline {
+  position: absolute;
+  left: 53px;
+  bottom: -9px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  gap: 5px;
+}
+.game-hud .level-num { color: #acc9cc; font-size: 9px; }
+.game-hud .level-bar { width: 30px; height: 3px; background: #06121c; }
 .game-hud .level-bar i { background: #96d9e0; }
+.game-hud .hud-hint { font: 500 9px var(--font-display); letter-spacing: 0.06em; color: #d2cfb9; }
 
 .game-hud .hud-bars {
   display: flex;
@@ -129,6 +150,7 @@ body button:focus-visible {
   flex-wrap: wrap;
   width: auto;
   max-width: 226px;
+  margin-top: 7px;
   gap: 5px;
   align-items: center;
 }
@@ -151,18 +173,23 @@ body button:focus-visible {
 .game-hud .vitals .slim-bar { width: 70px; height: 4px; }
 .game-hud .vitals .slim-num { font-size: 10px; }
 .game-hud .hud-mao {
+  position: absolute;
+  right: calc(var(--safe-r) + 64px);
+  bottom: calc(var(--safe-b) + 186px);
   display: flex;
-  width: 36px;
+  width: 100px;
   height: 32px;
   min-height: 32px;
-  padding: 3px;
+  padding: 3px 8px;
+  gap: 7px;
   justify-content: center;
-  border: 1px solid #78949666;
-  border-radius: 10px;
-  background: #11232bc9;
+  border: 1px solid #b396665e;
+  border-radius: 16px;
+  background: #11232b9c;
   box-shadow: none;
 }
-.game-hud .hud-mao-txt, .game-hud .hud-mao-troca { display: none; }
+.game-hud .hud-mao-txt { display: none; }
+.game-hud .hud-mao-troca { display: inline; font: 500 10px var(--font-display); color: #dfc8a3; }
 .game-hud .hud-mao-icone { width: 23px; height: 23px; font-size: 20px; }
 .game-hud .hud-mao.arma { border-color: #e4b875; }
 .game-hud .quota {
@@ -176,7 +203,7 @@ body button:focus-visible {
 }
 .game-hud .quota-puxador { padding: 3px 7px; font-size: 9px; letter-spacing: 0.07em; }
 .game-hud .hud-top-center {
-  top: calc(var(--safe-t) + 130px);
+  top: calc(var(--safe-t) + 155px);
   left: calc(var(--safe-l) + 10px);
   right: auto;
   width: 210px;
@@ -205,9 +232,46 @@ body button:focus-visible {
 .game-hud .ib-label { display: none; }
 .game-hud .ib-icon, .game-hud .ib-img { width: 24px; height: 24px; font-size: 21px; }
 .game-hud .ib-badge { font-size: 9px; min-width: 14px; height: 14px; }
-.game-hud .hud-fold { border-radius: 50%; background: #10212bd9; border: 1px solid #78949655; }
-.game-hud .hud-top-right .hud-map-slot { width: 112px; height: 112px; }
-.game-hud .minimap { width: 112px; height: 112px; border-color: #b9986466; border-radius: 9px; background: #0c1b24e8; }
+.game-hud .hud-fold {
+  position: absolute;
+  right: 155px;
+  top: 43px;
+  border-radius: 50%;
+  background: #10212b70;
+  border: 1px solid #78949644;
+}
+.game-hud .hud-top-right .hud-map-slot { width: 145px; height: auto; }
+.game-hud .minimap {
+  width: 145px;
+  height: auto;
+  padding: 2px;
+  opacity: 1;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.game-hud .minimap canvas { background: transparent; border-radius: 0; max-height: 74px; object-fit: contain; }
+.game-hud .minimap-label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 5px;
+  padding: 3px 0;
+  background: #091c2466;
+  text-shadow: 0 1px 2px #000;
+}
+.game-hud .minimap-label b { font: 500 9px var(--font-display); overflow-wrap: anywhere; }
+.game-hud .minimap-label strong { font: 700 15px 'Cinzel', Georgia, serif; color: #f4d28c; }
+.game-hud .minimap-label span { grid-column: 1 / -1; font-size: 8px; opacity: 1; }
+.game-hud .minimap-hint {
+  top: 0;
+  right: 0;
+  min-height: 30px;
+  border: 0;
+  background: #0b202960;
+  font: 500 9px var(--font-display);
+}
+.game-hud .quota-puxador u { transform: none; opacity: 0.9; white-space: nowrap; font-size: 8px; }
 
 /* Arco fixo em torno da acao, com espaco proprio para o pulo. */
 body .touch-skills { right: var(--safe-r); bottom: var(--safe-b); width: 0; height: 0; }
@@ -218,16 +282,16 @@ body .touch-skills .touch-btn.skill {
   border-color: #8cc0cf88;
   box-shadow: inset 0 0 0 3px #10232bd9, 0 3px 10px #0006;
 }
-body #btn-skill1 { right: 16px; bottom: 147px; }
-body #btn-skill2 { right: 74px; bottom: 145px; }
-body #btn-skill3 { right: 128px; bottom: 122px; }
-body #btn-skill4 { right: 176px; bottom: 86px; }
+body #btn-skill1 { right: 3px; bottom: 104px; }
+body #btn-skill2 { right: 53px; bottom: 128px; }
+body #btn-skill3 { right: 108px; bottom: 123px; }
+body #btn-skill4 { right: 156px; bottom: 92px; }
 body .touch-skills .touch-btn.skill.ready {
   border-color: #a7e1e8;
   box-shadow: inset 0 0 0 3px #10232b, 0 0 9px #8cd5e52e;
 }
 body .touch-fold {
-  right: calc(var(--safe-r) + 232px);
+  right: calc(var(--safe-r) + 214px);
   bottom: calc(var(--safe-b) + 92px);
   width: 30px;
   height: 30px;

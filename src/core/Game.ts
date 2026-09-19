@@ -465,7 +465,8 @@ export class Game {
       this.world,
       this.exploration,
       () => this.telas.abrir('mapa', () => this.mapScreen.open()),
-      () => this.helperDots()
+      () => this.helperDots(),
+      () => this.alvosDoObjetivo()
     );
 
     // Criaturas: os postos vem da geracao, entao so podem ser calculados
@@ -774,23 +775,8 @@ export class Game {
      * O objetivo entra nela em primeiro lugar, em ambar — a mesma cor que o
      * jogo usa em toda parte para dizer "e isto que da para fazer agora".
      */
-    this.compass = new CloneCompass(this.world, () => [
-      ...this.alvosDoObjetivo(),
-      ...this.cloneManager.clones.map((c) => ({
-        x: c.x,
-        y: c.y,
-        tint: c.tint,
-        index: c.index,
-        label: 'C',
-      })),
-      ...this.collectors.units.map((u) => ({
-        x: u.x,
-        y: u.y,
-        tint: '#d8a35a',
-        index: u.index,
-        label: 'T',
-      })),
-    ]);
+    // A frota ja aparece no mapa; dezenas de setas na borda tapavam a mina.
+    this.compass = new CloneCompass(this.world, () => this.alvosDoObjetivo());
 
     this.collectors = new CollectorManager(
       this.world,

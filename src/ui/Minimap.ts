@@ -1,6 +1,6 @@
 import { CONFIG } from '../data/config';
 import { drawMap } from './MapRenderer';
-import { layerAt, metersToNextLayer } from '../data/layers';
+import { layerAt } from '../data/layers';
 import type { Exploration } from '../systems/Exploration';
 import type { World } from '../world/World';
 
@@ -27,7 +27,8 @@ export class Minimap {
     private exploration: Exploration,
     private onOpen: () => void,
     /** Copias e toupeiras, para aparecerem no minimapa. */
-    private helpers: () => { x: number; y: number; tint: string }[] = () => []
+    private helpers: () => { x: number; y: number; tint: string }[] = () => [],
+    private objectives: () => { x: number; y: number }[] = () => []
   ) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.root = document.createElement('div');
@@ -35,7 +36,7 @@ export class Minimap {
     this.root.innerHTML = `
       <canvas></canvas>
       <div class="minimap-label"></div>
-      <div class="minimap-hint">mapa</div>`;
+      <button class="minimap-hint" aria-label="Abrir mapa completo">MAPA ↗</button>`;
     parent.appendChild(this.root);
 
     this.canvas = this.root.querySelector('canvas') as HTMLCanvasElement;
@@ -101,6 +102,7 @@ export class Minimap {
       playerCol: col,
       playerRow: row,
       markers: this.exploration.visibleMarkers(),
+      translucent: true,
       helpers: ajudantes.map((h) => ({
         col: Math.floor(h.x / ts),
         row: Math.floor(h.y / ts),
@@ -110,29 +112,31 @@ export class Minimap {
 
     const depth = this.world.depthOfRow(row);
     const layer = layerAt(depth);
-    const toNext = metersToNextLayer(depth);
-    // A profundidade mora aqui: e a mesma informacao que o mapa ja conta, e um
-    // card so no lugar de dois deixa a coluna respirar.
-    // Profundidade E coluna.
-    //
-    // Com 240 colunas, "236 m" nao localiza nada: a base do Cristal esta na
-    // coluna 30 e Blockia na 180, na mesma profundidade de muita coisa. Sem a
-    // coluna o jogador nao tem como saber se precisa andar para a esquerda ou
-    // para a direita, e as missoes citam coluna.
-    /*
-     * "col 57" saiu.
-     *
-     * Era o indice da coluna do jogador no mundo: um numero de depuracao, sem
-     * significado nenhum para quem joga, ocupando uma das quatro linhas fixas
-     * do HUD. As outras tres se justificam — a camada diz onde voce esta, a
-     * profundidade e o numero central do jogo, e "proxima em X m" e a unica
-     * coisa que mede progresso rumo ao que vem embaixo.
-     */
+    // Alvo distante fica preso a borda; nao revela terreno ainda desconhecido.
+    const w = this.tilesX * this.scale;
+    const h = this.tilesY * this.scale;
+    const nearest = this.objectives().sort((a, b) =>
+      Math.hypot(a.x - playerX, a.y - playerY) - Math.hypot(b.x - playerX, b.y - playerY))[0];
+    if (nearest) {
+      const dx = (nearest.x / ts - col) * this.scale;
+      const dy = (nearest.y / ts - row) * this.scale;
+      const factor = Math.min(1, (w / 2 - 8) / Math.max(1, Math.abs(dx)), (h / 2 - 8) / Math.max(1, Math.abs(dy)));
+      const x = w / 2 + dx * factor, y = h / 2 + dy * factor;
+      this.ctx.fillStyle = '#ffda82';
+      this.ctx.strokeStyle = '#23170c';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, y - 5);
+      this.ctx.lineTo(x + 5, y);
+      this.ctx.lineTo(x, y + 5);
+      this.ctx.lineTo(x - 5, y);
+      this.ctx.closePath();
+      this.ctx.fill();
+      this.ctx.stroke();
+    }
     this.label.innerHTML =
       `<b>${layer.name}</b>` +
       `<strong>${Math.max(0, Math.round(depth))}<small>m</small></strong>` +
-      (toNext !== null
-        ? `<span>proxima em ${Math.max(0, Math.round(toNext))} m</span>`
-        : '<span>fundo da mina</span>');
+      '<span>◈ objetivo · ● você</span>';
   }
 }
