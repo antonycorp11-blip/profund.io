@@ -36,6 +36,8 @@ export class HUD {
   private jetFill: HTMLElement;
   private lastJet = -1;
   private objetivoTimer = 0;
+  /** Ha luta de chefe em curso? Quem avisa sao os eventos de chefe. */
+  private emLutaDeChefe = false;
   /**
    * Telas largas mostram vida e mochila o TEMPO TODO.
    *
@@ -359,6 +361,17 @@ export class HUD {
     this.debugEl = document.createElement('div');
     this.debugEl.className = 'debug';
     this.root.appendChild(this.debugEl);
+
+    // A luta de chefe muda como o HUD fala: ver `celebrate`.
+    Events.on('boss:engaged', () => {
+      this.emLutaDeChefe = true;
+    });
+    Events.on('boss:ended', () => {
+      this.emLutaDeChefe = false;
+    });
+    Events.on('player:died', () => {
+      this.emLutaDeChefe = false;
+    });
 
     Events.on('ui:toast', (p) => this.toast(p.text, p.tone ?? 'info'));
     // Sem aviso de mochila cheia: a barra ja fica vermelha e o aviso aparecia
@@ -862,6 +875,23 @@ export class HUD {
     tone: 'money' | 'quota' | 'progress',
     priority: number
   ): void {
+    /*
+     * DURANTE UMA LUTA DE CHEFE, NADA DE CARTAO NO MEIO DA TELA.
+     *
+     * Relato do dono, e ele esta certo: "toda hora eu lutando la, tentando nao
+     * morrer, aparecia o texto por cima do meu personagem, no meio da tela.
+     * Voce deixou coisa pra tras. Isso nao pode ser quebrado. Que merda, eu to
+     * aqui lutando."
+     *
+     * O cartao ocupa o centro — exatamente onde esta o boneco, o chefe e a
+     * mira. Numa luta, o centro da tela nao esta disponivel para recado
+     * nenhum. A noticia nao se perde: vira aviso de canto, que se le sem
+     * tirar os olhos do bicho.
+     */
+    if (this.emLutaDeChefe) {
+      this.toast(`${title} — ${detail}`.slice(0, 96), tone === 'quota' ? 'warn' : 'info');
+      return;
+    }
     if (this.celebration && priority < this.celebrationPriority) return;
     clearTimeout(this.celebrationTimer);
     this.celebration?.remove();

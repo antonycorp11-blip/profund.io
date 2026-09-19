@@ -67,9 +67,21 @@ export function generateWorld(world: World): GeneratedWorldInfo {
         id = BLOCK_IDS.GRASS;
       } else if (row > top) {
         const depth = world.depthOfRow(row);
+        /*
+         * A ROCHA VEM DA CAMADA, e nao de um numero solto.
+         *
+         * Era `depth < 120 ? STONE : DARKSTONE`. So que a fronteira da camada
+         * — o selo, onde mora o chefe — esta em 180 m. De 120 a 180 o jogador
+         * via a pedra escura do bioma SEGUINTE dezenas de metros antes de
+         * poder chegar nele, e o relato foi exatamente esse: "eu ja estou
+         * vendo a pedra mais escura antes mesmo de chegar no bicho".
+         *
+         * Duas verdades sobre onde um bioma comeca, escritas em lugares
+         * diferentes, sempre acabam divergindo. Agora ha uma so: cada camada
+         * declara a propria rocha em /data/layers.ts, e a geracao obedece.
+         */
         if (depth < 6) id = BLOCK_IDS.DIRT;
-        else if (depth < 120) id = BLOCK_IDS.STONE;
-        else id = BLOCK_IDS.DARKSTONE;
+        else id = blockByKey(layerAt(depth).rockKey)?.id ?? BLOCK_IDS.STONE;
       }
       world.setTileRaw(col, row, id);
     }

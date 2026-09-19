@@ -47,7 +47,15 @@ export const RESOURCES: Record<ResourceId, ResourceDef> = {
     rarity: 'comum',
     color: '#8d8d95',
     accent: '#b6b6be',
-    weight: 1,
+    /*
+     * A PEDRA NAO PESA NA MOCHILA.
+     *
+     * Ela nao e minerio que se leva para vender: e materia de municao, e o
+     * cinturao tritura no lugar. Enquanto pesava, cada tiro disputava espaco
+     * com o carvao e o ferro, e o jogador chegava ao chefe com a mochila cheia
+     * de pedra e sem o que vender — sendo punido por ter atirado.
+     */
+    weight: 0,
     showInHud: false,
   },
   coal: {

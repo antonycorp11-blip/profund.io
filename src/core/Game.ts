@@ -210,6 +210,15 @@ export class Game {
    * Nasce antes do HUD porque os botoes da barra ja passam por ele.
    */
   private telas = new Telas();
+  /**
+   * Fracao de pedra ja triturada e ainda nao gasta.
+   *
+   * Um tiro custa menos de uma pedra, e o inventario so guarda inteiros.
+   * Este resto e o que sobra do seixo entre um disparo e outro.
+   */
+  private restoDeMunicao = 0;
+  /** Ha chefe engajado agora? Silencia avisos que atrapalhariam a luta. */
+  private emLutaDeChefe = false;
   private reputation = new Reputation();
   private cityNpcs: CityNpc[] = [];
   private decor: SurfaceDecor;
@@ -460,8 +469,33 @@ export class Game {
          * valendo para as melhores, e cai no mesmo caminho porque ela tambem
          * e um recurso de mochila.
          */
-        tem: () => this.inventory.count(this.weapons.def.ammo),
-        gastar: (n) => this.inventory.remove(this.weapons.def.ammo, n) >= n,
+        /*
+         * MUNICAO E CONTADA EM TIROS, e a pedra e gasta em pedacos.
+         *
+         * `ammoPerShot` virou fracionario (um quinto de pedra por tiro) e o
+         * inventario so guarda inteiros, entao o resto fica aqui: cada disparo
+         * acumula a fracao, e quando ela fecha uma unidade a pedra sai da
+         * mochila. Sem esse resto, `remove(id, 0.2)` arredondaria e o tiro
+         * sairia de graca ou comeria uma pedra inteira.
+         *
+         * E `tem()` devolve TIROS, nao pedras: o HUD mostra o que o jogador
+         * decide com. Ele quer saber quantas vezes ainda pode puxar o gatilho,
+         * nao quantos seixos carrega.
+         */
+        tem: () => {
+          const porTiro = this.weapons.def.ammoPerShot || 1;
+          return Math.floor((this.inventory.count(this.weapons.def.ammo) + this.restoDeMunicao) / porTiro);
+        },
+        gastar: (n) => {
+          const id = this.weapons.def.ammo;
+          this.restoDeMunicao += n;
+          const inteiros = Math.floor(this.restoDeMunicao);
+          if (inteiros <= 0) return true; // ainda dentro da mesma pedra
+          if (this.inventory.count(id) < inteiros) return false;
+          this.inventory.remove(id, inteiros);
+          this.restoDeMunicao -= inteiros;
+          return true;
+        },
       },
       /*
        * O que as habilidades de ARMA acrescentam a ESTE disparo.
@@ -1001,7 +1035,25 @@ export class Game {
      * diferentes: ou o guardiao ainda esta vivo em algum lugar da faixa, ou
      * ele ja caiu e o que segura sao missoes deixadas para tras.
      */
+    Events.on('boss:engaged', () => {
+      this.emLutaDeChefe = true;
+    });
+    Events.on('boss:ended', () => {
+      this.emLutaDeChefe = false;
+    });
+
     Events.on('seal:hit', (p) => {
+      /*
+       * O SELO CALA ENQUANTO O GUARDIAO ESTA VIVO NA SUA FRENTE.
+       *
+       * O piso da arena E o selo — foi assim que eu a construi. Entao cada
+       * picaretada no chao durante a luta disparava este aviso, e o jogador
+       * levava "A PAREDE NAO CEDE" na cara enquanto tentava nao morrer.
+       *
+       * Fora que a mensagem e inutil ali: ela existe para explicar POR QUE a
+       * parede nao abre, e o motivo esta em pe na frente dele, atirando.
+       */
+      if (this.emLutaDeChefe) return;
       if (this.selAviso > 0) return;
       this.selAviso = 4;
       this.camera.addShake(2.4);
@@ -1547,7 +1599,10 @@ export class Game {
     );
 
     const balaDe = this.weapons.def.ammo;
-    this.hud.setAmmo(this.inventory.count(balaDe), balaDe, RESOURCES[balaDe].name);
+    // TIROS, nao pedras: e o numero com que o jogador decide se atira ou foge.
+    const porTiro = this.weapons.def.ammoPerShot || 1;
+    const tiros = Math.floor((this.inventory.count(balaDe) + this.restoDeMunicao) / porTiro);
+    this.hud.setAmmo(tiros, balaDe, RESOURCES[balaDe].name);
     this.hud.setMao(this.mao, this.weapons.def.shortName);
     this.touch.setRotuloAcao(this.mao === 'arma' ? 'ATIRAR' : 'MINERAR');
 

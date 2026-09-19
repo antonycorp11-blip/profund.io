@@ -111,7 +111,15 @@ export const WEAPONS: WeaponDef[] = [
     pierce: 0,
     recoil: 40,
     ammo: 'stone',
-    ammoPerShot: 2,
+    /*
+     * UM QUINTO de pedra por tiro: cinco tiros por pedra.
+     *
+     * Custava DUAS pedras por tiro. Dez pedras na mochila davam cinco tiros, e
+     * cinco tiros nao derrubam nada — a arma virava enfeite e o jogador
+     * aprendia a nao usa-la. Uma pedra vira estilhaco para varios tiros, que e
+     * como um cinturao de mineiro funcionaria.
+     */
+    ammoPerShot: 0.2,
     requiredDepth: 0,
     cost: 0,
     bulletSize: 3,

@@ -74,7 +74,18 @@ export const LAYERS: LayerDef[] = [
     minDepth: 0,
     color: '#6b4a2f',
     tunnelColor: '#2a1c10',
-    rockKey: 'dirt',
+    /*
+     * PEDRA, e nao terra.
+     *
+     * Dizia 'dirt', descrevendo o topo do solo. So que esta camada vai de 0 a
+     * 180 m: dos 180 metros dela, uns seis sao terra. Enquanto a geracao usava
+     * um numero solto (`depth < 120`) a mentira nao aparecia; quando a rocha
+     * passou a vir DAQUI, ela encheu de terra ate a fronteira.
+     *
+     * A terra do topo continua existindo, mas e outra coisa: e a camada de
+     * superficie no sentido literal, tratada por profundidade na geracao.
+     */
+    rockKey: 'stone',
     backwall: 0,
     generated: true,
     tagline: 'O comeco de tudo.',
