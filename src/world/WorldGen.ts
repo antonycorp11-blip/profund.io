@@ -195,11 +195,20 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     const pisoArena = row0 - 1; // a ultima linha de ar, logo acima do selo
     const rochaDaCamada = blockByKey(layer.rockKey)?.id ?? BLOCK_IDS.STONE;
 
-    // 1. O vao: escavado na rocha da camada de cima.
+    /*
+     * 1. O vao, com FUNDO.
+     *
+     * Era ar puro: atras dos pilares ficava escuro liso, e a sala lia como um
+     * recorte em vez de um salao. Profundidade nao vem de escurecer, vem de
+     * ter alguma coisa atras — aqui, a mesma pedra com a luz apagada.
+     *
+     * O fundo e atravessavel e a picareta nao o alcanca, entao ele nao muda
+     * nada do jogo: muda o que se ve.
+     */
     for (let col = arenaCol - arenaHalf; col <= arenaCol + arenaHalf; col++) {
       for (let row = tetoArena; row <= pisoArena; row++) {
         if (row <= 0) continue;
-        world.setTileRaw(col, row, BLOCK_IDS.AIR);
+        world.setTileRaw(col, row, BLOCK_IDS.RUIN_BACKWALL);
       }
     }
 
@@ -322,11 +331,12 @@ export function generateWorld(world: World): GeneratedWorldInfo {
           if (r > 0) world.setTileRaw(passo.col, r, BLOCK_IDS.AIR);
         }
       }
-      // 2a passada: piso de tijolo SO onde ainda ha pedra.
+      // 2a passada: DEGRAU DE PEDRA so onde ainda ha rocha. A galeria e obra
+      // de quem enterrou a camara, entao ela pisa em pedra lavrada.
       for (const passo of caminho) {
         const r = passo.row + 1;
         if (r > 0 && world.isSolid(passo.col, r)) {
-          world.setTileRaw(passo.col, r, BLOCK_IDS.RUIN_BRICK);
+          world.setTileRaw(passo.col, r, BLOCK_IDS.STEP_RUIN);
         }
       }
       const fim = caminho[caminho.length - 1];
@@ -481,8 +491,10 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     const colIni = shaftCol + degrau * AVANCO;
     for (let col = colIni; col < colIni + AVANCO; col++) {
       if (col < 0 || col >= width) continue;
-      // O degrau em que se pisa: tabua, porque a galeria foi CONSTRUIDA.
-      world.setTileRaw(col, pisoRow, BLOCK_IDS.PLANK);
+      // O degrau em que se pisa: DEGRAU DE MADEIRA, viga e ferro. Obra de
+      // mineiro — o mesmo formato da galeria da arena, outro material, e e por
+      // isso que os dois lugares contam coisas diferentes.
+      world.setTileRaw(col, pisoRow, BLOCK_IDS.STEP_WOOD);
       for (let r = pisoRow - 1; r >= pisoRow - ALTURA_LIVRE; r--) {
         world.setTileRaw(col, r, BLOCK_IDS.AIR);
       }

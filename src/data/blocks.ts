@@ -106,6 +106,9 @@ export const BLOCK_IDS = {
   RUIN_SLAB: 19,
   RUIN_COLUMN: 20,
   RUIN_DOOR: 21,
+  RUIN_BACKWALL: 22,
+  STEP_RUIN: 23,
+  STEP_WOOD: 24,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -441,6 +444,97 @@ export const BLOCKS: BlockDef[] = [
     color: '#7a5533',
     shade: '#5d3f25',
     speckle: '#96683f',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    /*
+     * A PAREDE DE FUNDO DA CAMARA.
+     *
+     * A sala nao tinha fundo: atras dos pilares era escuro liso, entao ela
+     * parecia um recorte e nao um salao. Profundidade nao vem de escurecer,
+     * vem de ter ALGUMA COISA atras — a mesma pedra, com a luz apagada.
+     *
+     * E um bloco decorativo, e nao a parede de fundo do motor: aquela e
+     * escolhida por CAMADA inteira, e eu queria esta so dentro da arena.
+     * Atravessavel e fora do alcance da picareta: quem mirar nela acerta o que
+     * estiver atras, que e o que o jogador espera de uma parede distante.
+     */
+    id: BLOCK_IDS.RUIN_BACKWALL,
+    key: 'ruin_backwall',
+    name: 'Fundo da camara',
+    type: 'estrutura',
+    hp: 0,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['special', 'indestructible'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 99,
+    solid: false,
+    indestructible: true,
+    color: '#4e5647',
+    shade: '#3a4035',
+    speckle: '#5e6656',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    /*
+     * OS DEGRAUS, em pedra e em madeira.
+     *
+     * Mesma forma, materiais diferentes, e e isso que faz os dois lugares
+     * contarem coisas diferentes com a mesma geometria: a galeria da base e
+     * obra de mineiro (tabua, viga e ferro), a da arena e obra de quem enterrou
+     * aquilo (pedra lavrada).
+     */
+    id: BLOCK_IDS.STEP_RUIN,
+    key: 'step_ruin',
+    name: 'Degrau de pedra',
+    type: 'estrutura',
+    hp: 120,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['ancient', 'stone'],
+    rarity: 'comum',
+    value: 2,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    artFlipY: false,
+    color: '#9aa08c',
+    shade: '#6f7566',
+    speckle: '#b7bda8',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.STEP_WOOD,
+    key: 'step_wood',
+    name: 'Degrau de madeira',
+    type: 'estrutura',
+    hp: 60,
+    drop: null,
+    dropMin: 0,
+    dropMax: 0,
+    dropChance: 0,
+    tags: ['special'],
+    rarity: 'comum',
+    value: 0,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    artFlipY: false,
+    color: '#8a6234',
+    shade: '#5d3f20',
+    speckle: '#b0834a',
     sfxMaterial: 'estrutura',
   },
   /*
