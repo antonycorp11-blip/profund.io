@@ -554,10 +554,24 @@ export class Game {
           // `consume` ja poe em recarga quando a ultima carga vai embora.
           return this.activeSkills.consume(id);
         };
+        const rajada = um('rajada');
+        const perfurante = um('perfurante');
+        const ricochete = um('ricochete');
+        const ativas = Number(rajada) + Number(perfurante) + Number(ricochete);
         return {
-          balas: um('rajada') ? Math.max(1, Math.round(this.attrs.get('burstShots'))) : 1,
-          furos: um('perfurante') ? Math.max(1, Math.round(this.attrs.get('pierceCount'))) : 0,
-          quiques: um('ricochete') ? Math.max(1, Math.round(this.attrs.get('ricochetBounces'))) : 0,
+          balas: rajada ? Math.max(1, Math.round(this.attrs.get('burstShots'))) : 1,
+          furos: perfurante ? Math.max(1, Math.round(this.attrs.get('pierceCount'))) : 0,
+          quiques: ricochete ? Math.max(1, Math.round(this.attrs.get('ricochetBounces'))) : 0,
+          estilo:
+            ativas > 1
+              ? 'combo'
+              : rajada
+                ? 'burst'
+                : perfurante
+                  ? 'pierce'
+                  : ricochete
+                    ? 'ricochet'
+                    : 'normal',
         };
       }
     );
@@ -1681,8 +1695,9 @@ export class Game {
    * REVER UMA CENA pela URL: `?cena=prologo`.
    *
    * Uma cutscene roda uma vez, no comeco de um jogo novo. Para conferir se ela
-   * ficou boa era preciso APAGAR O SAVE — preco absurdo por quinze segundos de
-   * tela, e que na pratica significa nunca mais olhar depois da primeira vez.
+   * ficou boa era preciso APAGAR O SAVE — o que e um preco absurdo por olhar
+   * quinze segundos de tela, e que na pratica significa nunca mais olhar
+   * depois da primeira vez.
    *
    * Com isto da para rever qualquer cena a qualquer momento, no celular, sem
    * perder nada. O parametro some do endereco depois, como o das moedas: nao
@@ -1991,7 +2006,9 @@ export class Game {
      * de planilha, nao uma mudanca.
      */
     const corpo = this.equipment.equippedIn('corpo');
-    this.playerSprite.traje = corpo ? equipDef(corpo)?.arte ?? null : null;
+    const corpoDef = corpo ? equipDef(corpo) : null;
+    this.playerSprite.traje = corpoDef?.arte ?? null;
+    this.playerSprite.equipamentoModular = corpoDef?.modular === true;
 
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     // A pose do braco e a arma na mao seguem a MAO ATUAL e a mira.
@@ -2031,7 +2048,7 @@ export class Game {
      * (ver ART.character.equipamentoNoCorpo). Desenhar as pecas por cima poria
      * um segundo capacete sobre o primeiro.
      */
-    const nu = !ART.character.equipamentoNoCorpo;
+    const nu = this.playerSprite.equipamentoModular || !ART.character.equipamentoNoCorpo;
     this.playerSprite.capaceteArt = nu ? this.equipment.equippedIn('cabeca') : null;
     this.playerSprite.mochilaArt = nu ? this.equipment.equippedIn('costas') : null;
     this.playerSprite.picaretaArt =
