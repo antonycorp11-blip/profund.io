@@ -215,7 +215,8 @@ export function generateWorld(world: World): GeneratedWorldInfo {
         const col = arenaCol + lado * dist;
         for (let row = pisoArena - 4; row <= pisoArena; row++) {
           if (row <= 0) continue;
-          world.setTileRaw(col, row, BLOCK_IDS.RUIN_BRICK);
+          // COLUNA, e nao tijolo: um pilar tem que parecer um pilar.
+          world.setTileRaw(col, row, BLOCK_IDS.RUIN_COLUMN);
         }
       }
     }
@@ -231,7 +232,8 @@ export function generateWorld(world: World): GeneratedWorldInfo {
       for (let k = 0; k < 5; k++) {
         const col = ini + lado * k;
         const row = pisoArena - 6;
-        if (row > 0) world.setTileRaw(col, row, BLOCK_IDS.RUIN_BRICK);
+        // LAJE: sacada e piso, e piso se le pelo acabamento liso.
+        if (row > 0) world.setTileRaw(col, row, BLOCK_IDS.RUIN_SLAB);
       }
     }
 
@@ -257,7 +259,16 @@ export function generateWorld(world: World): GeneratedWorldInfo {
      */
     const meiaPorta = CONFIG.gate.doorHalf;
     for (let col = arenaCol - meiaPorta; col <= arenaCol + meiaPorta; col++) {
-      world.setTileRaw(col, row0, BLOCK_IDS.RUIN_BRICK);
+      /*
+       * O centro e a PASSAGEM; as bordas sao a soleira.
+       *
+       * A porta entaipada tem desenho proprio — pedras de tamanhos errados
+       * cravadas numa moldura lavrada — e ele so diz o que tem a dizer se
+       * aparecer em poucos tiles. Espalhada pelos nove, vira textura e perde
+       * o sentido: "alguem fechou isto" so se le quando ha comeco e fim.
+       */
+      const noMeio = Math.abs(col - arenaCol) <= 1;
+      world.setTileRaw(col, row0, noMeio ? BLOCK_IDS.RUIN_DOOR : BLOCK_IDS.RUIN_SLAB);
     }
 
 

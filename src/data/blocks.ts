@@ -103,6 +103,9 @@ export const BLOCK_IDS = {
   SEAL: 16,
   LAMP: 17,
   LADDER: 18,
+  RUIN_SLAB: 19,
+  RUIN_COLUMN: 20,
+  RUIN_DOOR: 21,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -438,6 +441,93 @@ export const BLOCKS: BlockDef[] = [
     color: '#7a5533',
     shade: '#5d3f25',
     speckle: '#96683f',
+    sfxMaterial: 'estrutura',
+  },
+  /*
+   * AS TRES PECAS DA RUINA.
+   *
+   * A arena inteira era feita do MESMO tile: pilar, sacada, porta e teto com a
+   * textura identica. Por isso ela lia como um bloco so em vez de um lugar
+   * construido — nenhuma parte dizia o que era.
+   *
+   * Sao blocos separados e nao variantes do tijolo porque eles nao sao a mesma
+   * coisa com outra cara: a laje e piso, a coluna e sustentacao, a porta e a
+   * razao de tudo aquilo existir. Quem olha tem que conseguir nomear.
+   *
+   * Todos com a mesma vida do tijolo antigo (120): a diferenca e de leitura,
+   * nao de dificuldade.
+   */
+  {
+    id: BLOCK_IDS.RUIN_SLAB,
+    key: 'ruin_slab',
+    name: 'Laje antiga',
+    type: 'estrutura',
+    hp: 120,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['ancient', 'stone'],
+    rarity: 'comum',
+    value: 2,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    color: '#9aa08c',
+    shade: '#6f7566',
+    speckle: '#b7bda8',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.RUIN_COLUMN,
+    key: 'ruin_column',
+    name: 'Coluna antiga',
+    type: 'estrutura',
+    hp: 120,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['ancient', 'stone'],
+    rarity: 'comum',
+    value: 2,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    /* A coluna nao espelha: as estrias tem topo e base, e espelhar na vertical
+       viraria um tubo sem direcao. */
+    artFlipY: false,
+    color: '#a3a993',
+    shade: '#767c6b',
+    speckle: '#c0c6b1',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.RUIN_DOOR,
+    key: 'ruin_door',
+    name: 'Passagem murada',
+    type: 'estrutura',
+    hp: 120,
+    drop: 'stone',
+    dropMin: 1,
+    dropMax: 2,
+    dropChance: 1,
+    tags: ['ancient', 'stone'],
+    rarity: 'comum',
+    value: 2,
+    minDepth: 0,
+    maxDepth: Infinity,
+    minTool: 1,
+    solid: true,
+    indestructible: false,
+    artFlipY: false,
+    color: '#8f9583',
+    shade: '#666c5d',
+    speckle: '#adb39d',
     sfxMaterial: 'estrutura',
   },
   {

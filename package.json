@@ -36,7 +36,8 @@
     "slice-bots": "node tools/slice-bots.mjs",
     "identificar-trajes": "node tools/identificar-trajes.mjs",
     "slice-trajes": "node tools/slice-trajes.mjs",
-    "medir-toque": "node tools/medir-toque.mjs"
+    "medir-toque": "node tools/medir-toque.mjs",
+    "slice-ruinas": "node tools/slice-ruinas.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
