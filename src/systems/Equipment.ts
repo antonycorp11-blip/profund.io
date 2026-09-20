@@ -80,7 +80,10 @@ export class Equipment {
   }
 
   unequip(slot: EquipSlot): void {
-    this.equipped.delete(slot);
+    // O corpo antigo tinha picareta pintada nos quadros e nao faz mais parte
+    // do jogador. Tirar uma roupa volta ao traje canonico, nunca ao sprite velho.
+    if (slot === 'corpo') this.equipped.set('corpo', TRAJE_INICIAL);
+    else this.equipped.delete(slot);
     this.apply();
   }
 

@@ -434,7 +434,9 @@ export class PlayerSprite {
      * tiroteio faria a arma PISCAR para fora da mao por um quarto de segundo,
      * que e pior do que nao ter transicao.
      */
-    const t = this.aiming ? null : this.quadroDaTransicao();
+    // As transicoes pertencem ao corpo antigo. Um traje sem essas folhas deve
+    // continuar na propria caminhada, nunca piscar para outro personagem.
+    const t = this.aiming || this.traje ? null : this.quadroDaTransicao();
     if (t) return t;
 
     if (player.climbingWall !== 0 && has('climb')) {
@@ -543,8 +545,13 @@ export class PlayerSprite {
      */
     const doTraje =
       strip && this.traje ? Assets.trajeStrip(this.traje, strip.name) : null;
-    let sheet: CanvasImageSource | null =
-      doTraje ?? (strip ? Assets.characterStrip(strip.name) : null);
+    let sheet: CanvasImageSource | null = doTraje;
+    if (!sheet && strip && this.traje) {
+      // O corpo vestido nunca cai no personagem antigo. Se uma folha falhar
+      // ao carregar, mantem o proprio traje parado ate ela voltar.
+      sheet = Assets.trajeStrip(this.traje, 'idle');
+    }
+    if (!sheet && !this.traje) sheet = strip ? Assets.characterStrip(strip.name) : null;
     let frameW = art.stripFrame;
     let frameH = art.stripFrame;
     let sx: number;
