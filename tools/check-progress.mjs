@@ -65,6 +65,10 @@ const origens = new Set<string>([
   // (Reputation.conferirPassagem -> Game, evento city:passage). Sem crase:
   // este arquivo carrega a fonte TS dentro de um template literal.
   ...CITIES.map((c) => 'passagem_' + c.id),
+  // Acoes permanentes da campanha, emitidas por MissionActions/Game.
+  'trilhos_reparados', 'posto_nove_defendido', 'base_cristal_primeira_entrega',
+  'vilma_rota_segura', 'rota_comercial_reparada', 'blockia_arquivo_concluido',
+  'blockia_ponte_reparada', 'blockia_cisterna_limpa',
 ]);
 for (const m of MISSIONS) {
   for (const f of m.requires) {

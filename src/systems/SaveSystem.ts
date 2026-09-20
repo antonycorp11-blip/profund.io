@@ -66,6 +66,7 @@ export interface SaveData {
   /** Pergaminhos ja lidos. */
   scrolls?: string[];
   gates?: import('./BiomeGate').BiomeGateSave;
+  motherlodes?: import('./MotherlodeSystem').MotherlodeSave;
   stats: { blocksMined: number; deepestMeters: number; playTime: number };
   savedAt: number;
 }

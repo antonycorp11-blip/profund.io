@@ -77,6 +77,8 @@ export interface TechDef {
   name: string;
   description: string;
   cost: Partial<Record<ResourceId, number>>;
+  /** Mao de obra e maquinas da pesquisa. */
+  moneyCost?: number;
   requires: string[];
   /** Profundidade maxima ja alcancada necessaria. */
   requiredDepth: number;
@@ -324,6 +326,11 @@ export const TECHS: TechDef[] = [
     position: { x: 1, y: 1 },
   },
 ];
+
+for (const tech of TECHS) {
+  if (tech.startsResearched) continue;
+  tech.moneyCost = tech.requiredDepth < 120 ? 500 : tech.requiredDepth < 500 ? 2500 : tech.requiredDepth < 900 ? 5000 : 8000;
+}
 
 const BY_ID = new Map(TECHS.map((t) => [t.id, t]));
 

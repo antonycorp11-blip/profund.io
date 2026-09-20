@@ -77,6 +77,11 @@ import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
 import { Missions } from '../systems/Missions';
+import { MissionActions } from '../systems/MissionActions';
+import { CollapseSystem } from '../systems/CollapseSystem';
+import { MotherlodeSystem } from '../systems/MotherlodeSystem';
+import { Secrets } from '../systems/Secrets';
+import { SECRETS } from '../data/secrets';
 import { Reputation, type CityId } from '../systems/Reputation';
 import { calcularOffline, formatarDuracao } from '../systems/Offline';
 import { CityNpc } from '../entities/CityNpc';
@@ -145,6 +150,9 @@ export class Game {
   private upgrades: UpgradeSystem;
   private drops: DropManager;
   private mining: MiningSystem;
+  private missionActions: MissionActions;
+  private collapses!: CollapseSystem;
+  private motherlodes!: MotherlodeSystem;
 
   private hud: HUD;
   private dialog: DialogUI;
@@ -318,8 +326,23 @@ export class Game {
       this.attrs,
       this.procs
     );
+    this.missionActions = new MissionActions(
+      this.stock,
+      (id) => this.skills.hasStoryFlag(id),
+      (id) => this.skills.setStoryFlag(id),
+      () => { this.refreshObjective(); this.save(); }
+    );
 
     this.worldInfo = generateWorld(this.world);
+    this.collapses = new CollapseSystem(
+      () => {
+        this.camera.addShake(7);
+        this.particles.dust(this.player.cx, this.player.cy - 24, 12, '#9d8d75');
+        this.hurtPlayer(8, this.player.cx - 20);
+      },
+      (flag) => { this.skills.setStoryFlag(flag); this.refreshObjective(); this.save(); }
+    );
+    this.motherlodes = new MotherlodeSystem(this.world, (id) => this.skills.hasStoryFlag(id));
     this.decor = new SurfaceDecor(this.worldInfo.baseFloorRow);
 
     this.touch = new TouchControls(this.input, uiRoot);
@@ -477,6 +500,7 @@ export class Game {
 
     this.tech = new TechTree(this.attrs, this.stock);
     this.exploration = new Exploration(this.world, this.attrs);
+    new Secrets(this.world, this.stock, (id) => this.exploration.discoverMarker(id), (id) => this.skills.setStoryFlag(id));
     this.mapScreen = new MapScreen(uiRoot, this.world, this.exploration, () => ({
       col: Math.floor(this.player.cx / CONFIG.tileSize),
       row: Math.floor(this.player.cy / CONFIG.tileSize),
@@ -990,6 +1014,15 @@ export class Game {
             () => this.inventory.totalUnits()
           )
       ),
+      ...this.missionActions.list().map((action): Interactable => {
+        const pos = this.missionActions.worldPosition(action);
+        return {
+          id: `mission:${action.id}`, x: pos.x, y: pos.y, radius: pos.radius,
+          prompt: () => this.missionActions.prompt(action),
+          interact: () => this.missionActions.interact(action),
+          render: () => undefined,
+        };
+      }),
     ];
   }
 
@@ -1021,6 +1054,9 @@ export class Game {
         label: clue.title,
         alwaysVisible: false,
       });
+    }
+    for (const secret of SECRETS) {
+      this.exploration.addMarker({ id: secret.marker.id, kind: 'secret', col: secret.col, row: secret.row, label: secret.marker.label, alwaysVisible: false });
     }
     for (const npc of RESCUE_NPCS) {
       this.exploration.addMarker({
@@ -1375,9 +1411,23 @@ export class Game {
     Events.on('automation:delivered', (p) =>
       this.quota.registerDelivery(p.resource as never, p.amount)
     );
+    Events.on('resource:collect', () => {
+      if (!this.skills.hasStoryFlag('m0_recurso')) {
+        this.skills.setStoryFlag('m0_recurso'); this.refreshObjective();
+      }
+    });
+    Events.on('delivery:done', () => {
+      if (!this.skills.hasStoryFlag('m0_entrega')) {
+        this.skills.setStoryFlag('m0_entrega'); this.refreshObjective();
+      }
+    });
     Events.on('time:week', (p) => this.quota.onWeekChanged(p.week));
     // --- fontes de XP: tudo que e "jogar" empurra a barra ---
     Events.on('base:deposit', (p) => {
+      if (p.base === 'base_cristal' && !this.skills.hasStoryFlag('base_cristal_primeira_entrega')) {
+        this.skills.setStoryFlag('base_cristal_primeira_entrega');
+        this.refreshObjective();
+      }
       // Primeira entrega numa base: anota, e so a primeira. Uma linha por
       // carrinho de toupeira encheria o guia de ruido.
       const base = BASE_CAMPS.find((b) => b.id === p.base);
@@ -1405,6 +1455,8 @@ export class Game {
     });
 
     Events.on('block:break', (p) => {
+      const depth = this.world.depthOfRow(p.row);
+      if (depth >= 26 && !this.skills.hasStoryFlag('m1_26m')) this.skills.setStoryFlag('m1_26m');
       const c = CONFIG.progression;
       const def = blockDef(p.blockId);
       const value = def.drop ? RESOURCES[def.drop].value : 0;
@@ -1625,6 +1677,7 @@ export class Game {
     // reindexado ela e simplesmente descartada: o pior que acontece e alguns
     // minerios quebrados demorarem mais uma rodada para voltar.
     this.world.applyRegrow(remapear ? undefined : data.regrow);
+    this.motherlodes.fromJSON(data.motherlodes);
 
     this.stats.setTool(data.toolIndex ?? 0);
     this.inventory.fromJSON(data.inventory);
@@ -2114,6 +2167,8 @@ export class Game {
 
     this.world.setWatchPoint(this.player.cx, this.player.cy);
     this.world.update(dt);
+    this.collapses.update(dt);
+    this.motherlodes.update(dt);
     this.procs.update(dt);
     this.player.loadRatio = this.inventory.loadRatio;
     this.drops.update(dt, this.player);
@@ -3062,7 +3117,8 @@ export class Game {
      * e ele que transforma trezentos metros mudos em trezentos metros de
      * progresso.
      */
-    let texto = m ? `${m.title}: ${m.goal}` : 'A mina acabou. A historia nao.';
+    const step = this.missions.currentStep(m);
+    let texto = m ? `${m.title}: ${step?.text ?? m.goal}` : 'A mina acabou. A historia nao.';
     if (m) {
       const falta = Math.round(m.depth - this.deepestMeters);
       if (falta > 40) texto += `  ·  faltam ${falta} m`;
@@ -3083,7 +3139,8 @@ export class Game {
     if (!m) return [];
     const ts = CONFIG.tileSize;
     const out: { x: number; y: number; tint: string; index: number; label: string }[] = [];
-    for (const req of m.requires) {
+    const step = this.missions.currentStep(m);
+    for (const req of step?.requires ?? m.requires) {
       const marca = this.exploration.markers.find((x) => x.id === req);
       if (!marca || marca.done) continue;
       out.push({
@@ -3115,7 +3172,9 @@ export class Game {
    */
   private revelarAlvoDaMissao(m: MissionDef | null): void {
     if (!m) return;
-    for (const req of m.requires) {
+    const step = this.missions.currentStep(m);
+    const targets = step?.markerId ? [step.markerId] : (step?.requires ?? m.requires);
+    for (const req of targets) {
       // Flags que nao sao lugar (gate_stone, quota_paga) simplesmente nao
       // casam com marcador nenhum, e o metodo ignora em silencio.
       this.exploration.discoverMarker(req);
@@ -3159,6 +3218,7 @@ export class Game {
       automation: this.automation.toJSON(),
       creatures: this.creatures.toJSON(),
       gates: this.biomeGate.toJSON(),
+      motherlodes: this.motherlodes.toJSON(),
       vitals: this.vitals.toJSON(),
       activeSkills: this.activeSkills.toJSON(),
       progression: this.progression.toJSON(),

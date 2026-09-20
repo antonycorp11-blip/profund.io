@@ -56,6 +56,7 @@ export class TechTree {
       return { ok: false, reason: `Requer ${def.requiredDepth} m alcancados` };
     }
     if (!this.stock.canAfford(def.cost)) return { ok: false, reason: 'Recursos insuficientes' };
+    if (!this.stock.canAffordMoney(def.moneyCost)) return { ok: false, reason: 'Moedas insuficientes' };
     return { ok: true };
   }
 
@@ -66,7 +67,7 @@ export class TechTree {
       return false;
     }
     const def = techDef(id)!;
-    if (!this.stock.spend(def.cost)) return false;
+    if (!this.stock.spend(def.cost) || !this.stock.spendMoney(def.moneyCost)) return false;
     this.researched.add(id);
     this.apply();
     Events.emit('tech:researched', { id, name: def.name, unlocks: def.unlocks ?? '' });

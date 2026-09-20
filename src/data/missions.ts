@@ -88,6 +88,16 @@ export interface MissionDef {
    * ABAIXO do limiar, e o caminho obrigatorio tem de alcanca-lo exatamente.
    */
   trust?: { city: string; amount: number };
+  /** Etapas exibidas sem criar estado separado do progresso de historia. */
+  steps?: MissionStepDef[];
+}
+
+export interface MissionStepDef {
+  id: string;
+  text: string;
+  requires: string[];
+  markerId?: string;
+  depth?: number;
 }
 
 export const MISSIONS: MissionDef[] = [
@@ -160,7 +170,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 216,
     title: 'Trilhos Novos',
     goal: 'Ha trilho remendado com solda nova numa mina fechada ha quatorze anos. Ache e veja com os proprios olhos.',
-    requires: ['clue_trilhos'],
+    requires: ['clue_trilhos', 'trilhos_reparados'],
     onDone: 'Alguem consertou aquilo este ano. A companhia jura que nao ha ninguem la embaixo.',
     porque:
       'Trilho remendado com solda nova numa mina fechada ha quatorze anos significa que alguem esteve aqui DEPOIS que fecharam. Seu pai desceu por estes trilhos.',
@@ -173,7 +183,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 278,
     title: 'Posto Nove',
     goal: 'Os trilhos levam a algum lugar. Siga a linha e descubra quem mora no fim dela.',
-    requires: ['rui_cabeca'],
+    requires: ['posto_nove_defendido', 'rui_cabeca'],
     onDone: 'Rui Cabeca. Mora aqui com a irma e um gato. E fala de lanternas azuis mais fundo.',
     porque:
       'Quem mora no fim de um trilho que nao deveria existir sabe quem passou por ele. E alguem passou.',
@@ -206,7 +216,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 396,
     title: 'A Base do Cristal',
     goal: 'Ha uma camara abandonada a 396 m, na coluna oeste, com um refinador velho ainda de pe. Va ate la e erga o Deposito Bruto: as toupeiras param de subir 396 metros e passam a entregar ali.',
-    requires: ['base_cristal:deposito'],
+    requires: ['base_cristal:deposito', 'base_cristal_primeira_entrega'],
     onDone: 'A base respira. Daqui para baixo, o minerio nao sobe mais nas costas de ninguem.',
     porque:
       'Daqui para baixo o minerio nao sobe mais nas costas de ninguem. Sem uma base aqui, cada metro conquistado custa a viagem de volta inteira.',
@@ -219,7 +229,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 460,
     title: 'Luzes Abaixo',
     goal: 'Tem outra voz nas Cavernas de Cristal. Siga o som e tire essa pessoa de la.',
-    requires: ['npc_vilma'],
+    requires: ['npc_vilma', 'vilma_rota_segura'],
     onDone: 'Tres pulsos longos, dois curtos. John ouviu isso primeiro.',
     porque:
       'Tres pulsos longos, dois curtos. E o sinal do caderno do seu pai, e ele esta sendo repetido por alguem que ainda esta vivo la embaixo.',
@@ -232,7 +242,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 497,
     title: 'A Rota Comercial',
     goal: 'A Rainha Escavadora bloqueia a passagem aos 497 m. Abra o caminho.',
-    requires: ['boss_automato_enferrujado', 'gate_minerals'],
+    requires: ['rota_comercial_reparada', 'boss_automato_enferrujado', 'gate_minerals'],
     onDone: 'Uma rota comercial, fechada por dentro. Por quem vive do outro lado.',
     porque:
       'Uma rota comercial fechada POR DENTRO. Quem fecha uma porta por dentro esta do outro lado — e seu pai foi para o outro lado.',
@@ -274,7 +284,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 602,
     title: 'O Arquivo das Lanternas',
     goal: 'Afonso guarda uma pagina do caderno do seu pai. Ele so entrega depois que voce tirar as caixas da galeria alagada.',
-    requires: ['afonso_greda'],
+    requires: ['blockia_arquivo_concluido', 'afonso_greda'],
     onDone: 'Pagina 03. Santiago escrevia nas margens dos mapas publicos — em casa tambem fazia isso.',
     porque:
       'O arquivista de Blockia tem uma pagina que sua mae nunca viu. Ela esta a tres salas de voce, e o preco e trabalho.',
@@ -288,7 +298,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 604,
     title: 'A Ponte Quebrada',
     goal: 'O elevador leste esta parado e a ponte caiu. Breno precisa de maos, nao de opiniao.',
-    requires: ['breno_torga'],
+    requires: ['blockia_ponte_reparada', 'breno_torga'],
     onDone: 'A cidade voltou a ter norte e sul. Breno nao agradeceu; ele elogiou seu jeito de segurar viga.',
     porque:
       'Uma cidade vertical parada e uma cidade partida em duas. Consertar o que os moradores usam todo dia e como se deixa de ser visita.',
@@ -302,7 +312,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 606,
     title: 'Conselho das Lanternas',
     goal: 'Ha bicho nas cisternas. O Conselho deixa voce resolver — sem estragar a reserva de agua.',
-    requires: ['irene_salles'],
+    requires: ['blockia_cisterna_limpa', 'irene_salles'],
     onDone: '"Seu pai chegou aqui querendo permissao. Quando dissemos nao, ele foi mesmo assim."',
     porque:
       'O Conselho nao duvida da sua forca: duvida do seu juizo. Eles ja viram um Ramires decidir sozinho, e a cidade pagou por isso.',
@@ -408,3 +418,71 @@ export const MISSIONS: MissionDef[] = [
     rewardPoints: 4,
   },
 ];
+
+// As flags continuam sendo a unica fonte de verdade. Estes passos so revelam
+// o proximo problema, sem antecipar a cadeia inteira no HUD.
+const CAMPAIGN_STEPS: Record<string, MissionStepDef[]> = {
+  m0_primeira_cota: [
+    { id: 'minerar', text: 'Minere e colete seu primeiro recurso.', requires: ['m0_recurso'] },
+    { id: 'entregar', text: 'Faca a primeira entrega no deposito.', requires: ['m0_entrega'] },
+    { id: 'cota', text: 'Conclua a cota semanal.', requires: ['quota_paga'] },
+  ],
+  m1_marca_do_pai: [
+    { id: 'chegar', text: 'Desca ate 26 m.', requires: ['m1_26m'], depth: 26 },
+    { id: 'parede', text: 'Procure a parede que soa oca.', requires: ['secret_marca_pai'], markerId: 'secret_marca_pai', depth: 26 },
+    { id: 'queda', text: 'Sobreviva ao desabamento.', requires: ['collapse_26m'] },
+    { id: 'marca', text: 'Examine a marca de Santiago.', requires: ['clue_marca_do_pai'], markerId: 'clue_marca_do_pai' },
+  ],
+  m2_a_voz_na_pedra: [
+    { id: 'ouvir', text: 'Siga os gritos de Jonas.', requires: ['m2_jonas_sala'], markerId: 'npc_jonas', depth: 84 },
+    { id: 'rubble', text: 'Remova os escombros da passagem.', requires: ['m2_escombros'] },
+    { id: 'abrir', text: 'Abra uma passagem segura.', requires: ['m2_passagem_segura'] },
+    { id: 'jonas', text: 'Liberte Jonas.', requires: ['npc_jonas'], markerId: 'npc_jonas' },
+  ],
+  m2b_marcas_na_pedra: [
+    { id: 'marca1', text: 'Encontre a primeira marca.', requires: ['m2b_marca_1'], depth: 120 },
+    { id: 'marca2', text: 'Encontre a segunda marca.', requires: ['m2b_marca_2'] },
+    { id: 'marca3', text: 'Encontre a terceira marca.', requires: ['m2b_marca_3'] },
+    { id: 'camara', text: 'Abra a camara escondida.', requires: ['m2b_camara_aberta'] },
+    { id: 'pagina', text: 'Leia a Pagina 01.', requires: ['clue_pagina_01'], markerId: 'clue_pagina_01' },
+  ],
+  m3b_trilhos_novos: [
+    { id: 'solda', text: 'Examine a solda nova.', requires: ['clue_trilhos'], markerId: 'clue_trilhos', depth: 216 },
+    { id: 'reparar', text: 'Repare a secao inutilizada (10 ferro, 6 cobre).', requires: ['trilhos_reparados'] },
+  ],
+  m3c_posto_nove: [
+    { id: 'gerador', text: 'Abasteca o gerador com 20 carvoes.', requires: ['posto_nove_gerador'], depth: 278 },
+    { id: 'defesa', text: 'Sobreviva ao encontro no Posto Nove.', requires: ['posto_nove_defendido'] },
+    { id: 'rui', text: 'Fale com Rui.', requires: ['rui_cabeca'] },
+  ],
+  m3d_caminho_das_lanternas: [
+    { id: 'lanterna1', text: 'Localize a primeira lanterna.', requires: ['m3d_lanterna_1'], depth: 340 },
+    { id: 'lanterna2', text: 'Encontre a terceira lanterna apagada.', requires: ['m3d_lanterna_3'] },
+    { id: 'reparar', text: 'Repare a lanterna (2 cobre, 6 carvao).', requires: ['lanterna_reparada'] },
+    { id: 'lampiao', text: 'Examine o lampiao abastecido.', requires: ['clue_lampiao'], markerId: 'clue_lampiao' },
+  ],
+  m4b_a_base_do_cristal: [
+    { id: 'camara', text: 'Chegue a camara do cristal.', requires: ['m4b_camara'], depth: 396 },
+    { id: 'limpar', text: 'Limpe os escombros de acesso.', requires: ['m4b_acesso'] },
+    { id: 'deposito', text: 'Construa o Deposito Bruto.', requires: ['base_cristal:deposito'] },
+    { id: 'entrega', text: 'Faca a primeira entrega na base.', requires: ['base_cristal_primeira_entrega'] },
+  ],
+  m5_luzes_abaixo: [
+    { id: 'vilma', text: 'Siga os sons de Vilma.', requires: ['m5_vilma_zona'], markerId: 'npc_vilma', depth: 460 },
+    { id: 'queda', text: 'Sobreviva ao desabamento cristalino.', requires: ['collapse_460m'] },
+    { id: 'abrir', text: 'Abra caminho ate Vilma.', requires: ['m5_vilma_acesso'] },
+    { id: 'resgatar', text: 'Liberte Vilma e garanta a rota.', requires: ['npc_vilma', 'vilma_rota_segura'] },
+  ],
+  m6_a_rota_comercial: [
+    { id: 'rubble', text: 'Remova os escombros da rota comercial.', requires: ['m6_rota_limpa'], depth: 497 },
+    { id: 'guincho', text: 'Repare o guincho (18 ferro, 8 cobre, 500 moedas).', requires: ['rota_comercial_reparada'] },
+    { id: 'boss', text: 'Derrote o automato e abra o gate.', requires: ['boss_automato_enferrujado', 'gate_minerals'] },
+  ],
+  m5_lanternas_azuis: [{ id: 'mara', text: 'Apresente-se a Mara na porta.', requires: ['mara_avelar'], depth: 600 }],
+  m7_arquivo_das_lanternas: [{ id: 'arquivo', text: 'Ative a bomba e recupere os tres arquivos.', requires: ['blockia_arquivo_concluido'] }, { id: 'afonso', text: 'Volte a Afonso.', requires: ['afonso_greda'] }],
+  m8_ponte_quebrada: [{ id: 'ponte', text: 'Instale a peca da ponte (30 ferro, 12 cobre, 1.200 moedas).', requires: ['blockia_ponte_reparada'] }, { id: 'breno', text: 'Mostre o reparo a Breno.', requires: ['breno_torga'] }],
+  m9_conselho_das_lanternas: [{ id: 'cisterna', text: 'Abra a parede da cisterna e limpe o ninho.', requires: ['blockia_cisterna_limpa'] }, { id: 'irene', text: 'Volte ao Conselho.', requires: ['irene_salles'] }],
+  m10_saida_inferior: [{ id: 'saida', text: 'Ganhe confianca e abra a saida inferior.', requires: ['passagem_blockia'] }],
+};
+
+for (const mission of MISSIONS) mission.steps = CAMPAIGN_STEPS[mission.id];

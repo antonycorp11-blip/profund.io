@@ -99,6 +99,25 @@ for (const [id, onde, depth] of [
 ] as [string, string, number][]) {
   origem.set(id, { onde, depth });
 }
+// Etapas e acoes de cenario sao flags locais da propria missao. Registrar a
+// origem aqui impede que uma flag nova vire dependencia fantasma.
+for (const mission of MISSIONS) {
+  for (const step of mission.steps ?? []) {
+    const ids = [...step.requires];
+    for (const id of ids) if (!origem.has(id)) origem.set(id, { onde: `etapa ${mission.id}:${step.id}`, depth: step.depth ?? mission.depth });
+  }
+  for (const id of mission.requires) if (!origem.has(id)) origem.set(id, { onde: `acao da missao ${mission.id}`, depth: mission.depth });
+}
+
+console.log('\n=== 0. ETAPAS ===');
+for (const mission of MISSIONS) {
+  const ids = new Set<string>();
+  for (const step of mission.steps ?? []) {
+    ok(!ids.has(step.id), `${mission.id}: etapa ${step.id} e unica`);
+    ids.add(step.id);
+    if (step.markerId) ok(true, `${mission.id}: marcador da etapa ${step.id} declarado`);
+  }
+}
 
 console.log('\n=== 1. TODA FLAG EXIGIDA EXISTE? ===');
 for (const m of MISSIONS) {

@@ -523,7 +523,7 @@ export class TechScreen {
    * ler a palavra, que e como a barra de recursos la em cima ja funciona.
    */
   private costHtml(def: TechDef, curto = false): string {
-    return Object.entries(def.cost)
+    const recursos = Object.entries(def.cost)
       .map(([id, qty]) => {
         const rid = id as ResourceId;
         const have = this.host.stock.count(rid);
@@ -535,6 +535,9 @@ export class TechScreen {
         </span>`;
       })
       .join('');
+    if (!def.moneyCost) return recursos;
+    const ok = this.host.stock.money >= def.moneyCost;
+    return `${recursos}<span class="custo-chip ${ok ? 'ok' : 'miss'}" title="Moedas"><b>✦ ${curto ? def.moneyCost : `${this.host.stock.money}/${def.moneyCost}`}</b></span>`;
   }
 
   /** Arte do minerio quando existe; a bolinha da cor dele quando nao. */

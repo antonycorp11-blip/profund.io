@@ -115,6 +115,11 @@ export interface GameEvents {
     porque: string;
     depth: number;
   };
+  'mission:action': { id: string; flag: string };
+  'collapse:warning': { id: string; col: number; row: number; warningSec: number };
+  'collapse:impact': { id: string; col: number; row: number };
+  'secret:found': { id: string; label: string };
+  'motherlode:depleted': { id: string; name: string };
   /** Uma tela cheia abriu ou fechou. Quem coordena e /ui/Telas.ts. */
   'tela:aberta': { nome: string };
   'tela:fechada': { nome: string };

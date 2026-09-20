@@ -9,6 +9,7 @@ import { carvePostoNove } from './PostoNove';
 import { carveBaseCamps } from './BaseCampCarve';
 import { CLUES, RESCUE_NPCS } from '../data/story';
 import { SCROLLS } from '../data/scrolls';
+import { SECRETS } from '../data/secrets';
 import { fbm2d, hash2d, Rng } from '../core/rng';
 import type { World } from './World';
 
@@ -544,6 +545,11 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   for (const npc of RESCUE_NPCS) {
     carveRoom(world, npc.col, npc.row, npc.roomW, npc.roomH, BLOCK_IDS.STONE);
     sealRing(world, npc.col, npc.row, Math.max(npc.roomW, npc.roomH));
+  }
+  for (const secret of SECRETS) {
+    // A primeira sala e a propria sala canonica da marca do pai.
+    if (secret.id === 'secret_marca_pai') continue;
+    carveRoom(world, secret.col, secret.row, secret.roomW, secret.roomH, BLOCK_IDS.STONE);
   }
 
   return {

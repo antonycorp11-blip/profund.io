@@ -66,6 +66,7 @@ export class World {
   private time = 0;
   /** Minerios quebrados esperando a hora de voltar: index -> bloco e quando. */
   private regrowQueue = new Map<number, { id: number; at: number }>();
+  private externalRegrow = new Set<number>();
   /** Onde o jogador esta, para nao fazer bloco nascer em cima dele. */
   private watchX = 0;
   private watchY = 0;
@@ -147,6 +148,12 @@ export class World {
     this.hits.delete(i);
     this.damaged.delete(i);
     this.markDirtyAround(col, row);
+  }
+
+  setExternalRegrowOwner(col: number, row: number, owned: boolean): void {
+    const index = this.idx(col, row);
+    if (owned) { this.externalRegrow.add(index); this.regrowQueue.delete(index); }
+    else this.externalRegrow.delete(index);
   }
 
   /**
@@ -352,6 +359,7 @@ export class World {
    * um tile dela isoladamente custaria mais que lembrar um numero.
    */
   private scheduleRegrow(index: number, def: BlockDef): void {
+    if (this.externalRegrow.has(index)) return;
     const cfg = CONFIG.regrow;
     if (!cfg.enabled) return;
     // So minerio volta. Pedra e terra ficam onde o jogador as deixou.

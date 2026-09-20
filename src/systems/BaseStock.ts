@@ -63,6 +63,17 @@ export class BaseStock {
     return true;
   }
 
+  canAffordMoney(amount = 0): boolean {
+    return this.money >= amount;
+  }
+
+  /** Gasta moeda uma unica vez, no mesmo ponto que confere saldo. */
+  spendMoney(amount = 0): boolean {
+    if (!this.canAffordMoney(amount)) return false;
+    this.money -= amount;
+    return true;
+  }
+
   entries(): [ResourceId, number][] {
     return Array.from(this.items.entries());
   }

@@ -1,5 +1,5 @@
 import { Events } from '../core/events';
-import { MISSIONS, type MissionDef } from '../data/missions';
+import { MISSIONS, type MissionDef, type MissionStepDef } from '../data/missions';
 
 /**
  * Missoes da campanha.
@@ -36,6 +36,21 @@ export class Missions {
    */
   current(): MissionDef | null {
     return MISSIONS.find((m) => !this.done_(m)) ?? null;
+  }
+
+  stepDone(step: MissionStepDef): boolean {
+    return step.requires.every((flag) => this.hasFlag(flag));
+  }
+
+  currentStep(mission: MissionDef | null = this.current()): MissionStepDef | null {
+    if (!mission?.steps?.length) return null;
+    return mission.steps.find((step) => !this.stepDone(step)) ?? null;
+  }
+
+  currentStepIndex(mission: MissionDef | null = this.current()): number {
+    if (!mission?.steps?.length) return -1;
+    const step = this.currentStep(mission);
+    return step ? mission.steps.indexOf(step) : mission.steps.length;
   }
 
   /**
