@@ -16,7 +16,7 @@
     "slice-base": "node tools/slice-base.mjs",
     "check": "node tools/check-progress.mjs",
     "climb": "esbuild tools/climb-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/climb-probe.cjs --log-level=warning && node node_modules/.cache/climb-probe.cjs",
-    "verify": "tsc --noEmit && npm run check && npm run check-estilo && node tools/check-touch-layout.mjs && npm run climb && npm run boss && npm run covil && npm run cerca && npm run offline && npm run lotacao && npm run cidade && npm run praca && npm run armas && npm run cutscene && npm run auditar && vite build",
+    "verify": "tsc --noEmit && npm run check && npm run check-estilo && node tools/check-touch-layout.mjs && npm run aparencia && npm run climb && npm run boss && npm run covil && npm run cerca && npm run offline && npm run lotacao && npm run cidade && npm run praca && npm run armas && npm run cutscene && npm run auditar && vite build",
     "slice-ui": "node tools/slice-ui.mjs",
     "slice-armas": "node tools/slice-armas.mjs",
     "slice-mira": "node tools/slice-mira.mjs",
@@ -52,7 +52,8 @@
     "arco": "node tools/arco-skills.mjs",
     "armas": "esbuild tools/armas-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/armas-probe.cjs --log-level=warning && node node_modules/.cache/armas-probe.cjs",
     "cutscene": "esbuild tools/cutscene-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/cutscene-probe.cjs --log-level=warning && node node_modules/.cache/cutscene-probe.cjs",
-    "cena-toque": "node tools/cena-toque.mjs"
+    "cena-toque": "node tools/cena-toque.mjs",
+    "aparencia": "esbuild tools/aparencia-probe.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/aparencia-probe.cjs --log-level=warning && node node_modules/.cache/aparencia-probe.cjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

@@ -70,10 +70,10 @@ const TRAJES_DE_TESTE: EquipDef[] = [
   {
     id: 'eq_traje_t1',
     slot: 'corpo',
-    name: 'Couro de Campo',
-    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    name: 'Traje de Blockia',
+    description: 'Uniforme da cidade subterranea. So aparece depois de chegar a Blockia.',
     cost: 1,
-    requiredDepth: 0,
+    requiredDepth: 600,
     modifiers: [],
     icon: '🦺',
     arte: 'traje1',

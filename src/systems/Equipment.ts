@@ -8,6 +8,11 @@ export interface EquipmentSave {
   equipped: Partial<Record<EquipSlot, string>>;
 }
 
+/** Corpos sem ferramenta usados para testar as camadas modulares. */
+const TRAJES_INICIAIS = ['eq_traje_t2', 'eq_traje_t3', 'eq_traje_t4'] as const;
+export const TRAJE_INICIAL = 'eq_traje_t4';
+export const TRAJE_BLOCKIA = 'eq_traje_t1';
+
 /**
  * Equipamentos: o que o jogador comprou e o que esta vestindo.
  *
@@ -16,7 +21,6 @@ export interface EquipmentSave {
  * experimentar.
  */
 export class Equipment {
-  private static readonly TRAJE_INICIAL = 'eq_traje_t1';
   private owned = new Set<string>();
   private equipped = new Map<EquipSlot, string>();
 
@@ -29,13 +33,11 @@ export class Equipment {
     // jogador possa vestir qualquer corpo e testar as camadas de ferramenta.
     // O custo continua visivel na definicao para saves antigos e telas que o
     // consultam, mas o traje ja nasce na mochila.
-    for (const def of EQUIPMENT) {
-      if (def.slot === 'corpo') this.owned.add(def.id);
-    }
+    for (const id of TRAJES_INICIAIS) this.owned.add(id);
     // Corpo limpo para as ferramentas modulares. Sem isto um jogo novo ainda
     // nascia com a picareta pintada no sprite antigo e qualquer encaixe novo
     // aparecia duplicado.
-    this.equipped.set('corpo', Equipment.TRAJE_INICIAL);
+    this.equipped.set('corpo', TRAJE_INICIAL);
   }
 
   has(id: string): boolean {
@@ -101,20 +103,23 @@ export class Equipment {
   fromJSON(data: EquipmentSave | undefined): void {
     if (!data) return;
     this.owned = new Set(data.owned ?? []);
-    // Migra saves antigos: todos os corpos continuam selecionaveis depois da
-    // atualizacao, sem exigir que o jogador compre de novo uma arte que ja
-    // existia no projeto.
-    for (const def of EQUIPMENT) {
-      if (def.slot === 'corpo') this.owned.add(def.id);
-    }
+    // O build anterior concedeu este traje automaticamente; nao existe como
+    // distinguir essa concessao de uma compra de uma moeda. Retira uma vez e
+    // deixa a loja libera-lo novamente quando a profundidade certa for salva.
+    this.owned.delete(TRAJE_BLOCKIA);
+    // Conserva a vitrine de corpos modulares sem entregar os equipamentos que
+    // tem atributos nem o uniforme de Blockia antes de o jogador chegar la.
+    for (const id of TRAJES_INICIAIS) this.owned.add(id);
     this.equipped = new Map(
       Object.entries(data.equipped ?? {}).filter(([, id]) => this.owned.has(id as string)) as [
         EquipSlot,
         string,
       ][]
     );
-    if (!this.equipped.has('corpo')) {
-      this.equipped.set('corpo', Equipment.TRAJE_INICIAL);
+    // Uma versao curta equipou Blockia em todo save. Trocar aqui corrige tanto
+    // quem abriu aquela publicacao quanto jogos novos, sem apagar outras pecas.
+    if (!this.equipped.has('corpo') || this.equipped.get('corpo') === TRAJE_BLOCKIA) {
+      this.equipped.set('corpo', TRAJE_INICIAL);
     }
     this.apply();
   }

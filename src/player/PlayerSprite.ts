@@ -7,6 +7,11 @@ import type { Player } from './Player';
 
 type AnimName = keyof typeof ART.character.anims;
 
+/** As folhas de traje importadas olham para a direita; as antigas variam por tira. */
+export function orientacaoDaArte(stripFacing: 1 | -1, usandoTraje: boolean): 1 | -1 {
+  return usandoTraje ? 1 : stripFacing;
+}
+
 /**
  * Desenha o heroi a partir da folha de animacao.
  * Se a arte nao estiver carregada, `render` devolve false e o Player cai no placeholder vetorial.
@@ -578,7 +583,10 @@ export class PlayerSprite {
     }
 
     // Espelha so quando o lado desejado difere do lado que a arte ja olha.
-    const artFacing = usingStrip && strip ? art.strips[strip.name].facing : 1;
+    const artFacing = orientacaoDaArte(
+      usingStrip && strip ? art.strips[strip.name].facing : 1,
+      doTraje !== null
+    );
     /*
      * O GIRO ESPELHA AO CONTRARIO DE TODO O RESTO.
      *
