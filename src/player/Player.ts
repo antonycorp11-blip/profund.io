@@ -19,7 +19,7 @@ export class Player {
   facing: 1 | -1 = 1;
   onGround = false;
   readonly stats: PlayerStats;
-  /** 0..1 — quanto a mochila esta cheia (afeta a velocidade). */
+  /** 0..1 — quanto a mochila esta cheia (HUD e feedback visual). */
   loadRatio = 0;
   /** Parede agarrada agora: -1 esquerda, 1 direita, 0 nenhuma. */
   climbingWall: -1 | 0 | 1 = 0;
@@ -90,9 +90,8 @@ export class Player {
     const moveX = clamp(input.axisX, -1, 1);
 
     // --- horizontal ---
-    // Carregar muito pesa: a penalidade maxima vale com a mochila cheia.
-    const carry = 1 - this.stats.carryMovePenalty * this.loadRatio;
-    const target = moveX * this.stats.moveSpeed * carry;
+    // Mochila cheia limita a coleta, nunca a mobilidade do jogador.
+    const target = moveX * this.stats.moveSpeed;
     if (Math.abs(moveX) > 0.05) {
       const accel = (this.onGround ? p.groundAccel : p.airAccel * this.stats.airControl);
       this.vx = approach(this.vx, target, accel * dt);
