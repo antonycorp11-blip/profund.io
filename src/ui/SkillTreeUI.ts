@@ -222,6 +222,7 @@ export class SkillTreeUI {
     this.aplicarVista();
     this.buildTabs();
     this.buildNodes();
+    this.selected = this.entradasDoCaminho(this.category)[0]?.id ?? null;
     this.refresh();
   }
 
@@ -307,7 +308,7 @@ export class SkillTreeUI {
 
       const b = document.createElement('button');
       // A luz do lampiao so no caminho onde ha o que fazer AGORA.
-      b.className = `hub-caminho${gastos > 0 ? ' andado' : ''}${podeAgora ? ' pode' : ''}${
+      b.className = `hub-caminho${cat.id === this.category ? ' selecionado' : ''}${gastos > 0 ? ' andado' : ''}${podeAgora ? ' pode' : ''}${
         abertos === 0 && gastos === 0 ? ' dormindo' : ''
       }`;
       b.style.setProperty('--cat', cat.color);
@@ -316,12 +317,19 @@ export class SkillTreeUI {
         <span class="hub-nome">${cat.name}</span>
         <span class="hub-conta">${conta}</span>`;
       b.addEventListener('click', () => {
-        this.irParaCamara(cat.id, false);
+        this.category = cat.id;
+        this.selected = this.primeiroNoDoCaminho(cat.id);
+        this.refresh();
         Haptics.ui();
       });
       roda.appendChild(b);
     }
     this.hubEl.appendChild(roda);
+
+    const helper = document.createElement('p');
+    helper.className = 'hub-helper';
+    helper.textContent = 'Selecione um caminho para revelar suas próximas habilidades.';
+    this.hubEl.appendChild(helper);
   }
 
   /** Mostra o hub ou a camara, e acerta o cabecalho junto. */
@@ -662,6 +670,11 @@ export class SkillTreeUI {
   }
 
   private renderDetail(): void {
+    if (this.vista === 'hub') {
+      this.renderHubDetail();
+      return;
+    }
+
     if (!this.selected) {
       const cat = CATEGORIES[this.category];
       this.detailEl.innerHTML = `
@@ -740,6 +753,51 @@ export class SkillTreeUI {
         Haptics.ui();
         this.refresh();
       }
+    });
+  }
+
+  /** No hub, a ficha descreve o caminho antes de abrir a árvore interna. */
+  private renderHubDetail(): void {
+    const cat = CATEGORIES[this.category];
+    const entrada = this.entradasDoCaminho(this.category)[0];
+    if (!entrada) {
+      this.detailEl.innerHTML = '<div class="detail-empty"><p>Este caminho ainda nao foi catalogado.</p></div>';
+      return;
+    }
+
+    const level = this.host.tree.levelOf(entrada.id);
+    const check = this.host.tree.canLearn(entrada.id, this.host.currentDepth());
+    const cost = skillCost(entrada, Math.min(level, entrada.cost.length - 1));
+    const pronto = level > 0 || check.ok;
+
+    this.detailEl.innerHTML = `
+      <div class="hub-detail" style="--cat:${cat.color}">
+        <span class="hub-detail-kicker">CAMINHO PRINCIPAL</span>
+        <div class="detail-head">
+          <span class="detail-icon">${iconMarkup(CATEGORY_ART[cat.id], cat.icon)}</span>
+          <div class="det-nome">
+            <b>${cat.name}</b>
+            <small>${level > 0 ? 'CAMINHO DESBLOQUEADO' : 'CAMINHO FECHADO'}</small>
+          </div>
+        </div>
+        <p class="hub-detail-fantasy">${cat.fantasy}</p>
+        <p class="hub-detail-copy">Desbloqueie este caminho para revelar as próximas habilidades.</p>
+        <div class="hub-detail-progress"><span>PROGRESSO</span><b>${level > 0 ? '1/1' : '0/1'}</b></div>
+        ${
+          level > 0
+            ? '<button class="btn primary hub-detail-action" data-open-path>ABRIR CAMINHO</button>'
+            : pronto
+              ? '<button class="btn primary hub-detail-action" data-open-path>DESBLOQUEAR</button>'
+              : `<div class="detail-status">${check.reason ?? 'Caminho indisponivel'}</div>`
+        }
+        ${level === 0 && pronto ? `<small class="hub-detail-cost">CUSTO · ${cost} PONTO${cost === 1 ? '' : 'S'}</small>` : ''}
+      </div>`;
+
+    const action = this.detailEl.querySelector('[data-open-path]');
+    action?.addEventListener('click', () => {
+      if (level === 0 && !this.host.tree.learn(entrada.id, this.host.currentDepth())) return;
+      this.irParaCamara(this.category, true);
+      Haptics.ui();
     });
   }
 
