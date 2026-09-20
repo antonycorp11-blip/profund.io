@@ -440,11 +440,9 @@ const CAMPAIGN_STEPS: Record<string, MissionStepDef[]> = {
     { id: 'jonas', text: 'Liberte Jonas.', requires: ['npc_jonas'], markerId: 'npc_jonas' },
   ],
   m2b_marcas_na_pedra: [
-    { id: 'marca1', text: 'Encontre a primeira marca.', requires: ['m2b_marca_1'], depth: 120 },
-    { id: 'marca2', text: 'Encontre a segunda marca.', requires: ['m2b_marca_2'] },
-    { id: 'marca3', text: 'Encontre a terceira marca.', requires: ['m2b_marca_3'] },
-    { id: 'camara', text: 'Abra a camara escondida.', requires: ['m2b_camara_aberta'] },
-    { id: 'pagina', text: 'Leia a Pagina 01.', requires: ['clue_pagina_01'], markerId: 'clue_pagina_01' },
+    // A Pagina 01 ja e a sala canonica que encerra a sequencia de marcas.
+    // Apontar para ela evita uma flag intermediaria sem fonte no mundo.
+    { id: 'pagina', text: 'Siga as marcas ate a Pagina 01.', requires: ['clue_pagina_01'], markerId: 'clue_pagina_01', depth: 120 },
   ],
   m3b_trilhos_novos: [
     { id: 'solda', text: 'Examine a solda nova.', requires: ['clue_trilhos'], markerId: 'clue_trilhos', depth: 216 },
