@@ -6,12 +6,16 @@ import type { BaseStock } from './BaseStock';
 export interface EquipmentSave {
   owned: string[];
   equipped: Partial<Record<EquipSlot, string>>;
+  appearanceVersion?: number;
 }
 
-/** Corpos sem ferramenta usados para testar as camadas modulares. */
-const TRAJES_INICIAIS = ['eq_traje_t2', 'eq_traje_t3', 'eq_traje_t4'] as const;
-export const TRAJE_INICIAL = 'eq_traje_t4';
-export const TRAJE_BLOCKIA = 'eq_traje_t1';
+export const TRAJE_INICIAL = 'eq_traje_inicial';
+export const TRAJES_DE_CIDADE = [
+  'eq_traje_t1',
+  'eq_traje_t4',
+  'eq_traje_t3',
+  'eq_traje_t2',
+] as const;
 
 /**
  * Equipamentos: o que o jogador comprou e o que esta vestindo.
@@ -28,12 +32,9 @@ export class Equipment {
     private attrs: Attributes,
     private stock: BaseStock
   ) {
-    // Os trajes sao uma vitrine de personalizacao, nao uma compra escondida
-    // atras de um requisito. Eles ficam disponiveis desde o inicio para que o
-    // jogador possa vestir qualquer corpo e testar as camadas de ferramenta.
-    // O custo continua visivel na definicao para saves antigos e telas que o
-    // consultam, mas o traje ja nasce na mochila.
-    for (const id of TRAJES_INICIAIS) this.owned.add(id);
+    // O corpo inicial e a unica roupa que nasce na mochila. As quatro roupas
+    // de cidade pertencem a progressao e aparecem nas profundidades delas.
+    this.owned.add(TRAJE_INICIAL);
     // Corpo limpo para as ferramentas modulares. Sem isto um jogo novo ainda
     // nascia com a picareta pintada no sprite antigo e qualquer encaixe novo
     // aparecia duplicado.
@@ -97,28 +98,27 @@ export class Equipment {
     return {
       owned: [...this.owned],
       equipped: Object.fromEntries(this.equipped) as Partial<Record<EquipSlot, string>>,
+      appearanceVersion: 2,
     };
   }
 
   fromJSON(data: EquipmentSave | undefined): void {
     if (!data) return;
     this.owned = new Set(data.owned ?? []);
-    // O build anterior concedeu este traje automaticamente; nao existe como
-    // distinguir essa concessao de uma compra de uma moeda. Retira uma vez e
-    // deixa a loja libera-lo novamente quando a profundidade certa for salva.
-    this.owned.delete(TRAJE_BLOCKIA);
-    // Conserva a vitrine de corpos modulares sem entregar os equipamentos que
-    // tem atributos nem o uniforme de Blockia antes de o jogador chegar la.
-    for (const id of TRAJES_INICIAIS) this.owned.add(id);
+    // A versao anterior concedeu as roupas de cidade automaticamente. A marca
+    // garante que a limpeza aconteca uma vez so; uma compra futura sobrevive.
+    if ((data.appearanceVersion ?? 0) < 2) {
+      for (const id of TRAJES_DE_CIDADE) this.owned.delete(id);
+    }
+    this.owned.add(TRAJE_INICIAL);
     this.equipped = new Map(
       Object.entries(data.equipped ?? {}).filter(([, id]) => this.owned.has(id as string)) as [
         EquipSlot,
         string,
       ][]
     );
-    // Uma versao curta equipou Blockia em todo save. Trocar aqui corrige tanto
-    // quem abriu aquela publicacao quanto jogos novos, sem apagar outras pecas.
-    if (!this.equipped.has('corpo') || this.equipped.get('corpo') === TRAJE_BLOCKIA) {
+    // Se a roupa removida estava equipada, volta ao corpo canonico.
+    if (!this.equipped.has('corpo')) {
       this.equipped.set('corpo', TRAJE_INICIAL);
     }
     this.apply();

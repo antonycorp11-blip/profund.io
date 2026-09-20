@@ -53,20 +53,28 @@ export interface EquipDef {
    * usando o corpo completo, sem ganhar uma segunda picareta por acidente.
    */
   modular?: boolean;
+  /** Corpo mantem roupa/capacete proprios, mas recebe a ferramenta como camada. */
+  ferramentaModular?: boolean;
 }
 
 /**
- * OS TRAJES NOVOS, por enquanto SO PARA VESTIR.
- *
- * O pedido foi explicito: "por enquanto nao precisa ter atributo, nem nivel
- * neles, nem up, mas so a aplicacao para eu ver como vai ficar no jogo".
- * Entao eles nao mexem em nenhum numero — custam pouco, aparecem cedo, e a
- * unica coisa que fazem e trocar o corpo do heroi.
- *
- * Os nomes sao provisorios e descrevem o que se ve, porque o zip nao trouxe
- * nome nenhum. Trocar por nome de verdade e editar esta linha.
+ * Corpos visuais: o primeiro e o uniforme canonico de Elias; os outros quatro
+ * pertencem as cidades e seguem a ordem de profundidade da campanha. Ainda nao
+ * alteram atributos, mas tambem nao podem antecipar visualmente uma cidade.
  */
 const TRAJES_DE_TESTE: EquipDef[] = [
+  {
+    id: 'eq_traje_inicial',
+    slot: 'corpo',
+    name: 'Traje de Minerador',
+    description: 'O traje de Elias, preparado para receber ferramenta e arma separadas.',
+    cost: 0,
+    requiredDepth: 0,
+    modifiers: [],
+    icon: '🦺',
+    arte: 'inicial',
+    ferramentaModular: true,
+  },
   {
     id: 'eq_traje_t1',
     slot: 'corpo',
@@ -82,10 +90,10 @@ const TRAJES_DE_TESTE: EquipDef[] = [
   {
     id: 'eq_traje_t2',
     slot: 'corpo',
-    name: 'Placa Noturna',
-    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    name: 'Traje de Vespera',
+    description: 'Uniforme da cidade mais profunda. So aparece depois de chegar a Vespera.',
     cost: 1,
-    requiredDepth: 0,
+    requiredDepth: 1720,
     modifiers: [],
     icon: '🦺',
     arte: 'traje2',
@@ -94,10 +102,10 @@ const TRAJES_DE_TESTE: EquipDef[] = [
   {
     id: 'eq_traje_t3',
     slot: 'corpo',
-    name: 'Placa Clara',
-    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    name: 'Traje de Lumora',
+    description: 'Uniforme claro da terceira cidade. So aparece depois de chegar a Lumora.',
     cost: 1,
-    requiredDepth: 0,
+    requiredDepth: 1380,
     modifiers: [],
     icon: '🦺',
     arte: 'traje3',
@@ -106,10 +114,10 @@ const TRAJES_DE_TESTE: EquipDef[] = [
   {
     id: 'eq_traje_t4',
     slot: 'corpo',
-    name: 'Couro Pesado',
-    description: 'Traje novo, em teste. Ainda nao muda nenhum atributo.',
+    name: 'Traje de Ferruria',
+    description: 'Uniforme reforcado da cidade das forjas. So aparece depois de chegar a Ferruria.',
     cost: 1,
-    requiredDepth: 0,
+    requiredDepth: 980,
     modifiers: [],
     icon: '🦺',
     arte: 'traje4',

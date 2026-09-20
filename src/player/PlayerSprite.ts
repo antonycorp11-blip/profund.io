@@ -32,6 +32,8 @@ export class PlayerSprite {
 
   /** O traje atual foi desenhado sem ferramenta e aceita camadas encaixadas. */
   equipamentoModular = false;
+  /** A ferramenta vem separada mesmo quando capacete e mochila ja estao no corpo. */
+  ferramentaModular = false;
 
   /** Estado externo que influencia a pose. */
   heavy = false;
@@ -604,7 +606,9 @@ export class PlayerSprite {
     ctx.save();
     ctx.translate(Math.round(player.cx), Math.round(top));
     if (flipped) ctx.scale(-1, 1);
-    if (player.climbingWall !== 0) {
+    // Trajes com oito quadros ja trazem o movimento inteiro. A deformacao
+    // abaixo existe apenas para dar vida ao corpo antigo de um quadro so.
+    if (player.climbingWall !== 0 && !doTraje) {
       this.climbTransform(ctx, player, h, strip?.name === 'climb', flipped);
     }
     // Squash ao aterrissar continua vindo do codigo: a arte nao precisa de quadro para isso.
@@ -768,7 +772,7 @@ export class PlayerSprite {
      * Maos vazias e a postura padrao. A ferramenta aparece quando e usada.
      */
     const carregando =
-      this.equipamentoModular && !this.aiming && (tira === 'idle' || tira === 'walk' || tira === 'jump');
+      this.ferramentaModular && !this.aiming && (tira === 'idle' || tira === 'walk' || tira === 'jump');
     if (tira !== 'mine' && !carregando) return;
     const id = this.picaretaArt;
     const arte = id ? Assets.tool(id) : null;

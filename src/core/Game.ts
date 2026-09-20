@@ -2021,6 +2021,8 @@ export class Game {
     const corpoDef = corpo ? equipDef(corpo) : null;
     this.playerSprite.traje = corpoDef?.arte ?? null;
     this.playerSprite.equipamentoModular = corpoDef?.modular === true;
+    this.playerSprite.ferramentaModular =
+      corpoDef?.modular === true || corpoDef?.ferramentaModular === true;
 
     this.playerSprite.heavy = this.inventory.used >= this.inventory.capacity * 0.9;
     // A pose do braco e a arma na mao seguem a MAO ATUAL e a mira.
@@ -2064,7 +2066,9 @@ export class Game {
     this.playerSprite.capaceteArt = nu ? this.equipment.equippedIn('cabeca') : null;
     this.playerSprite.mochilaArt = nu ? this.equipment.equippedIn('costas') : null;
     this.playerSprite.picaretaArt =
-      nu && this.mao !== 'arma' ? TOOLS[this.stats.toolIndex]?.key ?? null : null;
+      this.playerSprite.ferramentaModular && this.mao !== 'arma'
+        ? TOOLS[this.stats.toolIndex]?.key ?? null
+        : null;
     this.weapons.boca = () => this.playerSprite.bocaDoCano(this.player);
     this.playerSprite.update(dt, this.player);
 

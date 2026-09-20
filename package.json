@@ -36,6 +36,7 @@
     "slice-bots": "node tools/slice-bots.mjs",
     "identificar-trajes": "node tools/identificar-trajes.mjs",
     "slice-trajes": "node tools/slice-trajes.mjs",
+    "slice-traje-inicial": "node tools/slice-traje-inicial.mjs",
     "medir-toque": "node tools/medir-toque.mjs",
     "slice-ruinas": "node tools/slice-ruinas.mjs",
     "auditar-missoes": "esbuild tools/auditar-missoes.ts --bundle --platform=node --format=cjs --outfile=node_modules/.cache/audit.cjs --log-level=warning && node node_modules/.cache/audit.cjs",
