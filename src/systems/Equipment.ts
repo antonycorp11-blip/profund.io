@@ -16,6 +16,7 @@ export interface EquipmentSave {
  * experimentar.
  */
 export class Equipment {
+  private static readonly TRAJE_INICIAL = 'eq_traje_t1';
   private owned = new Set<string>();
   private equipped = new Map<EquipSlot, string>();
 
@@ -31,6 +32,10 @@ export class Equipment {
     for (const def of EQUIPMENT) {
       if (def.slot === 'corpo') this.owned.add(def.id);
     }
+    // Corpo limpo para as ferramentas modulares. Sem isto um jogo novo ainda
+    // nascia com a picareta pintada no sprite antigo e qualquer encaixe novo
+    // aparecia duplicado.
+    this.equipped.set('corpo', Equipment.TRAJE_INICIAL);
   }
 
   has(id: string): boolean {
@@ -108,6 +113,9 @@ export class Equipment {
         string,
       ][]
     );
+    if (!this.equipped.has('corpo')) {
+      this.equipped.set('corpo', Equipment.TRAJE_INICIAL);
+    }
     this.apply();
   }
 }

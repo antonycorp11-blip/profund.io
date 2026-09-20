@@ -209,9 +209,22 @@ export class PlayerSprite {
     return { x: Math.cos(ang) * lado, y: Math.sin(ang) };
   }
 
-  /** A pose do braco e independente das pernas: o corpo pode caminhar e a
-   * arma continua presa ao mesmo punho, em vez de desaparecer a cada passo. */
-  private poseDaArma(): { tira: string; quadro: number } {
+  /**
+   * A arma usa o punho do corpo que esta realmente na tela.
+   *
+   * Antes, caminhar mantinha a arma presa ao punho da tira `aim`, enquanto o
+   * corpo visivel vinha de `walk`. Eram duas maos em lugares diferentes: o
+   * revolver flutuava na altura do peito enquanto o braco balancava embaixo.
+   * Quando a tira atual possui punho medido, ela e a fonte da verdade. A pose
+   * de mira fica como reserva para o corpo parado e para tiras sem encaixe.
+   */
+  private poseDaArma(corpo?: { name: string; index: number } | null): {
+    tira: string;
+    quadro: number;
+  } {
+    if (corpo && corpo.name !== 'aim' && encaixe(corpo.name, corpo.index, 'punho')) {
+      return { tira: corpo.name, quadro: corpo.index };
+    }
     if (this.recoil > 0.02) return { tira: 'aim', quadro: this.recoil > 0.5 ? 6 : 7 };
     if (this.aimY < -0.45) return { tira: 'aim', quadro: 2 };
     if (this.aimY > 0.45) return { tira: 'aim', quadro: 4 };
@@ -456,8 +469,8 @@ export class PlayerSprite {
        * A perna nao troca de animacao quando a mao troca de ferramenta.
        * `arma_anda` e `arma_baixa` nunca foram entregues no pacote de arte;
        * exigir esses arquivos fazia o personagem cair numa pose fixa. O
-       * corpo usa a caminhada real e o braco usa a pose `aim` separadamente
-       * durante o desenho da arma.
+       * corpo usa a caminhada real e a arma acompanha o punho daquele mesmo
+       * quadro durante o desenho.
        */
       if (andando && has('walk')) return pick('walk', ciclo('walk'));
 
@@ -615,19 +628,11 @@ export class PlayerSprite {
      * contrario.
      */
     if (strip) this.desenharCostas(ctx, h, strip.name, strip.index);
-    /*
-     * A ARMA SO APARECE NO TIRO — mesma regra da picareta, mesmo motivo.
-     *
-     * `aiming` diz que a arma esta na cinta; `atirando` e o instante do
-     * gatilho. So o segundo poe a arma na mao. O recuo entra junto porque ele e
-     * a continuacao visivel do tiro: sumir com a arma no meio do coice seria
-     * pior do que nao mostra-la.
-     *
-     * Com isso `arma_baixa` passa a ser o que o nome diz — ele anda de mao
-     * livre, pronto, e a arma so sai quando ele puxa.
-     */
+    /* A arma fica na mao enquanto esta selecionada. A tira e o quadro usados
+     * no encaixe sao os mesmos do corpo visivel, para caminhar e pular sem a
+     * arma flutuar onde estaria o punho de outra pose. */
     if (this.aiming && this.weaponArt) {
-      const pose = this.poseDaArma();
+      const pose = this.poseDaArma(strip);
       this.tiraDaArma = pose.tira;
       this.quadroDeMira = pose.quadro;
       // A arma permanece na mao enquanto o jogador anda, pula ou procura um
@@ -671,7 +676,7 @@ export class PlayerSprite {
     if (!this.aiming || !id || !arte || !arte.width) return null;
 
     const h = ART.character.stripDrawHeight;
-    const pose = this.poseDaArma();
+    const pose = this.poseDaArma(this.stripFrame(player));
     this.tiraDaArma = pose.tira;
     this.quadroDeMira = pose.quadro;
     const punho = encaixe(pose.tira, pose.quadro, 'punho');
