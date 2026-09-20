@@ -31,6 +31,21 @@ interface Bala {
   /** Rastro: onde ela estava no quadro anterior, para desenhar a risca. */
   px: number;
   py: number;
+  /** Relogio visual: pulsa a luz e anima o rastro durante o voo. */
+  idade: number;
+  fase: number;
+}
+
+interface Capsula {
+  ativo: boolean;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  vida: number;
+  total: number;
+  rot: number;
+  vrot: number;
 }
 
 const MAX_BALAS = 96;
@@ -73,6 +88,7 @@ const MAX_FX = 40;
 export class WeaponSystem {
   private pool: Bala[] = [];
   private fx: Estampido[] = [];
+  private capsulas: Capsula[] = [];
   /** Tempo ate poder atirar de novo. */
   private recarga = 0;
   /** Arma na mao. Uma so por enquanto; o slot vem depois. */
@@ -106,6 +122,12 @@ export class WeaponSystem {
     for (let i = 0; i < MAX_FX; i++) {
       this.fx.push({ ativo: false, x: 0, y: 0, ang: 0, vida: 0, total: 1, tipo: 'fogo', tamanho: 16 });
     }
+    for (let i = 0; i < 18; i++) {
+      this.capsulas.push({
+        ativo: false, x: 0, y: 0, vx: 0, vy: 0,
+        vida: 0, total: 1, rot: 0, vrot: 0,
+      });
+    }
     for (let i = 0; i < MAX_BALAS; i++) {
       this.pool.push({
         ativo: false,
@@ -123,6 +145,8 @@ export class WeaponSystem {
         estilo: 'normal',
         px: 0,
         py: 0,
+        idade: 0,
+        fase: 0,
       });
     }
   }
@@ -168,6 +192,18 @@ export class WeaponSystem {
       e.vida -= dt;
       if (e.vida <= 0) e.ativo = false;
     }
+    for (const c of this.capsulas) {
+      if (!c.ativo) continue;
+      c.vida -= dt;
+      if (c.vida <= 0) {
+        c.ativo = false;
+        continue;
+      }
+      c.vy += 240 * dt;
+      c.x += c.vx * dt;
+      c.y += c.vy * dt;
+      c.rot += c.vrot * dt;
+    }
     if (segurandoGatilho && this.recarga <= 0) this.atirar(mirarX, mirarY);
     this.moverBalas(dt);
   }
@@ -211,6 +247,8 @@ export class WeaponSystem {
       b.raio = d.bulletSize;
       b.cor = d.color;
       b.estilo = ef.estilo ?? 'normal';
+      b.idade = 0;
+      b.fase = Math.random() * Math.PI * 2;
     }
 
     // Recuo: empurra o jogador para TRAS da mira. E o que da peso ao tiro, e
@@ -219,6 +257,17 @@ export class WeaponSystem {
     this.player.vy -= mirarY * d.recoil * 0.5;
 
     this.acender('fogo', bocaX, bocaY, Math.atan2(mirarY, mirarX), 22, 0.1);
+    const capsula = this.capsulas.find((c) => !c.ativo);
+    if (capsula) {
+      capsula.ativo = true;
+      capsula.x = bocaX - mirarX * 10;
+      capsula.y = bocaY - mirarY * 10;
+      capsula.vx = -mirarX * 22 - mirarY * 65 + (Math.random() - 0.5) * 18;
+      capsula.vy = -75 - mirarY * 18;
+      capsula.total = capsula.vida = 0.72;
+      capsula.rot = Math.random() * Math.PI * 2;
+      capsula.vrot = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 8);
+    }
     Haptics.hit();
     Events.emit('weapon:fired', { id: d.id, x: bocaX, y: bocaY });
   }
@@ -234,6 +283,7 @@ export class WeaponSystem {
     const ts = this.world.tileSize;
     for (const b of this.pool) {
       if (!b.ativo) continue;
+      b.idade += dt;
       b.px = b.x;
       b.py = b.y;
       b.vy += b.gravidade * dt;
@@ -319,22 +369,34 @@ export class WeaponSystem {
       const ang = Math.atan2(b.vy, b.vx);
 
       if (bala) {
-        // Arte: o rastro atras e a bala na ponta, os dois girados pela
-        // direcao real do voo.
+        // A arte vira uma pequena animacao: dois rastros respiram em fases
+        // diferentes e o nucleo pulsa. O desenho continua seguindo a direcao
+        // real do voo, inclusive depois de gravidade ou ricochete.
         if (rastro) {
           ctx.save();
           ctx.translate(b.x, b.y);
           ctx.rotate(ang);
-          ctx.globalAlpha = 0.75;
-          const lr = b.raio * 9;
-          ctx.drawImage(rastro, -lr, -b.raio * 2, lr, b.raio * 4);
+          const pulso = 0.88 + Math.sin(b.idade * 28 + b.fase) * 0.12;
+          const lr = b.raio * (9 + Math.min(5, b.idade * 35));
+          ctx.globalAlpha = 0.28;
+          ctx.drawImage(rastro, -lr * 1.35, -b.raio * 2.8, lr * 1.35, b.raio * 5.6);
+          ctx.globalAlpha = 0.82;
+          ctx.drawImage(rastro, -lr, -b.raio * 1.7 * pulso, lr, b.raio * 3.4 * pulso);
           ctx.restore();
         }
         ctx.save();
         ctx.translate(b.x, b.y);
         ctx.rotate(ang);
+        const pulso = 1 + Math.sin(b.idade * 32 + b.fase) * 0.09;
+        const lb = b.raio * 4.4 * pulso;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.32;
+        ctx.fillStyle = b.cor;
+        ctx.beginPath();
+        ctx.arc(0, 0, lb * 0.72, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1;
-        const lb = b.raio * 4;
         ctx.drawImage(bala, -lb / 2, -lb / 2, lb, lb);
         ctx.restore();
         this.desenharAssinatura(ctx, b, ang);
@@ -356,6 +418,17 @@ export class WeaponSystem {
       ctx.arc(b.x, b.y, b.raio, 0, Math.PI * 2);
       ctx.fill();
       this.desenharAssinatura(ctx, b, ang);
+    }
+
+    const arteCapsula = Assets.shotFx('capsula');
+    if (arteCapsula) for (const c of this.capsulas) {
+      if (!c.ativo || !camera.sees(c.x, c.y)) continue;
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rot);
+      ctx.globalAlpha = Math.min(1, c.vida / c.total * 2);
+      ctx.drawImage(arteCapsula, -3.5, -3.5, 7, 7);
+      ctx.restore();
     }
 
     // Estampidos e impactos, por cima das balas.
@@ -432,5 +505,6 @@ export class WeaponSystem {
 
   limpar(): void {
     for (const b of this.pool) b.ativo = false;
+    for (const c of this.capsulas) c.ativo = false;
   }
 }

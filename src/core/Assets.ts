@@ -7,10 +7,10 @@ import { RESOURCES } from '../data/resources';
 /**
  * As seis animacoes que um traje pode trazer.
  *
- * `tiro` so existe em alguns: o zip veio com trajes de cinco e de seis, e o
- * carregador nao pode exigir o que pode nao existir.
+ * Todas usam as cinco acoes canonicas. A arma reaproveita `mine`, portanto
+ * nao existe uma sexta folha exclusiva para o disparo.
  */
-const TRAJE_ANIMS = ['idle', 'walk', 'mine', 'jump', 'climb', 'tiro'] as const;
+const TRAJE_ANIMS = ['idle', 'walk', 'mine', 'jump', 'climb'] as const;
 
 const SKILL_ICON_NAMES = [
   'power', 'speed', 'hardstone', 'ore_target', 'crit', 'crit_mult', 'fracture', 'charged',
@@ -453,13 +453,6 @@ class AssetsImpl {
   trajeStrip(traje: string, anim: string): HTMLImageElement | null {
     const direta = this.images.get(`traje:${traje}:${anim}`);
     if (direta) return direta;
-    // Os trajes novos vieram com uma tira `tiro` (o corpo armado), enquanto
-    // o runtime trabalha com a pose semantica `aim`. Aceitar os dois nomes
-    // evita um personagem invisivel e permite que o mesmo traje caminhe com a
-    // arma na mao sem duplicar PNGs.
-    if (anim === 'aim' || anim === 'arma_anda' || anim === 'arma_baixa') {
-      return this.images.get(`traje:${traje}:tiro`) ?? null;
-    }
     return null;
   }
 

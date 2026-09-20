@@ -7,6 +7,15 @@ import type { Player } from './Player';
 
 type AnimName = keyof typeof ART.character.anims;
 
+const PUNHO_DESCANSO_TRAJE_INICIAL = { x: 0.105, y: -0.25 } as const;
+/** Punhos dos quadros da martelada reaproveitados pelo disparo. */
+const PUNHOS_ACAO_ARMA = [
+  { x: 0.02, y: -0.34 }, { x: -0.023, y: -0.633 },
+  { x: 0.039, y: -0.688 }, { x: 0.08, y: -0.36 },
+  { x: 0.148, y: -0.18 }, { x: 0.164, y: -0.196 },
+  { x: 0.04, y: -0.58 }, { x: 0.02, y: -0.34 },
+] as const;
+
 /** As folhas de traje importadas olham para a direita; as antigas variam por tira. */
 export function orientacaoDaArte(stripFacing: 1 | -1, usandoTraje: boolean): 1 | -1 {
   return usandoTraje ? 1 : stripFacing;
@@ -117,8 +126,14 @@ export class PlayerSprite {
    * sua propria — perguntar pelo punho da tira errada poe a arma no lugar
    * errado sem erro nenhum aparecer.
    */
-  private tiraDaArma = 'aim';
+  private tiraDaArma = 'mine';
   private quadroDeMira = 0;
+
+  private punhoDaArma(tira: string, quadro: number): { x: number; y: number } | null {
+    if (this.traje === 'inicial' && tira === 'idle') return PUNHO_DESCANSO_TRAJE_INICIAL;
+    if (tira === 'mine') return PUNHOS_ACAO_ARMA[Math.max(0, Math.min(7, quadro))];
+    return encaixe(tira, quadro, 'punho');
+  }
 
   /*
    * TRANSICOES.
@@ -191,7 +206,7 @@ export class PlayerSprite {
    * porque o DESENHO e a BOCA DO CANO precisam sair do mesmo numero — se
    * divergirem, a bala deixa de nascer na ponta.
    */
-  static readonly ARMA_ALTURA = 0.15;
+  static readonly ARMA_ALTURA = 0.21;
 
   /**
    * Quanto a arma sobe dentro da mao, em fracao da altura do heroi.
@@ -219,23 +234,25 @@ export class PlayerSprite {
   /**
    * A arma usa o punho do corpo que esta realmente na tela.
    *
-   * Antes, caminhar mantinha a arma presa ao punho da tira `aim`, enquanto o
+   * Antes, caminhar mantinha a arma presa ao punho de outra tira, enquanto o
    * corpo visivel vinha de `walk`. Eram duas maos em lugares diferentes: o
    * revolver flutuava na altura do peito enquanto o braco balancava embaixo.
-   * Quando a tira atual possui punho medido, ela e a fonte da verdade. A pose
-   * de mira fica como reserva para o corpo parado e para tiras sem encaixe.
+   * Quando a tira atual possui punho medido, ela e a fonte da verdade. A
+   * martelada fornece os quadros da acao de disparar.
    */
   private poseDaArma(corpo?: { name: string; index: number } | null): {
     tira: string;
     quadro: number;
   } {
-    if (corpo && corpo.name !== 'aim' && encaixe(corpo.name, corpo.index, 'punho')) {
+    if (corpo && this.traje === 'inicial' && corpo.name === 'idle') {
+      return { tira: 'idle', quadro: corpo.index };
+    }
+    if (corpo && encaixe(corpo.name, corpo.index, 'punho')) {
       return { tira: corpo.name, quadro: corpo.index };
     }
-    if (this.recoil > 0.02) return { tira: 'aim', quadro: this.recoil > 0.5 ? 6 : 7 };
-    if (this.aimY < -0.45) return { tira: 'aim', quadro: 2 };
-    if (this.aimY > 0.45) return { tira: 'aim', quadro: 4 };
-    return { tira: 'aim', quadro: this.atirando ? 0 : 1 };
+    if (this.aimY < -0.45) return { tira: 'mine', quadro: this.recoil > 0.45 ? 2 : 1 };
+    if (this.aimY > 0.45) return { tira: 'mine', quadro: this.recoil > 0.45 ? 5 : 4 };
+    return { tira: 'mine', quadro: this.recoil > 0.45 ? 5 : 4 };
   }
 
   update(dt: number, player: Player): void {
@@ -482,7 +499,13 @@ export class PlayerSprite {
        * quadro durante o desenho.
        */
       if (andando && has('walk')) return pick('walk', ciclo('walk'));
+      if (!this.atirando && this.recoil <= 0.02 && has('idle')) {
+        return pick('idle', Math.floor(this.animTime * strips.idle.fps) % strips.idle.frames);
+      }
 
+      // O disparo reaproveita a animacao de acao da picareta. Ela ja tem o
+      // peso do ombro, a inclinacao do tronco e o retorno do braco; manter uma
+      // segunda folha so para tiro fazia o personagem trocar de anatomia.
       const pose = this.poseDaArma();
       if (has(pose.tira)) return pick(pose.tira, pose.quadro);
     }
@@ -560,9 +583,7 @@ export class PlayerSprite {
     let drawH = art.drawHeight;
     let usingStrip = false;
     if (sheet && strip) {
-      // `aim` tem dez quadros no corpo base; os trajes modulares entregam
-      // oito na tira `tiro`. Clamp evita ler pixels fora da folha quando um
-      // recuo escolhe os quadros 6/7.
+      // Clamp evita ler pixels fora da folha se uma arte incompleta entrar.
       const quadrosNaFolha = Math.max(1, Math.floor(sheet.width / frameW));
       sx = Math.min(strip.index, quadrosNaFolha - 1) * frameW;
       drawH = art.stripDrawHeight;
@@ -632,8 +653,8 @@ export class PlayerSprite {
      * tras, o punho fechado do desenho cobre o cabo, e e esse encaixe que faz
      * a mao parecer estar segurando de verdade.
      *
-     * O cano continua a vista porque ele sai para FORA da silhueta: o braco
-     * esta esticado longe do tronco em todas as poses de mira.
+     * O cano continua a vista porque sai para fora da silhueta. Parado, ele
+     * aponta para baixo; so a acao de disparar projeta a arma a frente.
      */
     /*
      * A ORDEM DAS CAMADAS E O QUE FAZ AS PECAS PARECEREM VESTIDAS.
@@ -667,7 +688,7 @@ export class PlayerSprite {
      * uma picareta segurada.
      *
      * Com a arma o calculo e outro e por isso ela continua atras: o cano sai
-     * para FORA da silhueta em toda pose de mira, entao o que some atras do
+     * para FORA da silhueta durante a acao, entao o que some atras do
      * corpo e so o cabo, e o punho fechado cobrindo o cabo e justamente o que
      * vende o aperto. Uma ferramenta carregada junto ao corpo nao tem essa
      * sobra — se ela for para tras, some.
@@ -698,7 +719,7 @@ export class PlayerSprite {
     const pose = this.poseDaArma(this.stripFrame(player));
     this.tiraDaArma = pose.tira;
     this.quadroDeMira = pose.quadro;
-    const punho = encaixe(pose.tira, pose.quadro, 'punho');
+    const punho = this.punhoDaArma(pose.tira, pose.quadro);
     if (!punho) return null;
     const cabo = WEAPON_GRIPS[id] ?? { x: 0.2, y: 0.5 };
     const lado = player.facing < 0 ? -1 : 1;
@@ -826,17 +847,15 @@ export class PlayerSprite {
    * Desenhada DEPOIS do corpo e dentro da mesma transformacao dele: assim ela
    * herda o espelhamento e o squash do pouso de graca, e nunca descola da mao.
    *
-   * O giro e pelo angulo REAL da mira, e nao pela direcao do quadro. Sao
-   * coisas diferentes: o corpo tem tres poses, a mira tem infinitas. Girar a
-   * arma junto e o que faz um tiro a 30 graus parecer um tiro a 30 graus e nao
-   * um tiro na horizontal com o braco torto.
+   * O giro segue uma das tres direcoes que o corpo suporta. Assim arma, braco,
+   * bala e boca do cano sempre concordam.
    */
   private desenharArma(ctx: CanvasRenderingContext2D, alturaDoCorpo: number, flipped: boolean): void {
     const id = this.weaponArt;
     const arte = id ? Assets.weapon(id) : null;
     if (!id || !arte || !arte.width) return;
 
-    const p = encaixe(this.tiraDaArma, this.quadroDeMira, 'punho');
+    const p = this.punhoDaArma(this.tiraDaArma, this.quadroDeMira);
     if (!p) return;
 
     // As fracoes do punho foram medidas na folha com o heroi olhando para a
@@ -846,7 +865,7 @@ export class PlayerSprite {
     // O MESMO angulo que a pose do braco tem — nao o angulo cru da mira. Era
     // isso que fazia a arma se mexer em angulos que a mao nao se mexe.
     const d = PlayerSprite.direcaoDaPose(flipped ? -this.aimX : this.aimX, this.aimY);
-    const ang = Math.atan2(d.y, d.x);
+    const ang = !this.atirando ? Math.PI * 0.34 : Math.atan2(d.y, d.x);
 
     const alturaArma = alturaDoCorpo * PlayerSprite.ARMA_ALTURA;
     const escala = alturaArma / arte.height;

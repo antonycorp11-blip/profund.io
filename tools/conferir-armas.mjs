@@ -24,8 +24,8 @@ import { PNG } from 'pngjs';
 const LIMIAR = 24;
 const QUADRO = 128;
 const AMPLIA = 3;
-/** Qual quadro da tira de mira serve de palco (0 = mirando reto a frente). */
-const POSE = 0;
+/** Quadro frontal da animacao de acao reaproveitada pelo disparo. */
+const POSE = 4;
 
 const fonte = fs.readFileSync(path.resolve('src/player/PlayerSprite.ts'), 'utf8');
 const num = (nome) => {
@@ -48,13 +48,9 @@ const ARMA_SOBE = num('ARMA_SOBE');
  * Se a leitura falhar isto tem que EXPLODIR e nao cair num valor padrao: uma
  * folha de conferencia que mente e pior do que nenhuma.
  */
-const gerado = fs.readFileSync(path.resolve('src/data/characterAnchors.ts'), 'utf8');
-const bloco = gerado.match(/aim:\s*\[([\s\S]*?)\n  \]/);
-if (!bloco) throw new Error('nao achei a tira `aim` em src/data/characterAnchors.ts');
-const tabela = bloco[1];
-// So o `punho` de cada quadro: o bloco tambem traz `cabeca` e `costas`, e uma
-// regex de `x:`/`y:` solta misturaria os tres na mesma lista.
-const punhos = [...tabela.matchAll(/punho:\s*\{\s*x:\s*(-?[0-9.]+),\s*y:\s*(-?[0-9.]+)/g)].map((m) => ({
+const bloco = fonte.match(/PUNHOS_ACAO_ARMA\s*=\s*\[([\s\S]*?)\]\s*as const/);
+if (!bloco) throw new Error('nao achei PUNHOS_ACAO_ARMA no PlayerSprite');
+const punhos = [...bloco[1].matchAll(/\{\s*x:\s*(-?[0-9.]+),\s*y:\s*(-?[0-9.]+)/g)].map((m) => ({
   x: Number(m[1]),
   y: Number(m[2]),
 }));
@@ -65,7 +61,7 @@ const grips = JSON.parse(
 );
 const ARMAS = Object.keys(grips);
 
-const heroi = PNG.sync.read(fs.readFileSync(path.resolve('public/art/character/aim.png')));
+const heroi = PNG.sync.read(fs.readFileSync(path.resolve('public/art/trajes/inicial/mine.png')));
 /** A linha dos pes na tira, medida e nao suposta. */
 let PES = 0;
 for (let y = 0; y < QUADRO; y++) {

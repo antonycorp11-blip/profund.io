@@ -272,7 +272,7 @@ export class HUD {
     this.maoEl = document.createElement('button');
     this.maoEl.className = 'hud-mao';
     this.maoEl.innerHTML = `
-      <span class="hud-mao-icone" data-mao-icone>⛏</span>
+      <img class="hud-mao-icone" data-mao-icone src="art/tools/pick_old.png" alt="">
       <span class="hud-mao-txt" data-mao-nome>Picareta</span>
       <span class="hud-mao-troca">TROCAR ⇄</span>`;
     this.maoLabel = this.maoEl.querySelector('[data-mao-nome]') as HTMLElement;
@@ -871,8 +871,8 @@ export class HUD {
   setMao(mao: 'picareta' | 'arma', nomeDaArma: string): void {
     if (this.maoAtual === mao) return;
     this.maoAtual = mao;
-    const icone = this.maoEl.querySelector('[data-mao-icone]') as HTMLElement;
-    icone.textContent = mao === 'arma' ? '🔫' : '⛏';
+    const icone = this.maoEl.querySelector('[data-mao-icone]') as HTMLImageElement;
+    icone.src = mao === 'arma' ? 'art/weapons/pistola.png' : 'art/tools/pick_old.png';
     this.maoLabel.textContent = mao === 'arma' ? nomeDaArma : 'Picareta';
     this.maoEl.classList.toggle('arma', mao === 'arma');
     this.maoEl.setAttribute('aria-label', `${this.maoLabel.textContent}. Trocar ferramenta`);

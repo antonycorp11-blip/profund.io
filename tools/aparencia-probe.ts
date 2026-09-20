@@ -36,7 +36,7 @@ ok(equipamento.equippedIn('corpo') === roupaComprada, 'roupa comprada foi retira
 // publicado, portanto reprova se o cortador voltar a encolher uma das folhas.
 function alturas(nome: string): number[] {
   const png = PNG.sync.read(fs.readFileSync(path.resolve(`public/art/trajes/inicial/${nome}.png`)));
-  const quadros = nome === 'tiro' ? 10 : 8;
+  const quadros = 8;
   ok(png.width === quadros * 128 && png.height === 128, `${nome}: folha fora de ${quadros}x128`);
   return Array.from({ length: quadros }, (_, quadro) => {
     let minY = 128, maxY = -1;
@@ -50,6 +50,6 @@ function alturas(nome: string): number[] {
 const media = (valores: number[]) => valores.reduce((soma, valor) => soma + valor, 0) / valores.length;
 ok(Math.abs(media(alturas('idle')) - media(alturas('walk'))) <= 2, 'heroi muda de tamanho ao andar');
 ok(alturas('climb').every((altura) => altura > 90), 'escalada perdeu parte do corpo no recorte');
-ok(alturas('tiro').every((altura) => altura > 85), 'folha de tiro perdeu parte do corpo no recorte');
+ok(!fs.existsSync(path.resolve('public/art/trajes/inicial/tiro.png')), 'folha de tiro duplicada voltou ao pacote');
 
 console.log('  aparencia do heroi: orientacao e traje inicial coerentes');

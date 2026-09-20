@@ -2,7 +2,7 @@ import { CONFIG } from '../data/config';
 import { ART } from '../data/art';
 import { TOOLS, toolByKey } from '../data/tools';
 import { RESOURCES } from '../data/resources';
-import { activeSkillMeta } from '../data/activeSkills';
+import { activeSkillMeta, type ActiveSkillId } from '../data/activeSkills';
 import { blockDef, type BlockDef } from '../data/blocks';
 import { RESCUE_NPCS, rescueName } from '../data/story';
 import { Camera } from './camera';
@@ -99,6 +99,24 @@ import { UpgradeSystem } from '../systems/UpgradeSystem';
 import { World } from '../world/World';
 import type { Interactable } from '../entities/Interactable';
 
+const CORES_SKILL: Record<ActiveSkillId, readonly [string, string, string]> = {
+  shock: ['#8ff5ff', '#39bfff', '#ffffff'],
+  drill: ['#ffd782', '#ff8b38', '#fff1c4'],
+  blast: ['#fff078', '#ff7038', '#ffffff'],
+  sense: ['#b6ff9c', '#55efba', '#eaffdf'],
+  recall: ['#a8d8ff', '#7777ff', '#ffffff'],
+  rajada: ['#ffd26f', '#ff8c42', '#fff5d6'],
+  perfurante: ['#83f3ff', '#38b9ff', '#e8ffff'],
+  ricochete: ['#e0a2ff', '#8f6bff', '#fff0ff'],
+};
+
+interface EfeitoSkillNoHeroi {
+  id: ActiveSkillId;
+  vida: number;
+  total: number;
+  fase: number;
+}
+
 /** Orquestrador: monta o mundo, roda o loop e conecta os sistemas. */
 export class Game {
   private canvas: HTMLCanvasElement;
@@ -178,6 +196,8 @@ export class Game {
   private campUI!: BaseCampUI;
   private vitals = new Vitals(this.attrs);
   private activeSkills = new ActiveSkills(this.attrs);
+  /** Pulso visual no corpo quando uma habilidade e armada. */
+  private efeitosDeSkill: EfeitoSkillNoHeroi[] = [];
   private progression = new Progression(this.skills);
   private shock: ShockChain;
   private drill: DrillTool;
@@ -1028,6 +1048,24 @@ export class Game {
 
   private bindEvents(): void {
     AudioSystem.bindEvents();
+
+    Events.on('skill:activated', (p) => {
+      const id = p.id as ActiveSkillId;
+      const cores = CORES_SKILL[id];
+      if (!cores) return;
+      // O primeiro quadro precisa ser um acontecimento, nao apenas um aro no
+      // botao: luz sobe do corpo e as particulas deixam claro que a habilidade
+      // agora esta carregada no personagem.
+      this.efeitosDeSkill.push({ id, vida: 1.15, total: 1.15, fase: Math.random() * Math.PI * 2 });
+      if (this.efeitosDeSkill.length > 4) this.efeitosDeSkill.shift();
+      this.particles.sparks(this.player.cx, this.player.cy - 18, 16, cores[0]);
+      this.particles.burst(this.player.cx, this.player.feetY - 8, 12, [...cores], {
+        speed: 125,
+        spread: Math.PI * 2,
+        size: 2.8,
+        life: 0.75,
+      });
+    });
 
     Events.on('resource:collect', (p) => {
       const name = p.amount > 1 ? `+${p.amount}` : '+1';
@@ -1952,6 +1990,8 @@ export class Game {
       Math.abs(this.player.vx) < 12 &&
       this.vitals.hurtFlash <= 0;
     this.activeSkills.update(dt, podeCanalizar);
+    for (const efeito of this.efeitosDeSkill) efeito.vida -= dt;
+    this.efeitosDeSkill = this.efeitosDeSkill.filter((efeito) => efeito.vida > 0);
     this.camps.update(dt);
     this.tickConstrucao(dt);
     this.campUI.update(dt);
@@ -2517,6 +2557,7 @@ export class Game {
     if (!this.playerSprite.render(ctx, this.player)) {
       this.player.render(ctx);
     }
+    this.renderEfeitosDeSkill(ctx);
     this.particles.render(ctx);
     this.buildMode.render(ctx);
 
@@ -2604,6 +2645,77 @@ export class Game {
       ctx.fillText('sendo levado para a base...', this.cssW / 2, this.cssH / 2 + 16);
       ctx.textAlign = 'left';
     }
+  }
+
+  /**
+   * A habilidade aparece NO PERSONAGEM enquanto esta preparada.
+   *
+   * O pulso grande marca a ativacao; depois ficam apenas motes orbitando e um
+   * halo discreto ate as cargas acabarem. Cada familia tem sua cor, portanto
+   * o jogador reconhece Choque, Detonacao ou Perfurante sem ler o botao.
+   */
+  private renderEfeitosDeSkill(ctx: CanvasRenderingContext2D): void {
+    const ativos = this.activeSkills
+      .all()
+      .filter((estado) => estado.unlocked && (estado.charges > 0 || estado.casting > 0));
+    if (ativos.length === 0 && this.efeitosDeSkill.length === 0) return;
+
+    const x = this.player.cx;
+    const y = this.player.cy - 7;
+    const tempo = this.playTime;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    ativos.slice(0, 3).forEach((estado, indice) => {
+      const id = estado.id as ActiveSkillId;
+      const cores = CORES_SKILL[id];
+      const pulso = Math.sin(tempo * 5.5 + indice * 1.7) * 1.8;
+      const raio = 18 + indice * 4 + pulso;
+      ctx.strokeStyle = cores[0];
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = estado.casting > 0 ? 0.7 : 0.26;
+      ctx.beginPath();
+      ctx.ellipse(x, this.player.feetY - 3, raio, raio * 0.28, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Tres particulas presas ao corpo. Nao usam o pool: assim o halo nao
+      // disputa espaco com poeira, minerio e impactos em aparelhos modestos.
+      for (let mote = 0; mote < 3; mote++) {
+        const a = tempo * (2.2 + indice * 0.25) + mote * (Math.PI * 2 / 3) + indice;
+        const mx = x + Math.cos(a) * (raio * 0.72);
+        const my = y + Math.sin(a) * (12 + indice * 2);
+        const tamanho = 1.5 + (Math.sin(a * 2) + 1) * 0.8;
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = cores[mote % cores.length];
+        ctx.fillRect(mx - tamanho / 2, my - tamanho / 2, tamanho, tamanho);
+      }
+    });
+
+    for (const efeito of this.efeitosDeSkill) {
+      const cores = CORES_SKILL[efeito.id];
+      const progresso = 1 - efeito.vida / efeito.total;
+      const alpha = Math.max(0, efeito.vida / efeito.total);
+      const raio = 12 + progresso * 35;
+      ctx.strokeStyle = cores[0];
+      ctx.lineWidth = 3 * alpha + 0.5;
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.beginPath();
+      ctx.arc(x, y, raio, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let i = 0; i < 8; i++) {
+        const a = efeito.fase + i * Math.PI / 4 + progresso * 1.8;
+        const r = raio * (0.75 + (i % 2) * 0.22);
+        const px = x + Math.cos(a) * r;
+        const py = y + Math.sin(a) * r;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(a + Math.PI / 4);
+        ctx.fillStyle = cores[i % cores.length];
+        ctx.fillRect(-1.6, -1.6, 3.2, 3.2);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
   }
 
   private drawSky(ctx: CanvasRenderingContext2D): void {

@@ -197,7 +197,7 @@ body button:focus-visible {
 }
 .game-hud .hud-mao-txt { display: none; }
 .game-hud .hud-mao-troca { display: inline; font: 500 10px var(--font-display); color: #dfc8a3; }
-.game-hud .hud-mao-icone { width: 23px; height: 23px; font-size: 20px; }
+.game-hud .hud-mao-icone { width: 25px; height: 25px; object-fit: contain; }
 .game-hud .hud-mao.arma { border-color: #e4b875; }
 .game-hud .quota {
   width: 205px;

@@ -89,15 +89,15 @@ const caixasIdle = gruposDaFolha(idle).map((g) => caixa(idle, g));
 const alturaIdle = caixasIdle.map((c) => c.h).sort((a, b) => a - b)[4];
 const escalaBase = ALTURA_PARADO / alturaIdle;
 
-for (const arquivo of fs.readdirSync(ORIGEM).filter((f) => f.endsWith('.png')).sort()) {
+for (const arquivo of fs.readdirSync(ORIGEM).filter((f) => f.endsWith('.png') && f !== 'tiro.png').sort()) {
   const origem = PNG.sync.read(fs.readFileSync(path.join(ORIGEM, arquivo)));
-  const quadros = arquivo === 'tiro.png' ? 10 : 8;
+  const quadros = 8;
   const grupos = gruposDaFolha(origem, quadros);
   const caixas = grupos.map((g) => caixa(origem, g));
   // Andar veio 8% menor que parado na fonte. O corpo e o mesmo; so a folha
   // mudou de escala. Igualar as medianas impede o heroi de encolher ao mover.
   const alturas = caixas.map((c) => c.h).sort((a, b) => a - b);
-  const ajustaAlturaParada = arquivo === 'walk.png' || arquivo === 'tiro.png';
+  const ajustaAlturaParada = arquivo === 'walk.png';
   const escala = ajustaAlturaParada ? ALTURA_PARADO / alturas[Math.floor(alturas.length / 2)] : escalaBase;
   const base = Math.max(...caixas.map((c) => c.maxY));
   const saida = new PNG({ width: QUADRO * quadros, height: QUADRO });

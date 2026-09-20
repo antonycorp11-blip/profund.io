@@ -288,7 +288,7 @@ export const ART = {
    * substitui nenhuma delas.
    */
   shotArts: [
-    'fogo_1', 'fogo_2', 'rastro', 'bala',
+    'fogo_1', 'fogo_2', 'rastro', 'bala', 'capsula',
     'poeira_1', 'poeira_2', 'sangue_1', 'sangue_2',
   ],
 
@@ -361,9 +361,9 @@ export const ART = {
      * pecas separadas. Ligar as camadas modulares por cima poria um segundo
      * capacete sobre o primeiro e uma segunda mochila sobre a primeira.
      *
-     * A ARMA e a excecao e continua sendo peca solta: a tira de mira foi
-     * desenhada com o punho VAZIO de proposito, justamente para a arma entrar
-     * ali.
+     * A ARMA e a excecao e continua sendo peca solta. No disparo ela usa os
+     * quadros de acao da picareta, que ja tem as maos vazias; parada, fica
+     * junto ao corpo sobre a tira `idle`.
      *
      * Trocar para uma arte de heroi nu e virar isto para `false`. E o unico
      * interruptor entre os dois mundos.
@@ -377,19 +377,6 @@ export const ART = {
       jump: { file: 'jump.png', frames: 8, fps: 12, facing: 1 },
       mine: { file: 'mine.png', frames: 8, fps: 12, facing: 1 },
       climb: { file: 'climb.png', frames: 8, fps: 10, facing: 1 },
-      /*
-       * POSE DE MIRA, dez quadros e MAO VAZIA.
-       *
-       * O punho fechado esta vazio de proposito: a arma e um sprite separado,
-       * preso ali e girado pelo angulo da mira. Com a arma desenhada dentro do
-       * corpo, cada arma nova exigiria a folha inteira do personagem outra vez
-       * — tres armas virariam trinta quadros, e trocar de arma no jogo seria
-       * trocar de personagem.
-       *
-       * Os quadros vao em pares por direcao: 0-1 frente, 2-3 cima, 4-5 baixo,
-       * 6-7 recuo, 8-9 andando de arma em punho.
-       */
-      aim: { file: 'aim.png', frames: 10, fps: 6, facing: 1 },
     } as Record<string, StripDef>,
     cols: 4,
     frameW: 128,
