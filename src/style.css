@@ -10408,6 +10408,13 @@ html.dev-hud .debug {
   display: none;
 }
 
+/* A navegação da árvore é o próprio hub. Dentro de um caminho, manter uma
+   segunda lista lateral de categorias duplica a decisão e rouba espaço dos
+   nós recém-revelados. O retorno acontece pelo botão CAMINHOS. */
+.skilltree.flow-caminho .casca-trilho {
+  display: none;
+}
+
 .hub-topo {
   display: flex;
   align-items: baseline;
@@ -10528,6 +10535,29 @@ html.dev-hud .debug {
 
 .hub-caminho.dormindo .hub-nome {
   color: var(--doc-tinta-fraca);
+}
+
+@keyframes skill-node-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+    filter: brightness(0.45) saturate(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+.skill-node.reveal-in {
+  animation: skill-node-reveal 0.34s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skill-node.reveal-in {
+    animation: none;
+  }
 }
 
 /* ---- o vazio da automacao vira a chamada de compra ---- */

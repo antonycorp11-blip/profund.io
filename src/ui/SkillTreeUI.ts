@@ -133,7 +133,6 @@ export class SkillTreeUI {
   private category: SkillCategory = 'mining';
   private selected: string | null = null;
   private nodes = new Map<string, HTMLButtonElement>();
-  private montado = false;
 
   private panX = 0;
   private panY = 0;
@@ -152,11 +151,10 @@ export class SkillTreeUI {
       <div class="skill-screen">
         <header class="casca-cab">
           <span class="casca-titulo">
-            <b>Caminhos de evolução</b>
-            <span>Escolha onde seu minério vira poder</span>
+            <b>Tributos</b>
+            <span>Escolha um caminho para revelar novas habilidades</span>
           </span>
           <button class="casca-cab-btn" data-voltar hidden>‹ CAMINHOS</button>
-          <button class="casca-cab-btn" data-tudo>VER O NINHO</button>
           <div class="casca-conta skill-points">
             <img src="art/hud/ponto.png" alt="">
             <b data-points>0</b>
@@ -187,23 +185,13 @@ export class SkillTreeUI {
     this.pointsEl = this.wrap.querySelector('[data-points]') as HTMLElement;
     this.svg = this.wrap.querySelector('.skill-links') as unknown as SVGSVGElement;
 
-    /*
-     * O mapa inteiro continua a UM toque.
-     *
-     * A tela abre numa camara para o anel ser grande e o nome legivel, mas a
-     * pergunta "que caminhos existem" precisa da vista de cima — e ela era a
-     * unica leitura que a tela dava antes. Agora sao duas, e o jogador escolhe
-     * qual quer.
-     */
-    (this.wrap.querySelector('[data-tudo]') as HTMLElement).addEventListener('click', () => {
-      this.enquadrarTudo();
-      Haptics.ui();
-    });
-
     (this.wrap.querySelector('[data-voltar]') as HTMLElement).addEventListener('click', () => {
+      this.selected = null;
       this.vista = 'hub';
       this.buildHub();
       this.aplicarVista();
+      this.buildNodes();
+      this.refresh();
       Haptics.ui();
     });
 
@@ -229,32 +217,11 @@ export class SkillTreeUI {
     this.wrap.classList.add('open');
     // Sempre pelo hub: a primeira pergunta e "que caminhos existem".
     this.vista = 'hub';
+    this.selected = null;
     this.buildHub();
     this.aplicarVista();
     this.buildTabs();
     this.buildNodes();
-    // Abre onde o jogador parou de olhar. Na primeira vez, na camara de
-    // mineracao: e a unica que todo mundo tem no minuto zero.
-    if (!this.montado) {
-      this.montado = true;
-    }
-    // Abre na CAMARA EM FOCO, e nao no ninho inteiro. Ver tudo de uma vez
-    // parecia a resposta certa — "que caminhos existem" — mas com trinta e
-    // tres nos o zoom caia para 0,59 e cada anel virava uma moeda com o nome
-    // ilegivel embaixo. O conceito mostra uma camara por vez, com o anel
-    // grande e o nome legivel, e os tuneis saindo pelas bordas para dizer que
-    // ha mais. A leitura do mapa inteiro continua a um gesto de distancia (a
-    // pinca, a roda, e o botao de ver tudo).
-    this.enquadrarCamara(this.category, false);
-    /*
-     * A ficha abre com ALGO dentro.
-     *
-     * Ela abria com um paragrafo generico sobre o ninho, e o jogador tinha de
-     * clicar num no para a tela comecar a dizer alguma coisa. No conceito ha
-     * sempre um no aberto — e o primeiro que da para COMPRAR e a melhor
-     * escolha, porque e exatamente o que ele veio decidir aqui.
-     */
-    if (!this.selected) this.selected = this.primeiroComprável();
     this.refresh();
   }
 
@@ -349,10 +316,7 @@ export class SkillTreeUI {
         <span class="hub-nome">${cat.name}</span>
         <span class="hub-conta">${conta}</span>`;
       b.addEventListener('click', () => {
-        this.vista = 'camara';
-        this.aplicarVista();
         this.irParaCamara(cat.id, false);
-        this.buildTabs();
         Haptics.ui();
       });
       roda.appendChild(b);
@@ -368,14 +332,12 @@ export class SkillTreeUI {
     const titulo = this.wrap.querySelector('.casca-titulo span') as HTMLElement | null;
     if (titulo) {
       titulo.textContent = hub
-        ? 'Escolha um caminho'
-        : CATEGORIES[this.category]?.name ?? 'Evolua seu explorador';
+        ? 'Escolha um caminho para começar'
+        : `${CATEGORIES[this.category]?.name ?? 'Caminho'} — revele suas habilidades`;
     }
     const voltar = this.wrap.querySelector('[data-voltar]') as HTMLElement | null;
     if (voltar) voltar.hidden = hub;
-    // "Ver o ninho" enquadra as camaras: no hub nao ha ninho para enquadrar.
-    const ninho = this.wrap.querySelector('[data-tudo]') as HTMLElement | null;
-    if (ninho) ninho.hidden = hub;
+    this.wrap.classList.toggle('flow-caminho', !hub);
   }
 
   private buildTabs(): void {
@@ -423,51 +385,56 @@ export class SkillTreeUI {
     return Number.isFinite(v) && v > 0.05 ? v : 1;
   }
 
-  private enquadrarTudo(): void {
-    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
-      (sk) => this.host.tree.visibility(sk.id) !== 'escondido'
-    );
-    if (lista.length === 0) return;
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const def of lista) {
-      const q = nodePos(def);
-      minX = Math.min(minX, q.x);
-      minY = Math.min(minY, q.y - 54); // placa da camara fica acima do no
-      maxX = Math.max(maxX, q.x + NODE);
-      maxY = Math.max(maxY, q.y + NODE + 26); // nome fica abaixo
-    }
-    const r = this.viewport.getBoundingClientRect();
-    if (r.width < 10 || r.height < 10) return;
-    const margem = 28;
-    const ui = this.escalaDaUI();
-    const z = Math.min(
-      (r.width - margem * 2) / Math.max(1, (maxX - minX) * ui),
-      (r.height - margem * 2) / Math.max(1, (maxY - minY) * ui)
-    );
-    this.zoom = Math.max(0.3, Math.min(1.6, z));
-    this.panX = r.width / (2 * ui) - ((minX + maxX) / 2) * this.zoom - 40;
-    this.panY = r.height / (2 * ui) - ((minY + maxY) / 2) * this.zoom - 20;
-    this.canvasEl.classList.remove('gliding');
-    this.applyTransform();
-  }
-
-  /** Leva a vista ate uma camara, sem esconder o resto do ninho. */
+  /** Entra em um caminho e mostra apenas a fronteira ja revelada dele. */
   private irParaCamara(cat: SkillCategory, animar: boolean): void {
+    const mudou = this.vista !== 'camara' || this.category !== cat;
+    this.vista = 'camara';
+    this.category = cat;
+    if (mudou || !this.selected || skillDef(this.selected)?.category !== cat) {
+      this.selected = this.primeiroNoDoCaminho(cat);
+    }
+    this.aplicarVista();
     this.enquadrarCamara(cat, animar);
     this.buildTabs();
+    this.buildNodes();
     this.refresh();
   }
 
-  /** O primeiro no que o jogador pode comprar agora; senao, o primeiro visivel. */
-  private primeiroComprável(): string | null {
-    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
-      (sk) => this.host.tree.visibility(sk.id) !== 'escondido'
+  /**
+   * Entradas de um caminho: no primeiro acesso elas funcionam como a porta
+   * daquele ramo. Dependencias de OUTRA categoria continuam podendo deixar a
+   * porta visivel, mas nao fazem os filhos aparecerem antes da hora.
+   */
+  private entradasDoCaminho(category: SkillCategory): SkillDef[] {
+    return SKILLS.filter((sk) => {
+      if (sk.category !== category) return false;
+      return !sk.requiredSkills.some((req) => skillDef(req)?.category === category);
+    }).sort((a, b) => a.requiredDepth - b.requiredDepth || a.position.y - b.position.y);
+  }
+
+  private primeiroNoDoCaminho(category: SkillCategory): string | null {
+    const entradas = this.entradasDoCaminho(category);
+    const depth = this.host.currentDepth();
+    return (
+      entradas.find((sk) => this.host.tree.canLearn(sk.id, depth).ok)?.id ??
+      entradas[0]?.id ??
+      null
     );
-    const prof = this.host.currentDepth();
-    return lista.find((sk) => this.host.tree.canLearn(sk.id, prof).ok)?.id ?? lista[0]?.id ?? null;
+  }
+
+  /**
+   * No hub nao ha habilidades — so caminhos. Dentro de um caminho, mostramos
+   * as entradas e o proximo nivel imediatamente ligado a algo ja aprendido.
+   * O nivel seguinte permanece escondido ate a compra que o revela.
+   */
+  private nosVisiveisNaVista(): SkillDef[] {
+    if (this.vista !== 'camara') return [];
+    const entradas = new Set(this.entradasDoCaminho(this.category).map((sk) => sk.id));
+    return SKILLS.filter((sk) => {
+      if (sk.category !== this.category) return false;
+      const visao = this.host.tree.visibility(sk.id);
+      return entradas.has(sk.id) || visao === 'aberto';
+    });
   }
 
   /**
@@ -481,9 +448,7 @@ export class SkillTreeUI {
    */
   private enquadrarCamara(cat: SkillCategory, animar: boolean): void {
     this.category = cat;
-    const lista = nosDoNinho((c) => this.host.tree.isCategoryVisible(c)).filter(
-      (sk) => sk.category === cat && this.host.tree.visibility(sk.id) !== 'escondido'
-    );
+    const lista = this.nosVisiveisNaVista();
     if (lista.length === 0) return;
     let minX = Infinity;
     let minY = Infinity;
@@ -522,7 +487,7 @@ export class SkillTreeUI {
     for (const el of Array.from(this.canvasEl.querySelectorAll('.skill-node'))) el.remove();
     for (const el of Array.from(this.canvasEl.querySelectorAll('.skill-chamber'))) el.remove();
 
-    const list = nosDoNinho((c) => this.host.tree.isCategoryVisible(c));
+    const list = this.nosVisiveisNaVista();
 
     // Placa de cada camara, para o ninho nao virar um monte de bolinha solta.
     for (const cat of Object.values(CATEGORIES)) {
@@ -553,7 +518,7 @@ export class SkillTreeUI {
       const visao = this.host.tree.visibility(def.id);
       if (visao === 'escondido') continue;
       const btn = document.createElement('button');
-      btn.className = `skill-node${visao === 'vizinho' ? ' apagado' : ''}`;
+      btn.className = `skill-node reveal-in${visao === 'vizinho' ? ' apagado' : ''}`;
       const p = nodePos(def);
       btn.style.left = `${p.x}px`;
       btn.style.top = `${p.y}px`;
@@ -619,8 +584,7 @@ export class SkillTreeUI {
         if (!req || req.category === 'active') continue;
         // Galeria para camara que ainda nao existe na tela nao se desenha:
         // seria um tunel saindo do nada para lugar nenhum.
-        if (this.host.tree.visibility(def.id) === 'escondido') continue;
-        if (this.host.tree.visibility(reqId) === 'escondido') continue;
+        if (!list.some((sk) => sk.id === reqId)) continue;
         const b = nodePos(req);
         const aberto = this.host.tree.levelOf(reqId) > 0;
 
@@ -667,6 +631,19 @@ export class SkillTreeUI {
     // errado.
     if (this.vista === 'hub') this.buildHub();
 
+    // Aprender um no muda a fronteira do mapa. Reconstroi somente quando a
+    // lista realmente cresceu ou encolheu; assim pontos ganhos nao fazem a
+    // camera piscar, mas um desbloqueio revela o proximo trecho imediatamente.
+    if (this.vista === 'camara') {
+      const ids = this.nosVisiveisNaVista().map((sk) => sk.id);
+      const atuais = Array.from(this.nodes.keys());
+      const mudou = ids.length !== atuais.length || ids.some((id, i) => id !== atuais[i]);
+      if (mudou) {
+        this.buildNodes();
+        this.enquadrarCamara(this.category, true);
+      }
+    }
+
     const depth = this.host.currentDepth();
     for (const [id, btn] of this.nodes) {
       const def = skillDef(id)!;
@@ -680,7 +657,7 @@ export class SkillTreeUI {
       const lvl = btn.querySelector('.node-level') as HTMLElement;
       lvl.textContent = def.maxLevel > 1 ? `${level}/${def.maxLevel}` : level > 0 ? '✓' : '';
     }
-    this.drawLinks(nosDoNinho((c) => this.host.tree.isCategoryVisible(c)));
+    this.drawLinks(this.nosVisiveisNaVista());
     this.renderDetail();
   }
 
