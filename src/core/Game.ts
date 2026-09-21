@@ -983,12 +983,31 @@ export class Game {
       }
       ocupado.add(`${spot.col},${spot.row}`);
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
+      this.exploration.addMarker({
+        id: d.id,
+        kind: 'npc',
+        col: spot.col,
+        row: spot.row,
+        label: d.name,
+        alwaysVisible: false,
+      });
     }
     // Posto Nove: coordenadas proprias, fora da geometria de Blockia.
     for (const d of OUTPOST_NPCS) {
       const alvo = { col: d.worldCol, row: this.world.surfaceRow + d.depth };
       const spot = this.world.findStandingSpot(alvo.col, alvo.row, 20) ?? alvo;
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
+      // O `requires` da missao usa o id do Rui. Sem um marcador com o mesmo
+      // id, revelar o objetivo nao encontrava nada e Posto Nove ficava sem
+      // mapa nem bussola apesar de anunciar 278 m.
+      this.exploration.addMarker({
+        id: d.id,
+        kind: 'npc',
+        col: spot.col,
+        row: spot.row,
+        label: 'Posto Nove',
+        alwaysVisible: false,
+      });
     }
     this.scrollObjects = SCROLLS.map((sc) => new ScrollObject(sc, this.world.surfaceRow));
     // A porta da cidade: fechada de verdade ate alguem atender.
@@ -1174,6 +1193,7 @@ export class Game {
     // Conhecer um morador tambem e progresso de missao: o Posto Nove inteiro
     // e "converse com o Rui".
     Events.on('city:met', (p) => {
+      this.exploration.setMarkerDone(p.id);
       this.skills.setStoryFlag(p.id);
       this.refreshObjective();
       this.save();

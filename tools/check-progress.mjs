@@ -174,7 +174,7 @@ const ondeNasce = new Map<string, number>();
 ondeNasce.set('quota_paga', 0);
 for (const c of CLUES) ondeNasce.set(c.id, c.row - sr);
 for (const n of RESCUE_NPCS) ondeNasce.set(n.id, n.row - sr);
-for (const n of OUTPOST_NPCS) ondeNasce.set(n.id, (n as { row: number }).row - sr);
+for (const n of OUTPOST_NPCS) ondeNasce.set(n.id, n.depth);
 for (const n of BLOCKIA_NPCS) ondeNasce.set(n.id, CONFIG.blockia.depth0);
 for (const b of BASE_CAMPS) for (const sl of b.slots) ondeNasce.set(b.id + ':' + sl.kind, b.depth);
 for (const l of GATE_LAYERS) {
