@@ -7,6 +7,8 @@ export type ResourceId =
   | 'iron'
   | 'gold'
   | 'crystal'
+  | 'amber'
+  | 'azurite'
   | 'ruby'
   | 'relic'
   | 'voidstone'
@@ -107,6 +109,14 @@ export const RESOURCES: Record<ResourceId, ResourceDef> = {
     accent: '#d3b4ff',
     weight: 1,
     showInHud: false,
+  },
+  amber: {
+    id: 'amber', name: 'Ambar fossil', value: 26, rarity: 'raro',
+    color: '#dc8b27', accent: '#ffe4a3', weight: 1, showInHud: false,
+  },
+  azurite: {
+    id: 'azurite', name: 'Azurita', value: 74, rarity: 'raro',
+    color: '#164bc0', accent: '#7ca8ff', weight: 1, showInHud: false,
   },
   ruby: {
     id: 'ruby',
@@ -218,6 +228,8 @@ export const RESOURCE_ORDER: ResourceId[] = [
   'iron',
   'gold',
   'crystal',
+  'amber',
+  'azurite',
   'ruby',
   'relic',
   'voidstone',

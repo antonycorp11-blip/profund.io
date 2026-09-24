@@ -373,6 +373,7 @@ export class Creature {
   private renderArt(ctx: CanvasRenderingContext2D): boolean {
     const d = this.def;
     if (!d.art) return false;
+    if (d.artMode === 'fourFrame') return this.renderFourFrameArt(ctx);
     const sheet = Assets.creature(d.art, this.anim) ?? Assets.creature(d.art, 'idle');
     if (!sheet) return false;
 
@@ -419,6 +420,48 @@ export class Creature {
       ctx.restore();
     }
 
+    if (this.alive && this.health < d.health) this.renderHealthBar(ctx, top);
+    return true;
+  }
+
+  private renderFourFrameArt(ctx: CanvasRenderingContext2D): boolean {
+    const d = this.def;
+    if (!d.art) return false;
+    const move = this.anim === 'walk' ? Assets.creature(d.art, 'walk') : null;
+    const attack = this.anim === 'attack' ? Assets.creature(d.art, 'attack') : null;
+    const sheet = attack ?? move ?? Assets.creature(d.art, 'single');
+    if (!sheet) return false;
+    const frames = attack || move ? 4 : 1;
+    const frameW = sheet.width / frames;
+    const frameH = sheet.height;
+    const frame = attack
+      ? Math.min(3, Math.floor(this.animTime * 8))
+      : move ? Math.floor(this.animTime * 9) % 4 : 0;
+    const h = d.drawHeight;
+    const w = h * frameW / frameH;
+    const feetY = this.y + d.h / 2;
+    const bob = this.anim === 'idle' ? Math.sin(this.t * 3) * 0.7 : 0;
+    const top = feetY - h + bob;
+
+    ctx.save();
+    if (!this.alive) ctx.globalAlpha = Math.max(0, this.deathFade / 0.7);
+    if (this.alive && !d.flying) {
+      ctx.fillStyle = 'rgba(0,0,0,0.26)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, feetY + 1, d.w * 0.46, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.translate(Math.round(this.x), Math.round(top));
+    if (this.facing === -1) ctx.scale(-1, 1);
+    if (this.anim === 'attack' && !attack) ctx.translate(Math.min(4, this.animTime * 12), 0);
+    if (this.anim === 'death') ctx.rotate(Math.min(0.22, this.animTime * 0.4));
+    ctx.drawImage(sheet, frame * frameW, 0, frameW, frameH, -w / 2, 0, w, h);
+    if (this.hurtTimer > 0 && this.alive) {
+      ctx.globalAlpha = Math.min(0.65, this.hurtTimer * 3);
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.drawImage(sheet, frame * frameW, 0, frameW, frameH, -w / 2, 0, w, h);
+    }
+    ctx.restore();
     if (this.alive && this.health < d.health) this.renderHealthBar(ctx, top);
     return true;
   }

@@ -2653,6 +2653,7 @@ export class Game {
       },
       // Guardioes brilham: dao para ver de longe que ha algo guardando ali.
       ...this.creatures.lights(),
+      ...this.tileRenderer.ambientLights(),
     ];
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.lighting.render(

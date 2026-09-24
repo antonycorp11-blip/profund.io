@@ -109,6 +109,8 @@ export const BLOCK_IDS = {
   RUIN_BACKWALL: 22,
   STEP_RUIN: 23,
   STEP_WOOD: 24,
+  AMBER: 25,
+  AZURITE: 26,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -802,6 +804,28 @@ export const BLOCKS: BlockDef[] = [
     shade: '#17171c',
     speckle: '#35353d',
     sfxMaterial: 'pedra',
+  },
+  {
+    id: BLOCK_IDS.AMBER,
+    key: 'amber', name: 'Ambar fossil', type: 'minerio',
+    hp: 48, drop: 'amber', dropMin: 1, dropMax: 2, dropChance: 1,
+    tags: ['soil', 'ore', 'rareOre'], rarity: 'raro', value: 26,
+    minDepth: 0, maxDepth: 360, minTool: 1,
+    solid: true, indestructible: false,
+    color: '#65503b', shade: '#463725', speckle: '#86623d',
+    oreColor: '#e9a83c', oreGlow: '#ffcf74', emissive: 0.08,
+    sfxMaterial: 'cristal',
+  },
+  {
+    id: BLOCK_IDS.AZURITE,
+    key: 'azurite', name: 'Veio de azurita', type: 'minerio',
+    hp: 86, drop: 'azurite', dropMin: 1, dropMax: 2, dropChance: 1,
+    tags: ['stone', 'hardStone', 'ore', 'rareOre'], rarity: 'raro', value: 74,
+    minDepth: 360, maxDepth: 1300, minTool: 3,
+    solid: true, indestructible: false,
+    color: '#263657', shade: '#19243d', speckle: '#385895',
+    oreColor: '#245ddd', oreGlow: '#87aeff', emissive: 0.28,
+    sfxMaterial: 'cristal',
   },
 ];
 

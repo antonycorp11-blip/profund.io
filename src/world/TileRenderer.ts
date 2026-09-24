@@ -38,6 +38,7 @@ export class TileRenderer {
    */
   private readonly paintBudget = 2;
   private paintedThisFrame = 0;
+  private decorationLights: { x: number; y: number; radius: number; intensity: number }[] = [];
 
   constructor(private world: World) {
     this.chunkWorldPx = world.chunkSize * world.tileSize;
@@ -86,6 +87,7 @@ export class TileRenderer {
       }
     }
 
+    this.drawDecorations(ctx, c0, r0, c1, r1);
     this.drawCracks(ctx, c0, r0, c1, r1);
     this.evictIfNeeded();
   }
@@ -147,8 +149,11 @@ export class TileRenderer {
     }
     const def = blockDef(id);
 
-    // Minerio: rocha da camada + pepitas carimbadas (ver ART.oreStamp).
-    if (this.useArt && ART.oreStamp.enabled && def.type === 'minerio' && def.drop) {
+    // Veios fundos herdam a rocha da camada: um quadrado de terra entre blocos
+    // vulcanicos parecia remendo, nao minerio incrustado.
+    const directOre = ART.directOreKeys.includes(def.key) ||
+      (def.key === 'copper' && this.world.depthOfRow(row) < 12);
+    if (this.useArt && ART.oreStamp.enabled && def.type === 'minerio' && def.drop && !directOre) {
       if (this.paintOreStamp(ctx, def, col, row, x, y, size)) return;
     }
 
@@ -162,8 +167,7 @@ export class TileRenderer {
         : plainArt;
 
     if (art) {
-      // Textura real: variacao sorteada pela posicao + espelhamento.
-      // Com 1 textura so, o espelho ja da 4 arranjos diferentes e mata a repeticao.
+      // A variacao e estavel no mundo inteiro, inclusive entre chunks.
       const v = Math.floor(hash2d(col, row, 991) * art.length) % art.length;
       this.drawTileImage(ctx, art[v], x, y, size, col, row, def.artFlipY !== false);
       this.paintArtEdges(ctx, col, row, x, y, size);
@@ -251,7 +255,9 @@ export class TileRenderer {
     const bv = Math.floor(hash2d(col, row, 991) * base.length) % base.length;
     this.drawTileImage(ctx, base[bv], x, y, size, col, row, true);
 
-    const count =
+    const cluster = def.key === 'copper' || def.key === 'iron' ||
+      def.key === 'gold' || def.key === 'azurite';
+    const count = cluster ? 1 :
       cfg.minCount + Math.floor(hash2d(col, row, 4001) * (cfg.maxCount - cfg.minCount + 1));
     const margin = size * cfg.margin;
     const span = size - margin * 2;
@@ -262,19 +268,22 @@ export class TileRenderer {
       const hs = hash2d(col + i * 31, row - i * 17, 7001);
       const hr = hash2d(col - i * 23, row + i * 41, 8009);
 
-      const s = size * (cfg.minScale + hs * (cfg.maxScale - cfg.minScale));
-      const cx = x + margin + hx * span;
-      const cy = y + margin + hy * span;
+      const s = cluster ? size * (0.88 + hs * 0.12) :
+        size * (cfg.minScale + hs * (cfg.maxScale - cfg.minScale));
+      const cx = cluster ? x + size * (0.46 + hx * 0.08) : x + margin + hx * span;
+      const cy = cluster ? y + size * (0.46 + hy * 0.08) : y + margin + hy * span;
       const rot = (hr - 0.5) * 2 * cfg.maxRotation;
 
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(rot);
       // Encaixe: sombra atras da pepita para ela parecer incrustada, nao colada.
-      ctx.fillStyle = `rgba(0,0,0,${cfg.socketAlpha})`;
-      ctx.beginPath();
-      ctx.ellipse(0, s * 0.06, (s * cfg.socketScale) / 2, (s * cfg.socketScale) / 2.3, 0, 0, Math.PI * 2);
-      ctx.fill();
+      if (!cluster) {
+        ctx.fillStyle = `rgba(0,0,0,${cfg.socketAlpha})`;
+        ctx.beginPath();
+        ctx.ellipse(0, s * 0.06, (s * cfg.socketScale) / 2, (s * cfg.socketScale) / 2.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.drawImage(icon, -s / 2, -s / 2, s, s);
       ctx.restore();
     }
@@ -309,8 +318,8 @@ export class TileRenderer {
   }
 
   /**
-   * Volume dos blocos quando a textura e real: sombra embaixo/direita e luz no topo exposto.
-   * Deliberadamente sutil — a arte ja tem contraste proprio.
+   * A sombra antiga entrava em TODO tile e desenhava uma grade escura no mundo.
+   * Volume so faz sentido na borda da parede; dentro da rocha as faces se unem.
    */
   private paintArtEdges(
     ctx: CanvasRenderingContext2D,
@@ -321,12 +330,14 @@ export class TileRenderer {
     size: number
   ): void {
     const e = size * 0.16;
-    ctx.fillStyle = 'rgba(0,0,0,0.26)';
-    ctx.fillRect(x, y + size - e, size, e);
-    ctx.fillStyle = 'rgba(0,0,0,0.13)';
-    ctx.fillRect(x, y + size - e * 1.9, size, e * 0.9);
-    ctx.fillRect(x + size - e * 0.6, y, e * 0.6, size);
-
+    if (!this.world.isSolid(col, row + 1)) {
+      ctx.fillStyle = 'rgba(0,0,0,0.30)';
+      ctx.fillRect(x, y + size - e, size, e);
+    }
+    if (!this.world.isSolid(col + 1, row)) {
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(x + size - e * 0.6, y, e * 0.6, size);
+    }
     if (!this.world.isSolid(col, row - 1)) {
       ctx.fillStyle = 'rgba(255,245,220,0.16)';
       ctx.fillRect(x, y, size, size * 0.1);
@@ -434,11 +445,71 @@ export class TileRenderer {
       for (let dc = -r; dc <= r; dc++) {
         for (let dr = -r; dr <= r; dr++) {
           if (Math.max(Math.abs(dc), Math.abs(dr)) !== r) continue;
-          if (this.world.isSolid(col + dc, row + dr)) return (r - 1) / max;
+          if (this.world.isSolid(col + dc, row + dr)) return (r - 0.5) / max;
         }
       }
     }
     return 1;
+  }
+
+  /** Luzes dos lampioes de suporte, calculadas no mesmo passeio que os sprites. */
+  ambientLights(): { x: number; y: number; radius: number; intensity: number }[] {
+    return this.decorationLights;
+  }
+
+  private supportAt(col: number, row: number): boolean {
+    const depth = this.world.depthOfRow(row);
+    if (depth < 8 || depth > 180 || col % 9 !== 2 || hash2d(col, row, 4109) < 0.55) return false;
+    for (let dy = -2; dy <= 0; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        if (this.world.getTile(col + dx, row + dy) !== BLOCK_IDS.AIR) return false;
+      }
+    }
+    return this.world.isSolid(col, row + 1) && this.world.isSolid(col + 2, row + 1);
+  }
+
+  /**
+   * Adornos ancorados no mapa, nunca sorteados por quadro. No mundo grande,
+   * a posicao precisa sobreviver ao scroll e respeitar os tuneis minerados.
+   */
+  private drawDecorations(ctx: CanvasRenderingContext2D, c0: number, r0: number, c1: number, r1: number): void {
+    this.decorationLights = [];
+    if (!this.useArt) return;
+    const roots = Assets.environment('roots');
+    const stalactite = Assets.environment('stalactite');
+    const support = Assets.environment('support');
+    const lantern = Assets.environment('lantern');
+    const ts = this.world.tileSize;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    for (let row = r0; row <= r1; row++) {
+      for (let col = c0; col <= c1; col++) {
+        if (support && this.supportAt(col, row)) {
+          const x = col * ts;
+          const y = (row - 2) * ts;
+          ctx.globalAlpha = 0.7;
+          ctx.drawImage(support, x, y, ts * 3, ts * 3);
+          if (lantern) {
+            ctx.globalAlpha = 0.85;
+            ctx.drawImage(lantern, x + ts * 1.28, y + ts * 0.18, ts * 0.45, ts * 0.95);
+            this.decorationLights.push({ x: x + ts * 1.5, y: y + ts * 0.65, radius: ts * 3.5, intensity: 0.68 });
+          }
+        }
+        if (this.world.getTile(col, row) !== BLOCK_IDS.AIR ||
+            !this.world.isSolid(col, row - 1) ||
+            this.world.getTile(col, row + 1) !== BLOCK_IDS.AIR) continue;
+        const depth = this.world.depthOfRow(row);
+        if (roots && depth < 80 && this.world.getTile(col, row + 2) === BLOCK_IDS.AIR &&
+            hash2d(col, row, 5113) > 0.88) {
+          ctx.globalAlpha = 0.68;
+          ctx.drawImage(roots, col * ts, row * ts - 3, ts, ts * 2.2);
+        } else if (stalactite && depth >= 30 && hash2d(col, row, 6113) > 0.89) {
+          ctx.globalAlpha = 0.55;
+          ctx.drawImage(stalactite, col * ts - ts * 0.08, row * ts - 2, ts * 1.16, ts * 1.16);
+        }
+      }
+    }
+    ctx.restore();
   }
 
   /** Rachaduras: desenhadas fora do cache, pois mudam a cada golpe. */

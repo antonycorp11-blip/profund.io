@@ -126,7 +126,23 @@ class AssetsImpl {
     // desenho vetorial daquela criatura, sem quebrar nada.
     const artes = new Set<string>();
     for (const def of CREATURES) {
-      if (def.art) artes.add(def.art);
+      if (!def.art) continue;
+      if (def.artMode === 'fourFrame') {
+        const nomes = def.artAttackSheet ? ['single', 'walk', 'attack'] : ['single', 'walk'];
+        for (const anim of nomes) {
+          jobs.push(
+            this.loadImage(`${manifest.basePath}${manifest.creaturesDir}${def.art}_${anim}.png`).then(
+              (img) => {
+                if (!img) return;
+                this.images.set(`creature:${def.art}:${anim}`, img);
+                this.creatureArts.add(def.art!);
+              }
+            )
+          );
+        }
+      } else {
+        artes.add(def.art);
+      }
     }
     // Ajudantes usam a mesma pasta. A toupeira saiu do bestiario ao virar
     // coletora, e com ela a arte deixou de ser carregada — a toupeira virava
@@ -236,6 +252,13 @@ class AssetsImpl {
         })
       );
     }
+    for (const key of manifest.environmentKeys) {
+      jobs.push(
+        this.loadImage(`${manifest.basePath}${manifest.environmentDir}${key}.png`).then((img) => {
+          if (img) this.images.set('environment:' + key, img);
+        })
+      );
+    }
     for (const [key, prop] of Object.entries(manifest.props)) {
       jobs.push(
         this.loadImage(`${manifest.basePath}${manifest.propsDir}${prop.file}`).then((img) => {
@@ -327,6 +350,10 @@ class AssetsImpl {
   /** Fundo de galeria por indice de camada (0 = terra, 1 = pedra, 2 = profundezas). */
   backwall(layer: number): HTMLImageElement[] | null {
     return this.backwalls[layer] ?? null;
+  }
+
+  environment(key: string): HTMLImageElement | null {
+    return this.images.get('environment:' + key) ?? null;
   }
 
   /**

@@ -397,7 +397,7 @@ export const CONFIG = {
     darkStartDepth: 4,
     /** ... e chega ao maximo aqui. */
     darkFullDepth: 40,
-    maxDarkness: 0.93,
+    maxDarkness: 0.68,
     flicker: 0.02,
   },
 

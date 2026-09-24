@@ -106,6 +106,7 @@ export const LAYERS: LayerDef[] = [
     ores: [
       { key: 'coal', chance: 0.038, sizeMin: 3, sizeMax: 7 },
       { key: 'copper', chance: 0.013, sizeMin: 2, sizeMax: 4 },
+      { key: 'amber', chance: 0.008, sizeMin: 1, sizeMax: 3 },
     ],
   },
   {
@@ -136,6 +137,7 @@ export const LAYERS: LayerDef[] = [
       { key: 'coal', chance: 0.05, sizeMin: 4, sizeMax: 9 },
       { key: 'copper', chance: 0.034, sizeMin: 3, sizeMax: 7 },
       { key: 'iron', chance: 0.018, sizeMin: 2, sizeMax: 5 },
+      { key: 'amber', chance: 0.011, sizeMin: 1, sizeMax: 4 },
     ],
   },
   {
@@ -161,6 +163,7 @@ export const LAYERS: LayerDef[] = [
       { key: 'iron', chance: 0.055, sizeMin: 4, sizeMax: 9 },
       { key: 'gold', chance: 0.022, sizeMin: 2, sizeMax: 6 },
       { key: 'crystal', chance: 0.03, sizeMin: 3, sizeMax: 7 },
+      { key: 'azurite', chance: 0.012, sizeMin: 2, sizeMax: 5 },
     ],
   },
   {
@@ -185,6 +188,7 @@ export const LAYERS: LayerDef[] = [
       { key: 'iron', chance: 0.07, sizeMin: 4, sizeMax: 10 },
       { key: 'gold', chance: 0.05, sizeMin: 3, sizeMax: 8 },
       { key: 'crystal', chance: 0.045, sizeMin: 3, sizeMax: 8 },
+      { key: 'azurite', chance: 0.018, sizeMin: 2, sizeMax: 5 },
     ],
   },
   {

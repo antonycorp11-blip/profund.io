@@ -77,7 +77,7 @@ export const ART = {
   tileArtScale: 2,
 
   /** Quantas variacoes de cada bloco procurar (arquivo_0, _1, _2...). */
-  blockVariants: 3,
+  blockVariants: 4,
 
   /**
    * Minerio composto: em vez de uma textura de "pedra com pepita" pronta,
@@ -93,11 +93,11 @@ export const ART = {
       { minDepth: 0, key: 'stone' },
       { minDepth: 120, key: 'darkstone' },
     ],
-    minCount: 1,
+    minCount: 2,
     maxCount: 3,
     /** Tamanho da pepita em fracao do tile. */
-    minScale: 0.34,
-    maxScale: 0.58,
+    minScale: 0.42,
+    maxScale: 0.64,
     /** Rotacao maxima em radianos (a luz da arte vem do topo-esquerda). */
     maxRotation: 0.45,
     /** Margem minima ate a borda do tile, em fracao. */
@@ -106,6 +106,8 @@ export const ART = {
     socketAlpha: 0.38,
     socketScale: 1.1,
   },
+  /** Estes veios ja tem rocha e inclusao desenhadas na mesma textura. */
+  directOreKeys: ['crystal', 'amber'],
 
   blocksDir: 'blocks/',
   /** Blocos que tem textura. A chave e a mesma de BLOCKS[].key. */
@@ -119,6 +121,8 @@ export const ART = {
     'iron',
     'gold',
     'crystal',
+    'amber',
+    'azurite',
     'ruin_brick',
     'ruin_slab',
     'ruin_column',
@@ -149,6 +153,8 @@ export const ART = {
     'iron',
     'gold',
     'crystal',
+    'amber',
+    'azurite',
     'stone',
     // A folha de minerio veio completa: os quatro de baixo existiam so como
     // bolinha colorida, inclusive o Coque, que e o material que a base inteira
@@ -172,6 +178,8 @@ export const ART = {
    * (por isso a arte NAO precisa emendar).
    */
   bgDir: 'bg/',
+  environmentDir: 'environment/',
+  environmentKeys: ['roots', 'stalactite', 'support', 'lantern'],
   /** Ceus do ciclo dia/noite (dia, entardecer, noite). */
   skyKeys: ['sky_day', 'sky_dusk', 'sky_night'],
   /*

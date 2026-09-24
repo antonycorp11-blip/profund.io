@@ -38,6 +38,9 @@ export interface CreatureDef {
   flying?: boolean;
   /** Pasta da arte em public/art/creatures (sem o sufixo da animacao). */
   art?: string;
+  /** Usa um sprite parado e uma tira de quatro quadros para movimento. */
+  artMode?: 'fourFrame';
+  artAttackSheet?: boolean;
   /** Altura do sprite em pixels de mundo. */
   drawHeight: number;
   /** Cores do desenho vetorial (usado enquanto a arte nao carrega). */
@@ -89,6 +92,42 @@ export interface CreatureDef {
  * A arte dela continua em public/art/creatures/toupeira_*.
  */
 export const CREATURES: CreatureDef[] = [
+  {
+    id: 'raizerrante', name: 'Raizerrante', layers: ['surface', 'stone'],
+    behavior: 'territorial', health: 65, damage: 6, moveSpeed: 42,
+    aggroRange: 96, attackRange: 30, attackCooldown: 1.8, spawnWeight: 2,
+    w: 34, h: 22, art: 'raizerrante', artMode: 'fourFrame', artAttackSheet: true, drawHeight: 40,
+    color: '#735d39', accent: '#ffcb72',
+    drops: [{ resource: 'amber', min: 1, max: 1, chance: 0.12 }],
+    tagline: 'Defende o solo onde criou raizes.',
+  },
+  {
+    id: 'cascalideo', name: 'Cascalideo', layers: ['stone', 'crystal', 'minerals'],
+    behavior: 'territorial', health: 105, damage: 13, moveSpeed: 58,
+    aggroRange: 150, attackRange: 34, attackCooldown: 1.5, spawnWeight: 2,
+    w: 38, h: 24, art: 'cascalideo', artMode: 'fourFrame', artAttackSheet: true, drawHeight: 43,
+    color: '#51766e', accent: '#da843e',
+    drops: [{ resource: 'copper', min: 1, max: 2, chance: 0.65 }],
+    tagline: 'Mastiga o veio antes da sua picareta.',
+  },
+  {
+    id: 'veu_lumen', name: 'Veu-de-Lumen', layers: ['crystal', 'minerals', 'ruins'],
+    behavior: 'passivo', health: 36, damage: 5, moveSpeed: 76,
+    aggroRange: 90, attackRange: 24, attackCooldown: 2, spawnWeight: 2,
+    w: 25, h: 20, flying: true, art: 'veu_lumen', artMode: 'fourFrame', artAttackSheet: true, drawHeight: 37,
+    color: '#b5eff5', accent: '#69d4ee',
+    drops: [{ resource: 'azurite', min: 1, max: 1, chance: 0.12 }],
+    tagline: 'Sua luz aponta galerias esquecidas.',
+  },
+  {
+    id: 'sentinela_escoria', name: 'Sentinela de Escoria', layers: ['magma', 'ruins'],
+    behavior: 'territorial', health: 245, damage: 25, moveSpeed: 35,
+    aggroRange: 175, attackRange: 42, attackCooldown: 2.1, spawnWeight: 1,
+    w: 36, h: 58, art: 'sentinela_escoria', artMode: 'fourFrame', artAttackSheet: true,
+    drawHeight: 72, color: '#514b4a', accent: '#ff7c38',
+    drops: [{ resource: 'iron', min: 2, max: 4, chance: 0.9 }],
+    tagline: 'Algo antigo ainda cumpre seu turno.',
+  },
   // ------------------------------------------------- superficie e pedra ---
   {
     id: 'larva',
