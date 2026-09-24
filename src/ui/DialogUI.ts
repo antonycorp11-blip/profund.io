@@ -1,6 +1,7 @@
 import { Assets } from '../core/Assets';
 import { npcIdForSpeaker } from '../data/story';
 import { Events } from '../core/events';
+import { t } from '../i18n/i18n';
 import type { DialogLine } from '../data/story';
 
 /** Caixa de dialogo: avanca com toque, clique, Espaco ou Enter. */
@@ -33,7 +34,7 @@ export class DialogUI {
       <div class="dialog-box">
         <img class="dialog-face" alt="" hidden>
         <div class="dialog-speaker"></div>
-        <div class="dialog-text"></div>
+        <div class="dialog-text" data-sem-traducao></div>
         <div class="dialog-next">toque para continuar <span>▾</span></div>
       </div>`;
     parent.appendChild(this.root);
@@ -67,7 +68,9 @@ export class DialogUI {
     // empilhava o mesmo dialogo por cima dele mesmo e o `onClose` do primeiro
     // se perdia — a pista era registrada duas vezes ou nenhuma.
     if (this.isOpen) return;
-    this.lines = lines;
+    // Traduz a fala inteira antes de digitar: letra por letra, o texto na
+    // tela nunca e uma frase completa que o dicionario reconheca.
+    this.lines = lines.map((l) => ({ ...l, text: t(l.text) }));
     this.index = 0;
     this.onClose = onClose;
     this.root.classList.add('open');

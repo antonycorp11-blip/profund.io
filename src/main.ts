@@ -4,6 +4,10 @@ import './ui/cutscene.css';
 import { Assets } from './core/Assets';
 import { Game } from './core/Game';
 import { esperarLiberacao } from './ui/Portao';
+import { instalarTraducao } from './i18n/i18n';
+
+// Antes de qualquer tela: o portao e o primeiro texto que o jogador ve.
+instalarTraducao();
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;
 const uiRoot = document.getElementById('ui-root');

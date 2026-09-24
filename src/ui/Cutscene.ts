@@ -1,4 +1,5 @@
 import { Events } from '../core/events';
+import { t } from '../i18n/i18n';
 import { cutsceneDef, type CutsceneBeat, type CutsceneCamada, type Enquadre } from '../data/cutscenes';
 
 /**
@@ -55,7 +56,7 @@ export class Cutscene {
       <button class="cs-pular" type="button">PULAR</button>
       <div class="cs-caixa">
         <b class="cs-quem"></b>
-        <p class="cs-texto"></p>
+        <p class="cs-texto" data-sem-traducao></p>
         <span class="cs-avanco">toque para continuar</span>
       </div>`;
     this.palco = this.wrap.querySelector('.cs-palco') as HTMLDivElement;
@@ -248,7 +249,8 @@ export class Cutscene {
     const linha = b.falas[this.fala];
     this.quem.textContent = linha.speaker;
     this.caixa.classList.toggle('cs-narrador', linha.speaker.includes('gravacao'));
-    this.datilografar(linha.text);
+    // Traduz inteira antes de digitar (ver DialogUI).
+    this.datilografar(t(linha.text));
   }
 
   private datilografar(txt: string): void {

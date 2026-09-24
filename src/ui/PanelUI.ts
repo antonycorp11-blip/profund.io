@@ -4,6 +4,7 @@ import { Haptics } from '../fx/Haptics';
 import { AudioSystem } from '../systems/AudioSystem';
 import type { BaseStock } from '../systems/BaseStock';
 import type { PlayerStats } from '../player/PlayerStats';
+import { idioma, trocarIdioma } from '../i18n/i18n';
 import type { UpgradeSystem } from '../systems/UpgradeSystem';
 
 export interface PanelHost {
@@ -336,6 +337,7 @@ export class PanelUI {
     this.corpo.appendChild(row('Tempo de jogo', formatTime(info.playTime)));
 
     this.corpo.appendChild(sectionTitle('Opcoes'));
+    this.corpo.appendChild(idiomaRow());
     this.corpo.appendChild(
       switchRow('Som', AudioSystem.enabled, (on) => {
         AudioSystem.enabled = on;
@@ -478,6 +480,28 @@ function row(label: string, value: string): HTMLElement {
   const el = document.createElement('div');
   el.className = 'row';
   el.innerHTML = `<span>${label}</span><b>${value}</b>`;
+  return el;
+}
+
+/*
+ * O rotulo vem nos dois idiomas de proposito: quem caiu no idioma errado
+ * precisa achar a saida sem ler o idioma em que caiu.
+ */
+function idiomaRow(): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'row';
+  const span = document.createElement('span');
+  span.textContent = 'Idioma · Language';
+  const btn = document.createElement('button');
+  btn.className = 'switch on';
+  btn.dataset.semTraducao = '';
+  btn.textContent = idioma === 'en' ? 'ENGLISH' : 'PORTUGUÊS';
+  btn.addEventListener('click', () => {
+    Haptics.ui();
+    trocarIdioma(idioma === 'en' ? 'pt' : 'en');
+  });
+  el.appendChild(span);
+  el.appendChild(btn);
   return el;
 }
 
