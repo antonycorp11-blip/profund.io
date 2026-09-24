@@ -103,6 +103,15 @@ export interface RescueNpcDef {
    * tem OPINIAO sobre o trabalho, e um bonus que vem disso.
    */
   worksAt?: { base: string; bonus: 'refino' | 'elevador'; fala: string[] };
+  /**
+   * Romper a sala nao basta: ele so sai quando esta flag existir.
+   *
+   * E o que da peso as etapas "remova os escombros / abra uma passagem
+   * segura": sem isto, o primeiro buraco na parede soltava o preso e as
+   * etapas ficavam para tras sem ninguem ter feito. `aviso` aparece uma vez,
+   * quando a parede cai e ele ainda nao pode sair.
+   */
+  soltaCom?: { flag: string; aviso: string };
 }
 
 /**
@@ -308,6 +317,10 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Jonas', text: 'Consegui... obrigado. Achei que ficaria aqui pra sempre.' },
       { speaker: 'Jonas', text: 'Deixa eu sair desse buraco primeiro.' },
     ],
+    soltaCom: {
+      flag: 'm2_passagem_segura',
+      aviso: 'Jonas: "Nao puxa! Tira as pedras de qualquer jeito e o teto vem junto. Limpa e escora primeiro."',
+    },
     safeLines: [
       { speaker: 'Jonas', text: 'Ramires. Voce e filho do Santiago, ne? Tem a cara dele.' },
       { speaker: 'Elias', text: 'Voce conheceu meu pai?' },
@@ -373,6 +386,10 @@ export const RESCUE_NPCS: RescueNpcDef[] = [
       { speaker: 'Vilma', text: 'Obrigada. Achei que ninguem mais descia ate aqui.' },
       { speaker: 'Vilma', text: 'Espera eu recuperar o folego.' },
     ],
+    soltaCom: {
+      flag: 'm5_vilma_acesso',
+      aviso: 'Vilma: "Primeiro esse bloco na minha perna. Devagar — o cristal em volta ainda esta cantando."',
+    },
     safeLines: [
       { speaker: 'Vilma', text: 'Eu nao me perdi. Eu estava procurando.' },
       { speaker: 'Elias', text: 'Procurando o que?' },

@@ -10,6 +10,7 @@ import { carveBaseCamps } from './BaseCampCarve';
 import { CLUES, RESCUE_NPCS } from '../data/story';
 import { SCROLLS } from '../data/scrolls';
 import { SECRETS } from '../data/secrets';
+import { LANTERNAS } from '../data/campaignBeats';
 import { fbm2d, hash2d, Rng } from '../core/rng';
 import type { World } from './World';
 
@@ -545,6 +546,12 @@ export function generateWorld(world: World): GeneratedWorldInfo {
   for (const npc of RESCUE_NPCS) {
     carveRoom(world, npc.col, npc.row, npc.roomW, npc.roomH, BLOCK_IDS.STONE);
     sealRing(world, npc.col, npc.row, Math.max(npc.roomW, npc.roomH));
+  }
+  // As lanternas do caminho do lampiao: nicho pequeno com a luz no teto. A
+  // terceira mora na sala do lampiao e fica apagada — e ela que se conserta.
+  for (const l of [LANTERNAS.primeira, LANTERNAS.segunda]) {
+    carveRoom(world, l.col, l.row, 3, 2, BLOCK_IDS.RUIN_BRICK);
+    world.setTileRaw(l.col, l.row - 2, BLOCK_IDS.LAMP);
   }
   for (const secret of SECRETS) {
     carveRoom(world, secret.col, secret.row, secret.roomW, secret.roomH, BLOCK_IDS.STONE);

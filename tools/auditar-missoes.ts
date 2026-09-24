@@ -33,6 +33,7 @@ import { OUTPOST_NPCS } from '../src/data/outpost';
 import { MISSION_ACTIONS } from '../src/data/missionActions';
 import { COLLAPSE_ZONES } from '../src/data/collapses';
 import { SECRETS } from '../src/data/secrets';
+import { ZONE_TRIGGERS, POSTO_DEFESA } from '../src/data/campaignBeats';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -128,6 +129,10 @@ for (const z of COLLAPSE_ZONES) {
 for (const s of SECRETS) {
   origem.set(s.id, { onde: `sala lacrada "${s.marker.label}"`, depth: s.row - SUP });
 }
+for (const z of ZONE_TRIGGERS) {
+  origem.set(z.flag, { onde: `chegada em ${z.id}`, depth: z.row - SUP });
+}
+origem.set(POSTO_DEFESA.flag, { onde: 'defesa do Posto Nove', depth: POSTO_DEFESA.row - SUP });
 /*
  * Flags ligadas direto no codigo, com o nome escrito: `setStoryFlag('x')`.
  * Lidas da FONTE, e nao de uma lista minha — lista a mao era exatamente o
@@ -154,6 +159,7 @@ const marcadores = new Set<string>([
   ...BLOCKIA_NPCS.map((n) => n.id),
   ...OUTPOST_NPCS.map((n) => n.id),
   ...BASE_CAMPS.map((b) => b.id),
+  ...ZONE_TRIGGERS.flatMap((z) => (z.marcador ? [z.id] : [])),
 ]);
 
 console.log('\n=== 0. ETAPAS E ACOES ===');
@@ -172,6 +178,11 @@ console.log('\n=== 0. ETAPAS E ACOES ===');
       if (step.markerId && !marcadores.has(step.markerId)) {
         falha(`${mission.id}: a etapa "${step.id}" aponta para o marcador "${step.markerId}", que nao existe.`);
       }
+    }
+  }
+  for (const n of RESCUE_NPCS) {
+    if (n.soltaCom && !temOrigem(n.soltaCom.flag)) {
+      falha(`${n.name} so sai da sala com a flag "${n.soltaCom.flag}", que nada no jogo produz.`);
     }
   }
   for (const a of MISSION_ACTIONS) {

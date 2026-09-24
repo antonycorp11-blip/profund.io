@@ -472,17 +472,23 @@ export class CreatureManager {
     return c;
   }
 
-  /** Coloca uma criatura no ar mais proximo do ponto pedido (ferramenta de teste). */
-  spawnAt(id: string, x: number, y: number): boolean {
+  /** Coloca uma criatura no ar mais proximo do ponto pedido. */
+  spawnAt(id: string, x: number, y: number): Creature | null {
     const def = creatureDef(id);
-    if (!def) return false;
+    if (!def) return null;
     const ts = this.world.tileSize;
     const col = Math.floor(x / ts);
     const row = Math.floor(y / ts);
     const spot = this.world.isSolid(col, row) ? this.findAir(col, row) : { col, row };
-    if (!spot) return false;
-    this.creatures.push(new Creature(def, spot.col * ts + ts / 2, spot.row * ts + ts / 2));
-    return true;
+    if (!spot) return null;
+    const c = new Creature(def, spot.col * ts + ts / 2, spot.row * ts + ts / 2);
+    this.creatures.push(c);
+    return c;
+  }
+
+  /** A criatura ainda esta no mundo? Despawn e zona segura tiram sem matar. */
+  contains(c: Creature): boolean {
+    return this.creatures.includes(c);
   }
 
   /**

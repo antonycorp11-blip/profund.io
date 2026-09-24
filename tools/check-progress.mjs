@@ -66,6 +66,7 @@ import { generateWorld } from '../src/world/WorldGen';
 import { MISSION_ACTIONS } from '../src/data/missionActions';
 import { COLLAPSE_ZONES } from '../src/data/collapses';
 import { SECRETS } from '../src/data/secrets';
+import { ZONE_TRIGGERS, POSTO_DEFESA } from '../src/data/campaignBeats';
 const FLAGS_DO_CODIGO: string[] = ${JSON.stringify(flagsDoCodigo())};
 
 const erros: string[] = [];
@@ -92,6 +93,8 @@ const origens = new Set<string>([
   ...MISSION_ACTIONS.map((a) => a.completionFlag),
   ...COLLAPSE_ZONES.flatMap((z) => (z.completionFlag ? [z.completionFlag] : [])),
   ...SECRETS.map((s) => s.id),
+  ...ZONE_TRIGGERS.map((z) => z.flag),
+  POSTO_DEFESA.flag,
   // Ligadas no codigo com o nome escrito, lidas da fonte (ver o topo).
   ...FLAGS_DO_CODIGO,
 ]);

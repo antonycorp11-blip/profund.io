@@ -31,7 +31,14 @@ export class RescueNpc implements Interactable {
   /** Bordas da sala (em tiles) que precisam ser rompidas. */
   private ring: { c0: number; r0: number; c1: number; r1: number };
 
-  constructor(private def: RescueNpcDef, private world: World) {
+  /** O aviso de "ainda nao posso sair" ja apareceu? Uma vez basta. */
+  private avisouPreso = false;
+
+  constructor(
+    private def: RescueNpcDef,
+    private world: World,
+    private hasFlag: (id: string) => boolean = () => true
+  ) {
     this.id = def.id;
     const ts = CONFIG.tileSize;
     this.x = def.col * ts + ts / 2;
@@ -155,6 +162,14 @@ export class RescueNpc implements Interactable {
 
     if (this.state === 'trapped') {
       if (this.isBreached()) {
+        const trava = this.def.soltaCom;
+        if (trava && !this.hasFlag(trava.flag)) {
+          if (!this.avisouPreso) {
+            this.avisouPreso = true;
+            Events.emit('ui:toast', { text: trava.aviso, tone: 'story' });
+          }
+          return;
+        }
         this.state = 'freed';
         this.breachDelay = 0.5;
       }

@@ -23,6 +23,9 @@ import { posicionarMoradores } from '../src/world/Blockia';
 import { BLOCKIA_NPCS } from '../src/data/blockia';
 import { MISSION_ACTIONS } from '../src/data/missionActions';
 import { missionActionTile } from '../src/systems/MissionActions';
+import { ZONE_TRIGGERS, POSTO_DEFESA } from '../src/data/campaignBeats';
+import { CampaignBeats } from '../src/systems/CampaignBeats';
+import { RESCUE_NPCS } from '../src/data/story';
 
 let falhas = 0;
 const ok = (cond: boolean, titulo: string, detalhe = ''): boolean => {
@@ -88,6 +91,82 @@ for (const a of MISSION_ACTIONS) {
   ok(andavel, `${a.id}: da para andar do morador ate ela`);
   // O toque escolhe o MAIS PERTO. Colados, um dos dois nunca seria alcancado.
   ok(Math.abs(tile.col - npc.col) >= 2, `${a.id}: longe o bastante do morador para os dois avisos`, `${Math.abs(tile.col - npc.col)} tile(s)`);
+}
+
+console.log('\nTODO GATILHO DE CHEGADA TEM CHAO DENTRO DO RAIO');
+for (const z of ZONE_TRIGGERS) {
+  let achou = false;
+  for (let r = z.row - z.raio; r <= z.row + z.raio && !achou; r++) {
+    for (let c = z.col - z.raio; c <= z.col + z.raio && !achou; c++) {
+      if (Math.hypot(c - z.col, r - z.row) > z.raio) continue;
+      if (!world.isSolid(c, r) && !world.isSolid(c, r - 1) && world.isSolid(c, r + 1)) achou = true;
+    }
+  }
+  ok(achou, `${z.id} (${z.row - world.surfaceRow} m): da para chegar e ficar de pe no raio`);
+}
+
+console.log('\nQUEM SO SAI DEPOIS DE UMA ACAO TEM A ACAO DENTRO DA SALA');
+for (const n of RESCUE_NPCS) {
+  if (!n.soltaCom) continue;
+  const acao = MISSION_ACTIONS.find((a) => a.completionFlag === n.soltaCom!.flag);
+  if (!ok(!!acao, `${n.id}: alguma acao liga "${n.soltaCom.flag}"`)) continue;
+  const halfW = Math.floor(n.roomW / 2);
+  const dentro =
+    acao!.col !== undefined && acao!.row !== undefined &&
+    acao!.col >= n.col - halfW && acao!.col <= n.col + halfW &&
+    acao!.row >= n.row - (n.roomH - 1) && acao!.row <= n.row;
+  // Fora da sala, o jogador teria de cavar ate um ponto invisivel; dentro,
+  // ele ja esta la quando rompe a parede.
+  ok(dentro, `${n.id}: "${acao!.prompt}" fica dentro da sala`, `acao em ${acao!.col},${acao!.row}`);
+}
+
+console.log('\nA DEFESA DO POSTO NOVE NASCE, E TERMINA');
+{
+  for (const b of POSTO_DEFESA.leva) {
+    ok(!world.isSolid(b.col, POSTO_DEFESA.row), `${b.id} na coluna ${b.col}: nasce no ar do posto`);
+  }
+  // O sistema de verdade, com um anfitriao falso: flags num Set, bichos
+  // fingidos que so sabem estar vivos ou nao.
+  type Falso = { alive: boolean };
+  const flags = new Set<string>();
+  const mundo: Falso[] = [];
+  const beats = new CampaignBeats({
+    hasFlag: (id) => flags.has(id),
+    setFlag: (id) => flags.add(id),
+    spawn: () => { const c = { alive: true }; mundo.push(c); return c as never; },
+    contains: (c) => mundo.includes(c as never),
+    visitado: () => {},
+  });
+  const meio = POSTO_DEFESA.leva[1].col;
+  const px = (meio + 0.5) * ts;
+  const py = (POSTO_DEFESA.row + 0.5) * ts;
+  beats.update(px, py);
+  ok(mundo.length === 0, 'sem gerador, nenhum bicho');
+  flags.add(POSTO_DEFESA.requires);
+  beats.update(px, py);
+  ok(mundo.length === POSTO_DEFESA.leva.length, 'gerador aceso chama a leva inteira', `${mundo.length} bicho(s)`);
+  mundo[0].alive = false;
+  beats.update(px, py);
+  ok(!flags.has(POSTO_DEFESA.flag), 'com bicho vivo, o posto nao esta seguro');
+  // Um bicho entalado some do mundo vivo, perto do jogador: nao pode travar.
+  mundo.splice(1, 1);
+  mundo[1].alive = false;
+  beats.update(px, py);
+  ok(flags.has(POSTO_DEFESA.flag), 'leva derrubada (ou sumida perto) liga posto_nove_defendido');
+}
+
+console.log('\nCHEGAR PERTO LIGA A FLAG DO GATILHO');
+{
+  const flags = new Set<string>();
+  const beats = new CampaignBeats({
+    hasFlag: (id) => flags.has(id), setFlag: (id) => flags.add(id),
+    spawn: () => null, contains: () => false, visitado: () => {},
+  });
+  const z = ZONE_TRIGGERS[0];
+  beats.update((z.col + z.raio + 3) * ts, (z.row + 0.5) * ts);
+  ok(!flags.has(z.flag), `${z.id}: longe, nada`);
+  beats.update((z.col + 0.5) * ts, (z.row + 0.5) * ts);
+  ok(flags.has(z.flag), `${z.id}: no centro, liga ${z.flag}`);
 }
 
 console.log(falhas === 0 ? '\nToda acao de missao esta ao alcance.\n' : `\n${falhas} falha(s).\n`);

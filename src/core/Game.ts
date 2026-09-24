@@ -81,6 +81,8 @@ import { MissionActions, missionActionTile } from '../systems/MissionActions';
 import { CollapseSystem } from '../systems/CollapseSystem';
 import { MotherlodeSystem } from '../systems/MotherlodeSystem';
 import { Secrets } from '../systems/Secrets';
+import { CampaignBeats } from '../systems/CampaignBeats';
+import { ZONE_TRIGGERS } from '../data/campaignBeats';
 import { SECRETS } from '../data/secrets';
 import { Reputation, type CityId } from '../systems/Reputation';
 import { calcularOffline, formatarDuracao } from '../systems/Offline';
@@ -153,6 +155,7 @@ export class Game {
   private missionActions: MissionActions;
   private collapses!: CollapseSystem;
   private motherlodes!: MotherlodeSystem;
+  private beats!: CampaignBeats;
 
   private hud: HUD;
   private dialog: DialogUI;
@@ -536,6 +539,13 @@ export class Game {
     // Criaturas: os postos vem da geracao, entao so podem ser calculados
     // depois de o mundo existir (e antes de o save restaurar quem ja morreu).
     this.creatures = new CreatureManager(this.world, this.drops, this.exploration);
+    this.beats = new CampaignBeats({
+      hasFlag: (id) => this.skills.hasStoryFlag(id),
+      setFlag: (id) => { this.skills.setStoryFlag(id); this.refreshObjective(); this.save(); },
+      spawn: (id, x, y) => this.creatures.spawnAt(id, x, y),
+      contains: (c) => this.creatures.contains(c),
+      visitado: (id) => this.exploration.setMarkerDone(id),
+    });
     this.creatures.buildGuardPosts();
     // Os covis: encontros opcionais, longe do poco. Ver /data/encounters.ts.
     this.creatures.buildLairs();
@@ -972,7 +982,7 @@ export class Game {
     );
 
     this.clueObjects = STORY_CLUES.map((c) => new ClueObject(c));
-    this.npcs = RESCUE_NPCS.map((n) => new RescueNpc(n, this.world));
+    this.npcs = RESCUE_NPCS.map((n) => new RescueNpc(n, this.world, (id) => this.skills.hasStoryFlag(id)));
     // Moradores de Blockia. As coordenadas na ficha sao relativas a caverna,
     // entao mexer a cidade no config nao obriga a mexer em sete fichas.
     // As coordenadas da ficha sao uma SUGESTAO: `findStandingSpot` encaixa
@@ -1076,6 +1086,10 @@ export class Game {
         label: clue.title,
         alwaysVisible: false,
       });
+    }
+    for (const z of ZONE_TRIGGERS) {
+      if (!z.marcador) continue;
+      this.exploration.addMarker({ id: z.id, kind: 'clue', col: z.col, row: z.row, label: z.marcador, alwaysVisible: false });
     }
     for (const secret of SECRETS) {
       this.exploration.addMarker({ id: secret.marker.id, kind: 'secret', col: secret.col, row: secret.row, label: secret.marker.label, alwaysVisible: false });
@@ -2201,6 +2215,7 @@ export class Game {
     this.world.setWatchPoint(this.player.cx, this.player.cy);
     this.world.update(dt);
     this.collapses.update(dt);
+    this.beats.update(this.player.cx, this.player.cy);
     this.motherlodes.update(dt);
     this.procs.update(dt);
     this.player.loadRatio = this.inventory.loadRatio;
