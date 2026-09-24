@@ -23,6 +23,12 @@ function embaralhar(texto: string): number {
 const SENHA = 2085875303;
 const CHAVE = 'profundezas:acesso';
 
+/**
+ * Chave geral do portao. `true` = jogo aberto a todos (publicado na ATHG).
+ * Para voltar a trancar com senha, basta trocar para `false`.
+ */
+const PORTAO_ABERTO = true;
+
 /** Ja liberado nesta maquina? Quem entrou uma vez nao redigita. */
 export function liberado(): boolean {
   try {
@@ -50,7 +56,7 @@ export function esperarLiberacao(): Promise<void> {
   const portao = document.getElementById('portao');
   if (!portao) return Promise.resolve();
 
-  if (liberado()) {
+  if (PORTAO_ABERTO || liberado()) {
     portao.remove();
     return Promise.resolve();
   }
