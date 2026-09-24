@@ -20,10 +20,9 @@ import { CONFIG } from '../src/data/config';
 import { World } from '../src/world/World';
 import { generateWorld } from '../src/world/WorldGen';
 import { posicionarMoradores } from '../src/world/Blockia';
-import { BLOCKIA_NPCS } from '../src/data/blockia';
 import { MISSION_ACTIONS } from '../src/data/missionActions';
 import { missionActionTile } from '../src/systems/MissionActions';
-import { ZONE_TRIGGERS, POSTO_DEFESA } from '../src/data/campaignBeats';
+import { ZONE_TRIGGERS, ENCONTROS } from '../src/data/campaignBeats';
 import { CampaignBeats } from '../src/systems/CampaignBeats';
 import { RESCUE_NPCS } from '../src/data/story';
 
@@ -39,7 +38,7 @@ const ok = (cond: boolean, titulo: string, detalhe = ''): boolean => {
 
 const world = new World();
 generateWorld(world);
-const moradores = posicionarMoradores(world, BLOCKIA_NPCS);
+const moradores = posicionarMoradores(world);
 const ts = CONFIG.tileSize;
 const alcance = CONFIG.player.interactRadius;
 
@@ -120,39 +119,68 @@ for (const n of RESCUE_NPCS) {
   ok(dentro, `${n.id}: "${acao!.prompt}" fica dentro da sala`, `acao em ${acao!.col},${acao!.row}`);
 }
 
-console.log('\nA DEFESA DO POSTO NOVE NASCE, E TERMINA');
-{
-  for (const b of POSTO_DEFESA.leva) {
-    ok(!world.isSolid(b.col, POSTO_DEFESA.row), `${b.id} na coluna ${b.col}: nasce no ar do posto`);
+console.log('\nTODO ENCONTRO NASCE NO AR, E TERMINA');
+for (const enc of ENCONTROS) {
+  for (const b of enc.leva) {
+    ok(!world.isSolid(b.col, enc.row), `${enc.id}: ${b.id} na coluna ${b.col} nasce no ar`);
   }
+}
+{
   // O sistema de verdade, com um anfitriao falso: flags num Set, bichos
   // fingidos que so sabem estar vivos ou nao.
-  type Falso = { alive: boolean };
+  const d = ENCONTROS[0];
+  type Falso = { alive: boolean; permitidoNaCidade?: boolean };
   const flags = new Set<string>();
   const mundo: Falso[] = [];
-  const beats = new CampaignBeats({
-    hasFlag: (id) => flags.has(id),
-    setFlag: (id) => flags.add(id),
-    spawn: () => { const c = { alive: true }; mundo.push(c); return c as never; },
-    contains: (c) => mundo.includes(c as never),
-    visitado: () => {},
-  });
-  const meio = POSTO_DEFESA.leva[1].col;
+  const beats = new CampaignBeats(
+    {
+      hasFlag: (id) => flags.has(id),
+      setFlag: (id) => flags.add(id),
+      spawn: () => { const c: Falso = { alive: true }; mundo.push(c); return c as never; },
+      contains: (c) => mundo.includes(c as never),
+      visitado: () => {},
+    },
+    [],
+    [d]
+  );
+  const meio = d.leva[1].col;
   const px = (meio + 0.5) * ts;
-  const py = (POSTO_DEFESA.row + 0.5) * ts;
+  const py = (d.row + 0.5) * ts;
   beats.update(px, py);
-  ok(mundo.length === 0, 'sem gerador, nenhum bicho');
-  flags.add(POSTO_DEFESA.requires);
+  ok(mundo.length === 0, `${d.id}: sem ${d.requires}, nenhum bicho`);
+  flags.add(d.requires);
   beats.update(px, py);
-  ok(mundo.length === POSTO_DEFESA.leva.length, 'gerador aceso chama a leva inteira', `${mundo.length} bicho(s)`);
+  ok(mundo.length === d.leva.length, `${d.id}: a flag chama a leva inteira`, `${mundo.length} bicho(s)`);
   mundo[0].alive = false;
   beats.update(px, py);
-  ok(!flags.has(POSTO_DEFESA.flag), 'com bicho vivo, o posto nao esta seguro');
+  ok(!flags.has(d.flag), `${d.id}: com bicho vivo, o encontro nao acabou`);
   // Um bicho entalado some do mundo vivo, perto do jogador: nao pode travar.
   mundo.splice(1, 1);
   mundo[1].alive = false;
   beats.update(px, py);
-  ok(flags.has(POSTO_DEFESA.flag), 'leva derrubada (ou sumida perto) liga posto_nove_defendido');
+  ok(flags.has(d.flag), `${d.id}: leva derrubada (ou sumida perto) liga ${d.flag}`);
+}
+{
+  // Encontro dentro da cidade: o bicho precisa sair com licenca, senao a
+  // zona segura o apaga no quadro seguinte e a leva nunca termina de nascer.
+  const d = ENCONTROS.find((e) => e.naCidade);
+  if (ok(!!d, 'ha encontro dentro de cidade para conferir')) {
+    const flags = new Set<string>([d!.requires]);
+    const mundo: { alive: boolean; permitidoNaCidade?: boolean }[] = [];
+    const beats = new CampaignBeats(
+      {
+        hasFlag: (id) => flags.has(id),
+        setFlag: (id) => flags.add(id),
+        spawn: () => { const c = { alive: true, permitidoNaCidade: false }; mundo.push(c); return c as never; },
+        contains: (c) => mundo.includes(c as never),
+        visitado: () => {},
+      },
+      [],
+      [d!]
+    );
+    beats.update((d!.leva[0].col + 0.5) * ts, (d!.row + 0.5) * ts);
+    ok(mundo.length > 0 && mundo.every((c) => c.permitidoNaCidade), `${d!.id}: a leva nasce com licenca de cidade`);
+  }
 }
 
 console.log('\nCHEGAR PERTO LIGA A FLAG DO GATILHO');

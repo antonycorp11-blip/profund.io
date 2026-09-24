@@ -116,6 +116,8 @@ export interface GameEvents {
     depth: number;
   };
   'mission:action': { id: string; flag: string };
+  /** Uma flag de historia nova acabou de ser ligada. */
+  'historia:flag': { flag: string };
   'collapse:warning': { id: string; col: number; row: number; warningSec: number };
   'collapse:impact': { id: string; col: number; row: number };
   'secret:found': { id: string; label: string };

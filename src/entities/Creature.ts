@@ -85,6 +85,12 @@ export class Creature {
     this.isGuardian = def.behavior === 'guardiao';
   }
 
+  /**
+   * Pode ficar dentro de uma cidade? So bicho de encontro de historia (a
+   * cisterna de Blockia): cidade e zona segura, e bicho comum ali some.
+   */
+  permitidoNaCidade = false;
+
   get alive(): boolean {
     return this.state !== 'morto';
   }

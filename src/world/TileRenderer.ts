@@ -5,6 +5,7 @@ import { CONFIG } from '../data/config';
 import { hash2d } from '../core/rng';
 import { layerAt } from '../data/layers';
 import type { Camera } from '../core/camera';
+import { insideBlockia } from '../data/gates';
 import type { World } from './World';
 
 /** Escurecimento aplicado sobre a textura de fundo, por camada. */
@@ -146,6 +147,7 @@ export class TileRenderer {
       return;
     }
     const def = blockDef(id);
+    if (def.desenhoProprio) return;
 
     // Minerio: rocha da camada + pepitas carimbadas (ver ART.oreStamp).
     if (this.useArt && ART.oreStamp.enabled && def.type === 'minerio' && def.drop) {
@@ -153,11 +155,11 @@ export class TileRenderer {
     }
 
     const layerHere = layerAt(this.world.depthOfRow(row));
-    const plainArt = this.useArt ? Assets.blockVariants(def.key) : null;
+    const plainArt = this.useArt ? Assets.blockVariants(def.artKey ?? def.key) : null;
     // Rocha comum herda a cor da camada; estruturas e minerios mantem a propria.
     const art =
       plainArt && layerHere.tint && (def.key === 'stone' || def.key === 'darkstone')
-        ? Assets.tintedBlockVariants(def.key, layerHere.tint, layerHere.tintStrength ?? 0.7) ??
+        ? Assets.tintedBlockVariants(def.artKey ?? def.key, layerHere.tint, layerHere.tintStrength ?? 0.7) ??
           plainArt
         : plainArt;
 
@@ -373,6 +375,10 @@ export class TileRenderer {
     size: number
   ): void {
     if (row <= this.world.surfaceRow + 1) return;
+    // Dentro da cidade o fundo e a pintura dela, inteira. A parede de galeria
+    // aqui virava remendos quadrados translucidos por cima da pintura (a
+    // "abertura" de cada tile variava com a distancia da passarela mais perto).
+    if (insideBlockia(col, row, this.world.surfaceRow)) return;
     const layerDef = layerAt(this.world.depthOfRow(row));
     const layer = layerDef.backwall;
 

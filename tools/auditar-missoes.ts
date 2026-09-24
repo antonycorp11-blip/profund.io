@@ -31,9 +31,10 @@ import { CITIES } from '../src/data/cities';
 import { BLOCKIA_NPCS } from '../src/data/blockia';
 import { OUTPOST_NPCS } from '../src/data/outpost';
 import { MISSION_ACTIONS } from '../src/data/missionActions';
+import { MIGRACOES, flagsMigradas } from '../src/data/migracaoFlags';
 import { COLLAPSE_ZONES } from '../src/data/collapses';
 import { SECRETS } from '../src/data/secrets';
-import { ZONE_TRIGGERS, POSTO_DEFESA } from '../src/data/campaignBeats';
+import { ZONE_TRIGGERS, ENCONTROS } from '../src/data/campaignBeats';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -118,9 +119,14 @@ for (const [id, onde, depth] of [
  * copia a premissa do verificado.
  */
 for (const a of MISSION_ACTIONS) {
-  const depth = a.perto
-    ? origem.get(a.perto.npc)?.depth ?? Infinity
-    : (a.row ?? Infinity) - SUP;
+  // Obra dentro da cidade conta na profundidade da CIDADE, como os
+  // moradores: a cidade inteira abre de uma vez pela porta, e as missoes dela
+  // sao uma fila so, nao uma escada de metros.
+  const depth = a.naCidade
+    ? CITIES[0].depth
+    : a.perto
+      ? origem.get(a.perto.npc)?.depth ?? Infinity
+      : (a.row ?? Infinity) - SUP;
   origem.set(a.completionFlag, { onde: `acao "${a.prompt}"`, depth });
 }
 for (const z of COLLAPSE_ZONES) {
@@ -132,7 +138,7 @@ for (const s of SECRETS) {
 for (const z of ZONE_TRIGGERS) {
   origem.set(z.flag, { onde: `chegada em ${z.id}`, depth: z.row - SUP });
 }
-origem.set(POSTO_DEFESA.flag, { onde: 'defesa do Posto Nove', depth: POSTO_DEFESA.row - SUP });
+for (const e of ENCONTROS) origem.set(e.flag, { onde: `encontro ${e.id}`, depth: e.row - SUP });
 /*
  * Flags ligadas direto no codigo, com o nome escrito: `setStoryFlag('x')`.
  * Lidas da FONTE, e nao de uma lista minha — lista a mao era exatamente o
@@ -160,6 +166,7 @@ const marcadores = new Set<string>([
   ...OUTPOST_NPCS.map((n) => n.id),
   ...BASE_CAMPS.map((b) => b.id),
   ...ZONE_TRIGGERS.flatMap((z) => (z.marcador ? [z.id] : [])),
+  ...MISSION_ACTIONS.flatMap((a) => (a.marcador ? [`acao_${a.id}`] : [])),
 ]);
 
 console.log('\n=== 0. ETAPAS E ACOES ===');
@@ -179,6 +186,20 @@ console.log('\n=== 0. ETAPAS E ACOES ===');
         falha(`${mission.id}: a etapa "${step.id}" aponta para o marcador "${step.markerId}", que nao existe.`);
       }
     }
+  }
+  // A migracao de saves antigos so pode conceder flags que existem: flag com
+  // erro de digitacao ali nao destravaria nada, em silencio.
+  for (const m of MIGRACOES) {
+    for (const f of [...m.se, ...m.concede]) {
+      if (!temOrigem(f)) falha(`migracao de save cita a flag "${f}", que nada no jogo produz.`);
+    }
+  }
+  {
+    // Quem ja passou do selo do Cristal com o Rui conhecido leva a defesa;
+    // quem ainda esta acima dele, nao — esse joga a etapa nova.
+    const tem = (f: string) => f === 'rui_cabeca';
+    if (!flagsMigradas(tem, 400).includes('posto_nove_defendido')) falha('migracao: save alem dos 360 m nao recebeu a defesa do Posto Nove');
+    if (flagsMigradas(tem, 300).length > 0) falha('migracao: save acima dos 360 m recebeu flag que ainda pode conquistar');
   }
   for (const n of RESCUE_NPCS) {
     if (n.soltaCom && !temOrigem(n.soltaCom.flag)) {

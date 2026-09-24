@@ -48,7 +48,10 @@ export class Background {
         // Veu mais leve que o da caverna: a cidade e o unico lugar iluminado
         // em 600 m de mina, e escurecer o fundo dela mata justamente o que
         // faz a chegada valer a pena.
-        ctx.fillStyle = 'rgba(6,5,10,0.18)';
+        // Mais fundo que antes: a pintura tem casas, penhascos e passarelas
+        // proprias, e com veu leve elas competiam com as de verdade — o
+        // jogador nao sabia em qual passarela dava para pisar.
+        ctx.fillStyle = 'rgba(8,12,22,0.55)';
         ctx.fillRect(0, 0, cssW, cssH);
         return true;
       }

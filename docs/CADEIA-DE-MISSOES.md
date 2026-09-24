@@ -147,12 +147,17 @@ A cidade não quer visita. Aqui não se desce: **se é aceito.** Cada missão é
 | dá para juntar a confiança que Blockia pede? | ✅ |
 | recompensa acompanha o esforço? | ✅ monotônica |
 
-## O buraco que ainda existe — sendo honesto
+## O trabalho de Blockia agora é jogável
 
-As cinco missões de Blockia **fecham conversando com o morador certo**. O texto promete
-trabalho: *tirar as caixas da galeria alagada*, *consertar o elevador e a ponte*,
-*limpar as cisternas sem estragar a água*. Esse trabalho ainda não existe como
-conteúdo jogável.
+As missões da cidade acontecem nos lugares que a planta construiu para elas
+(`src/data/cidades/blockia.ts`):
 
-São 2h14 das 5h00 do arco. É a diferença entre 5 h de projeto e 5 h de jogo,
-e é o próximo passo.
+| missão | o que se faz, e onde |
+|---|---|
+| O Arquivo das Lanternas | liga a bomba na passarela do bairro oeste, a galeria alagada seca, pega as três caixas lá dentro e leva ao Afonso |
+| A Ponte Quebrada | religa o sarilho do elevador na Forja (8 carvão) e instala a peça no vão da Ponte dos Arcos; o elevador passa a levar do chão ao Conselho |
+| Conselho das Lanternas | abre a grade da cisterna no Reservatório, derruba o limo que sai dela e opera a válvula |
+
+`npm run cidade` anda pela cidade a pé e confere que a galeria tranca as caixas
+até a bomba, que a ponte quebrada não isola nenhum bairro e que a saída inferior
+só leva para baixo depois da passagem.

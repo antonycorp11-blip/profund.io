@@ -3,6 +3,8 @@ import { MISSION_ACTIONS, type MissionActionDef } from '../data/missionActions';
 import { Events } from '../core/events';
 import type { BaseStock } from './BaseStock';
 import type { World } from '../world/World';
+import { BLOCKIA_PLANTA } from '../data/cidades/blockia';
+import { pontoNoPiso } from '../world/cidade/geometria';
 
 type Tile = { col: number; row: number };
 
@@ -17,6 +19,9 @@ export function missionActionTile(
   world: World,
   moradores: ReadonlyMap<string, Tile>
 ): Tile | null {
+  if (def.naCidade) {
+    return pontoNoPiso(BLOCKIA_PLANTA, world.surfaceRow, def.naCidade.piso, def.naCidade.x);
+  }
   if (def.perto) {
     const npc = moradores.get(def.perto.npc);
     if (!npc) return null;

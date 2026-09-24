@@ -67,7 +67,7 @@ export class PortaBlockia implements Interactable {
   }
 
   render(): void {
-    /* A porta é desenhada pelo `BlockiaRenderer`, junto com o resto da cidade:
+    /* A porta é desenhada pelo `CidadeRenderer`, junto com o resto da cidade:
      * aqui só mora a interação. Desenhar nos dois lugares abriria a chance de
      * a folha aberta aparecer por cima da fechada. */
   }

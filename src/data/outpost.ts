@@ -44,8 +44,6 @@ export const OUTPOST_NPCS: (CityNpcDef & { depth: number; worldCol: number })[] 
     id: 'rui_cabeca',
     name: 'Rui Cabeca',
     role: 'Operador de trilhos',
-    nivel: 0,
-    offset: 0,
     depth: POSTO_NOVE.depth,
     worldCol: POSTO_NOVE.col + 4,
     color: '#c0713a',

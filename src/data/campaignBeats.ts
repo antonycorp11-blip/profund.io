@@ -1,5 +1,6 @@
 import { CONFIG } from './config';
 import { POSTO_NOVE } from './outpost';
+import { BLOCKIA_PLANTA } from './cidades/blockia';
 
 /**
  * CHEGAR A UM LUGAR tambem e progresso.
@@ -84,25 +85,60 @@ export const ZONE_TRIGGERS: ZoneTriggerDef[] = [
 ];
 
 /**
- * A defesa do Posto Nove.
+ * UM ENCONTRO DE HISTORIA: uma flag chama uma leva de bichos num lugar, e a
+ * leva derrubada liga outra flag.
  *
- * O gerador aceso e a primeira luz forte a 278 m em quatorze anos, e o que
- * mora nos trilhos vem ver. A etapa "sobreviva ao encontro" esperava
- * `posto_nove_defendido` e nada ligava essa flag — a missao travava o selo do
- * Cristal. Agora o gerador chama a leva, e a leva derrubada liga a flag.
+ * Nasceu como a defesa do Posto Nove (a etapa "sobreviva ao encontro"
+ * esperava `posto_nove_defendido` e nada ligava essa flag — a missao travava
+ * o selo do Cristal). A cisterna de Blockia e o mesmo desenho: abrir a grade
+ * solta o que mora no fundo dela.
  */
-export const POSTO_DEFESA = {
-  requires: 'posto_nove_gerador',
-  flag: 'posto_nove_defendido',
-  /** Bichos da Camada de Pedra, nas pontas e no meio do posto. */
-  leva: [
-    { id: 'aranha', col: POSTO_NOVE.col + 2 },
-    { id: 'morcego', col: POSTO_NOVE.col + Math.floor(POSTO_NOVE.largura / 2) },
-    { id: 'aranha', col: POSTO_NOVE.col + POSTO_NOVE.largura - 2 },
-  ],
-  row: R + POSTO_NOVE.depth - 2,
+export interface EncontroDef {
+  id: string;
+  requires: string;
+  flag: string;
+  leva: { id: string; col: number }[];
+  /** Linha onde a leva nasce. */
+  row: number;
   /** A leva so nasce com o jogador perto, em tiles. */
-  alcance: 24,
-  inicio: 'O gerador tosse e acende. A luz corre pelos trilhos — e alguma coisa no escuro corre na direcao dela.',
-  fim: 'Rui abre a porta da casinha: "Faz um ano que ninguem segura esta linha assim. Entra, antes que venha mais."',
-};
+  alcance: number;
+  inicio: string;
+  fim: string;
+  /**
+   * Nasce dentro de uma cidade? Cidade e zona segura: bicho ali some no
+   * quadro seguinte, e a leva nunca terminaria de nascer.
+   */
+  naCidade?: boolean;
+}
+
+const cisterna = BLOCKIA_PLANTA.pisos.find((p) => p.id === 'reservatorio')!;
+
+export const ENCONTROS: EncontroDef[] = [
+  {
+    id: 'posto_nove',
+    requires: 'posto_nove_gerador',
+    flag: 'posto_nove_defendido',
+    // Bichos da Camada de Pedra, nas pontas e no meio do posto. O gerador
+    // aceso e a primeira luz forte a 278 m em quatorze anos.
+    leva: [
+      { id: 'aranha', col: POSTO_NOVE.col + 2 },
+      { id: 'morcego', col: POSTO_NOVE.col + Math.floor(POSTO_NOVE.largura / 2) },
+      { id: 'aranha', col: POSTO_NOVE.col + POSTO_NOVE.largura - 2 },
+    ],
+    row: R + POSTO_NOVE.depth - 2,
+    alcance: 24,
+    inicio: 'O gerador tosse e acende. A luz corre pelos trilhos — e alguma coisa no escuro corre na direcao dela.',
+    fim: 'Rui abre a porta da casinha: "Faz um ano que ninguem segura esta linha assim. Entra, antes que venha mais."',
+  },
+  {
+    id: 'cisterna_blockia',
+    requires: 'blockia_ninho_aberto',
+    flag: 'blockia_ninho_limpo',
+    leva: [45, 50, 55].map((x) => ({ id: 'limo', col: BLOCKIA_PLANTA.col0 + x })),
+    row: R + cisterna.pe,
+    alcance: 20,
+    inicio: 'A grade cede e o fundo da cisterna se mexe. Limo — e muito. Sem estragar a agua, Irene pediu.',
+    fim: 'O ultimo limo se desfaz. Agora da para abrir a valvula sem sujar a reserva da cidade.',
+    naCidade: true,
+  },
+];

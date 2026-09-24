@@ -323,7 +323,7 @@ export class CreatureManager {
       // base tem obra para tocar, painel para abrir e esteira para olhar — as
       // duas coisas pedem que o jogador possa largar o controle. A margem
       // passa da parede, entao nem perseguicao entra atras dele.
-      if (this.zonaSegura(c.x, c.y)) {
+      if (this.zonaSegura(c.x, c.y) && !c.permitidoNaCidade) {
         this.creatures.splice(i, 1);
         continue;
       }

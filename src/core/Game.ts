@@ -62,10 +62,15 @@ import { storyGateAtRow } from '../data/storyGates';
 import { MINE_CLOSED } from '../data/prologue';
 import { BaseCamps } from '../systems/BaseCamps';
 import { BaseCampRenderer } from '../world/BaseCampRenderer';
-import { BlockiaRenderer } from '../world/BlockiaRenderer';
+import { CidadeRenderer } from '../world/cidade/CidadeRenderer';
+import { BLOCKIA_PLANTA } from '../data/cidades/blockia';
 import { Cutscene } from '../ui/Cutscene';
 import { PortaBlockia } from '../entities/PortaBlockia';
 import { abrirPortaBlockia } from '../world/Blockia';
+import { aplicarEstadoCidade, flagsDoEstado } from '../world/cidade/escavar';
+import { pontoNoPiso } from '../world/cidade/geometria';
+import { MISSION_ACTIONS } from '../data/missionActions';
+import { flagsMigradas } from '../data/migracaoFlags';
 import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
@@ -123,6 +128,8 @@ interface EfeitoSkillNoHeroi {
   total: number;
   fase: number;
 }
+
+const FLAGS_DA_CIDADE = flagsDoEstado(BLOCKIA_PLANTA);
 
 /** Orquestrador: monta o mundo, roda o loop e conecta os sistemas. */
 export class Game {
@@ -201,7 +208,7 @@ export class Game {
   private journal: Journal;
   private camps: BaseCamps;
   private campsRenderer!: BaseCampRenderer;
-  private blockiaRenderer!: BlockiaRenderer;
+  private blockiaRenderer!: CidadeRenderer;
   private cutscene!: Cutscene;
   private journalUI!: JournalUI;
   private campUI!: BaseCampUI;
@@ -699,15 +706,12 @@ export class Game {
     };
     this.campsRenderer = new BaseCampRenderer(this.world, this.camps);
     // A mobilia da cidade: arte por cima da geometria, sem tocar na colisao.
-    this.blockiaRenderer = new BlockiaRenderer(this.world);
+    this.blockiaRenderer = new CidadeRenderer(this.world, BLOCKIA_PLANTA, (f) => this.skills.hasStoryFlag(f));
     // As cenas: camada propria, por cima de tudo, fora do laco de quadro.
     this.cutscene = new Cutscene(uiRoot);
-    /*
-     * A porta abre quando a Mara abre — a MESMA flag que a missao "As
-     * Lanternas Azuis" exige. Sem isto o desenho da porta e o objetivo do
-     * jogador poderiam discordar, e discordariam no primeiro ajuste de missao.
-     */
-    this.blockiaRenderer.portaAberta = () => this.skills.hasStoryFlag('porta_blockia');
+    // A porta, a ponte, a galeria e o alcapao sao desenhados pelas mesmas
+    // flags que as missoes exigem (a porta abre com `porta_blockia`, a mesma
+    // da missao "As Lanternas Azuis"): desenho e objetivo nao discordam.
     /*
      * As bases sao lugares, nao segredos — mas so depois que existem para o
      * jogador.
@@ -983,14 +987,11 @@ export class Game {
 
     this.clueObjects = STORY_CLUES.map((c) => new ClueObject(c));
     this.npcs = RESCUE_NPCS.map((n) => new RescueNpc(n, this.world, (id) => this.skills.hasStoryFlag(id)));
-    // Moradores de Blockia. As coordenadas na ficha sao relativas a caverna,
-    // entao mexer a cidade no config nao obriga a mexer em sete fichas.
-    // As coordenadas da ficha sao uma SUGESTAO: `findStandingSpot` encaixa
-    // cada morador no chao mais proximo. Sem isso, errar dois tiles ao desenhar
-    // a cidade emparedava alguem — e um NPC dentro da pedra nao da erro
-    // nenhum, so some da historia.
+    // Moradores de Blockia: o lugar de cada um vem da planta da cidade
+    // (`data/cidades/blockia.ts`), a mesma que escava os pisos. A sonda
+    // `npm run cidade` confere que todos existem na planta e sao alcancaveis.
     this.cityNpcs = [];
-    const moradores = posicionarMoradores(this.world, BLOCKIA_NPCS);
+    const moradores = posicionarMoradores(this.world);
     for (const d of BLOCKIA_NPCS) {
       const spot = moradores.get(d.id)!;
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
@@ -1052,10 +1053,56 @@ export class Game {
           id: `mission:${action.id}`, x: pos.x, y: pos.y, radius: pos.radius,
           prompt: () => this.missionActions.prompt(action),
           interact: () => this.missionActions.interact(action),
-          render: () => undefined,
+          // As caixas da galeria sao coisas no chao ate alguem pegar.
+          render: (ctx) => {
+            if (action.visual && !this.skills.hasStoryFlag(action.completionFlag)) {
+              this.blockiaRenderer.desenharPecaNoTile(ctx, action.visual, tile.col, tile.row);
+            }
+          },
         }];
       }),
+      ...this.paradasDoElevador(),
     ];
+  }
+
+  /**
+   * O elevador leste de Blockia: de qualquer andar leva ao outro extremo (do
+   * chao ao Conselho, de cima ao chao). E a viagem que o jogador faz de
+   * verdade — parar em cada andar seria tres toques para ir a um lugar so.
+   * Parado ate o sarilho ser religado (missao "A Ponte Quebrada").
+   */
+  private paradasDoElevador(): Interactable[] {
+    const e = BLOCKIA_PLANTA.elevador;
+    if (!e) return [];
+    const ts = CONFIG.tileSize;
+    const sup = this.world.surfaceRow;
+    return e.paradas.map((id, i): Interactable => {
+      const aqui = pontoNoPiso(BLOCKIA_PLANTA, sup, id, e.x);
+      const destino = i === 0 ? e.paradas[e.paradas.length - 1] : e.paradas[0];
+      return {
+        id: `elevador:${id}`,
+        x: (aqui.col + 0.5) * ts,
+        y: (aqui.row + 0.5) * ts,
+        radius: CONFIG.player.interactRadius,
+        prompt: () =>
+          !this.skills.hasStoryFlag(e.flag) ? 'Elevador parado' : i === 0 ? 'Subir de elevador' : 'Descer de elevador',
+        interact: () => {
+          if (!this.skills.hasStoryFlag(e.flag)) {
+            this.hud.toast('O sarilho do elevador esta desligado. O Breno sabe religar.', 'warn');
+            return;
+          }
+          const alvo = pontoNoPiso(BLOCKIA_PLANTA, sup, destino, e.x);
+          const spot = this.world.findStandingSpot(alvo.col, alvo.row, 3) ?? alvo;
+          this.player.setPosition(spot.col * ts + ts / 2, spot.row * ts + ts / 2);
+          this.player.vx = 0;
+          this.player.vy = 0;
+          this.camera.snapTo(this.player.cx, this.player.cy);
+          this.blockiaRenderer.moverElevador(spot.row);
+          this.camera.addShake(2);
+        },
+        render: () => undefined,
+      };
+    });
   }
 
   /** Pontos de interesse: base, salas de historia e limites de camada. */
@@ -1086,6 +1133,13 @@ export class Game {
         label: clue.title,
         alwaysVisible: false,
       });
+    }
+    // Obras de missao que a etapa manda procurar: a bomba, o sarilho, o vao.
+    for (const a of MISSION_ACTIONS) {
+      if (!a.marcador) continue;
+      const t = missionActionTile(a, this.world, new Map());
+      if (!t) continue;
+      this.exploration.addMarker({ id: `acao_${a.id}`, kind: 'custom', col: t.col, row: t.row, label: a.marcador, alwaysVisible: false });
     }
     for (const z of ZONE_TRIGGERS) {
       if (!z.marcador) continue;
@@ -1157,6 +1211,12 @@ export class Game {
       }
     });
     Events.on('quota:new', () => this.refreshObjective());
+    // Flag que mexe na cidade (ponte, galeria, alcapao) muda o mapa na hora.
+    Events.on('historia:flag', (p) => {
+      if (!FLAGS_DA_CIDADE.has(p.flag)) return;
+      aplicarEstadoCidade(this.world, BLOCKIA_PLANTA, (f) => this.skills.hasStoryFlag(f));
+      this.tileRenderer.invalidateAll();
+    });
     Events.on('collapse:warning', () => {
       this.camera.addShake(2);
       this.hud.toast('A rocha estala em cima de voce. Saia daqui!', 'warn');
@@ -1717,6 +1777,10 @@ export class Game {
         if (col >= this.world.width) continue; // coluna que nao existe mais
         idx = row * this.world.width + col;
       }
+      // Dentro da cidade nada e cavavel agora; um buraco gravado por um save
+      // da Blockia antiga furaria a passarela nova no mesmo lugar.
+      const w = this.world.width;
+      if (insideBlockia(idx % w, Math.floor(idx / w), this.world.surfaceRow, 4)) continue;
       pairs.push([idx, data.tiles[i + 1]]);
     }
     this.world.applyOverrides(pairs);
@@ -1780,6 +1844,12 @@ export class Game {
     // Selos de historia: quem ja tem a flag passa. Vale principalmente para
     // save ANTIGO — o mundo e regerado do zero a cada carga, entao uma faixa
     // criada depois do save nasceria selada com o jogador do outro lado dela.
+    // Save de antes das etapas novas: quem ja passou do selo leva as flags
+    // delas, senao o selo se refaz logo abaixo com o jogador preso embaixo
+    // (ver /data/migracaoFlags.ts).
+    for (const f of flagsMigradas((x) => this.skills.hasStoryFlag(x), data.stats?.deepestMeters ?? 0)) {
+      this.skills.setStoryFlag(f);
+    }
     this.storyGates.sync(true);
     const refechados = this.biomeGate.enforce();
     if (refechados.length > 0) {
@@ -1815,10 +1885,10 @@ export class Game {
      * nao conhece save). Quem ja bateu nela reabre no carregamento — a mesma
      * logica dos selos de bioma em `reopenSavedGates`.
      */
-    if (this.skills.hasStoryFlag('porta_blockia')) {
-      abrirPortaBlockia(this.world, this.world.surfaceRow);
-      this.portaBlockia.aberta = true;
-    }
+    // O mesmo vale para o resto do que a historia muda na cidade: ponte
+    // consertada, galeria drenada, saida inferior aberta.
+    aplicarEstadoCidade(this.world, BLOCKIA_PLANTA, (f) => this.skills.hasStoryFlag(f));
+    this.portaBlockia.aberta = this.skills.hasStoryFlag('porta_blockia');
 
     this.player.setPosition(data.player.x, data.player.y);
     this.player.unstuck(this.world);
@@ -2681,6 +2751,8 @@ export class Game {
       },
       // Guardioes brilham: dao para ver de longe que ha algo guardando ali.
       ...this.creatures.lights(),
+      // Lanternas, janelas e a forja da cidade.
+      ...this.blockiaRenderer.lights(),
     ];
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.lighting.render(
@@ -3034,8 +3106,6 @@ export class Game {
           id: ficha.id,
           name: ficha.name,
           role: posto.bonus === 'refino' ? 'Cuida do fogo' : 'Cuida do elevador',
-          nivel: 0,
-          offset: 0,
           color: '#ffc453',
           trust: 0,
           lines: posto.fala.map((t) => ({ speaker: ficha.name, text: t })),

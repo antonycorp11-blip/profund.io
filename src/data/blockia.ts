@@ -8,33 +8,18 @@ import type { DialogLine } from './story';
  * principio 6: quem pergunta da superficie ouve respostas diferentes de cada
  * um, porque eles discordam entre si sobre ficar.
  *
- * `col` e `depthOffset` sao relativos a caverna da cidade (CONFIG.blockia):
- * col 0 = parede esquerda, depthOffset 0 = teto.
  */
 export interface CityNpcDef {
   id: string;
   name: string;
   /** Funcao, exibida embaixo do nome. */
   role: string;
-  /**
-   * Em que nivel ele mora.
-   *
-   *   0      = o piso da praca (tres patamares em alturas diferentes)
-   *   1..5   = terracos da TORRE OESTE, de baixo para cima
-   *   6..10  = terracos da TORRE LESTE, de baixo para cima
-   *   11     = a ponte que liga as duas no alto
-   *
-   * Antes era coluna e profundidade absolutas, escritas a mao. Os sete
-   * nasceram dentro da pedra por causa disso. Nivel + deslocamento e
-   * impossivel de errar: a geometria vem de `blockiaLayout`.
-   *
-   * Os sete estao espalhados pelos DOIS lados de proposito. Com todos numa
-   * torre so, metade da cidade seria cenario — o jogador subiria um lado,
-   * falaria com todo mundo e nunca teria motivo para atravessar a ponte.
+  /*
+   * ONDE ELE MORA NAO FICA AQUI: fica na planta da cidade
+   * (`data/cidades/blockia.ts`, campo `moradores`), junto dos pisos. Nivel e
+   * deslocamento soltos na ficha, longe da geometria que eles apontavam, foi
+   * o que ja emparedou os sete uma vez.
    */
-  nivel: number;
-  /** Colunas a partir da borda esquerda daquele nivel. */
-  offset: number;
   /** Cor do balao e da silhueta enquanto nao ha arte. */
   color: string;
   /** Primeira conversa. */
@@ -62,8 +47,6 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'mara_avelar',
     name: 'Mara Avelar',
     role: 'Primeira Lanterna',
-    nivel: 0,
-    offset: 30,
     color: '#ffc453',
     trust: 2,
     lines: [
@@ -86,8 +69,6 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'silas_arcos',
     name: 'Silas Arcos',
     role: 'Ferreiro',
-    nivel: 0,
-    offset: 8,
     color: '#c0713a',
     trust: 1,
     lines: [
@@ -105,8 +86,6 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'nina_candeia',
     name: 'Nina Candeia',
     role: 'Mercado da Ponte',
-    nivel: 0,
-    offset: 46,
     color: '#9affd8',
     trust: 1,
     lines: [
@@ -123,14 +102,14 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'breno_torga',
     name: 'Breno Torga',
     role: 'Mestre dos Elevadores',
-    nivel: 8,
-    offset: 4,
     color: '#8cbef0',
     trust: 1,
     lines: [
       { speaker: 'Breno', text: 'Nao encosta nesse cabo.' },
       { speaker: 'Elias', text: 'Nao encostei.' },
       { speaker: 'Breno', text: 'Ainda. Todo mundo encosta.' },
+      { speaker: 'Breno', text: 'O elevador leste esta parado. O sarilho la embaixo, perto da forja, ficou sem carvao e sem vontade.' },
+      { speaker: 'Breno', text: 'Religa ele. Depois a ponte: tem um vao no meio. A peca eu tenho. Braco, nao.' },
     ],
     idleLines: [
       'Uma cidade vertical tem tres tipos de cidadao: quem usa elevador, quem conserta elevador e quem mente dizendo que prefere escada.',
@@ -141,14 +120,14 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'irene_salles',
     name: 'Dra. Irene Salles',
     role: 'Medica',
-    nivel: 1,
-    offset: 4,
     color: '#ffffff',
     trust: 1,
     lines: [
       { speaker: 'Irene', text: 'Senta. Deixa eu ver essas maos.' },
       { speaker: 'Elias', text: 'Estou bem.' },
       { speaker: 'Irene', text: 'Todo mundo que desce esta bem. Depois nao esta.' },
+      { speaker: 'Irene', text: 'Tem limo na cisterna do reservatorio. Veneno mata o limo e a cidade junto.' },
+      { speaker: 'Irene', text: 'Abre a grade e tira eles de la. Depois a valvula. Nessa ordem.' },
     ],
     idleLines: [
       'Todo mundo acha que cidade subterranea vive de pedra. Vive de agua. Pedra so faz barulho.',
@@ -159,8 +138,6 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'afonso_greda',
     name: 'Afonso Greda',
     role: 'Arquivista',
-    nivel: 5,
-    offset: 6,
     color: '#d3b47d',
     trust: 2,
     lines: [
@@ -172,6 +149,9 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
       { speaker: 'Afonso', text: '"John passou por aqui tres dias antes de mim. Comprou filtros, corda e polvora. Nao disse para onde ia."' },
       { speaker: 'Elias', text: 'Tres dias antes...' },
       { speaker: 'Afonso', text: 'Eu tambem fiz essa conta. Ela nao fecha com o que contaram la em cima, fecha?' },
+      { speaker: 'Afonso', text: 'O resto do que ele escreveu esta em tres caixas, na galeria de baixo.' },
+      { speaker: 'Elias', text: 'E a galeria?' },
+      { speaker: 'Afonso', text: 'Debaixo d\'agua. A bomba fica na passarela da frente. Liga, espera baixar, e me traz as caixas.' },
     ],
     idleLines: [
       'Nao ficamos porque perdemos o caminho. Ficamos porque encontramos outro.',
@@ -182,8 +162,6 @@ export const BLOCKIA_NPCS: CityNpcDef[] = [
     id: 'lio',
     name: 'Lio',
     role: '11 anos',
-    nivel: 6,
-    offset: 5,
     color: '#8c5ce0',
     trust: 1,
     lines: [

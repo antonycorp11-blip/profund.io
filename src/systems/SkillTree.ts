@@ -186,6 +186,7 @@ export class SkillTree {
   setStoryFlag(flag: string): void {
     if (this.storyFlags.has(flag)) return;
     this.storyFlags.add(flag);
+    Events.emit('historia:flag', { flag });
 
     for (const def of SKILLS) {
       if (def.category !== 'legacy') continue;

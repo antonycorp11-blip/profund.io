@@ -298,7 +298,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 604,
     title: 'A Ponte Quebrada',
     goal: 'O elevador leste esta parado e a ponte caiu. Breno precisa de maos, nao de opiniao.',
-    requires: ['blockia_ponte_reparada', 'breno_torga'],
+    requires: ['blockia_elevador_religado', 'blockia_ponte_reparada', 'breno_torga'],
     onDone: 'A cidade voltou a ter norte e sul. Breno nao agradeceu; ele elogiou seu jeito de segurar viga.',
     porque:
       'Uma cidade vertical parada e uma cidade partida em duas. Consertar o que os moradores usam todo dia e como se deixa de ser visita.',
@@ -477,9 +477,23 @@ const CAMPAIGN_STEPS: Record<string, MissionStepDef[]> = {
     { id: 'boss', text: 'Derrote o automato e abra o gate.', requires: ['boss_automato_enferrujado', 'gate_minerals'] },
   ],
   m5_lanternas_azuis: [{ id: 'mara', text: 'Apresente-se a Mara na porta.', requires: ['mara_avelar'], markerId: 'mara_avelar', depth: 600 }],
-  m7_arquivo_das_lanternas: [{ id: 'arquivo', text: 'Ative a bomba da galeria, ao lado de Afonso.', requires: ['blockia_arquivo_concluido'], markerId: 'afonso_greda' }, { id: 'afonso', text: 'Volte a Afonso.', requires: ['afonso_greda'], markerId: 'afonso_greda' }],
-  m8_ponte_quebrada: [{ id: 'ponte', text: 'Instale a peca da ponte ao lado de Breno (30 ferro, 12 cobre, 1.200 moedas).', requires: ['blockia_ponte_reparada'], markerId: 'breno_torga' }, { id: 'breno', text: 'Mostre o reparo a Breno.', requires: ['breno_torga'], markerId: 'breno_torga' }],
-  m9_conselho_das_lanternas: [{ id: 'cisterna', text: 'Opere a valvula da cisterna, ao lado de Irene.', requires: ['blockia_cisterna_limpa'], markerId: 'irene_salles' }, { id: 'irene', text: 'Volte ao Conselho.', requires: ['irene_salles'], markerId: 'irene_salles' }],
+  m7_arquivo_das_lanternas: [
+    { id: 'afonso', text: 'Fale com Afonso, no Arquivo (alto do bairro oeste).', requires: ['afonso_greda'], markerId: 'afonso_greda' },
+    { id: 'bomba', text: 'Ligue a bomba da galeria alagada, na passarela abaixo do Arquivo.', requires: ['blockia_galeria_drenada'], markerId: 'acao_arquivo_bomba' },
+    { id: 'caixas', text: 'Recupere as tres caixas da galeria.', requires: ['blockia_caixa_1', 'blockia_caixa_2', 'blockia_caixa_3'], markerId: 'acao_caixa_1' },
+    { id: 'entrega', text: 'Leve as caixas a Afonso.', requires: ['blockia_arquivo_concluido'], markerId: 'afonso_greda' },
+  ],
+  m8_ponte_quebrada: [
+    { id: 'breno', text: 'Fale com Breno, na passarela da oficina.', requires: ['breno_torga'], markerId: 'breno_torga' },
+    { id: 'sarilho', text: 'Religue o sarilho do elevador, na Forja (8 carvao).', requires: ['blockia_elevador_religado'], markerId: 'acao_elevador_sarilho' },
+    { id: 'ponte', text: 'Instale a peca no vao da ponte (30 ferro, 12 cobre, 1.200 moedas).', requires: ['blockia_ponte_reparada'], markerId: 'acao_ponte_blockia' },
+  ],
+  m9_conselho_das_lanternas: [
+    { id: 'irene', text: 'Fale com a Dra. Irene, na Casa de Saude.', requires: ['irene_salles'], markerId: 'irene_salles' },
+    { id: 'grade', text: 'Abra a grade da cisterna, no Reservatorio.', requires: ['blockia_ninho_aberto'], markerId: 'acao_cisterna_grade' },
+    { id: 'ninho', text: 'Limpe o ninho da cisterna sem sair do Reservatorio.', requires: ['blockia_ninho_limpo'], markerId: 'acao_cisterna_grade' },
+    { id: 'valvula', text: 'Opere a valvula da cisterna.', requires: ['blockia_cisterna_limpa'], markerId: 'acao_cisterna_blockia' },
+  ],
   m10_saida_inferior: [{ id: 'saida', text: 'Ganhe confianca e abra a saida inferior.', requires: ['passagem_blockia'] }],
 };
 

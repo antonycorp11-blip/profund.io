@@ -14,6 +14,12 @@ export interface MissionActionDef {
   col?: number;
   row?: number;
   perto?: { npc: string; dx: number };
+  /** Um ponto de um piso da planta de Blockia (`x` pode passar da borda do piso: e o caso da galeria). */
+  naCidade?: { piso: string; x: number };
+  /** Nome no mapa: a etapa que manda vir aqui aponta para `acao_<id>`. */
+  marcador?: string;
+  /** Peca de arte da cidade desenhada no lugar enquanto a acao nao foi feita (as caixas). */
+  visual?: string;
   radius?: number;
   prompt: string;
   requiresFlags: string[];
@@ -52,7 +58,19 @@ export const MISSION_ACTIONS: MissionActionDef[] = [
   { id: 'vilma_escora', col: 82, row: R + 460, prompt: 'Escorar a galeria', requiresFlags: ['npc_vilma'], completionFlag: 'vilma_rota_segura', resourceCost: { iron: 8 } },
   { id: 'rota_escombros', col: gateArenaCol() - 10, row: chaoArenaMinerais, prompt: 'Remover escombros da rota', requiresFlags: [], completionFlag: 'm6_rota_limpa' },
   { id: 'rota_guincho', col: gateArenaCol() + 10, row: chaoArenaMinerais, prompt: 'Reparar guincho', requiresFlags: ['m6_rota_limpa'], completionFlag: 'rota_comercial_reparada', resourceCost: { iron: 18, copper: 8 }, moneyCost: 500 },
-  { id: 'arquivo_bomba', perto: { npc: 'afonso_greda', dx: 3 }, prompt: 'Ativar bomba da galeria', requiresFlags: [], completionFlag: 'blockia_arquivo_concluido' },
-  { id: 'ponte_blockia', perto: { npc: 'breno_torga', dx: -3 }, prompt: 'Instalar peca da ponte', requiresFlags: [], completionFlag: 'blockia_ponte_reparada', resourceCost: { iron: 30, copper: 12 }, moneyCost: 1200 },
-  { id: 'cisterna_blockia', perto: { npc: 'irene_salles', dx: 3 }, prompt: 'Operar valvula da cisterna', requiresFlags: [], completionFlag: 'blockia_cisterna_limpa' },
+  /*
+   * BLOCKIA. Cada obra mora no lugar que a planta construiu para ela: a bomba
+   * na passarela em frente a galeria alagada, as caixas la dentro, o sarilho
+   * ao pe do elevador, a peca da ponte no vao, a grade e a valvula no
+   * reservatorio. Antes eram tres botoes ao lado de tres moradores.
+   */
+  { id: 'arquivo_bomba', naCidade: { piso: 'oeste_2', x: 5 }, marcador: 'Bomba da galeria', prompt: 'Ligar a bomba da galeria', requiresFlags: ['afonso_greda'], completionFlag: 'blockia_galeria_drenada' },
+  { id: 'caixa_1', naCidade: { piso: 'oeste_2', x: -3 }, marcador: 'Galeria alagada', prompt: 'Pegar caixa do arquivo', visual: 'engradados', requiresFlags: ['blockia_galeria_drenada'], completionFlag: 'blockia_caixa_1' },
+  { id: 'caixa_2', naCidade: { piso: 'oeste_2', x: -6 }, prompt: 'Pegar caixa do arquivo', visual: 'engradados', requiresFlags: ['blockia_galeria_drenada'], completionFlag: 'blockia_caixa_2' },
+  { id: 'caixa_3', naCidade: { piso: 'oeste_2', x: -9 }, prompt: 'Pegar caixa do arquivo', visual: 'engradados', requiresFlags: ['blockia_galeria_drenada'], completionFlag: 'blockia_caixa_3' },
+  { id: 'arquivo_entrega', perto: { npc: 'afonso_greda', dx: 3 }, prompt: 'Entregar as caixas', requiresFlags: ['blockia_caixa_1', 'blockia_caixa_2', 'blockia_caixa_3'], completionFlag: 'blockia_arquivo_concluido' },
+  { id: 'elevador_sarilho', naCidade: { piso: 'forja', x: 93 }, marcador: 'Sarilho do elevador', prompt: 'Religar o sarilho do elevador', requiresFlags: ['breno_torga'], completionFlag: 'blockia_elevador_religado', resourceCost: { coal: 8 } },
+  { id: 'ponte_blockia', naCidade: { piso: 'ponte', x: 53 }, marcador: 'Vao da ponte', prompt: 'Instalar a peca da ponte', requiresFlags: ['blockia_elevador_religado'], completionFlag: 'blockia_ponte_reparada', resourceCost: { iron: 30, copper: 12 }, moneyCost: 1200 },
+  { id: 'cisterna_grade', naCidade: { piso: 'reservatorio', x: 49 }, marcador: 'Cisterna', prompt: 'Abrir a grade da cisterna', requiresFlags: ['irene_salles'], completionFlag: 'blockia_ninho_aberto' },
+  { id: 'cisterna_blockia', naCidade: { piso: 'reservatorio', x: 55 }, marcador: 'Valvula da cisterna', prompt: 'Operar a valvula da cisterna', requiresFlags: ['blockia_ninho_limpo'], completionFlag: 'blockia_cisterna_limpa' },
 ];

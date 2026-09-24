@@ -81,6 +81,10 @@ export interface BlockDef {
    * etiqueta: subir por escada nao e escalar devagar, e outra coisa.
    */
   climbable?: boolean;
+  /** Usa a arte de outro bloco (a rocha da cidade e rocha escura). */
+  artKey?: string;
+  /** Quem desenha e outro renderizador (a cidade): o de tiles nao pinta nada. */
+  desenhoProprio?: boolean;
 }
 
 export const BLOCK_IDS = {
@@ -109,6 +113,19 @@ export const BLOCK_IDS = {
   RUIN_BACKWALL: 22,
   STEP_RUIN: 23,
   STEP_WOOD: 24,
+  /*
+   * OS BLOCOS DA CIDADE.
+   *
+   * Tudo que e cidade e indestrutivel: com picareta dava para cavar a praca
+   * de Blockia, atravessar a passarela e entrar na galeria alagada por tras,
+   * pulando a missao. Rocha da cidade tem arte de rocha; laje, tabua e agua
+   * sao desenhadas pelo `CidadeRenderer` a partir da planta, entao o
+   * renderizador de tiles nao pinta nada nelas (`desenhoProprio`).
+   */
+  CITY_ROCK: 25,
+  CITY_STONE: 26,
+  CITY_WOOD: 27,
+  CITY_WATER: 28,
 } as const;
 
 export const BLOCKS: BlockDef[] = [
@@ -779,6 +796,55 @@ export const BLOCKS: BlockDef[] = [
     solid: false, indestructible: true,
     color: '#ffdc83', shade: '#c08a2a', speckle: '#fff6c8',
     oreGlow: '#ffc453', emissive: 1.35, sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.CITY_ROCK,
+    key: 'city_rock',
+    name: 'Rocha da cidade',
+    type: 'especial',
+    hp: 0, drop: null, dropMin: 0, dropMax: 0, dropChance: 0,
+    tags: ['indestructible', 'special'],
+    rarity: 'comum', value: 0, minDepth: 0, maxDepth: Infinity, minTool: 99,
+    solid: true, indestructible: true,
+    artKey: 'darkstone',
+    color: '#2b2a30', shade: '#1c1b20', speckle: '#3a3940',
+    sfxMaterial: 'pedra',
+  },
+  {
+    id: BLOCK_IDS.CITY_STONE,
+    key: 'city_stone',
+    name: 'Laje da cidade',
+    type: 'especial',
+    hp: 0, drop: null, dropMin: 0, dropMax: 0, dropChance: 0,
+    tags: ['indestructible', 'special'],
+    rarity: 'comum', value: 0, minDepth: 0, maxDepth: Infinity, minTool: 99,
+    solid: true, indestructible: true, desenhoProprio: true,
+    color: '#5a5650', shade: '#3a3733', speckle: '#77716a',
+    sfxMaterial: 'pedra',
+  },
+  {
+    id: BLOCK_IDS.CITY_WOOD,
+    key: 'city_wood',
+    name: 'Passarela da cidade',
+    type: 'especial',
+    hp: 0, drop: null, dropMin: 0, dropMax: 0, dropChance: 0,
+    tags: ['indestructible', 'special'],
+    rarity: 'comum', value: 0, minDepth: 0, maxDepth: Infinity, minTool: 99,
+    solid: true, indestructible: true, desenhoProprio: true,
+    color: '#7a5230', shade: '#4e331c', speckle: '#9a6a3a',
+    sfxMaterial: 'estrutura',
+  },
+  {
+    id: BLOCK_IDS.CITY_WATER,
+    key: 'city_water',
+    name: 'Agua represada',
+    type: 'especial',
+    hp: 0, drop: null, dropMin: 0, dropMax: 0, dropChance: 0,
+    tags: ['indestructible', 'special'],
+    rarity: 'comum', value: 0, minDepth: 0, maxDepth: Infinity, minTool: 99,
+    solid: true, indestructible: true, desenhoProprio: true,
+    color: '#1f5c7a', shade: '#153f55', speckle: '#4a8fb0',
+    sfxMaterial: 'pedra',
   },
   {
     id: BLOCK_IDS.BEDROCK,

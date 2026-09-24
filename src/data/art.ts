@@ -201,7 +201,7 @@ export const ART = {
    *
    * Ficam numa lista propria e nao em `props` porque o contrato e outro: prop
    * comum e desenhado por quem o construiu (a base, a automacao), e estas sao
-   * MOBILIA DE CIDADE — quem decide onde cada uma fica e /data/blockiaProps.ts,
+   * MOBILIA DE CIDADE — quem decide onde cada uma fica e a planta da cidade (/data/cidades/),
    * e o tamanho em tiles vem medido de public/art/blockia/mapa.json. Misturar
    * as duas faria o carregador de uma mexer no tamanho da outra.
    */
