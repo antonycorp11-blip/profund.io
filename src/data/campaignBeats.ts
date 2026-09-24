@@ -23,6 +23,8 @@ export interface ZoneTriggerDef {
   raio: number;
   texto: string;
   marcador?: string;
+  /** So dispara depois desta flag (o passeio com a Mara so vale depois de conhece-la). */
+  requires?: string;
 }
 
 const R = CONFIG.world.surfaceRow;
@@ -38,6 +40,12 @@ export const LANTERNAS = {
   segunda: { col: 64, row: R + 329 },
   terceira: { col: 58, row: R + 340 },
 };
+
+/** Um ponto da planta de Blockia, para gatilho dentro da cidade. */
+function naBlockia(pisoId: string, x: number): { col: number; row: number } {
+  const p = BLOCKIA_PLANTA.pisos.find((q) => q.id === pisoId)!;
+  return { col: BLOCKIA_PLANTA.col0 + x, row: R + p.pe };
+}
 
 export const ZONE_TRIGGERS: ZoneTriggerDef[] = [
   {
@@ -81,6 +89,29 @@ export const ZONE_TRIGGERS: ZoneTriggerDef[] = [
     row: R + 460,
     raio: 8,
     texto: 'Tilintar de cristal, ritmado. Tres longos, dois curtos. Vilma esta batendo na pedra com o mesmo sinal do caderno.',
+  },
+  /*
+   * O PASSEIO DA MARA (M6, "A Cidade que Escolheu Ficar"): ela mostra
+   * mercado, horta, praca e elevador. Cada parada e dita na voz dela quando o
+   * jogador chega, e a ultima fala e com ela, de volta na Guarita.
+   */
+  {
+    id: 'tour_mercado', flag: 'blockia_tour_mercado', ...naBlockia('mercado', 29), raio: 5, requires: 'mara_avelar',
+    texto: 'Mara: "O Mercado da Ponte. Aqui ninguem vende o que nao plantou, cavou ou consertou."',
+  },
+  {
+    id: 'tour_horta', flag: 'blockia_tour_horta', ...naBlockia('horta', 30), raio: 5, requires: 'mara_avelar',
+    texto: 'Mara: "A horta. Agua da cascata, luz de lampiao e paciencia. E o que sustenta a cidade de verdade."',
+    marcador: 'Horta Suspensa',
+  },
+  {
+    id: 'tour_praca', flag: 'blockia_tour_praca', ...naBlockia('reservatorio', 50), raio: 4, requires: 'mara_avelar',
+    texto: 'Mara: "A praca do reservatorio. Todo mundo passa aqui duas vezes por dia, nem que seja para ver a agua cair."',
+  },
+  {
+    id: 'tour_elevador', flag: 'blockia_tour_elevador', ...naBlockia('forja', 97), raio: 4, requires: 'mara_avelar',
+    texto: 'Mara: "O elevador leste. Quando ele para, a cidade vira duas — e o Breno vira insuportavel."',
+    marcador: 'Elevador leste',
   },
 ];
 

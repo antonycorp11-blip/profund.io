@@ -78,6 +78,8 @@ export interface PropDef {
   /** Desenhar atras do jogador (fachada, barraca) ou na frente (caixote)? */
   fundo?: boolean;
   espelhado?: boolean;
+  /** So aparece depois desta flag (o que o jogador construiu ou plantou). */
+  seFlag?: string;
 }
 
 export interface MoradorLugar {
@@ -128,6 +130,8 @@ export interface ElevadorDef {
   paradas: string[];
   /** Flag que o poe para funcionar. Sem ela, ele fica parado no fundo. */
   flag: string;
+  /** Preso no meio do poco enquanto `flag` existir e `ate` nao (um pedido). */
+  travadoSe?: { flag: string; ate: string };
 }
 
 /** Alcapao no chao que leva para baixo da cidade. */
@@ -161,6 +165,11 @@ export interface CidadePlanta {
   ponteQuebrada?: PonteQuebradaDef;
   elevador?: ElevadorDef;
   saida?: SaidaDef;
+  /**
+   * Estrelas projetadas na abobada depois desta flag (o pedido do Lio), e de
+   * onde sai o feixe do projetor.
+   */
+  ceuEstrelado?: { flag: string; piso: string; x: number };
   /** Pasta da arte e do `mapa.json` com o tamanho das pecas. */
   pastaArte: string;
 }

@@ -2,6 +2,7 @@ import { Assets } from '../core/Assets';
 import { Events } from '../core/events';
 import { CONFIG } from '../data/config';
 import type { CityNpcDef } from '../data/blockia';
+import type { DialogLine } from '../data/story';
 import type { Interactable } from './Interactable';
 
 /**
@@ -24,6 +25,12 @@ export class CityNpc implements Interactable {
   private alvoX: number;
   private paradoAte = Math.random() * 4;
   private facing: 1 | -1 = 1;
+
+  /**
+   * Pedido que este morador tem para oferecer agora (ver `Pedidos`). Quem
+   * liga e o Game: o morador nao conhece flag nenhuma.
+   */
+  oferta: () => { lines: DialogLine[]; aceitar: () => void } | null = () => null;
 
   constructor(readonly def: CityNpcDef, col: number, row: number) {
     this.id = def.id;
@@ -52,6 +59,12 @@ export class CityNpc implements Interactable {
           });
         },
       });
+      return;
+    }
+    // Tem pedido para fazer: a segunda conversa e o pedido.
+    const pedido = this.oferta();
+    if (pedido) {
+      Events.emit('dialog:open', { lines: pedido.lines, onClose: pedido.aceitar });
       return;
     }
     // Depois da primeira conversa ele repete o que tem na cabeca, em ordem.
@@ -145,6 +158,17 @@ export class CityNpc implements Interactable {
   }
 
   renderOverlay(ctx: CanvasRenderingContext2D): void {
+    if (this.met && this.oferta()) {
+      // Pedido esperando: um "!" dourado em cima da cabeca, o sinal que todo
+      // jogador ja conhece de outro jogo.
+      const b = Math.sin(this.t * 4) * 2;
+      ctx.fillStyle = '#2b1b10';
+      ctx.fillRect(this.x - 4, this.y - 44 + b, 8, 14);
+      ctx.fillStyle = '#ffc453';
+      ctx.fillRect(this.x - 2, this.y - 42 + b, 4, 7);
+      ctx.fillRect(this.x - 2, this.y - 33 + b, 4, 3);
+      return;
+    }
     if (this.met) return;
     // Quem ainda nao foi conhecido tem um ponto pulsando: numa praca com sete
     // moradores, o jogador precisa saber com quem ainda nao falou.

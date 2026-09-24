@@ -38,6 +38,7 @@ export class CampaignBeats {
     const row = py / ts;
     for (const z of this.zones) {
       if (this.host.hasFlag(z.flag)) continue;
+      if (z.requires && !this.host.hasFlag(z.requires)) continue;
       if (Math.hypot(col - (z.col + 0.5), row - (z.row + 0.5)) > z.raio) continue;
       this.host.setFlag(z.flag);
       this.host.visitado(z.id);

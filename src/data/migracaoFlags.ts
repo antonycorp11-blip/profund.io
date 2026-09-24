@@ -38,6 +38,21 @@ export const MIGRACOES: MigracaoDef[] = [
   // A ponte consertada na Blockia antiga: o sarilho nao existia, e a missao
   // "A Ponte Quebrada" passou a pedi-lo.
   { se: ['blockia_ponte_reparada'], alemDe: 0, concede: ['blockia_elevador_religado'] },
+  // A visita com a Mara (M6) e a conversa do selo vieram depois. Quem ja tem
+  // a Picareta dos Fundadores fez a cidade inteira sem elas: sem estas flags,
+  // a missao nova a 601 m reabriria e o selo de magma se fecharia de novo.
+  {
+    se: ['passagem_blockia'],
+    alemDe: 0,
+    concede: [
+      'blockia_tour_mercado',
+      'blockia_tour_horta',
+      'blockia_tour_praca',
+      'blockia_tour_elevador',
+      'blockia_tour_concluido',
+      'blockia_confianca_plena',
+    ],
+  },
 ];
 
 /** As flags que um save deve ganhar, dado o que ele tem e ate onde desceu. */

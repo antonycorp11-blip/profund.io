@@ -35,6 +35,7 @@ import { MIGRACOES, flagsMigradas } from '../src/data/migracaoFlags';
 import { COLLAPSE_ZONES } from '../src/data/collapses';
 import { SECRETS } from '../src/data/secrets';
 import { ZONE_TRIGGERS, ENCONTROS } from '../src/data/campaignBeats';
+import { PEDIDOS, aceitoDe, feitoDe } from '../src/data/pedidos';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -139,6 +140,14 @@ for (const z of ZONE_TRIGGERS) {
   origem.set(z.flag, { onde: `chegada em ${z.id}`, depth: z.row - SUP });
 }
 for (const e of ENCONTROS) origem.set(e.flag, { onde: `encontro ${e.id}`, depth: e.row - SUP });
+// Pedido: aceito na conversa com o morador, fechado pelo sistema de pedidos
+// quando os passos terminam. Mora onde o morador mora.
+for (const p of PEDIDOS) {
+  const npc = BLOCKIA_NPCS.find((n) => n.id === p.npc);
+  const depth = npc ? CITIES[0].depth : Infinity;
+  origem.set(aceitoDe(p.id), { onde: `pedido "${p.titulo}" aceito`, depth });
+  origem.set(feitoDe(p.id), { onde: `pedido "${p.titulo}"`, depth });
+}
 /*
  * Flags ligadas direto no codigo, com o nome escrito: `setStoryFlag('x')`.
  * Lidas da FONTE, e nao de uma lista minha — lista a mao era exatamente o
@@ -212,6 +221,63 @@ console.log('\n=== 0. ETAPAS E ACOES ===');
     }
     if (a.perto && !BLOCKIA_NPCS.some((n) => n.id === a.perto!.npc)) {
       falha(`acao "${a.prompt}" esta ancorada em "${a.perto.npc}", que nao e morador de Blockia.`);
+    }
+  }
+  for (const z of ZONE_TRIGGERS) {
+    if (z.requires && !temOrigem(z.requires)) falha(`chegada em ${z.id} so vale com a flag "${z.requires}", que nada no jogo produz.`);
+  }
+  for (const e of ENCONTROS) {
+    if (!temOrigem(e.requires)) falha(`encontro ${e.id} so acontece com a flag "${e.requires}", que nada no jogo produz.`);
+  }
+  // Pedido que espera flag sem origem nunca e oferecido, ou nunca fecha — e
+  // fica no caderno para sempre, sem dizer por que.
+  for (const p of PEDIDOS) {
+    if (!BLOCKIA_NPCS.some((n) => n.id === p.npc)) falha(`pedido "${p.titulo}" e de "${p.npc}", que nao e morador.`);
+    for (const f of p.disponivelCom) {
+      if (!temOrigem(f)) falha(`pedido "${p.titulo}" so e oferecido com a flag "${f}", que nada no jogo produz.`);
+    }
+    if (!p.passos.length) falha(`pedido "${p.titulo}" nao tem passo: fecharia no instante em que e aceito.`);
+    for (const passo of p.passos) {
+      for (const f of passo.requires) {
+        if (!temOrigem(f)) falha(`pedido "${p.titulo}": o passo "${passo.id}" espera a flag "${f}", que nada no jogo produz.`);
+      }
+      if (passo.markerId && !marcadores.has(passo.markerId)) {
+        falha(`pedido "${p.titulo}": o passo "${passo.id}" aponta para o marcador "${passo.markerId}", que nao existe.`);
+      }
+    }
+  }
+  // Acao que so aparece depois de o pedido ser aceito precisa pedir a flag
+  // de ACEITO: sem ela, o jogador acharia a lente antes de o Lio pedir.
+  for (const p of PEDIDOS) {
+    for (const passo of p.passos) {
+      for (const f of passo.requires) {
+        const acao = MISSION_ACTIONS.find((a) => a.completionFlag === f);
+        if (acao && !acao.requiresFlags.includes(aceitoDe(p.id)) && !p.passos.some((q) => q !== passo && acao.requiresFlags.some((r) => q.requires.includes(r)))) {
+          falha(`acao "${acao.prompt}" e passo do pedido "${p.titulo}", mas aparece sem o pedido aceito.`);
+        }
+      }
+    }
+  }
+  /*
+   * SAVE QUE JA TEM A PICARETA DE UMA CIDADE NAO REABRE MISSAO DA CIDADE.
+   *
+   * O save antigo e montado do DADO: tudo que nasce acima da cidade, os
+   * moradores e a passagem — e nenhuma obra de dentro dela. Depois da
+   * migracao, toda missao da cidade tem de estar fechada; senao o selo abaixo
+   * se refaz com o jogador do lado de baixo.
+   */
+  for (const c of CITIES.filter((x) => x.implementada)) {
+    const base = new Set<string>([
+      ...[...origem].filter(([, o]) => o.depth < c.depth).map(([f]) => f),
+      ...(c.id === 'blockia' ? BLOCKIA_NPCS.map((n) => n.id) : []),
+      `passagem_${c.id}`,
+    ]);
+    const tem = (f: string) => base.has(f);
+    for (const f of flagsMigradas(tem, c.depth)) base.add(f);
+    const daCidade = MISSIONS.filter((m) => m.depth >= c.depth && m.depth <= c.depth + 12);
+    for (const m of daCidade) {
+      const faltam = m.requires.filter((f) => !base.has(f));
+      if (faltam.length) falha(`save antigo com a picareta de ${c.name} reabre "${m.title}": falta ${faltam.join(', ')}.`);
     }
   }
   if (erros === antes) console.log('  ok  toda etapa e toda acao espera flags que o jogo produz.');

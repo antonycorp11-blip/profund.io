@@ -17,6 +17,7 @@ import { World } from '../src/world/World';
 import { generateWorld } from '../src/world/WorldGen';
 import { BLOCKIA_PLANTA as planta } from '../src/data/cidades/blockia';
 import { BLOCKIA_NPCS } from '../src/data/blockia';
+import { PEDIDOS, aceitoDe } from '../src/data/pedidos';
 import { MISSION_ACTIONS } from '../src/data/missionActions';
 import { BLOCK_IDS, blockDef } from '../src/data/blocks';
 import { aplicarEstadoCidade } from '../src/world/cidade/escavar';
@@ -187,6 +188,31 @@ for (const p of planta.pisos) {
   ok(pisadas === total, `${p.nome}: andavel de ponta a ponta`, pisadas === 0 ? 'ILHA' : `${pisadas} de ${total} colunas`);
 }
 
+/*
+ * A flag de ESTADO DA CIDADE que tranca uma obra: a galeria alagada ou a
+ * saida fechada. Vem pelos requisitos da acao e, quando a acao e passo de um
+ * pedido, pelo que o pedido espera para ser oferecido — a picareta do mestre
+ * do Silas pede so "pedido aceito", mas o Silas so pede depois da passagem, e
+ * a passagem e o que abre o poco.
+ */
+const travas = new Set<string>([
+  ...planta.salas.flatMap((s) => (s.alagadaAte ? [s.alagadaAte] : [])),
+  ...(planta.saida ? [planta.saida.flag] : []),
+]);
+const travaDe = (a: (typeof MISSION_ACTIONS)[number]): string | undefined => {
+  const fila = [...a.requiresFlags];
+  const vistas = new Set<string>();
+  while (fila.length) {
+    const f = fila.pop()!;
+    if (vistas.has(f)) continue;
+    vistas.add(f);
+    if (travas.has(f)) return f;
+    const p = PEDIDOS.find((q) => aceitoDe(q.id) === f);
+    if (p) fila.push(...p.disponivelCom);
+  }
+  return undefined;
+};
+
 console.log('\nTODO MORADOR E TODA OBRA SE ALCANCA');
 {
   const lugares = lugaresDosMoradores(world, planta);
@@ -201,11 +227,11 @@ console.log('\nTODO MORADOR E TODA OBRA SE ALCANCA');
       ok(false, `${a.id}: tem lugar`);
       continue;
     }
-    const naGaleria = a.requiresFlags.includes('blockia_galeria_drenada');
-    if (naGaleria) {
+    const trava = travaDe(a);
+    if (trava) {
       // Com a galeria alagada, a caixa NAO pode estar ao alcance: e o que da
-      // sentido a bomba.
-      ok(!alcanca(vistos, t.col, t.row), `${a.id}: trancada pela agua enquanto a galeria esta alagada`);
+      // sentido a bomba. Idem o fundo do poco com a saida fechada.
+      ok(!alcanca(vistos, t.col, t.row), `${a.id}: trancada enquanto ${trava} nao abre`);
     } else {
       ok(alcanca(vistos, t.col, t.row), `${a.id} (${a.prompt})`);
     }
@@ -228,7 +254,7 @@ console.log('\nA GALERIA ABRE COM A BOMBA');
     vistos = andar();
     const r = salaRect(planta, SUP, sala);
     ok(alcanca(vistos, r.col0 + 2, r.row1), `${sala.id}: drenada, da para chegar no fundo`);
-    for (const a of MISSION_ACTIONS.filter((x) => x.requiresFlags.includes(sala.alagadaAte!))) {
+    for (const a of MISSION_ACTIONS.filter((x) => travaDe(x) === sala.alagadaAte)) {
       const t = missionActionTile(a, world, new Map())!;
       ok(alcanca(vistos, t.col, t.row), `${a.id}: ao alcance depois da bomba`);
     }
@@ -259,6 +285,10 @@ console.log('\nA SAIDA INFERIOR SO LEVA PARA BAIXO QUANDO ABRE');
   estado();
   vistos = andar();
   ok(alcanca(vistos, meio, fundoSaida), 'aberta, desce ate o fim do poco');
+  for (const a of MISSION_ACTIONS.filter((x) => travaDe(x) === s.flag)) {
+    const t = missionActionTile(a, world, new Map())!;
+    ok(alcanca(vistos, t.col, t.row), `${a.id}: ao alcance com a saida aberta`);
+  }
 }
 
 console.log('\nAS ESCADAS VAO DE UM PISO AO OUTRO');

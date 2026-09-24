@@ -172,6 +172,7 @@ export class CidadeRenderer {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     this.desenharParedoes(ctx, camera);
+    this.desenharCeuEstrelado(ctx, camera);
     this.desenharEstalactites(ctx, camera);
     this.desenharCascatas(ctx, camera);
     this.desenharAgua(ctx, camera);
@@ -183,7 +184,9 @@ export class CidadeRenderer {
     this.desenharSalas(ctx, camera);
     if (this.carregado) {
       this.desenharPorta(ctx, camera);
-      for (const pr of this.planta.props) if (pr.fundo) this.desenharPeca(ctx, camera, pr.id, pr.piso, pr.x, pr.espelhado);
+      for (const pr of this.planta.props) {
+        if (pr.fundo && (!pr.seFlag || this.flag(pr.seFlag))) this.desenharPeca(ctx, camera, pr.id, pr.piso, pr.x, pr.espelhado);
+      }
     }
     for (const p of this.planta.pisos) this.desenharFundacao(ctx, camera, p);
     this.desenharSaida(ctx, camera);
@@ -191,6 +194,7 @@ export class CidadeRenderer {
     this.desenharPonteQuebrada(ctx, camera);
     this.desenharAlcapao(ctx, camera);
     this.desenharLanternas(ctx, camera);
+    this.desenharProjetor(ctx, camera);
     ctx.restore();
   }
 
@@ -202,7 +206,9 @@ export class CidadeRenderer {
       ctx.restore();
       return;
     }
-    for (const pr of this.planta.props) if (!pr.fundo) this.desenharPeca(ctx, camera, pr.id, pr.piso, pr.x, pr.espelhado);
+    for (const pr of this.planta.props) {
+      if (!pr.fundo && (!pr.seFlag || this.flag(pr.seFlag))) this.desenharPeca(ctx, camera, pr.id, pr.piso, pr.x, pr.espelhado);
+    }
     ctx.restore();
   }
 
@@ -337,6 +343,87 @@ export class CidadeRenderer {
     // Borda iluminada pela cidade: e o que separa o paredao da pintura.
     c.fillStyle = 'rgba(190,160,120,0.22)';
     for (let y = 0; y <= h; y += 4) c.fillRect(xDe(borda(y)) - (lado === 'oeste' ? 3 : 0), y, 3, 4);
+  }
+
+  /**
+   * O projetor do Lio: estrelas na abobada, piscando, e o feixe que sai da
+   * praca. E a recompensa que se ve — a cidade inteira ganha um ceu.
+   */
+  /*
+   * O CEU DO LIO: estrelas projetadas no paredao do fundo, atras das casas.
+   *
+   * A primeira versao espalhava as estrelas do teto da abobada (552 m) ate
+   * quatro tiles acima do chao do mercado. Medido no navegador: a camera do
+   * celular deitado mostra dez tiles de altura, e do chao do mercado so quatro
+   * e meio ficam acima da cabeca — a faixa de estrelas terminava exatamente
+   * onde a tela comecava. Nenhuma estrela na foto.
+   *
+   * Agora a faixa vai de doze tiles acima do piso mais alto ate um tile acima
+   * do chao: e a parede que alguem na cidade de fato ve. As casas ficam na
+   * frente, e e assim que tem de ser — o ceu e o fundo.
+   */
+  private desenharCeuEstrelado(ctx: CanvasRenderingContext2D, camera: Camera | undefined): void {
+    const c = this.planta.ceuEstrelado;
+    if (!c || !this.flag(c.flag)) return;
+    const ts = this.ts;
+    const largura = this.planta.col1 - this.planta.col0;
+    const maisAlto = Math.min(...this.planta.pisos.map((p) => this.yChao(p)));
+    const topo = maisAlto - ts * 12;
+    const chao = this.yChao(piso(this.planta, c.piso)) - ts;
+    for (let i = 0; i < 900; i++) {
+      const x = this.xDe(1 + hash(i * 3.7) * (largura - 2));
+      const y = topo + hash(i * 5.3) * (chao - topo);
+      if (camera && !camera.sees(x, y, 8)) continue;
+      const brilho = 0.45 + 0.55 * Math.abs(Math.sin(this.t * (0.6 + hash(i) * 1.8) + i));
+      ctx.fillStyle = `rgba(215,230,255,${brilho})`;
+      // Ponto de 2 px some na tela do celular: o minimo e 3, e as mais fortes
+      // ganham a cruz de brilho.
+      if (hash(i * 9.1) > 0.8) {
+        ctx.fillRect(x - 4, y + 1, 11, P);
+        ctx.fillRect(x + 1, y - 4, P, 11);
+        ctx.fillRect(x - 1, y - 1, 6, 6);
+      } else {
+        ctx.fillRect(x, y, 3, 3);
+      }
+    }
+  }
+
+  /**
+   * O projetor e o feixe. Vem depois das barracas: na primeira foto o feixe
+   * saia de tras da padaria e ninguem via de onde vinham as estrelas.
+   */
+  private desenharProjetor(ctx: CanvasRenderingContext2D, camera: Camera | undefined): void {
+    const c = this.planta.ceuEstrelado;
+    if (!c || !this.flag(c.flag)) return;
+    const ts = this.ts;
+    const px = this.xDe(c.x) + ts / 2;
+    const chao = this.yChao(piso(this.planta, c.piso));
+    const boca = chao - ts * 0.9;
+    const alto = boca - ts * 11;
+    if (camera && !this.visivel(camera, px - ts * 4, alto, ts * 8, chao - alto)) return;
+    const g = ctx.createLinearGradient(0, boca, 0, alto);
+    g.addColorStop(0, 'rgba(200,220,255,0.22)');
+    g.addColorStop(1, 'rgba(200,220,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(px - 3, boca);
+    ctx.lineTo(px + 3, boca);
+    ctx.lineTo(px + ts * 3.5, alto);
+    ctx.lineTo(px - ts * 3.5, alto);
+    ctx.closePath();
+    ctx.fill();
+    // Tripe de ferro e o tubo de latao virado para cima.
+    ctx.fillStyle = COR.ferro;
+    ctx.fillRect(px - 9, chao - 12, P, 12);
+    ctx.fillRect(px + 7, chao - 12, P, 12);
+    ctx.fillRect(px - 1, chao - 14, P, 14);
+    ctx.fillStyle = '#b8863b';
+    ctx.fillRect(px - 5, boca, 10, chao - 12 - boca);
+    ctx.fillStyle = '#e0b060';
+    ctx.fillRect(px - 5, boca, 10, P);
+    const pulso = 0.6 + 0.4 * Math.sin(this.t * 2);
+    ctx.fillStyle = `rgba(215,235,255,${pulso})`;
+    ctx.fillRect(px - 3, boca - P, 6, P);
   }
 
   /** Pontas de pedra penduradas na abobada: a caverna tem teto, e ele e alto. */
@@ -1428,7 +1515,13 @@ export class CidadeRenderer {
     // A cabine: parada no fundo enquanto o sarilho nao for religado.
     const funciona = this.flag(e.flag);
     const baseRow = this.linha(paradas[0].pe);
+    const travado = !!e.travadoSe && this.flag(e.travadoSe.flag) && !this.flag(e.travadoSe.ate);
     if (!funciona || this.elevadorRow === null) this.elevadorRow = this.elevadorAlvo = baseRow;
+    if (travado) {
+      // Presa no meio do poco, entre dois andares: e o pedido do Breno.
+      const meio = Math.round((this.linha(paradas[1].pe) + this.linha(paradas[2].pe)) / 2);
+      this.elevadorRow = this.elevadorAlvo = meio;
+    }
     const yCab = (this.elevadorRow + 1) * ts;
     ctx.fillStyle = '#b8b0a0';
     ctx.fillRect(cx - 1, topo, P, yCab - topo - ts * 4.9);
@@ -1440,10 +1533,19 @@ export class CidadeRenderer {
       ctx.fillStyle = COR.madeira;
       ctx.fillRect(cx - ts * 1.4, yCab - ts * 2.6, ts * 2.8, ts * 2.6);
     }
-    if (!funciona) {
-      // Parado: corrente frouxa e a placa de "parado" que o Breno ja cansou de ver.
-      ctx.fillStyle = 'rgba(200,60,40,0.85)';
-      ctx.fillRect(cx - 10, yCab - ts * 3.4, 20, 8);
+    if (!funciona || travado) {
+      // Parado: a luz vermelha que o Breno ja cansou de ver. Pisca se tem
+      // gente presa la dentro.
+      const pisca = travado ? Math.sin(this.t * 6) > 0 : true;
+      if (pisca) {
+        ctx.fillStyle = 'rgba(220,60,40,0.9)';
+        ctx.fillRect(cx - 10, yCab - ts * 3.4, 20, 8);
+      }
+    }
+    if (travado) {
+      // Duas cabecas na janela da cabine.
+      ctx.fillStyle = '#e8c39a';
+      for (const d of [-10, 8]) ctx.fillRect(cx + d, yCab - ts * 2.2, 8, 8);
     }
   }
 }

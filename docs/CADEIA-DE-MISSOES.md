@@ -78,7 +78,7 @@ Leitura das colunas:
 
 ---
 
-## ATO 2 — BLOCKIA  (600 m → 608 m · ~2h14)
+## ATO 2 — BLOCKIA  (600 m → 608 m · ~2h26)
 
 A cidade não quer visita. Aqui não se desce: **se é aceito.** Cada missão é trabalho feito *pela* cidade, e é a soma de confiança que abre a saída inferior.
 
@@ -88,31 +88,40 @@ A cidade não quer visita. Aqui não se desce: **se é aceito.** Cada missão é
 **Por quê:** catorze anos de "não há ninguém lá embaixo", e há uma porta com guarda. Seu pai bateu nesta mesma porta.
 **Fecha com:** conversa com Mara Avelar. → *"Ramires?" A porta abriu antes de você responder de novo.*
 
+### 601 m — A Cidade que Escolheu Ficar · 12 min · ✦2000 ✧1
+> Mara quer que você veja a cidade antes de pedir qualquer coisa a ela: o mercado, a horta, a praça e o elevador.
+
+**Por quê:** quem mora aqui viu seu pai passar. Antes de perguntar por ele, é preciso entender por que esta gente ficou.
+**Fecha com:** o passeio (Mercado da Ponte → Horta Suspensa → praça do Reservatório → elevador leste, cada parada com uma fala da Mara) e a volta à Guarita. → *"Santiago. Passou. Quatorze anos atrás — e não veio procurar minério."*
+
 ### 602 m — O Arquivo das Lanternas · 30 min · ✦2100 ✧2
 > Afonso guarda uma página do caderno do seu pai. Ele só entrega depois que você tirar as caixas da galeria alagada.
 
 **Por quê:** o arquivista tem uma página que sua mãe nunca viu. Ela está a três salas de você, e o preço é trabalho.
 **Fecha com:** Afonso Greda. → *"Página 03. Santiago escrevia nas margens dos mapas públicos — em casa também fazia isso."*
+Afonso entrega a página em cena, e a **Página 03** entra no caderno ("John passou por aqui três dias antes de mim…").
 
 ### 604 m — A Ponte Quebrada · 25 min · ✦2300 ✧2
 > O elevador leste está parado e a ponte caiu. Breno precisa de mãos, não de opinião.
 
 **Por quê:** uma cidade vertical parada é uma cidade partida em duas. Consertar o que os moradores usam todo dia é como se deixa de ser visita.
 **Fecha com:** Breno Torga. → *"A cidade voltou a ter norte e sul. Breno não agradeceu; ele elogiou seu jeito de segurar viga."*
+Breno, em cena: *"Funciona."*
 
 ### 606 m — Conselho das Lanternas · 35 min · ✦2600 ✧3
 > Há bicho nas cisternas. O Conselho deixa você resolver — sem estragar a reserva de água.
 
 **Por quê:** o Conselho não duvida da sua força: duvida do seu juízo. Eles já viram um Ramires decidir sozinho, e a cidade pagou por isso.
 **Fecha com:** Dra. Irene Salles. → *"Seu pai chegou aqui querendo permissão. Quando dissemos não, ele foi mesmo assim."*
+Mara, em cena, a troca da bíblia: *"Isso parece com ele." — "Você diz isso como elogio." — "Ainda não decidi."*
 
 ### 608 m — A Saída Inferior · 20 min · ✦3000 ✧3
-> Blockia decide se você desce. Ganhe a confiança da cidade e receba a **Picareta dos Fundadores**.
+> Blockia decide se você desce. Ganhe a confiança da cidade e receba da Mara o selo de passagem e a **Picareta dos Fundadores**.
 
 **Por quê:** abaixo de Blockia a pedra só cede à ferramenta de Blockia. Sem ela você não desce mais um metro, e foi exatamente assim com o seu pai.
-**Fecha com:** confiança de Blockia (12 pontos). → *"Santiago seguiu para Ferrúria. Procure Dália Correia — se alguém tem registro da carga dele, é ela."*
+**Fecha com:** o selo de passagem, entregue pela Mara na Guarita. O Conselho só decide quando a confiança chega a 15 **e** as três obras (arquivo, ponte, cisterna) estão feitas — o pedido do Lio também dá confiança, e sem essa segunda condição ele deixava pular a cisterna. → *"Santiago seguiu para Ferrúria. Procure Dália Correia — se alguém tem registro da carga dele, é ela."*
 
-**➜ FIM DO ARCO PRIORITÁRIO: 5h00 de jogo.** (alvo combinado 4 h; bíblia §8 pede 5h30)
+**➜ FIM DO ARCO PRIORITÁRIO: 5h12 de jogo.** (alvo combinado 4 h; bíblia §8 pede 5h30)
 
 ---
 
@@ -145,6 +154,8 @@ A cidade não quer visita. Aqui não se desce: **se é aceito.** Cada missão é
 | algum alvo está atrás de selo fechado? | ✅ nenhum |
 | cada base está na camada que diz? | ✅ |
 | dá para juntar a confiança que Blockia pede? | ✅ |
+| todo pedido é de um morador, e todo passo tem origem e marcador? | ✅ |
+| save que já tem a picareta de uma cidade reabre missão dela? | ✅ não |
 | recompensa acompanha o esforço? | ✅ monotônica |
 
 ## O trabalho de Blockia agora é jogável
@@ -156,8 +167,28 @@ As missões da cidade acontecem nos lugares que a planta construiu para elas
 |---|---|
 | O Arquivo das Lanternas | liga a bomba na passarela do bairro oeste, a galeria alagada seca, pega as três caixas lá dentro e leva ao Afonso |
 | A Ponte Quebrada | religa o sarilho do elevador na Forja (8 carvão) e instala a peça no vão da Ponte dos Arcos; o elevador passa a levar do chão ao Conselho |
+| A Cidade que Escolheu Ficar | anda com a Mara pelo mercado, pela Horta Suspensa (bairro oeste, pela escada da Passarela Baixa), pela praça do Reservatório e pelo elevador leste, e volta à Guarita |
 | Conselho das Lanternas | abre a grade da cisterna no Reservatório, derruba o limo que sai dela e opera a válvula |
+| A Saída Inferior | quando o Conselho decide, a Mara chama; o selo é entregue na Guarita, e o alçapão da Forja abre |
 
 `npm run cidade` anda pela cidade a pé e confere que a galeria tranca as caixas
 até a bomba, que a ponte quebrada não isola nenhum bairro e que a saída inferior
 só leva para baixo depois da passagem.
+
+## Pedidos de Blockia (bíblia §10)
+
+Opcionais: **não entram na fila de missões** (lá travariam o selo seguinte para
+quem não quis fazer). O morador oferece na segunda conversa — um **!** dourado
+em cima da cabeça avisa que há pedido. Aceitos e concluídos aparecem no caderno,
+seção *Pedidos*. Dados em `src/data/pedidos.ts`; estado só em flags.
+
+| pedido | quem | aparece depois de | o que se faz | paga |
+|---|---|---|---|---|
+| O Céu de Lio | Lio | conhecer o Lio | pega a lente no fundo da galeria alagada (depois da bomba) e monta o projetor ao lado da fonte do Mercado (4 cristal, 6 cobre) — a cidade ganha estrelas no paredão | ✦800 · +1 confiança |
+| Água Não Se Minera | Irene | cisterna limpa | colhe mudas na Horta Suspensa e planta na beira do Reservatório — os canteiros aparecem lá | ✦900 · ✧1 |
+| A Última Carta | Afonso | arquivo concluído | lê a carta no nicho dos fundadores (fim da Passarela da Forja) e leva ao Afonso — a carta vai para o caderno | ✦700 · +1 influência |
+| Elevador 3-B | Breno | elevador religado | o elevador trava no meio do poço (luz vermelha, duas cabeças na janela); solta o freio no sarilho (12 ferro) e conta ao Breno | ✦1000 · ✧1 |
+| Ferramenta de Silas | Silas | selo de passagem | desce pelo alçapão aberto e pega a picareta do mestre no fundo do poço; devolve ao Silas | ✦1200 · ✧2 |
+
+As recompensas seguem a bíblia: só o Lio paga confiança, o Afonso paga influência.
+Com o elevador travado a cidade continua percorrível pelas escadas (`npm run cidade`).

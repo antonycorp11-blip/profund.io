@@ -59,6 +59,8 @@ export class JournalUI {
       current(): MissionDef | null;
       done(): MissionDef[];
       pending(): MissionDef[];
+      /** Pedidos dos moradores: os abertos com o passo atual, e os feitos. */
+      pedidos?(): { titulo: string; resumo: string; passo: string | null; feito: boolean }[];
     }
   ) {
     this.wrap = document.createElement('div');
@@ -241,12 +243,39 @@ export class JournalUI {
         }
       }
 
+      // Pedidos dos moradores: opcionais, entao ficam numa secao propria e
+      // nunca no lugar do objetivo da campanha.
+      const pedidos = this.missions.pedidos?.() ?? [];
+      const abertos = pedidos.filter((p) => !p.feito);
+      if (abertos.length > 0) {
+        const t = document.createElement('h5');
+        t.className = 'journal-sub';
+        t.textContent = 'Pedidos';
+        this.corpo.appendChild(t);
+        for (const p of abertos) {
+          const el = document.createElement('article');
+          el.className = 'journal-entry pendente';
+          el.innerHTML = `<div class="journal-text">
+            <h4>${p.titulo}<span class="journal-depth">pedido</span></h4>
+            <p>${p.passo ?? p.resumo}</p></div>`;
+          this.corpo.appendChild(el);
+        }
+      }
+
       const feitas = this.missions.done();
-      if (feitas.length > 0) {
+      if (feitas.length > 0 || pedidos.some((p) => p.feito)) {
         const t = document.createElement('h5');
         t.className = 'journal-sub';
         t.textContent = 'Concluido';
         this.corpo.appendChild(t);
+      }
+      for (const p of pedidos.filter((q) => q.feito)) {
+        const el = document.createElement('article');
+        el.className = 'journal-entry';
+        el.innerHTML = `<div class="journal-text">
+          <h4>${p.titulo}<span class="journal-depth">feito</span></h4>
+          <p>${p.resumo}</p></div>`;
+        this.corpo.appendChild(el);
       }
       for (const m of [...feitas].reverse()) {
         const el = document.createElement('article');

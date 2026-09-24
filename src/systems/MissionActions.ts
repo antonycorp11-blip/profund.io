@@ -20,7 +20,9 @@ export function missionActionTile(
   moradores: ReadonlyMap<string, Tile>
 ): Tile | null {
   if (def.naCidade) {
-    return pontoNoPiso(BLOCKIA_PLANTA, world.surfaceRow, def.naCidade.piso, def.naCidade.x);
+    const t = pontoNoPiso(BLOCKIA_PLANTA, world.surfaceRow, def.naCidade.piso, def.naCidade.x);
+    // `pe` troca a altura: e o caso da camara abaixo da saida inferior.
+    return def.naCidade.pe === undefined ? t : { col: t.col, row: world.surfaceRow + def.naCidade.pe };
   }
   if (def.perto) {
     const npc = moradores.get(def.perto.npc);
@@ -61,6 +63,7 @@ export class MissionActions {
     if (!this.stock.spend(def.resourceCost ?? {}) || !this.stock.spendMoney(def.moneyCost)) return;
     this.setFlag(def.completionFlag);
     Events.emit('mission:action', { id: def.id, flag: def.completionFlag });
+    if (def.falas) Events.emit('dialog:open', { lines: def.falas });
     this.onDone();
   }
 

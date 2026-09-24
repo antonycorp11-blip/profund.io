@@ -57,6 +57,9 @@ export const BLOCKIA_PLANTA: CidadePlanta = {
     // ------------------------------------------- Bairro das Tabuas (oeste) --
     { id: 'oeste_1', nome: 'Passarela Baixa', x0: 0, x1: 22, pe: 652, tipo: 'tabua', encosto: 'oeste' },
     { id: 'oeste_2', nome: 'Passarela da Bomba', x0: 0, x1: 18, pe: 640, tipo: 'tabua', encosto: 'oeste' },
+    // A horta suspensa: agua da cascata, luz de lampiao. E o que sustenta a
+    // cidade de verdade (BIBLIA 6.1), e a Mara faz questao de mostrar.
+    { id: 'horta', nome: 'Horta Suspensa', x0: 23, x1: 38, pe: 646, tipo: 'tabua', encosto: 'oeste' },
     { id: 'oeste_3', nome: 'Balcao do Arquivo', x0: 3, x1: 26, pe: 628, tipo: 'balcao', encosto: 'oeste' },
 
     // ------------------------------------------------------------ a ponte --
@@ -72,6 +75,7 @@ export const BLOCKIA_PLANTA: CidadePlanta = {
   escadas: [
     { x: 23, de: 'mercado', para: 'oeste_1' },
     { x: 19, de: 'oeste_1', para: 'oeste_2' },
+    { x: 22, de: 'oeste_1', para: 'horta' },
     { x: 2, de: 'oeste_2', para: 'oeste_3' },
     { x: 69, de: 'forja', para: 'leste_1' },
     { x: 73, de: 'leste_1', para: 'leste_2' },
@@ -118,6 +122,16 @@ export const BLOCKIA_PLANTA: CidadePlanta = {
     { id: 'vasos', piso: 'oeste_1', x: 19.9 },
     { id: 'bomba', piso: 'oeste_2', x: 3.4 },
     { id: 'balde', piso: 'oeste_2', x: 5.6 },
+    // Horta Suspensa
+    { id: 'canteiro_folha', piso: 'horta', x: 23.3 },
+    { id: 'canteiro_erva', piso: 'horta', x: 25.8 },
+    { id: 'canteiro_raiz', piso: 'horta', x: 28.3 },
+    { id: 'leira', piso: 'horta', x: 30.8 },
+    { id: 'tanque', piso: 'horta', x: 33.5 },
+    { id: 'ervas_penduradas', piso: 'horta', x: 36.1, fundo: true },
+    // Raizes filtradoras no reservatorio: so depois do pedido da Irene.
+    { id: 'canteiro_folha', piso: 'reservatorio', x: 49.8, seFlag: 'b2_plantadas' },
+    { id: 'canteiro_raiz', piso: 'reservatorio', x: 52.2, seFlag: 'b2_plantadas' },
     { id: 'prateleira', piso: 'oeste_3', x: 16.2, fundo: true },
     { id: 'escrivaninha', piso: 'oeste_3', x: 22.5 },
     // Bairro da Rocha
@@ -150,9 +164,19 @@ export const BLOCKIA_PLANTA: CidadePlanta = {
       altura: 5,
       alagadaAte: 'blockia_galeria_drenada',
     },
+    // O nicho dos fundadores, no fim da passarela da forja: onde a carta que
+    // o Afonso procura ficou (pedido "A Ultima Carta").
+    { id: 'nicho', piso: 'leste_1', lado: 'leste', largura: 6, altura: 4 },
   ],
 
   ponteQuebrada: { piso: 'ponte', x0: 45, x1: 51, flag: 'blockia_ponte_reparada' },
-  elevador: { x: 98, paradas: ['forja', 'leste_1', 'leste_2', 'leste_4'], flag: 'blockia_elevador_religado' },
+  elevador: {
+    x: 98,
+    paradas: ['forja', 'leste_1', 'leste_2', 'leste_4'],
+    flag: 'blockia_elevador_religado',
+    // Pedido do Breno: o freio trava com a cabine no meio do poco.
+    travadoSe: { flag: 'pedido_elevador_3b_aceito', ate: 'b4_freio' },
+  },
   saida: { piso: 'forja', x: 88, largura: 3, ate: 680, flag: 'passagem_blockia' },
+  ceuEstrelado: { flag: 'b1_projetor', piso: 'mercado', x: 41 },
 };

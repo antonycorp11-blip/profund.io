@@ -1,4 +1,5 @@
 import type { ResourceId } from './resources';
+import type { DialogLine } from './story';
 import { CONFIG } from './config';
 import { POSTO_NOVE } from './outpost';
 import { gateArenaCol, gateLayerDef } from './gates';
@@ -15,11 +16,13 @@ export interface MissionActionDef {
   row?: number;
   perto?: { npc: string; dx: number };
   /** Um ponto de um piso da planta de Blockia (`x` pode passar da borda do piso: e o caso da galeria). */
-  naCidade?: { piso: string; x: number };
+  naCidade?: { piso: string; x: number; pe?: number };
   /** Nome no mapa: a etapa que manda vir aqui aponta para `acao_<id>`. */
   marcador?: string;
   /** Peca de arte da cidade desenhada no lugar enquanto a acao nao foi feita (as caixas). */
   visual?: string;
+  /** Conversa que abre quando a acao e feita: quem entrega fala. */
+  falas?: DialogLine[];
   radius?: number;
   prompt: string;
   requiresFlags: string[];
@@ -73,4 +76,53 @@ export const MISSION_ACTIONS: MissionActionDef[] = [
   { id: 'ponte_blockia', naCidade: { piso: 'ponte', x: 53 }, marcador: 'Vao da ponte', prompt: 'Instalar a peca da ponte', requiresFlags: ['blockia_elevador_religado'], completionFlag: 'blockia_ponte_reparada', resourceCost: { iron: 30, copper: 12 }, moneyCost: 1200 },
   { id: 'cisterna_grade', naCidade: { piso: 'reservatorio', x: 49 }, marcador: 'Cisterna', prompt: 'Abrir a grade da cisterna', requiresFlags: ['irene_salles'], completionFlag: 'blockia_ninho_aberto' },
   { id: 'cisterna_blockia', naCidade: { piso: 'reservatorio', x: 55 }, marcador: 'Valvula da cisterna', prompt: 'Operar a valvula da cisterna', requiresFlags: ['blockia_ninho_limpo'], completionFlag: 'blockia_cisterna_limpa' },
+  /*
+   * O passeio com a Mara (M6) termina com ela, e a passagem (M10) tambem: o
+   * Conselho decide pela confianca, mas quem entrega o selo e a picareta e a
+   * Primeira Lanterna, em pessoa (BIBLIA, M6 e M10).
+   */
+  {
+    id: 'blockia_tour_mara', perto: { npc: 'mara_avelar', dx: 3 }, prompt: 'Voltar a Mara',
+    requiresFlags: ['blockia_tour_mercado', 'blockia_tour_horta', 'blockia_tour_praca', 'blockia_tour_elevador'],
+    completionFlag: 'blockia_tour_concluido',
+    falas: [
+      { speaker: 'Mara', text: 'Nossos avos ficaram porque nao conseguiam sair. Meus pais ficaram porque ja tinham uma vida. Eu fico porque esta e minha casa.' },
+      { speaker: 'Elias', text: 'Meu pai passou por aqui?' },
+      { speaker: 'Mara', text: '(olha o caderno por um tempo longo) Santiago. Passou.' },
+      { speaker: 'Elias', text: 'Quando?' },
+      { speaker: 'Mara', text: 'Quatorze anos atras. E nao veio procurar minerio.' },
+    ],
+  },
+  {
+    id: 'blockia_selo', perto: { npc: 'mara_avelar', dx: 3 }, prompt: 'Receber o selo de passagem',
+    requiresFlags: ['blockia_confianca_plena'], completionFlag: 'passagem_blockia',
+    falas: [
+      { speaker: 'Mara', text: 'O Conselho votou. Nao foi unanime, e isso e bom sinal.' },
+      { speaker: 'Mara', text: 'O selo de passagem de Blockia. E a Picareta dos Fundadores: abaixo daqui, e a unica que a pedra respeita.' },
+      { speaker: 'Mara', text: 'Santiago seguiu para Ferruria. Mas procure Dalia Correia quando chegar. Se alguem ainda tiver registro da carga dele, e ela.' },
+      { speaker: 'Elias', text: 'Obrigado.' },
+      { speaker: 'Mara', text: 'Nao agradeca. Volte.' },
+    ],
+  },
+  /*
+   * OS PEDIDOS (BIBLIA 10) — ver /data/pedidos.ts. Cada obra so aparece
+   * depois que o morador ofereceu o pedido.
+   */
+  { id: 'b1_lente', naCidade: { piso: 'oeste_2', x: -11 }, marcador: 'Lente velha', prompt: 'Pegar a lente velha', visual: 'caixa_ferramenta', requiresFlags: ['pedido_ceu_de_lio_aceito', 'blockia_galeria_drenada'], completionFlag: 'b1_lente' },
+  { id: 'b1_projetor', naCidade: { piso: 'mercado', x: 41 }, marcador: 'Projetor do Lio', prompt: 'Montar o projetor de estrelas', requiresFlags: ['b1_lente'], completionFlag: 'b1_projetor', resourceCost: { crystal: 4, copper: 6 } },
+  { id: 'b2_mudas', naCidade: { piso: 'horta', x: 31 }, marcador: 'Raizes filtradoras', prompt: 'Colher mudas de raiz filtradora', requiresFlags: ['pedido_agua_nao_se_minera_aceito'], completionFlag: 'b2_mudas' },
+  { id: 'b2_plantar', naCidade: { piso: 'reservatorio', x: 52 }, marcador: 'Beira do reservatorio', prompt: 'Plantar as raizes filtradoras', requiresFlags: ['b2_mudas'], completionFlag: 'b2_plantadas' },
+  {
+    id: 'b3_carta', naCidade: { piso: 'leste_1', x: 104 }, marcador: 'Nicho dos fundadores', prompt: 'Ler a carta do fundador', visual: 'escrivaninha',
+    requiresFlags: ['pedido_ultima_carta_aceito'], completionFlag: 'b3_carta',
+    falas: [
+      { speaker: 'Carta', text: '"Deixo registrado para quem vier: nao ficamos porque perdemos o caminho. Ficamos porque encontramos outro."' },
+      { speaker: 'Elias', text: 'Ele escreveu isso sabendo que ninguem la de cima ia ler.' },
+    ],
+  },
+  { id: 'b3_entrega', perto: { npc: 'afonso_greda', dx: -3 }, prompt: 'Entregar a carta', requiresFlags: ['b3_carta'], completionFlag: 'b3_entregue' },
+  { id: 'b4_freio', naCidade: { piso: 'forja', x: 93 }, marcador: 'Freio do elevador', prompt: 'Soltar o freio do elevador', requiresFlags: ['pedido_elevador_3b_aceito'], completionFlag: 'b4_freio', resourceCost: { iron: 12 } },
+  { id: 'b4_contado', perto: { npc: 'breno_torga', dx: -3 }, prompt: 'Contar do elevador ao Breno', requiresFlags: ['b4_freio'], completionFlag: 'b4_contado' },
+  { id: 'b5_picareta', naCidade: { piso: 'forja', x: 86, pe: 680 }, marcador: 'Picareta do mestre', prompt: 'Pegar a picareta do mestre', visual: 'caixa_ferramenta', requiresFlags: ['pedido_ferramenta_de_silas_aceito'], completionFlag: 'b5_picareta' },
+  { id: 'b5_devolvida', perto: { npc: 'silas_arcos', dx: -3 }, prompt: 'Devolver a picareta ao Silas', requiresFlags: ['b5_picareta'], completionFlag: 'b5_devolvida' },
 ];

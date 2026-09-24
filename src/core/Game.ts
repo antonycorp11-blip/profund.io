@@ -71,6 +71,7 @@ import { aplicarEstadoCidade, flagsDoEstado } from '../world/cidade/escavar';
 import { pontoNoPiso } from '../world/cidade/geometria';
 import { MISSION_ACTIONS } from '../data/missionActions';
 import { flagsMigradas } from '../data/migracaoFlags';
+import { CITIES } from '../data/cities';
 import { BASE_CAMPS, baseCampAt } from '../data/basecamp';
 import { Journal } from '../systems/Journal';
 import { JournalUI } from '../ui/JournalUI';
@@ -87,6 +88,7 @@ import { CollapseSystem } from '../systems/CollapseSystem';
 import { MotherlodeSystem } from '../systems/MotherlodeSystem';
 import { Secrets } from '../systems/Secrets';
 import { CampaignBeats } from '../systems/CampaignBeats';
+import { Pedidos } from '../systems/Pedidos';
 import { ZONE_TRIGGERS } from '../data/campaignBeats';
 import { SECRETS } from '../data/secrets';
 import { Reputation, type CityId } from '../systems/Reputation';
@@ -163,6 +165,7 @@ export class Game {
   private collapses!: CollapseSystem;
   private motherlodes!: MotherlodeSystem;
   private beats!: CampaignBeats;
+  private pedidos!: Pedidos;
 
   private hud: HUD;
   private dialog: DialogUI;
@@ -411,6 +414,10 @@ export class Game {
       current: () => this.missions.current(),
       done: () => this.missions.done(),
       pending: () => this.missions.pending(),
+      pedidos: () => [
+        ...this.pedidos.ativos().map((p) => ({ titulo: p.titulo, resumo: p.resumo, passo: this.pedidos.passoAtual(p)?.text ?? null, feito: false })),
+        ...this.pedidos.concluidos().map((p) => ({ titulo: p.titulo, resumo: p.resumo, passo: null, feito: true })),
+      ],
     });
     this.panels = new PanelUI(uiRoot, {
       stats: this.stats,
@@ -1021,6 +1028,20 @@ export class Game {
         alwaysVisible: false,
       });
     }
+    // Pedidos dos moradores: cada um sabe o que o seu morador tem a pedir.
+    this.pedidos = new Pedidos({
+      hasFlag: (id) => this.skills.hasStoryFlag(id),
+      setFlag: (id) => { this.skills.setStoryFlag(id); this.refreshObjective(); this.save(); },
+      pagar: (p) => {
+        this.stock.money += p.recompensa.moedas;
+        this.reputation.add(p.cidade, 'trust', p.recompensa.confianca ?? 0);
+        this.reputation.add(p.cidade, 'influence', p.recompensa.influencia ?? 0);
+        if (p.recompensa.pontos) this.skills.addPoints(p.recompensa.pontos, `pedido: ${p.titulo}`);
+        if (p.anotacao) this.journal.write('paginas', `pedido:${p.id}`, p.anotacao.titulo, p.anotacao.texto);
+        this.floating.push(this.player.cx, this.player.cy - 30, `+${p.recompensa.moedas}`, '#ffd166', 14);
+      },
+    });
+    for (const npc of this.cityNpcs) npc.oferta = () => this.pedidos.ofertaDe(npc.id);
     this.scrollObjects = SCROLLS.map((sc) => new ScrollObject(sc, this.world.surfaceRow));
     // A porta da cidade: fechada de verdade ate alguem atender.
     this.portaBlockia = new PortaBlockia(this.world.surfaceRow);
@@ -1071,6 +1092,12 @@ export class Game {
    * verdade — parar em cada andar seria tres toques para ir a um lugar so.
    * Parado ate o sarilho ser religado (missao "A Ponte Quebrada").
    */
+  /** O pedido do Breno trava a cabine no meio do poco ate o freio ser solto. */
+  private elevadorTravado(): boolean {
+    const t = BLOCKIA_PLANTA.elevador?.travadoSe;
+    return !!t && this.skills.hasStoryFlag(t.flag) && !this.skills.hasStoryFlag(t.ate);
+  }
+
   private paradasDoElevador(): Interactable[] {
     const e = BLOCKIA_PLANTA.elevador;
     if (!e) return [];
@@ -1085,10 +1112,20 @@ export class Game {
         y: (aqui.row + 0.5) * ts,
         radius: CONFIG.player.interactRadius,
         prompt: () =>
-          !this.skills.hasStoryFlag(e.flag) ? 'Elevador parado' : i === 0 ? 'Subir de elevador' : 'Descer de elevador',
+          !this.skills.hasStoryFlag(e.flag)
+            ? 'Elevador parado'
+            : this.elevadorTravado()
+              ? 'Elevador preso'
+              : i === 0
+                ? 'Subir de elevador'
+                : 'Descer de elevador',
         interact: () => {
           if (!this.skills.hasStoryFlag(e.flag)) {
             this.hud.toast('O sarilho do elevador esta desligado. O Breno sabe religar.', 'warn');
+            return;
+          }
+          if (this.elevadorTravado()) {
+            this.hud.toast('A cabine travou no meio do poco, com gente dentro. O freio fica no sarilho.', 'warn');
             return;
           }
           const alvo = pontoNoPiso(BLOCKIA_PLANTA, sup, destino, e.x);
@@ -1350,6 +1387,10 @@ export class Game {
         this.reputation.add(ficha.trust.city as CityId, 'trust', ficha.trust.amount);
       }
       this.hud.celebrate('MISSAO CONCLUIDA', p.title, p.text, 'progress', 3);
+      // Quem estava la fala, e o que ficou escrito vai para o caderno.
+      if (ficha?.anotacao) this.journal.write('pistas', `missao:${ficha.id}`, ficha.anotacao.titulo, ficha.anotacao.texto);
+      if (ficha?.falasAoConcluir) Events.emit('dialog:open', { lines: ficha.falasAoConcluir });
+      this.conferirConselho();
     });
 
     Events.on('gate:blocked', (p) => {
@@ -1380,13 +1421,28 @@ export class Game {
      * descer. Por isso vem com cartaz, e nao com aviso de canto — e o segundo
      * maior momento do jogo depois de derrubar um guardiao.
      */
+    /*
+     * A CONFIANCA CHEGOU AO LIMIAR: em Blockia, o Conselho decide e a Mara
+     * entrega o selo em pessoa (BIBLIA, M10). A flag da passagem nasce na
+     * conversa com ela (acao `blockia_selo`), e e a flag — venha de onde
+     * vier — que da a picareta.
+     */
     Events.on('city:passage', (p) => {
-      const def = toolByKey(p.pickaxeKey);
-      if (def && def.index > this.stats.toolIndex) this.stats.setTool(def.index);
+      if (p.city === 'blockia') {
+        this.conferirConselho();
+        return;
+      }
       this.skills.setStoryFlag(`passagem_${p.city}`);
+    });
+    Events.on('historia:flag', (p) => {
+      if (!p.flag.startsWith('passagem_')) return;
+      const cidade = CITIES.find((c) => `passagem_${c.id}` === p.flag);
+      if (!cidade) return;
+      const def = toolByKey(cidade.pickaxeId);
+      if (def && def.index > this.stats.toolIndex) this.stats.setTool(def.index);
       this.hud.celebrate(
-        `${p.name.toUpperCase()} CONFIA EM VOCE`,
-        p.pickaxeName,
+        `${cidade.name.toUpperCase()} CONFIA EM VOCE`,
+        cidade.pickaxeName,
         'Abaixo daqui, a pedra so cede a esta ferramenta. Seu pai carregou uma igual.',
         'progress',
         4
@@ -3204,6 +3260,30 @@ export class Game {
     this.inventory.clear();
     this.hud.toast(`${total} itens foram para o deposito da base.`, 'good');
     Haptics.pickup();
+    this.save();
+  }
+
+  /**
+   * O CONSELHO DE BLOCKIA SO DECIDE DEPOIS DAS OBRAS.
+   *
+   * O limiar de confianca sozinho nao basta desde que os pedidos pagam
+   * confianca: com os sete moradores conhecidos, o arquivo e a ponte, o
+   * pedido do Lio ja cruzava os 15 — e a Mara entregava o selo com a cisterna
+   * ainda cheia de bicho, pulando a missao do Conselho. Medido no navegador:
+   * confianca 15 com a cisterna por fazer, e o selo continuou fechado.
+   *
+   * `city:passage` so dispara uma vez por cidade, entao a decisao e
+   * reconferida a cada missao fechada: quem cruzou o limiar cedo recebe o
+   * chamado da Mara quando a ultima obra termina.
+   */
+  private conferirConselho(): void {
+    if (this.skills.hasStoryFlag('blockia_confianca_plena') || this.skills.hasStoryFlag('passagem_blockia')) return;
+    if (!this.reputation.temPassagem('blockia')) return;
+    const obras = MISSIONS.filter((m) => m.trust?.city === 'blockia');
+    if (!obras.every((m) => m.requires.every((f) => this.skills.hasStoryFlag(f)))) return;
+    this.skills.setStoryFlag('blockia_confianca_plena');
+    this.hud.toast('O Conselho decidiu. A Mara quer falar com voce na Guarita.', 'story');
+    this.refreshObjective();
     this.save();
   }
 
