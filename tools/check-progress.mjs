@@ -21,6 +21,22 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 
 const TMP = '.check-tmp';
+
+/** Toda flag ligada no codigo com o nome escrito: `setStoryFlag('x')`. */
+function flagsDoCodigo() {
+  const out = new Set();
+  const varre = (dir) => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = `${dir}/${e.name}`;
+      if (e.isDirectory()) varre(p);
+      else if (e.name.endsWith('.ts')) {
+        for (const m of fs.readFileSync(p, 'utf8').matchAll(/setStoryFlag\(\s*'([^'`$]+)'\s*\)/g)) out.add(m[1]);
+      }
+    }
+  };
+  varre('src');
+  return [...out];
+}
 fs.mkdirSync(TMP, { recursive: true });
 
 fs.writeFileSync(
@@ -47,6 +63,10 @@ import { TOOLS } from '../src/data/tools';
 import { BLOCKS } from '../src/data/blocks';
 import { World } from '../src/world/World';
 import { generateWorld } from '../src/world/WorldGen';
+import { MISSION_ACTIONS } from '../src/data/missionActions';
+import { COLLAPSE_ZONES } from '../src/data/collapses';
+import { SECRETS } from '../src/data/secrets';
+const FLAGS_DO_CODIGO: string[] = ${JSON.stringify(flagsDoCodigo())};
 
 const erros: string[] = [];
 const avisos: string[] = [];
@@ -65,10 +85,15 @@ const origens = new Set<string>([
   // (Reputation.conferirPassagem -> Game, evento city:passage). Sem crase:
   // este arquivo carrega a fonte TS dentro de um template literal.
   ...CITIES.map((c) => 'passagem_' + c.id),
-  // Acoes permanentes da campanha, emitidas por MissionActions/Game.
-  'trilhos_reparados', 'posto_nove_defendido', 'base_cristal_primeira_entrega',
-  'vilma_rota_segura', 'rota_comercial_reparada', 'blockia_arquivo_concluido',
-  'blockia_ponte_reparada', 'blockia_cisterna_limpa',
+  // Acoes de cenario, desabamentos e salas lacradas: do dado de cada uma.
+  // Aqui havia uma lista escrita a mao com duas flags que nada ligava
+  // (posto_nove_defendido, vilma_rota_segura) — a lista dizia que existiam, e
+  // a campanha travava no selo do Cristal com esta checagem verde.
+  ...MISSION_ACTIONS.map((a) => a.completionFlag),
+  ...COLLAPSE_ZONES.flatMap((z) => (z.completionFlag ? [z.completionFlag] : [])),
+  ...SECRETS.map((s) => s.id),
+  // Ligadas no codigo com o nome escrito, lidas da fonte (ver o topo).
+  ...FLAGS_DO_CODIGO,
 ]);
 for (const m of MISSIONS) {
   for (const f of m.requires) {

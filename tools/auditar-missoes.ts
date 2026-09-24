@@ -29,6 +29,12 @@ import { SCROLLS } from '../src/data/scrolls';
 import { BASE_CAMPS } from '../src/data/basecamp';
 import { CITIES } from '../src/data/cities';
 import { BLOCKIA_NPCS } from '../src/data/blockia';
+import { OUTPOST_NPCS } from '../src/data/outpost';
+import { MISSION_ACTIONS } from '../src/data/missionActions';
+import { COLLAPSE_ZONES } from '../src/data/collapses';
+import { SECRETS } from '../src/data/secrets';
+import fs from 'node:fs';
+import path from 'node:path';
 
 let erros = 0;
 let avisos = 0;
@@ -99,30 +105,90 @@ for (const [id, onde, depth] of [
 ] as [string, string, number][]) {
   origem.set(id, { onde, depth });
 }
-// Etapas e acoes de cenario sao flags locais da propria missao. Registrar a
-// origem aqui impede que uma flag nova vire dependencia fantasma.
-for (const mission of MISSIONS) {
-  for (const step of mission.steps ?? []) {
-    const ids = [...step.requires];
-    for (const id of ids) if (!origem.has(id)) origem.set(id, { onde: `etapa ${mission.id}:${step.id}`, depth: step.depth ?? mission.depth });
-  }
-  for (const id of mission.requires) if (!origem.has(id)) origem.set(id, { onde: `acao da missao ${mission.id}`, depth: mission.depth });
+/*
+ * Acoes de cenario, desabamentos e salas lacradas: a origem vem do DADO de
+ * cada sistema.
+ *
+ * A primeira versao registrava como origem toda flag que as etapas e as
+ * missoes pediam — "a flag existe porque alguem a pede". Com isso a checagem 1
+ * nao tinha como falhar, e nao falhou: `posto_nove_defendido` e
+ * `vilma_rota_segura` nao eram ligadas por nada, e a campanha travava no selo
+ * do Cristal com esta auditoria verde. A terceira vez que um verificador
+ * copia a premissa do verificado.
+ */
+for (const a of MISSION_ACTIONS) {
+  const depth = a.perto
+    ? origem.get(a.perto.npc)?.depth ?? Infinity
+    : (a.row ?? Infinity) - SUP;
+  origem.set(a.completionFlag, { onde: `acao "${a.prompt}"`, depth });
 }
-
-console.log('\n=== 0. ETAPAS ===');
-for (const mission of MISSIONS) {
-  const ids = new Set<string>();
-  for (const step of mission.steps ?? []) {
-    ok(!ids.has(step.id), `${mission.id}: etapa ${step.id} e unica`);
-    ids.add(step.id);
-    if (step.markerId) ok(true, `${mission.id}: marcador da etapa ${step.id} declarado`);
+for (const z of COLLAPSE_ZONES) {
+  if (z.completionFlag) origem.set(z.completionFlag, { onde: `desabamento ${z.id}`, depth: z.rect.row0 - SUP });
+}
+for (const s of SECRETS) {
+  origem.set(s.id, { onde: `sala lacrada "${s.marker.label}"`, depth: s.row - SUP });
+}
+/*
+ * Flags ligadas direto no codigo, com o nome escrito: `setStoryFlag('x')`.
+ * Lidas da FONTE, e nao de uma lista minha — lista a mao era exatamente o
+ * defeito acima. Nao tem profundidade (sao gatilhos: primeira entrega, chegar
+ * a tal metro), entao contam para "existe" e ficam fora das contas de metro.
+ */
+const doCodigo = new Set<string>();
+{
+  const varre = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? varre(path.join(dir, e.name)) : e.name.endsWith('.ts') ? [path.join(dir, e.name)] : []
+    );
+  for (const arq of varre('src')) {
+    for (const m of fs.readFileSync(arq, 'utf8').matchAll(/setStoryFlag\(\s*'([^'`$]+)'\s*\)/g)) doCodigo.add(m[1]);
   }
+}
+const temOrigem = (f: string) => origem.has(f) || doCodigo.has(f);
+
+/* Lugares que viram marcador no mapa: e para onde uma etapa pode apontar. */
+const marcadores = new Set<string>([
+  ...CLUES.map((c) => c.id),
+  ...RESCUE_NPCS.map((n) => n.id),
+  ...SECRETS.map((s) => s.marker.id),
+  ...BLOCKIA_NPCS.map((n) => n.id),
+  ...OUTPOST_NPCS.map((n) => n.id),
+  ...BASE_CAMPS.map((b) => b.id),
+]);
+
+console.log('\n=== 0. ETAPAS E ACOES ===');
+{
+  const antes = erros;
+  for (const mission of MISSIONS) {
+    const ids = new Set<string>();
+    for (const step of mission.steps ?? []) {
+      if (ids.has(step.id)) falha(`${mission.id}: etapa ${step.id} repetida`);
+      ids.add(step.id);
+      // Etapa com flag que nada liga nunca termina — e, sendo a primeira em
+      // aberto, esconde do mapa e da bussola o alvo da missao inteira.
+      for (const f of step.requires) {
+        if (!temOrigem(f)) falha(`${mission.id}: a etapa "${step.id}" espera a flag "${f}", que nada no jogo produz.`);
+      }
+      if (step.markerId && !marcadores.has(step.markerId)) {
+        falha(`${mission.id}: a etapa "${step.id}" aponta para o marcador "${step.markerId}", que nao existe.`);
+      }
+    }
+  }
+  for (const a of MISSION_ACTIONS) {
+    for (const f of a.requiresFlags) {
+      if (!temOrigem(f)) falha(`acao "${a.prompt}" so aparece com a flag "${f}", que nada no jogo produz.`);
+    }
+    if (a.perto && !BLOCKIA_NPCS.some((n) => n.id === a.perto!.npc)) {
+      falha(`acao "${a.prompt}" esta ancorada em "${a.perto.npc}", que nao e morador de Blockia.`);
+    }
+  }
+  if (erros === antes) console.log('  ok  toda etapa e toda acao espera flags que o jogo produz.');
 }
 
 console.log('\n=== 1. TODA FLAG EXIGIDA EXISTE? ===');
 for (const m of MISSIONS) {
   for (const f of m.requires) {
-    if (!origem.has(f)) falha(`"${m.title}" exige a flag "${f}", que nada no jogo produz.`);
+    if (!temOrigem(f)) falha(`"${m.title}" exige a flag "${f}", que nada no jogo produz.`);
   }
 }
 if (erros === 0) console.log('  ok  todas as flags exigidas tem origem conhecida.');

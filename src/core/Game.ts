@@ -77,7 +77,7 @@ import { BaseCampUI } from '../ui/BaseCampUI';
 import { BaseTerminal } from '../entities/BaseTerminal';
 import { BaseDepot } from '../entities/BaseDepot';
 import { Missions } from '../systems/Missions';
-import { MissionActions } from '../systems/MissionActions';
+import { MissionActions, missionActionTile } from '../systems/MissionActions';
 import { CollapseSystem } from '../systems/CollapseSystem';
 import { MotherlodeSystem } from '../systems/MotherlodeSystem';
 import { Secrets } from '../systems/Secrets';
@@ -87,7 +87,7 @@ import { calcularOffline, formatarDuracao } from '../systems/Offline';
 import { CityNpc } from '../entities/CityNpc';
 import { BLOCKIA_NPCS } from '../data/blockia';
 import { OUTPOST_NPCS } from '../data/outpost';
-import { blockiaLayout } from '../world/Blockia';
+import { posicionarMoradores } from '../world/Blockia';
 import { BiomeGate } from '../systems/BiomeGate';
 import { CreatureManager } from '../systems/CreatureManager';
 import { DrillTool } from '../mining/DrillTool';
@@ -334,11 +334,24 @@ export class Game {
     );
 
     this.worldInfo = generateWorld(this.world);
+    /*
+     * O desabamento avisa e depois cai. O dano vinha SEMPRE, onde quer que o
+     * jogador estivesse, e o aviso nao aparecia em lugar nenhum (ninguem
+     * escutava `collapse:warning`): o "aviso seguro" que a sonda confere era
+     * um numero sem tela. Agora o aviso aparece, e sair da zona a tempo salva.
+     */
     this.collapses = new CollapseSystem(
-      () => {
+      (zone) => {
         this.camera.addShake(7);
-        this.particles.dust(this.player.cx, this.player.cy - 24, 12, '#9d8d75');
-        this.hurtPlayer(8, this.player.cx - 20);
+        const ts = CONFIG.tileSize;
+        const r = zone.rect;
+        const col = Math.floor(this.player.cx / ts);
+        const row = Math.floor(this.player.cy / ts);
+        const dentro = col >= r.col0 - 1 && col <= r.col1 + 1 && row >= r.row0 - 1 && row <= r.row1 + 1;
+        const x = dentro ? this.player.cx : (r.col0 + r.col1 + 1) * ts / 2;
+        const y = dentro ? this.player.cy - 24 : r.row0 * ts;
+        this.particles.dust(x, y, 12, '#9d8d75');
+        if (dentro) this.hurtPlayer(8, this.player.cx - 20);
       },
       (flag) => { this.skills.setStoryFlag(flag); this.refreshObjective(); this.save(); }
     );
@@ -500,7 +513,12 @@ export class Game {
 
     this.tech = new TechTree(this.attrs, this.stock);
     this.exploration = new Exploration(this.world, this.attrs);
-    new Secrets(this.world, this.stock, (id) => this.exploration.discoverMarker(id), (id) => this.skills.setStoryFlag(id));
+    new Secrets(
+      this.stock,
+      (id) => this.skills.hasStoryFlag(id),
+      (id) => { this.skills.setStoryFlag(id); this.refreshObjective(); this.save(); },
+      (id) => this.exploration.discoverMarker(id)
+    );
     this.mapScreen = new MapScreen(uiRoot, this.world, this.exploration, () => ({
       col: Math.floor(this.player.cx / CONFIG.tileSize),
       row: Math.floor(this.player.cy / CONFIG.tileSize),
@@ -961,27 +979,10 @@ export class Game {
     // cada morador no chao mais proximo. Sem isso, errar dois tiles ao desenhar
     // a cidade emparedava alguem — e um NPC dentro da pedra nao da erro
     // nenhum, so some da historia.
-    const bl = CONFIG.blockia;
-    const layout = blockiaLayout(this.world.surfaceRow);
     this.cityNpcs = [];
-    // Lugares ja tomados: dois moradores encaixados no mesmo degrau ficariam um
-    // dentro do outro, e so um receberia o toque.
-    const ocupado = new Set<string>();
+    const moradores = posicionarMoradores(this.world, BLOCKIA_NPCS);
     for (const d of BLOCKIA_NPCS) {
-      // Nivel 0 e a praca; 1..4 sao os terracos. A linha e sempre a de cima da
-      // tabua, que e onde os pes ficam.
-      const nivel = d.nivel === 0 ? null : layout.decks[d.nivel - 1];
-      const alvo = nivel
-        ? { col: Math.min(nivel.col1 - 1, nivel.col0 + d.offset), row: nivel.row - 1 }
-        : { col: bl.col0 + 6 + d.offset, row: layout.piso };
-      let spot = this.world.findStandingSpot(alvo.col, alvo.row, 40) ?? alvo;
-      // Se o vizinho chegou primeiro, procura de novo a partir de dois tiles
-      // ao lado, ate achar chao livre.
-      for (let n = 0; n < 6 && ocupado.has(`${spot.col},${spot.row}`); n++) {
-        const desvio = (n % 2 === 0 ? 1 : -1) * (2 + n);
-        spot = this.world.findStandingSpot(spot.col + desvio, spot.row, 40) ?? spot;
-      }
-      ocupado.add(`${spot.col},${spot.row}`);
+      const spot = moradores.get(d.id)!;
       this.cityNpcs.push(new CityNpc(d, spot.col, spot.row));
       this.exploration.addMarker({
         id: d.id,
@@ -1033,14 +1034,16 @@ export class Game {
             () => this.inventory.totalUnits()
           )
       ),
-      ...this.missionActions.list().map((action): Interactable => {
-        const pos = this.missionActions.worldPosition(action);
-        return {
+      ...this.missionActions.list().flatMap((action): Interactable[] => {
+        const tile = missionActionTile(action, this.world, moradores);
+        if (!tile) return [];
+        const pos = this.missionActions.worldPosition(tile, action);
+        return [{
           id: `mission:${action.id}`, x: pos.x, y: pos.y, radius: pos.radius,
           prompt: () => this.missionActions.prompt(action),
           interact: () => this.missionActions.interact(action),
           render: () => undefined,
-        };
+        }];
       }),
     ];
   }
@@ -1140,6 +1143,13 @@ export class Game {
       }
     });
     Events.on('quota:new', () => this.refreshObjective());
+    Events.on('collapse:warning', () => {
+      this.camera.addShake(2);
+      this.hud.toast('A rocha estala em cima de voce. Saia daqui!', 'warn');
+    });
+    Events.on('secret:found', (p) => {
+      this.hud.toast(`${p.label}: o que havia aqui foi para o estoque da base.`, 'good');
+    });
 
 
     Events.on('clue:found', (p) => {
@@ -1476,7 +1486,10 @@ export class Game {
 
     Events.on('block:break', (p) => {
       const depth = this.world.depthOfRow(p.row);
-      if (depth >= 26 && !this.skills.hasStoryFlag('m1_26m')) this.skills.setStoryFlag('m1_26m');
+      if (depth >= 26 && !this.skills.hasStoryFlag('m1_26m')) {
+        this.skills.setStoryFlag('m1_26m');
+        this.refreshObjective();
+      }
       const c = CONFIG.progression;
       const def = blockDef(p.blockId);
       const value = def.drop ? RESOURCES[def.drop].value : 0;
@@ -3160,9 +3173,14 @@ export class Game {
     const ts = CONFIG.tileSize;
     const out: { x: number; y: number; tint: string; index: number; label: string }[] = [];
     const step = this.missions.currentStep(m);
-    for (const req of step?.requires ?? m.requires) {
+    // A etapa que nomeia um lugar (`markerId`) aponta para ele mesmo que o
+    // lugar ja tenha sido visitado: "repare o trilho" mora ao lado da pista
+    // ja lida, e "volte a Afonso" e alguem que voce ja conheceu. Sem isso a
+    // bussola sumia justamente nessas etapas.
+    const lugares = step?.markerId ? [step.markerId] : (step?.requires ?? m.requires);
+    for (const req of lugares) {
       const marca = this.exploration.markers.find((x) => x.id === req);
-      if (!marca || marca.done) continue;
+      if (!marca || (marca.done && !step?.markerId)) continue;
       out.push({
         x: marca.col * ts + ts / 2,
         y: marca.row * ts + ts / 2,

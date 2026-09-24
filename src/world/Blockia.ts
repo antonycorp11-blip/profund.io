@@ -302,6 +302,48 @@ export function blockiaLayout(surfaceRow: number): BlockiaPlanta {
   return { piso, patamares, decks, escadas, ponte };
 }
 
+/**
+ * Onde cada morador fica de pe, em tiles (a linha e a dos pes).
+ *
+ * Mora aqui, e nao no Game, porque mais de uma coisa precisa do mesmo lugar:
+ * o morador, o marcador dele no mapa e as acoes de missao ancoradas nele. A
+ * sonda tambem chama esta funcao — posicao calculada em dois lugares diverge.
+ *
+ * As coordenadas da ficha sao uma SUGESTAO: `findStandingSpot` encaixa cada
+ * morador no chao mais proximo. Sem isso, errar dois tiles ao desenhar a
+ * cidade emparedava alguem — e um NPC dentro da pedra nao da erro nenhum, so
+ * some da historia.
+ */
+export function posicionarMoradores(
+  world: World,
+  npcs: readonly { id: string; nivel: number; offset: number }[]
+): Map<string, { col: number; row: number }> {
+  const bl = CONFIG.blockia;
+  const layout = blockiaLayout(world.surfaceRow);
+  const out = new Map<string, { col: number; row: number }>();
+  // Lugares ja tomados: dois moradores encaixados no mesmo degrau ficariam um
+  // dentro do outro, e so um receberia o toque.
+  const ocupado = new Set<string>();
+  for (const d of npcs) {
+    // Nivel 0 e a praca; 1..4 sao os terracos. A linha e sempre a de cima da
+    // tabua, que e onde os pes ficam.
+    const nivel = d.nivel === 0 ? null : layout.decks[d.nivel - 1];
+    const alvo = nivel
+      ? { col: Math.min(nivel.col1 - 1, nivel.col0 + d.offset), row: nivel.row - 1 }
+      : { col: bl.col0 + 6 + d.offset, row: layout.piso };
+    let spot = world.findStandingSpot(alvo.col, alvo.row, 40) ?? alvo;
+    // Se o vizinho chegou primeiro, procura de novo a partir de dois tiles
+    // ao lado, ate achar chao livre.
+    for (let n = 0; n < 6 && ocupado.has(`${spot.col},${spot.row}`); n++) {
+      const desvio = (n % 2 === 0 ? 1 : -1) * (2 + n);
+      spot = world.findStandingSpot(spot.col + desvio, spot.row, 40) ?? spot;
+    }
+    ocupado.add(`${spot.col},${spot.row}`);
+    out.set(d.id, spot);
+  }
+  return out;
+}
+
 /** Todos os pisos andaveis da cidade, do mais baixo para o mais alto. */
 export function blockiaNiveis(surfaceRow: number): Deck[] {
   const p = blockiaLayout(surfaceRow);

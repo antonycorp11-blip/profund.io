@@ -183,7 +183,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 278,
     title: 'Posto Nove',
     goal: 'Os trilhos levam a algum lugar. Siga a linha e descubra quem mora no fim dela.',
-    requires: ['posto_nove_defendido', 'rui_cabeca'],
+    requires: ['rui_cabeca'],
     onDone: 'Rui Cabeca. Mora aqui com a irma e um gato. E fala de lanternas azuis mais fundo.',
     porque:
       'Quem mora no fim de um trilho que nao deveria existir sabe quem passou por ele. E alguem passou.',
@@ -229,7 +229,7 @@ export const MISSIONS: MissionDef[] = [
     depth: 460,
     title: 'Luzes Abaixo',
     goal: 'Tem outra voz nas Cavernas de Cristal. Siga o som e tire essa pessoa de la.',
-    requires: ['npc_vilma', 'vilma_rota_segura'],
+    requires: ['npc_vilma'],
     onDone: 'Tres pulsos longos, dois curtos. John ouviu isso primeiro.',
     porque:
       'Tres pulsos longos, dois curtos. E o sinal do caderno do seu pai, e ele esta sendo repetido por alguem que ainda esta vivo la embaixo.',
@@ -430,14 +430,11 @@ const CAMPAIGN_STEPS: Record<string, MissionStepDef[]> = {
   m1_marca_do_pai: [
     { id: 'chegar', text: 'Desca ate 26 m.', requires: ['m1_26m'], depth: 26 },
     { id: 'parede', text: 'Procure a parede que soa oca.', requires: ['secret_marca_pai'], markerId: 'secret_marca_pai', depth: 26 },
-    { id: 'queda', text: 'Sobreviva ao desabamento.', requires: ['collapse_26m'] },
+    { id: 'queda', text: 'Sobreviva ao desabamento.', requires: ['collapse_26m'], markerId: 'clue_marca_do_pai' },
     { id: 'marca', text: 'Examine a marca de Santiago.', requires: ['clue_marca_do_pai'], markerId: 'clue_marca_do_pai' },
   ],
   m2_a_voz_na_pedra: [
-    { id: 'ouvir', text: 'Siga os gritos de Jonas.', requires: ['m2_jonas_sala'], markerId: 'npc_jonas', depth: 84 },
-    { id: 'rubble', text: 'Remova os escombros da passagem.', requires: ['m2_escombros'] },
-    { id: 'abrir', text: 'Abra uma passagem segura.', requires: ['m2_passagem_segura'] },
-    { id: 'jonas', text: 'Liberte Jonas.', requires: ['npc_jonas'], markerId: 'npc_jonas' },
+    { id: 'jonas', text: 'Siga os gritos e liberte Jonas.', requires: ['npc_jonas'], markerId: 'npc_jonas', depth: 84 },
   ],
   m2b_marcas_na_pedra: [
     // A Pagina 01 ja e a sala canonica que encerra a sequencia de marcas.
@@ -446,40 +443,32 @@ const CAMPAIGN_STEPS: Record<string, MissionStepDef[]> = {
   ],
   m3b_trilhos_novos: [
     { id: 'solda', text: 'Examine a solda nova.', requires: ['clue_trilhos'], markerId: 'clue_trilhos', depth: 216 },
-    { id: 'reparar', text: 'Repare a secao inutilizada (10 ferro, 6 cobre).', requires: ['trilhos_reparados'] },
+    { id: 'reparar', text: 'Repare a secao inutilizada (10 ferro, 6 cobre).', requires: ['trilhos_reparados'], markerId: 'clue_trilhos' },
   ],
   m3c_posto_nove: [
-    { id: 'gerador', text: 'Abasteca o gerador com 20 carvoes.', requires: ['posto_nove_gerador'], depth: 278 },
-    { id: 'defesa', text: 'Sobreviva ao encontro no Posto Nove.', requires: ['posto_nove_defendido'] },
-    { id: 'rui', text: 'Fale com Rui.', requires: ['rui_cabeca'] },
+    { id: 'gerador', text: 'Abasteca o gerador do posto com 20 carvoes.', requires: ['posto_nove_gerador'], markerId: 'rui_cabeca', depth: 278 },
+    { id: 'rui', text: 'Fale com Rui.', requires: ['rui_cabeca'], markerId: 'rui_cabeca' },
   ],
   m3d_caminho_das_lanternas: [
-    { id: 'lanterna1', text: 'Localize a primeira lanterna.', requires: ['m3d_lanterna_1'], depth: 340 },
-    { id: 'lanterna2', text: 'Encontre a terceira lanterna apagada.', requires: ['m3d_lanterna_3'] },
-    { id: 'reparar', text: 'Repare a lanterna (2 cobre, 6 carvao).', requires: ['lanterna_reparada'] },
+    { id: 'reparar', text: 'Repare a lanterna apagada (2 cobre, 6 carvao).', requires: ['lanterna_reparada'], markerId: 'clue_lampiao', depth: 340 },
     { id: 'lampiao', text: 'Examine o lampiao abastecido.', requires: ['clue_lampiao'], markerId: 'clue_lampiao' },
   ],
   m4b_a_base_do_cristal: [
-    { id: 'camara', text: 'Chegue a camara do cristal.', requires: ['m4b_camara'], depth: 396 },
-    { id: 'limpar', text: 'Limpe os escombros de acesso.', requires: ['m4b_acesso'] },
-    { id: 'deposito', text: 'Construa o Deposito Bruto.', requires: ['base_cristal:deposito'] },
-    { id: 'entrega', text: 'Faca a primeira entrega na base.', requires: ['base_cristal_primeira_entrega'] },
+    { id: 'deposito', text: 'Construa o Deposito Bruto.', requires: ['base_cristal:deposito'], markerId: 'base_cristal', depth: 396 },
+    { id: 'entrega', text: 'Faca a primeira entrega na base.', requires: ['base_cristal_primeira_entrega'], markerId: 'base_cristal' },
   ],
   m5_luzes_abaixo: [
-    { id: 'vilma', text: 'Siga os sons de Vilma.', requires: ['m5_vilma_zona'], markerId: 'npc_vilma', depth: 460 },
-    { id: 'queda', text: 'Sobreviva ao desabamento cristalino.', requires: ['collapse_460m'] },
-    { id: 'abrir', text: 'Abra caminho ate Vilma.', requires: ['m5_vilma_acesso'] },
-    { id: 'resgatar', text: 'Liberte Vilma e garanta a rota.', requires: ['npc_vilma', 'vilma_rota_segura'] },
+    { id: 'queda', text: 'Siga os sons de Vilma. A rocha cristalina esta cedendo.', requires: ['collapse_460m'], markerId: 'npc_vilma', depth: 460 },
+    { id: 'resgatar', text: 'Liberte Vilma.', requires: ['npc_vilma'], markerId: 'npc_vilma' },
   ],
   m6_a_rota_comercial: [
-    { id: 'rubble', text: 'Remova os escombros da rota comercial.', requires: ['m6_rota_limpa'], depth: 497 },
-    { id: 'guincho', text: 'Repare o guincho (18 ferro, 8 cobre, 500 moedas).', requires: ['rota_comercial_reparada'] },
+    { id: 'guincho', text: 'Repare o guincho da arena (18 ferro, 8 cobre, 500 moedas).', requires: ['rota_comercial_reparada'], depth: 497 },
     { id: 'boss', text: 'Derrote o automato e abra o gate.', requires: ['boss_automato_enferrujado', 'gate_minerals'] },
   ],
-  m5_lanternas_azuis: [{ id: 'mara', text: 'Apresente-se a Mara na porta.', requires: ['mara_avelar'], depth: 600 }],
-  m7_arquivo_das_lanternas: [{ id: 'arquivo', text: 'Ative a bomba e recupere os tres arquivos.', requires: ['blockia_arquivo_concluido'] }, { id: 'afonso', text: 'Volte a Afonso.', requires: ['afonso_greda'] }],
-  m8_ponte_quebrada: [{ id: 'ponte', text: 'Instale a peca da ponte (30 ferro, 12 cobre, 1.200 moedas).', requires: ['blockia_ponte_reparada'] }, { id: 'breno', text: 'Mostre o reparo a Breno.', requires: ['breno_torga'] }],
-  m9_conselho_das_lanternas: [{ id: 'cisterna', text: 'Abra a parede da cisterna e limpe o ninho.', requires: ['blockia_cisterna_limpa'] }, { id: 'irene', text: 'Volte ao Conselho.', requires: ['irene_salles'] }],
+  m5_lanternas_azuis: [{ id: 'mara', text: 'Apresente-se a Mara na porta.', requires: ['mara_avelar'], markerId: 'mara_avelar', depth: 600 }],
+  m7_arquivo_das_lanternas: [{ id: 'arquivo', text: 'Ative a bomba da galeria, ao lado de Afonso.', requires: ['blockia_arquivo_concluido'], markerId: 'afonso_greda' }, { id: 'afonso', text: 'Volte a Afonso.', requires: ['afonso_greda'], markerId: 'afonso_greda' }],
+  m8_ponte_quebrada: [{ id: 'ponte', text: 'Instale a peca da ponte ao lado de Breno (30 ferro, 12 cobre, 1.200 moedas).', requires: ['blockia_ponte_reparada'], markerId: 'breno_torga' }, { id: 'breno', text: 'Mostre o reparo a Breno.', requires: ['breno_torga'], markerId: 'breno_torga' }],
+  m9_conselho_das_lanternas: [{ id: 'cisterna', text: 'Opere a valvula da cisterna, ao lado de Irene.', requires: ['blockia_cisterna_limpa'], markerId: 'irene_salles' }, { id: 'irene', text: 'Volte ao Conselho.', requires: ['irene_salles'], markerId: 'irene_salles' }],
   m10_saida_inferior: [{ id: 'saida', text: 'Ganhe confianca e abra a saida inferior.', requires: ['passagem_blockia'] }],
 };
 

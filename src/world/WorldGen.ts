@@ -547,8 +547,6 @@ export function generateWorld(world: World): GeneratedWorldInfo {
     sealRing(world, npc.col, npc.row, Math.max(npc.roomW, npc.roomH));
   }
   for (const secret of SECRETS) {
-    // A primeira sala e a propria sala canonica da marca do pai.
-    if (secret.id === 'secret_marca_pai') continue;
     carveRoom(world, secret.col, secret.row, secret.roomW, secret.roomH, BLOCK_IDS.STONE);
   }
 

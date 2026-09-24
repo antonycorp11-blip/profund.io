@@ -44,7 +44,17 @@ export class Missions {
 
   currentStep(mission: MissionDef | null = this.current()): MissionStepDef | null {
     if (!mission?.steps?.length) return null;
-    return mission.steps.find((step) => !this.stepDone(step)) ?? null;
+    // A etapa depois da ULTIMA ja feita, e nao a primeira em aberto. Etapa de
+    // caminho (a parede oca, o desabamento) pode ser pulada por quem chega
+    // por outro lado; apontar de volta para ela deixava o HUD preso num
+    // passo que o jogador ja deixou para tras.
+    let ultima = -1;
+    mission.steps.forEach((step, i) => { if (this.stepDone(step)) ultima = i; });
+    return (
+      mission.steps.find((step, i) => i > ultima && !this.stepDone(step)) ??
+      mission.steps.find((step) => !this.stepDone(step)) ??
+      null
+    );
   }
 
   currentStepIndex(mission: MissionDef | null = this.current()): number {

@@ -2,6 +2,29 @@ import { CONFIG } from '../data/config';
 import { MISSION_ACTIONS, type MissionActionDef } from '../data/missionActions';
 import { Events } from '../core/events';
 import type { BaseStock } from './BaseStock';
+import type { World } from '../world/World';
+
+type Tile = { col: number; row: number };
+
+/**
+ * O tile de uma acao: a coordenada fixa, ou o chao ao lado do morador.
+ *
+ * Funcao solta porque a sonda (`npm run acoes`) precisa da MESMA conta que o
+ * jogo. Devolve null quando a ancora nao existe — e a sonda que acusa.
+ */
+export function missionActionTile(
+  def: MissionActionDef,
+  world: World,
+  moradores: ReadonlyMap<string, Tile>
+): Tile | null {
+  if (def.perto) {
+    const npc = moradores.get(def.perto.npc);
+    if (!npc) return null;
+    return world.findStandingSpot(npc.col + def.perto.dx, npc.row, 3);
+  }
+  if (def.col === undefined || def.row === undefined) return null;
+  return { col: def.col, row: def.row };
+}
 
 /** Acoes unicas de cenario. Estado e custo vivem nas flags e no estoque. */
 export class MissionActions {
@@ -36,8 +59,8 @@ export class MissionActions {
     this.onDone();
   }
 
-  worldPosition(def: MissionActionDef): { x: number; y: number; radius: number } {
+  worldPosition(tile: Tile, def: MissionActionDef): { x: number; y: number; radius: number } {
     const ts = CONFIG.tileSize;
-    return { x: (def.col + 0.5) * ts, y: (def.row + 0.5) * ts, radius: def.radius ?? CONFIG.player.interactRadius };
+    return { x: (tile.col + 0.5) * ts, y: (tile.row + 0.5) * ts, radius: def.radius ?? CONFIG.player.interactRadius };
   }
 }
